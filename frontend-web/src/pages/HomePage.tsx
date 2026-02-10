@@ -1,0 +1,258 @@
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const HomePage: React.FC = () => {
+    const navigate = useNavigate();
+    const [expandedDayId, setExpandedDayId] = useState<number | null>(null);
+
+    // Helper: Get formatted date string MM/DD
+    const formatDate = (date: Date) => {
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${m}/${d}`;
+    };
+
+    // Helper: Get day name (Sun, Mon...) -> Now Korean
+    const getDayName = (date: Date) => {
+        const days = ['일', '월', '화', '수', '목', '금', '토'];
+        return days[date.getDay()];
+    };
+
+    // Generate Current Week Data
+    const generateCurrentWeek = () => {
+        const today = new Date();
+        const day = today.getDay(); // 0 (Sun) - 6 (Sat)
+        const diff = today.getDate() - day; // Adjust to Sunday
+
+        const weekData = [];
+        for (let i = 0; i < 7; i++) {
+            const current = new Date(today);
+            current.setDate(diff + i);
+
+            const isToday = current.toDateString() === today.toDateString();
+            const dateStr = formatDate(current);
+            const dayName = getDayName(current);
+            const id = i; // Use 0-6 as IDs for simplicity
+
+            let item: any = {
+                id,
+                date: dateStr,
+                day: dayName,
+                active: isToday,
+                sub: '', // Removed "Today" text
+                type: '',
+                events: []
+            };
+
+            // Add Mock Events for Monday (for demo)
+            if (dayName === '월') {
+                item.sub = '2개 일정';
+                item.events = [
+                    { type: '클랜', time: '14:00', title: '정기모임합주일정' },
+                    { type: '합주', time: '16:00', title: '회원모임-원하는 사람만 참석' }
+                ];
+            }
+
+            weekData.push(item);
+        }
+        return weekData;
+    };
+
+    const schedules = React.useMemo(() => generateCurrentWeek(), []);
+    const [myClan, setMyClan] = useState<any>(null);
+
+    React.useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            fetch(`/api/clans/my?userId=${userId}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('No clan found');
+                })
+                .then(data => setMyClan(data))
+                .catch(err => {
+                    // console.log("No clan or error", err);
+                    setMyClan(null);
+                });
+        }
+    }, []);
+
+
+    return (
+        <div className="flex flex-col space-y-6 pb-4">
+            {/* Banner Section - Full Width */}
+            <section className="relative w-full h-auto bg-red-500 overflow-hidden flex items-center justify-center">
+                {/* Banner Image - Full Width/Height */}
+                <div className="w-full">
+                    <img src="/images/main_logo.png" alt="New Album" className="w-full h-auto object-contain" />
+                </div>
+            </section>
+
+            {/* Schedule Section */}
+            <section className="px-4">
+                <h3 className="text-lg font-bold text-gray-900 mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>다가오는 합주 일정</h3>
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 min-h-[100px]">
+
+                    {/* Days Header - Always Visible */}
+                    <div className="grid grid-cols-7 text-center bg-[#00BDF8] py-2">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                            <div key={day} className="text-white text-xs font-medium">{day}</div>
+                        ))}
+                    </div>
+
+                    {/* Content: Detail View OR Grid View */}
+                    {expandedDayId !== null ? (
+                        // --- Detail View (Expanded) ---
+                        (() => {
+                            const selectedItem = schedules.find(s => s.id === expandedDayId);
+                            if (!selectedItem) return null;
+
+                            return (
+                                <div
+                                    onClick={() => setExpandedDayId(null)}
+                                    className="p-3 cursor-pointer bg-blue-50 h-full min-h-[100px] flex flex-col justify-start"
+                                >
+                                    {selectedItem.events && selectedItem.events.length > 0 ? (
+                                        <div className="space-y-0.5">
+                                            {selectedItem.events.map((evt: any, idx: number) => (
+                                                <div key={idx} className="flex items-center gap-1 py-1.5 border-b border-dotted border-blue-300 last:border-none">
+                                                    {/* Date & Time Prefix */}
+                                                    <span className="text-[#00BDF8] text-[13px] whitespace-nowrap" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                                        {evt.type}) {selectedItem.date}({selectedItem.day}) {evt.time} ~
+                                                    </span>
+                                                    {/* Title - Truncated */}
+                                                    <span className="text-[#00BDF8] text-[13px] font-bold truncate flex-1" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                                        {evt.title}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-[#00BDF8] text-[13px] text-center pt-4" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                            {selectedItem.sub || '등록된 상세 일정이 없습니다.'}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()
+                    ) : (
+                        // --- Grid View (Collapsed) ---
+                        <div className="grid grid-cols-7 gap-1 p-1">
+                            {schedules.map((item) => {
+                                // Determine Display Text
+                                // Determine Content to Display
+                                let content;
+                                if (item.events && item.events.length > 0) {
+                                    content = item.events.map((evt: any, idx: number) => (
+                                        <div key={idx} className="leading-tight whitespace-nowrap text-[11px] tracking-tighter text-[#00BDF8]" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                            {evt.type}일정
+                                        </div>
+                                    ));
+                                } else {
+                                    content = (
+                                        <div className={`${item.active || item.special ? '' : 'text-[#00BDF8]'} leading-tight block whitespace-nowrap text-[11px] tracking-tighter text-[#00BDF8]`} style={{ fontFamily: '"Jua", sans-serif' }}>
+                                            {item.active ? 'Today' : item.sub}
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div key={item.id}
+                                        onClick={() => setExpandedDayId(item.id)}
+                                        className={`
+                                        h-[80px] rounded-lg flex flex-col items-center justify-start pt-2 p-1 text-center text-[10px] cursor-pointer transition-colors
+                                        ${item.active ? 'bg-white border border-[#00BDF8] text-gray-800' : 'bg-white border border-gray-100'}
+                                        ${item.special ? 'bg-[#FF8E8E] text-white font-bold border-none' : ''}
+                                        hover:bg-blue-50
+                                    `}
+                                    >
+                                        {item.type && <span className="font-bold block">{item.type}</span>}
+                                        <div className={`${item.active || item.special ? '' : 'text-gray-600'} flex flex-col items-center justify-center h-full pb-2`}>
+                                            {content}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* My Room Section */}
+            <section className="px-4">
+                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 합주</h3>
+                <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                    <p className="text-[#003C48] font-medium mb-4 text-[14px]">참여 중인 방이 없습니다.</p>
+                    <button
+                        onClick={() => navigate('/main/freejam')}
+                        className="bg-[#00BDF8] hover:bg-[#00a8e0] text-white px-8 py-2 rounded-full font-bold text-[13px] shadow-md transition-colors"
+                    >
+                        합주방 보러 가기
+                    </button>
+                </div>
+            </section>
+
+            {/* My Clan Section */}
+            <section className="px-4">
+                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 클랜</h3>
+                {myClan ? (
+                    <div
+                        onClick={() => navigate(`/main/clan/detail/${myClan.cnNo}`)}
+                        className="bg-white border border-[#00BDF8] rounded-xl p-4 flex items-center shadow-sm relative cursor-pointer hover:bg-gray-50 transition-colors">
+                        {/* Logo */}
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 mr-4 ${!myClan.attachFilePath ? 'bg-black' : 'bg-white'}`}>
+                            {myClan.attachFilePath ? (
+                                <img src={myClan.attachFilePath} alt={myClan.cnNm} className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-white font-bold">
+                                    {myClan.cnNm ? myClan.cnNm.substring(0, 1) : "C"}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 pr-12">
+                            <h4 className="text-[#003C48] text-lg font-bold mb-1" style={{ fontFamily: '"Jua", sans-serif' }}>{myClan.cnNm}</h4>
+                            <p className="text-gray-600 text-[13px] mb-1 truncate">{myClan.cnDesc}</p>
+                            <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClan.userCnt}명</p>
+                        </div>
+
+                        {/* More Link */}
+                        <div className="absolute bottom-3 right-4">
+                            <span
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/main/clan/my');
+                                }}
+                                className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
+                                style={{ fontFamily: '"Jua", sans-serif' }}
+                            >
+                                더보기
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p className="text-[#003C48] font-medium mb-4 text-[14px]">소속된 클랜이 없습니다.</p>
+                        <button
+                            onClick={() => navigate('/main/clan')}
+                            className="bg-[#00BDF8] hover:bg-[#00a8e0] text-white px-8 py-2 rounded-full font-bold text-[13px] shadow-md transition-colors"
+                        >
+                            클랜 보러 가기
+                        </button>
+                    </div>
+                )}
+            </section>
+
+
+            {/* Practice Room Section */}
+            <section className="px-4 pb-5">
+                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 연습실</h3>
+                <div className="w-full h-[150px] bg-[#F3F4F6] rounded-xl"></div>
+            </section>
+        </div>
+    );
+};
+
+export default HomePage;

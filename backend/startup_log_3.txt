@@ -1,0 +1,93 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+> Task :resolveMainClassName UP-TO-DATE
+
+> Task :bootRun
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.2)
+
+2026-02-07T20:03:13.212+09:00  INFO 14252 --- [bandi-backend] [           main] com.bandi.backend.BackendApplication     : Starting BackendApplication using Java 17.0.13 with PID 14252 (D:\Project\bandi\backend\build\classes\java\main started by snyun in D:\Project\bandi\backend)
+2026-02-07T20:03:13.214+09:00 DEBUG 14252 --- [bandi-backend] [           main] com.bandi.backend.BackendApplication     : Running with Spring Boot v4.0.2, Spring v7.0.3
+2026-02-07T20:03:13.214+09:00  INFO 14252 --- [bandi-backend] [           main] com.bandi.backend.BackendApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-02-07T20:03:13.786+09:00  INFO 14252 --- [bandi-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-02-07T20:03:13.885+09:00  INFO 14252 --- [bandi-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 91 ms. Found 22 JPA repository interfaces.
+2026-02-07T20:03:14.361+09:00  INFO 14252 --- [bandi-backend] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8083 (http)
+2026-02-07T20:03:14.370+09:00  INFO 14252 --- [bandi-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-02-07T20:03:14.370+09:00  INFO 14252 --- [bandi-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.15]
+2026-02-07T20:03:14.419+09:00  INFO 14252 --- [bandi-backend] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1162 ms
+2026-02-07T20:03:14.536+09:00  INFO 14252 --- [bandi-backend] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-02-07T20:03:14.564+09:00  INFO 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.1.Final
+2026-02-07T20:03:14.878+09:00  INFO 14252 --- [bandi-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-02-07T20:03:14.908+09:00  INFO 14252 --- [bandi-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-02-07T20:03:15.081+09:00  INFO 14252 --- [bandi-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6814262d
+2026-02-07T20:03:15.082+09:00  INFO 14252 --- [bandi-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-02-07T20:03:15.108+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-02-07T20:03:15.126+09:00  INFO 14252 --- [bandi-backend] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://127.0.0.1:5432/bandi?sslmode=disable]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 18.1
+	Default catalog/schema: bandi/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-02-07T20:03:15.481+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.member.ChatMessageRead
+2026-02-07T20:03:15.482+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.common.BoardAttachment
+2026-02-07T20:03:15.483+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.band.BandNoticeAttachment
+2026-02-07T20:03:15.485+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.band.BandUser
+2026-02-07T20:03:15.485+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.member.GroupFriend
+2026-02-07T20:03:15.486+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.common.NoticeAttachment
+2026-02-07T20:03:15.487+09:00  WARN 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000038: Composite id class does not override equals(): com.bandi.backend.entity.clan.ClanNoticeAttachment
+2026-02-07T20:03:16.276+09:00  INFO 14252 --- [bandi-backend] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-02-07T20:03:16.374+09:00  INFO 14252 --- [bandi-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-02-07T20:03:16.435+09:00  INFO 14252 --- [bandi-backend] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-02-07T20:03:17.506+09:00  WARN 14252 --- [bandi-backend] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-02-07T20:03:17.742+09:00  WARN 14252 --- [bandi-backend] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2026-02-07T20:03:17.743+09:00  INFO 14252 --- [bandi-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-02-07T20:03:17.744+09:00  INFO 14252 --- [bandi-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-02-07T20:03:17.751+09:00  INFO 14252 --- [bandi-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2026-02-07T20:03:17.758+09:00  INFO 14252 --- [bandi-backend] [           main] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2026-02-07T20:03:17.766+09:00 ERROR 14252 --- [bandi-backend] [           main] o.s.b.d.LoggingFailureAnalysisReporter   : 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8083 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8083 or configure this application to listen on another port.
+
+
+> Task :bootRun FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':bootRun'.
+> Process 'command 'C:\Users\snyun\.jdks\corretto-17.0.13\bin\java.exe'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 7s
+4 actionable tasks: 1 executed, 3 up-to-date

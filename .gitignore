@@ -1,0 +1,37 @@
+# .gitignore
+
+# General
+.DS_Store
+Thumbs.db
+
+# Idea
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/
+
+# Java / Gradle
+build/
+.gradle/
+out/
+target/
+*.class
+
+# Node / JS
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# React Native
+android/app/build/
+ios/build/
+android/.gradle
+maven-local-build-repo/

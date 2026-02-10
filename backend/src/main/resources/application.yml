@@ -1,0 +1,29 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: bandi-backend
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/bandi?sslmode=disable
+    username: ${DB_USERNAME:postgres}
+    password: admin0325
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.bandi.backend: DEBUG
+
+kakao:
+  client-id: b7b74bba84f701122fa1bacf9697f578
+  redirect-uri: http://127.0.0.1:5173/auth/kakao/callback
