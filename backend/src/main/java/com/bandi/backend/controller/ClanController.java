@@ -17,6 +17,35 @@ import java.util.Map;
 public class ClanController {
 
     private final ClanService clanService;
+    private final com.bandi.backend.service.BandService bandService;
+
+    @GetMapping("/{clanId}/bands")
+    public ResponseEntity<?> getClanBands(
+            @PathVariable Long clanId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String filterPart) {
+        try {
+            return ResponseEntity.ok(bandService.getClanBandList(clanId, userId, keyword, sort, filterPart));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to fetch clan bands", "error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{clanId}/bands/recent")
+    public ResponseEntity<?> getRecentClanBands(@PathVariable Long clanId,
+            @RequestParam(required = false) String userId) {
+        try {
+            return ResponseEntity.ok(bandService.getRecentNonFullBands(clanId, 2, userId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to fetch recent clan bands", "error", e.getMessage()));
+        }
+    }
 
     @PostMapping(consumes = { "multipart/form-data" })
     public ResponseEntity<?> createClan(

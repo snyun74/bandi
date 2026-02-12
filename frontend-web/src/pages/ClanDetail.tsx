@@ -20,6 +20,7 @@ const ClanDetail: React.FC = () => {
     const [notices, setNotices] = useState<any[]>([]);
     const [topPosts, setTopPosts] = useState<any[]>([]);
     const [schedules, setSchedules] = useState<any[]>([]);
+    const [recentJams, setRecentJams] = useState<any[]>([]); // Added state
     const [loading, setLoading] = useState(true);
     const [selectedPreviewDate, setSelectedPreviewDate] = useState<string | null>(null); // Moved here
 
@@ -34,11 +35,12 @@ const ClanDetail: React.FC = () => {
                 const month = today.getMonth() + 1;
 
                 // Parallel fetch for clan details, notices, top posts, and schedules
-                const [clanRes, noticeRes, topRes, scheduleRes] = await Promise.all([
+                const [clanRes, noticeRes, topRes, scheduleRes, jamRes] = await Promise.all([
                     fetch(clanUrl),
                     fetch(`/api/clans/${id}/notices?limit=5`),
                     fetch(`/api/clans/${id}/boards/top`),
-                    fetch(`/api/clan/schedule?clanId=${id}&year=${year}&month=${month}`) // Fetch schedules
+                    fetch(`/api/clan/schedule?clanId=${id}&year=${year}&month=${month}`),
+                    fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`) // Fetch recent jams
                 ]);
 
                 if (clanRes.ok) {
@@ -69,6 +71,11 @@ const ClanDetail: React.FC = () => {
                 if (scheduleRes.ok) {
                     const scheduleData = await scheduleRes.json();
                     setSchedules(scheduleData);
+                }
+
+                if (jamRes.ok) {
+                    const jamData = await jamRes.json();
+                    setRecentJams(jamData);
                 }
 
             } catch (error) {
@@ -191,34 +198,34 @@ const ClanDetail: React.FC = () => {
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-[#003C48] font-bold text-lg">클랜 합주방</h3>
-                        <span className="text-gray-400 text-xs cursor-pointer">더보기</span>
+                        <span onClick={() => navigate(`/main/clan/jam/${id}`)} className="text-gray-400 text-xs cursor-pointer">더보기</span>
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-2">
-                        {/* Mock Jam Rooms */}
-                        <div className="min-w-[160px] border border-[#00BDF8] rounded-xl p-3">
-                            <h4 className="text-[#003C48] font-bold text-sm truncate">Love Poem</h4>
-                            <p className="text-gray-500 text-xs mb-2">: 아이유</p>
-                            <div className="flex flex-wrap gap-1">
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">보컬</span>
-                                <span className="px-1.5 py-0.5 bg-[#FF8A80] text-white rounded text-[10px]">리드기타</span>
-                                <span className="px-1.5 py-0.5 bg-[#FF8A80] text-white rounded text-[10px]">리듬기타</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">베이스</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">키보드</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">드럼</span>
+                        {recentJams.length > 0 ? (
+                            recentJams.map((jam) => (
+                                <div key={jam.id} className="min-w-[160px] border border-[#00BDF8] rounded-xl p-3 cursor-pointer hover:shadow-md transition-shadow" onClick={() => {
+                                    if (jam.member || jam.isMember) {
+                                        navigate(`/main/clan/jam/room/${jam.id}`);
+                                    } else {
+                                        navigate(`/main/clan/jam/${id}`);
+                                    }
+                                }}>
+                                    <h4 className="text-[#003C48] font-bold text-sm truncate">{jam.title}</h4>
+                                    <p className="text-gray-500 text-xs mb-2">: {jam.artist}</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {jam.roles.map((role: any, idx: number) => (
+                                            <span key={idx} className={`px-1.5 py-0.5 rounded text-[10px] ${role.status === 'occupied' ? 'bg-[#FF8A80] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                                {role.part}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-gray-400 text-xs w-full text-center py-4">
+                                진행 중인 합주가 없습니다.
                             </div>
-                        </div>
-                        <div className="min-w-[160px] border border-[#00BDF8] rounded-xl p-3">
-                            <h4 className="text-[#003C48] font-bold text-sm truncate">공감하시네</h4>
-                            <p className="text-gray-500 text-xs mb-2">: Welove</p>
-                            <div className="flex flex-wrap gap-1">
-                                <span className="px-1.5 py-0.5 bg-[#FF8A80] text-white rounded text-[10px]">보컬</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">리드기타</span>
-                                <span className="px-1.5 py-0.5 bg-[#FF8A80] text-white rounded text-[10px]">리듬기타</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">베이스</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">키보드</span>
-                                <span className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] text-gray-500">드럼</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

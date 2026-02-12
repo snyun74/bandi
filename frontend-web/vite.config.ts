@@ -9,7 +9,7 @@ export default defineConfig({
     host: true, // Listen on all addresses, including LAN and Emulator
     proxy: {
       '/api': {
-        target: 'http://localhost:8083',
+        target: 'http://localhost:8084',
         changeOrigin: true,
       },
     },

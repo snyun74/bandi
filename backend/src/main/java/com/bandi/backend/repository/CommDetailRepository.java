@@ -10,8 +10,8 @@ import java.util.List;
 
 public interface CommDetailRepository extends JpaRepository<CommDetail, CommDetailId> {
 
-    @Query("SELECT d FROM CommDetail d, Comm h " +
-            "WHERE d.commCd = h.commCd AND h.commCd = :commCd " +
+    @Query("SELECT d FROM CommDetail d " +
+            "WHERE d.commCd = :commCd " +
             "ORDER BY d.commOrder")
     List<CommDetail> findActiveDetailsByCommCd(@Param("commCd") String commCd);
 }

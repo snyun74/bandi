@@ -185,7 +185,7 @@ const HomePage: React.FC = () => {
                 <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
                     <p className="text-[#003C48] font-medium mb-4 text-[14px]">참여 중인 방이 없습니다.</p>
                     <button
-                        onClick={() => navigate('/main/freejam')}
+                        onClick={() => navigate('/main/jam')}
                         className="bg-[#00BDF8] hover:bg-[#00a8e0] text-white px-8 py-2 rounded-full font-bold text-[13px] shadow-md transition-colors"
                     >
                         합주방 보러 가기

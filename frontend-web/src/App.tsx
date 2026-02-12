@@ -24,6 +24,9 @@ import ClanNoticeList from './pages/ClanNoticeList';
 import ClanNoticeCreate from './pages/ClanNoticeCreate';
 import ClanNoticeDetail from './pages/ClanNoticeDetail';
 import ClanBoardList from './pages/ClanBoardList';
+import ClanJamList from './pages/ClanJamList';
+import ClanJamDetail from './pages/ClanJamDetail';
+import ClanJamCreate from './pages/ClanJamCreate';
 import ClanBoardPostList from './pages/ClanBoardPostList';
 import ClanBoardPostCreate from './pages/ClanBoardPostCreate';
 import ClanBoardPostDetail from './pages/ClanBoardPostDetail';
@@ -63,6 +66,11 @@ function App() {
           <Route path="clan/calendar/:clanId" element={<ClanCalendar />} />
           <Route path="clan/board/:clanId" element={<ClanBoardList />} />
           <Route path="clan/board/:clanId" element={<ClanBoardList />} />
+          <Route path="clan/jam/:clanId" element={<ClanJamList />} />
+          <Route path="jam" element={<ClanJamList />} />
+          <Route path="jam/create" element={<ClanJamCreate />} />
+          <Route path="clan/jam/room/:jamId" element={<ClanJamDetail />} />
+          <Route path="clan/jam/:clanId/create" element={<ClanJamCreate />} />
           <Route path="clan/board/:clanId/:boardTypeNo" element={<ClanBoardPostList />} />
           <Route path="clan/board/:clanId/:boardTypeNo/create" element={<ClanBoardPostCreate />} />
           <Route path="clan/board/:clanId/:boardTypeNo/post/:boardNo" element={<ClanBoardPostDetail />} />
