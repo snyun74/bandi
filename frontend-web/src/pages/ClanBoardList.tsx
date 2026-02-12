@@ -31,10 +31,17 @@ const ClanBoardList: React.FC = () => {
     const [userRole, setUserRole] = useState<string>(""); // '01': Leader, '02': Executive
     const userId = localStorage.getItem('userId');
 
-    // Common Modal State
-    const [commonModal, setCommonModal] = useState({
+    // CommonModal State
+    const [commonModal, setCommonModal] = useState<{
+        isOpen: boolean;
+        message: string;
+        type: 'alert' | 'confirm';
+        onConfirm: () => void;
+        onCancel?: () => void;
+    }>({
         isOpen: false,
         message: "",
+        type: 'alert',
         onConfirm: () => { }
     });
 
@@ -87,7 +94,6 @@ const ClanBoardList: React.FC = () => {
             const response = await fetch(`/api/clans/${clanId}/boards/types`);
             if (response.ok) {
                 const data = await response.json();
-                // Basic validation to check if data is array
                 if (Array.isArray(data)) {
                     const mappedBoards = data.map((item: any) => ({
                         id: item.cnBoardTypeNo,
@@ -113,6 +119,7 @@ const ClanBoardList: React.FC = () => {
             setCommonModal({
                 isOpen: true,
                 message: "게시판 이름을 입력해주세요.",
+                type: 'alert',
                 onConfirm: closeCommonModal
             });
             return;
@@ -136,6 +143,7 @@ const ClanBoardList: React.FC = () => {
                 setCommonModal({
                     isOpen: true,
                     message: "게시판이 추가되었습니다.",
+                    type: 'alert',
                     onConfirm: () => {
                         closeCommonModal();
                         setNewBoardName("");
@@ -147,6 +155,7 @@ const ClanBoardList: React.FC = () => {
                 setCommonModal({
                     isOpen: true,
                     message: "게시판 생성에 실패했습니다.",
+                    type: 'alert',
                     onConfirm: closeCommonModal
                 });
             }
@@ -155,6 +164,55 @@ const ClanBoardList: React.FC = () => {
             setCommonModal({
                 isOpen: true,
                 message: "오류가 발생했습니다.",
+                type: 'alert',
+                onConfirm: closeCommonModal
+            });
+        }
+    };
+
+    const handleDeleteBoard = (e: React.MouseEvent, board: BoardCategory) => {
+        e.stopPropagation(); // Prevent navigation
+        setCommonModal({
+            isOpen: true,
+            message: `'${board.name}' 게시판을 삭제하시겠습니까?`,
+            type: 'confirm',
+            onConfirm: () => {
+                deleteBoard(board.id);
+            },
+            onCancel: closeCommonModal
+        });
+    };
+
+    const deleteBoard = async (boardId: number) => {
+        if (!clanId || !userId) return;
+        try {
+            const response = await fetch(`/api/clans/${clanId}/boards/types/${boardId}/delete`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userId: userId }),
+            });
+
+            if (response.ok) {
+                // Success: Just close modal and refresh
+                closeCommonModal();
+                fetchBoards();
+            } else {
+                const errorData = await response.json();
+                setCommonModal({
+                    isOpen: true,
+                    message: errorData.message || "게시판 삭제에 실패했습니다.",
+                    type: 'alert',
+                    onConfirm: closeCommonModal
+                });
+            }
+        } catch (error) {
+            console.error("Failed to delete board", error);
+            setCommonModal({
+                isOpen: true,
+                message: "오류가 발생했습니다.",
+                type: 'alert',
                 onConfirm: closeCommonModal
             });
         }
@@ -238,7 +296,11 @@ const ClanBoardList: React.FC = () => {
                                     onClick={() => navigate(`/main/clan/board/${clanId}/${board.id}`)}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <FaMinusCircle className="text-[#FF8A80]" size={20} />
+                                        {(userRole === '01' || userRole === '02') && (
+                                            <div onClick={(e) => handleDeleteBoard(e, board)}>
+                                                <FaMinusCircle className="text-[#FF8A80] hover:text-red-500 transition-colors" size={20} />
+                                            </div>
+                                        )}
                                         <span className="text-[#003C48] font-medium">{board.name}</span>
                                     </div>
                                     <FaChevronRight className="text-gray-400" size={16} />
@@ -281,9 +343,10 @@ const ClanBoardList: React.FC = () => {
                 {/* Result Modal */}
                 <CommonModal
                     isOpen={commonModal.isOpen}
-                    type="alert"
+                    type={commonModal.type}
                     message={commonModal.message}
                     onConfirm={commonModal.onConfirm}
+                    onCancel={commonModal.onCancel}
                 />
 
             </div>

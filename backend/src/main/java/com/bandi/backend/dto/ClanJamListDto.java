@@ -39,5 +39,6 @@ public class ClanJamListDto {
         private boolean isCurrentUser;
         @JsonProperty("isBandLeader")
         private boolean isBandLeader;
+        private String userId;
     }
 }

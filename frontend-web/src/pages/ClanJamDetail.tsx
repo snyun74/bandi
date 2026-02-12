@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle } from 'react-icons/fa';
 import { GiGrandPiano } from "react-icons/gi";
 import CommonModal from '../components/common/CommonModal';
 
@@ -12,6 +12,7 @@ interface JamRole {
     status: 'empty' | 'occupied' | 'reserved';
     isCurrentUser?: boolean;
     isBandLeader?: boolean;
+    userId?: string;
 }
 
 interface BandDetail {
@@ -175,6 +176,114 @@ const ClanJamDetail: React.FC = () => {
         });
     };
 
+    const handleJoin = async (role: JamRole) => {
+        if (!userId || !bandDetail) return;
+
+        // Multi-session check logic is removed in backend, so frontend just sends join request
+        try {
+            const response = await fetch('/api/bands/join', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bnNo: bandDetail.id,
+                    userId: userId,
+                    sessionNo: role.sessionNo,
+                    sessionTypeCd: role.sessionTypeCd
+                }),
+            });
+
+            if (response.ok) {
+                showAlert("참여가 완료되었습니다!");
+                // Refresh
+                const res = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+                if (res.ok) setBandDetail(await res.json());
+            } else {
+                const error = await response.text();
+                showAlert(`참여 실패: ${error}`);
+            }
+        } catch (error) {
+            console.error("Join failed", error);
+            showAlert("오류가 발생했습니다.");
+        }
+    };
+
+    const handleCancelSession = (role: JamRole) => {
+        showConfirm("참여를 취소하시겠습니까?", async () => {
+            if (!userId || !bandDetail) return;
+            try {
+                const response = await fetch('/api/bands/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bnNo: bandDetail.id,
+                        userId: userId,
+                        sessionNo: role.sessionNo,
+                        sessionTypeCd: role.sessionTypeCd
+                    }),
+                });
+
+                if (response.ok) {
+                    showAlert("취소되었습니다.");
+                    // Refresh
+                    const res = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+                    if (res.ok) setBandDetail(await res.json());
+                } else {
+                    const error = await response.text();
+                    showAlert(`취소 실패: ${error}`);
+                }
+            } catch (error) {
+                console.error("Cancel failed", error);
+                showAlert("오류가 발생했습니다.");
+            }
+        });
+    };
+
+    const handleKick = (role: JamRole) => {
+        showConfirm("정말로 강제탈퇴시키겠습니까?", async () => {
+            if (!bandDetail?.id || !userId) return;
+            try {
+                // Find targetuserId from somewhere? 
+                // Wait, role.user is nickname. We need target USER ID. 
+                // The current API/DTO might not have target user ID in roles list?
+                // Checking Interface... JamRole has 'user' (nickname). 
+                // WE NEED TO UPDATE DTO to include userId.
+
+                // Assuming we can't do it right now without DTO change. 
+                // But wait, the backend kickBandMember needs targetUserId.
+                // Let's check DTO first. If DTO update is needed, we must do it.
+                // For now, I'll write the fetch call optimistically assuming I will update DTO next.
+
+                const response = await fetch('/api/bands/kick', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        bnNo: bandDetail.id,
+                        requesterId: userId,
+                        targetUserId: role.userId, // We need this field!
+                        sessionNo: role.sessionNo,
+                        sessionTypeCd: role.sessionTypeCd
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert("강제 탈퇴 처리되었습니다.");
+                    // Refresh
+                    const res = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setBandDetail(data);
+                    }
+                } else {
+                    const error = await response.text();
+                    showAlert(`강제 탈퇴 실패: ${error}`);
+                }
+            } catch (error) {
+                console.error("Kick failed", error);
+                showAlert("오류가 발생했습니다.");
+            }
+        });
+    };
+
     const handleEndJam = () => {
         showConfirm("합주를 종료하시겠습니까?", async () => {
             if (!bandDetail?.id || !userId) return;
@@ -249,12 +358,24 @@ const ClanJamDetail: React.FC = () => {
                             const isOccupied = role.status === 'occupied';
 
                             return (
-                                <div key={idx} className="flex flex-col items-center justify-center bg-gray-50 rounded-xl p-3 relative h-32">
+                                <div key={idx} className="flex flex-col items-center justify-between bg-gray-50 rounded-xl p-3 relative min-h-[160px]">
+                                    {/* Crown Icon (Left) */}
                                     {isOccupied && role.isBandLeader && (
-                                        <div className="absolute top-2 right-2 flex items-center justify-center text-yellow-400">
+                                        <div className="absolute top-2 left-2 flex items-center justify-center text-yellow-400">
                                             <FaCrown size={20} />
                                         </div>
                                     )}
+
+                                    {/* Kick Button (Right) - Only for Managers, Occupied Slots, NOT Current User, AND NOT Confirmed/Ended */}
+                                    {isOccupied && bandDetail.canManage && !role.isCurrentUser && !bandDetail.isConfirmed && bandDetail.status !== 'E' && (
+                                        <div
+                                            className="absolute top-2 right-2 text-[#FF8A80] hover:text-red-500 cursor-pointer transition-colors"
+                                            onClick={(e) => handleKick(role)}
+                                        >
+                                            <FaMinusCircle size={20} />
+                                        </div>
+                                    )}
+
                                     <div className="mb-2">
                                         {getIcon(role.part)}
                                     </div>
@@ -268,6 +389,46 @@ const ClanJamDetail: React.FC = () => {
                                     ) : (
                                         <span className="text-gray-300 text-xs">공석</span>
                                     )}
+
+                                    {/* Action Button */}
+                                    <div className="w-full mt-2">
+                                        {bandDetail.status === 'E' ? (
+                                            <button
+                                                disabled
+                                                className="w-full bg-gray-500 text-white text-xs font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
+                                            >
+                                                종료
+                                            </button>
+                                        ) : bandDetail.isConfirmed ? (
+                                            <button
+                                                disabled
+                                                className="w-full bg-gray-400 text-white text-xs font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
+                                            >
+                                                확정
+                                            </button>
+                                        ) : role.status === 'empty' ? (
+                                            <button
+                                                onClick={() => handleJoin(role)}
+                                                className="w-full bg-[#EFF1F3] hover:bg-gray-200 text-[#003C48] text-xs font-bold py-1.5 rounded-lg shadow-sm transition-colors"
+                                            >
+                                                참여
+                                            </button>
+                                        ) : role.isCurrentUser ? (
+                                            <button
+                                                onClick={() => handleCancelSession(role)}
+                                                className="w-full bg-[#FF8A80] text-white text-xs font-bold py-1.5 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
+                                            >
+                                                취소
+                                            </button>
+                                        ) : (
+                                            <button
+                                                disabled
+                                                className="w-full bg-[#00BDF8] text-white text-xs font-bold py-1.5 rounded-lg shadow-sm opacity-50 cursor-default"
+                                            >
+                                                참여중
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}

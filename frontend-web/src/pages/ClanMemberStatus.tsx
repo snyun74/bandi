@@ -140,6 +140,68 @@ const ClanMemberStatus: React.FC = () => {
         return null;
     };
 
+    // Role Change Modal
+    const [roleChangeModal, setRoleChangeModal] = useState({
+        isOpen: false,
+        userId: '',
+        currentRole: '',
+        targetRole: '02', // Default to Executive
+    });
+
+    const openRoleChangeModal = (userId: string, currentRole: string) => {
+        setRoleChangeModal({
+            isOpen: true,
+            userId,
+            currentRole,
+            targetRole: '02',
+        });
+    };
+
+    const closeRoleChangeModal = () => {
+        setRoleChangeModal(prev => ({ ...prev, isOpen: false }));
+    };
+
+    const handleRoleChange = async () => {
+        if (!clanId || !roleChangeModal.userId) return;
+
+        const proceedWithChange = async () => {
+            try {
+                const response = await fetch(`/api/clans/${clanId}/members/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: roleChangeModal.userId,
+                        role: roleChangeModal.targetRole
+                    }),
+                });
+
+                if (response.ok) {
+                    await fetchMembers();
+                    // If I was the leader and transferred leadership, I might need to refresh my own permissions/view
+                    // For now, just alert and close
+                    showAlert('직책이 변경되었습니다.');
+                    closeRoleChangeModal();
+                } else {
+                    showAlert('직책 변경 실패');
+                }
+            } catch (error) {
+                console.error("Role change failed", error);
+                showAlert('오류 발생');
+            }
+        };
+
+        if (roleChangeModal.targetRole === '01') {
+            showConfirm(
+                '클랜장을 위임하시겠습니까? 위임 후 본인은 간부로 변경됩니다.',
+                proceedWithChange
+            );
+        } else {
+            proceedWithChange();
+        }
+    };
+
     if (loading) return <div className="text-center py-10">Loading...</div>;
 
     return (
@@ -151,6 +213,78 @@ const ClanMemberStatus: React.FC = () => {
                 onConfirm={modal.onConfirm}
                 onCancel={closeModal}
             />
+
+            {/* Role Change Modal */}
+            {roleChangeModal.isOpen && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl p-6 w-80 shadow-2xl animate-fade-in-up">
+                        <h3 className="text-lg font-bold text-[#003C48] mb-4 text-center">직책 변경</h3>
+
+                        <div className="flex flex-col gap-3 mb-6">
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${roleChangeModal.targetRole === '01'
+                                ? 'border-[#00BDF8] bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="01"
+                                    checked={roleChangeModal.targetRole === '01'}
+                                    onChange={(e) => setRoleChangeModal(prev => ({ ...prev, targetRole: e.target.value }))}
+                                    className="accent-[#00BDF8] w-5 h-5"
+                                />
+                                <span className="font-bold text-[#003C48]">클랜장 (Leader)</span>
+                            </label>
+
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${roleChangeModal.targetRole === '02'
+                                ? 'border-[#00BDF8] bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="02"
+                                    checked={roleChangeModal.targetRole === '02'}
+                                    onChange={(e) => setRoleChangeModal(prev => ({ ...prev, targetRole: e.target.value }))}
+                                    className="accent-[#00BDF8] w-5 h-5"
+                                />
+                                <span className="font-bold text-[#003C48]">간부 (Executive)</span>
+                            </label>
+
+                            <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${roleChangeModal.targetRole === '03'
+                                ? 'border-[#00BDF8] bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="03"
+                                    checked={roleChangeModal.targetRole === '03'}
+                                    onChange={(e) => setRoleChangeModal(prev => ({ ...prev, targetRole: e.target.value }))}
+                                    className="accent-[#00BDF8] w-5 h-5"
+                                />
+                                <span className="font-bold text-[#003C48]">일반 회원 (Member)</span>
+                            </label>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={closeRoleChangeModal}
+                                className="flex-1 py-3 text-gray-500 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleRoleChange}
+                                className="flex-1 py-3 text-white font-bold bg-[#00BDF8] rounded-xl hover:bg-cyan-500 transition-colors shadow-lg shadow-cyan-200"
+                            >
+                                변경
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
@@ -212,7 +346,17 @@ const ClanMemberStatus: React.FC = () => {
                                 {/* Assuming Generation is not available in query yet, omitting or relying on nickname convention if any */}
                                 <span className="text-sm font-bold">{member.userNickNm}</span>
                             </div>
-                            {getRoleBadge(member.cnUserRoleCd)}
+                            <div className="flex items-center gap-2">
+                                {getRoleBadge(member.cnUserRoleCd)}
+                                {currentUserRole === '01' && member.cnUserRoleCd !== '01' && (
+                                    <button
+                                        onClick={() => openRoleChangeModal(member.cnUserId, member.cnUserRoleCd)}
+                                        className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-lg font-bold hover:bg-gray-200"
+                                    >
+                                        변경
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ))}
                 </div>

@@ -149,6 +149,19 @@ public class ClanController {
         }
     }
 
+    @PutMapping("/{clanId}/boards/types/{boardTypeNo}/delete")
+    public ResponseEntity<?> deleteClanBoardType(@PathVariable Long clanId, @PathVariable Long boardTypeNo,
+            @RequestBody Map<String, String> body) {
+        try {
+            String userId = body.get("userId");
+            clanService.deleteClanBoardType(clanId, boardTypeNo, userId);
+            return ResponseEntity.ok(Map.of("message", "Clan board type deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to delete clan board type", "error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/{clanId}/status")
     public ResponseEntity<?> getMemberStatus(@PathVariable Long clanId, @RequestParam String userId) {
         try {
@@ -183,6 +196,20 @@ public class ClanController {
             e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Failed to update member status", "error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{clanId}/members/role")
+    public ResponseEntity<?> updateMemberRole(@PathVariable Long clanId, @RequestBody Map<String, String> body) {
+        try {
+            String userId = body.get("userId");
+            String role = body.get("role");
+            clanService.updateMemberRole(clanId, userId, role);
+            return ResponseEntity.ok(Map.of("message", "Member role updated successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to update member role", "error", e.getMessage()));
         }
     }
 

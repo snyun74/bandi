@@ -60,6 +60,16 @@ public class BandController {
         }
     }
 
+    @PostMapping("/kick")
+    public ResponseEntity<?> kickBandMember(@RequestBody java.util.Map<String, Object> params) {
+        try {
+            bandService.kickBandMember(params);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Kick failed: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{bnNo}")
     public ResponseEntity<?> getBandDetail(@PathVariable Long bnNo, @RequestParam String userId) {
         try {
@@ -90,6 +100,26 @@ public class BandController {
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{bnNo}/verify-password")
+    public ResponseEntity<?> verifyPassword(@PathVariable Long bnNo, @RequestBody java.util.Map<String, String> body) {
+        String password = body.get("password");
+        boolean isValid = bandService.verifyBandPassword(bnNo, password);
+        if (isValid) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body("Incorrect password");
+        }
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyJams(@RequestParam String userId) {
+        try {
+            return ResponseEntity.ok(bandService.getMyJams(userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to fetch my jams: " + e.getMessage());
         }
     }
 }

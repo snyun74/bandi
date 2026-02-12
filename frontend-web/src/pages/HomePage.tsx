@@ -61,10 +61,13 @@ const HomePage: React.FC = () => {
 
     const schedules = React.useMemo(() => generateCurrentWeek(), []);
     const [myClan, setMyClan] = useState<any>(null);
+    const [myJams, setMyJams] = useState<any[]>([]);
+    const [currentJamIndex, setCurrentJamIndex] = useState(0);
 
     React.useEffect(() => {
         const userId = localStorage.getItem('userId');
         if (userId) {
+            // Fetch My Clan
             fetch(`/api/clans/my?userId=${userId}`)
                 .then(res => {
                     if (res.ok) return res.json();
@@ -72,11 +75,30 @@ const HomePage: React.FC = () => {
                 })
                 .then(data => setMyClan(data))
                 .catch(err => {
-                    // console.log("No clan or error", err);
                     setMyClan(null);
                 });
+
+            // Fetch My Jams
+            fetch(`/api/bands/my?userId=${userId}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return [];
+                })
+                .then(data => setMyJams(data))
+                .catch(err => console.error("Failed to fetch jams", err));
         }
     }, []);
+
+    // Rotation Logic
+    React.useEffect(() => {
+        if (myJams.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setCurrentJamIndex(prev => (prev + 1) % myJams.length);
+        }, 5000); // 5 seconds
+
+        return () => clearInterval(interval);
+    }, [myJams]);
 
 
     return (
@@ -182,15 +204,53 @@ const HomePage: React.FC = () => {
             {/* My Room Section */}
             <section className="px-4">
                 <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 합주</h3>
-                <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
-                    <p className="text-[#003C48] font-medium mb-4 text-[14px]">참여 중인 방이 없습니다.</p>
-                    <button
-                        onClick={() => navigate('/main/jam')}
-                        className="bg-[#00BDF8] hover:bg-[#00a8e0] text-white px-8 py-2 rounded-full font-bold text-[13px] shadow-md transition-colors"
+
+                {myJams.length > 0 ? (
+                    <div
+                        onClick={() => navigate(`/main/clan/jam/room/${myJams[currentJamIndex].bnNo}`)}
+                        className="bg-white border border-[#00BDF8] rounded-xl p-4 flex items-center shadow-sm relative cursor-pointer hover:bg-blue-50 transition-colors"
                     >
-                        합주방 보러 가기
-                    </button>
-                </div>
+                        {/* Album Art / Icon */}
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 mr-4 bg-gray-100">
+                            {/* Placeholder or actual image if available in projection */}
+                            <span className="text-gray-400 font-bold text-xs">J</span>
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 pr-12 overflow-hidden">
+                            <h4 className="text-[#003C48] text-lg font-bold mb-1 truncate" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                <span className={`mr-1 text-sm ${myJams[currentJamIndex].bnType === 'CLAN' ? 'text-[#00BDF8]' : 'text-gray-500'}`}>
+                                    [{myJams[currentJamIndex].bnType === 'CLAN' ? '클랜' : '자유'}]
+                                </span>
+                                {myJams[currentJamIndex].bnNm}
+                            </h4>
+                            <p className="text-gray-600 text-[13px] mb-1 truncate">
+                                {myJams[currentJamIndex].bnSongNm} : {myJams[currentJamIndex].bnSingerNm}
+                            </p>
+                            <p className="text-[#003C48] text-[12px] font-medium">
+                                내 역할 : {myJams[currentJamIndex].bnRoleCd === 'LEAD' ? <span className="text-yellow-500">👑 리더</span> : '멤버'}
+                            </p>
+                        </div>
+
+                        {/* More Link / Count */}
+                        <div className="absolute bottom-3 right-4 flex flex-col items-end">
+                            <span className="text-xs text-gray-400 mb-1">{currentJamIndex + 1} / {myJams.length}</span>
+                            <span className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                더보기
+                            </span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
+                        <p className="text-[#003C48] font-medium mb-4 text-[14px]">참여 중인 방이 없습니다.</p>
+                        <button
+                            onClick={() => navigate('/main/jam')}
+                            className="bg-[#00BDF8] hover:bg-[#00a8e0] text-white px-8 py-2 rounded-full font-bold text-[13px] shadow-md transition-colors"
+                        >
+                            합주방 보러 가기
+                        </button>
+                    </div>
+                )}
             </section>
 
             {/* My Clan Section */}

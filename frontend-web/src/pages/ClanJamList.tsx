@@ -11,6 +11,8 @@ interface JamRole {
     status: 'empty' | 'occupied' | 'reserved';
     reservedCount?: number;
     isCurrentUser?: boolean;
+    isBandLeader?: boolean;
+    userId?: string;
 }
 
 interface JamRoom {
@@ -89,6 +91,46 @@ const ClanJamList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [sortOption, setSortOption] = useState<string>('sort:latest');
     const [sessionCodes, setSessionCodes] = useState<{ commDtlCd: string; commDtlNm: string; commOrder: number }[]>([]);
+
+    const [passwordModal, setPasswordModal] = useState({
+        isOpen: false,
+        bnNo: 0,
+        password: '',
+    });
+
+    const handleRoomClick = (room: JamRoom) => {
+        if (room.secret) {
+            setPasswordModal({
+                isOpen: true,
+                bnNo: room.id,
+                password: '',
+            });
+        } else {
+            navigate(`/main/clan/jam/room/${room.id}`);
+        }
+    };
+
+    const verifyPasswordAndNavigate = async () => {
+        try {
+            const response = await fetch(`/api/bands/${passwordModal.bnNo}/verify-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ password: passwordModal.password }),
+            });
+
+            if (response.ok) {
+                setPasswordModal(prev => ({ ...prev, isOpen: false }));
+                navigate(`/main/clan/jam/room/${passwordModal.bnNo}`);
+            } else {
+                showAlert("비밀번호가 일치하지 않습니다.");
+            }
+        } catch (error) {
+            console.error("Password verification failed", error);
+            showAlert("오류가 발생했습니다.");
+        }
+    };
 
     useEffect(() => {
         const fetchCodes = async () => {
@@ -295,20 +337,23 @@ const ClanJamList: React.FC = () => {
                     </div>
                 ) : (
                     jamRooms.map((room) => {
-                        const isJoinedInRoom = room.roles.some(r => r.isCurrentUser);
+                        // const isJoinedInRoom = room.roles.some(r => r.isCurrentUser); // Removed for multi-session support
                         return (
                             <div key={room.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                                 {/* Card Header */}
                                 <div className="mb-3">
+
                                     <div className="flex items-center gap-2 mb-1">
-                                        {room.status && room.status !== 'N' && <FaLock className="text-[#003C48]" size={14} />}
+                                        {/* Lock Icon checks room.secret (bnPasswdFg === 'Y') */}
+                                        {room.secret && <FaLock className="text-[#003C48]" size={14} />}
                                         <h3
                                             className="text-[#003C48] font-bold text-base cursor-pointer hover:underline"
-                                            onClick={() => navigate(`/main/clan/jam/room/${room.id}`)}
+                                            onClick={() => handleRoomClick(room)}
                                         >
                                             {room.title}
                                         </h3>
                                     </div>
+
                                     <div className="text-[#00BDF8] font-bold text-sm">
                                         {room.artist} - {room.songTitle}
                                     </div>
@@ -351,10 +396,9 @@ const ClanJamList: React.FC = () => {
                                                 ) : role.status === 'empty' ? (
                                                     <button
                                                         onClick={() => handleJoin(room, role)}
-                                                        disabled={isJoinedInRoom}
-                                                        className={`w-full text-[#003C48] text-xs font-bold py-1.5 rounded-lg shadow-sm transition-colors ${isJoinedInRoom ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-[#EFF1F3] hover:bg-gray-200'}`}
+                                                        className="w-full text-[#003C48] text-xs font-bold py-1.5 rounded-lg shadow-sm transition-colors bg-[#EFF1F3] hover:bg-gray-200"
                                                     >
-                                                        {isJoinedInRoom ? '참여불가' : '참여'}
+                                                        참여
                                                     </button>
                                                 ) : role.isCurrentUser ? (
                                                     <button
@@ -380,6 +424,40 @@ const ClanJamList: React.FC = () => {
                     })
                 )}
             </div>
+
+            {/* Password Modal */}
+            {passwordModal.isOpen && (
+                <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl p-6 w-80 shadow-2xl animate-fade-in-up">
+                        <h3 className="text-lg font-bold text-[#003C48] mb-4 text-center">비밀번호 입력</h3>
+                        <input
+                            type="password"
+                            value={passwordModal.password}
+                            onChange={(e) => setPasswordModal(prev => ({ ...prev, password: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#00BDF8] focus:outline-none mb-6 text-center text-lg"
+                            placeholder="비밀번호를 입력하세요"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') verifyPasswordAndNavigate();
+                            }}
+                            autoFocus
+                        />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setPasswordModal(prev => ({ ...prev, isOpen: false }))}
+                                className="flex-1 py-3 text-gray-500 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={verifyPasswordAndNavigate}
+                                className="flex-1 py-3 text-white font-bold bg-[#00BDF8] rounded-xl hover:bg-cyan-500 transition-colors shadow-lg shadow-cyan-200"
+                            >
+                                확인
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <CommonModal
                 isOpen={modalConfig.isOpen}

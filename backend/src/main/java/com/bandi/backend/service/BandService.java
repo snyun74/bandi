@@ -217,15 +217,14 @@ public class BandService {
             throw new RuntimeException("확정된 합주는 변경할 수 없습니다.");
         }
 
-        // 0. Check for duplicate join
-        // 0. Check for duplicate join
-        boolean alreadyJoined = bnSessionRepository.findAll().stream()
-                .anyMatch(s -> s.getBnNo().equals(dto.getBnNo()) &&
-                        dto.getUserId().equals(s.getBnSessionJoinUserId()));
+        // 0. Check for duplicate join - REMOVED to allow multi-session
+        // boolean alreadyJoined = bnSessionRepository.findAll().stream()
+        // .anyMatch(s -> s.getBnNo().equals(dto.getBnNo()) &&
+        // dto.getUserId().equals(s.getBnSessionJoinUserId()));
 
-        if (alreadyJoined) {
-            throw new RuntimeException("이미 이 합주에 참여 중입니다.");
-        }
+        // if (alreadyJoined) {
+        // throw new RuntimeException("이미 이 합주에 참여 중입니다.");
+        // }
 
         // 1. Insert BN_USER
         BnUser user = new BnUser();
@@ -278,12 +277,7 @@ public class BandService {
             throw new RuntimeException("확정된 합주는 변경할 수 없습니다.");
         }
 
-        // 1. Delete BN_USER
-        com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(dto.getBnNo(),
-                dto.getUserId());
-        bnUserRepository.deleteById(bnUserId);
-
-        // 2. Update BN_SESSION
+        // 1. Update BN_SESSION (Cancel the specific session)
         BnSession session = null;
         if (dto.getSessionNo() != null) {
             session = bnSessionRepository.findById(dto.getSessionNo()).orElse(null);
@@ -304,6 +298,18 @@ public class BandService {
                 session.setUpdId(dto.getUserId());
                 bnSessionRepository.save(session);
             }
+        }
+
+        // 2. Check if user is still in ANY other session of this band
+        boolean stillInStats = bnSessionRepository.findAll().stream()
+                .anyMatch(s -> s.getBnNo().equals(dto.getBnNo()) &&
+                        dto.getUserId().equals(s.getBnSessionJoinUserId()));
+
+        // 3. Delete BN_USER only if NOT in any session
+        if (!stillInStats) {
+            com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(dto.getBnNo(),
+                    dto.getUserId());
+            bnUserRepository.deleteById(bnUserId);
         }
     }
 
@@ -424,8 +430,10 @@ public class BandService {
                     .user(userNick)
                     .status(status)
                     .isCurrentUser(isCurrentUser)
+                    .isCurrentUser(isCurrentUser)
                     .isBandLeader(isRoleBandLeader)
                     .reservedCount(0)
+                    .userId(session.getBnSessionJoinUserId())
                     .build());
         }
 
@@ -545,5 +553,102 @@ public class BandService {
         group.setUpdDtime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         group.setUpdId(userId);
         bnGroupRepository.save(group);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean verifyBandPassword(Long bnNo, String password) {
+        BnGroup group = bnGroupRepository.findById(bnNo)
+                .orElseThrow(() -> new RuntimeException("Band not found"));
+
+        if (!"Y".equals(group.getBnPasswdFg())) {
+            return true; // No password needed
+        }
+
+        return password != null && password.equals(group.getBnPasswd());
+    }
+
+    @Transactional
+    public void kickBandMember(java.util.Map<String, Object> params) {
+        Long bnNo = Long.valueOf(params.get("bnNo").toString());
+        String requesterId = (String) params.get("requesterId");
+        String targetUserId = (String) params.get("targetUserId");
+        Integer sessionNo = params.get("sessionNo") != null ? Integer.valueOf(params.get("sessionNo").toString())
+                : null;
+        String sessionTypeCd = (String) params.get("sessionTypeCd");
+
+        BnGroup group = bnGroupRepository.findById(bnNo)
+                .orElseThrow(() -> new RuntimeException("Band not found"));
+
+        // 1. Permission Check (Requester must be Band Leader OR Clan Leader/Executive)
+        boolean hasPermission = false;
+
+        // Check Band Leader
+        if (group.getBnLeaderId().equals(requesterId)) {
+            hasPermission = true;
+        }
+
+        // Check Clan Role
+        if (!hasPermission && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
+            com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(
+                    group.getCnNo(), requesterId);
+            com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId).orElse(null);
+
+            if (clanUser != null) {
+                String role = clanUser.getCnUserRoleCd();
+                if ("01".equals(role) || "02".equals(role)) {
+                    hasPermission = true;
+                }
+            }
+        }
+
+        if (!hasPermission) {
+            throw new RuntimeException("강제 퇴장 권한이 없습니다.");
+        }
+
+        // 2. Perform Kick (Same logic as cancelBand, but for targetUserId)
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        // Update BN_SESSION
+        BnSession session = null;
+        if (sessionNo != null) {
+            session = bnSessionRepository.findById(Long.valueOf(sessionNo)).orElse(null);
+        } else {
+            java.util.List<BnSession> sessions = bnSessionRepository.findAll();
+            for (BnSession s : sessions) {
+                if (s.getBnNo().equals(bnNo) && s.getBnSessionTypeCd().equals(sessionTypeCd)) {
+                    session = s;
+                    break;
+                }
+            }
+        }
+
+        if (session != null) {
+            // Only kick if the target user is actually in this session
+            if (targetUserId.equals(session.getBnSessionJoinUserId())) {
+                session.setBnSessionJoinUserId(null);
+                session.setUpdDtime(currentDateTime);
+                session.setUpdId(requesterId);
+                bnSessionRepository.save(session);
+            }
+        }
+
+        // 3. Check if target user is still in ANY other session
+        boolean stillInStats = bnSessionRepository.findAll().stream()
+                .anyMatch(s -> s.getBnNo().equals(bnNo) &&
+                        targetUserId.equals(s.getBnSessionJoinUserId()));
+
+        // 4. Delete BN_USER only if NOT in any session
+        if (!stillInStats) {
+            com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(bnNo,
+                    targetUserId);
+            if (bnUserRepository.existsById(bnUserId)) {
+                bnUserRepository.deleteById(bnUserId);
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.bandi.backend.repository.projection.MyJamProjection> getMyJams(String userId) {
+        return bnGroupRepository.findMyJams(userId);
     }
 }

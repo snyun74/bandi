@@ -225,6 +225,30 @@ public class ClanService {
         clanUserRepository.save(user);
     }
 
+    @Transactional
+    public void updateMemberRole(Long clanId, String userId, String role) {
+        // If promoting to Leader (01), handle leadership transfer
+        if ("01".equals(role)) {
+            // Find current leader
+            com.bandi.backend.entity.clan.ClanUser currentLeader = clanUserRepository
+                    .findByCnNoAndCnUserRoleCd(clanId, "01")
+                    .orElse(null);
+
+            // Demote current leader to Executive (02)
+            if (currentLeader != null && !currentLeader.getCnUserId().equals(userId)) {
+                currentLeader.setCnUserRoleCd("02");
+                clanUserRepository.save(currentLeader);
+            }
+        }
+
+        com.bandi.backend.entity.clan.ClanUser user = clanUserRepository
+                .findById(new com.bandi.backend.entity.clan.ClanUserId(clanId, userId))
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        user.setCnUserRoleCd(role);
+        clanUserRepository.save(user);
+    }
+
     @Transactional(readOnly = true)
     public java.util.List<ClanBoardType> getClanBoardTypeList(Long clanId) {
         return clanBoardTypeRepository.findByCnNoAndBoardTypeStatCd(clanId, "A");
@@ -242,6 +266,27 @@ public class ClanService {
         boardType.setInsId(dto.getUserId());
         boardType.setUpdDtime(currentDateTime);
         boardType.setUpdId(dto.getUserId());
+
+        clanBoardTypeRepository.save(boardType);
+    }
+
+    @Transactional
+    public void deleteClanBoardType(Long clanId, Long boardTypeNo, String userId) {
+        // 1. Check Authority (Clan Leader '01' or Executive '02')
+        String role = getMemberRole(clanId, userId);
+        if (!"01".equals(role) && !"02".equals(role)) {
+            throw new RuntimeException("클랜장 또는 간부만 게시판을 삭제할 수 있습니다.");
+        }
+
+        // 2. Find Board Type
+        ClanBoardType boardType = clanBoardTypeRepository.findById(boardTypeNo)
+                .orElseThrow(() -> new RuntimeException("Board type not found"));
+
+        // 3. Update Status to 'D' (Delete)
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        boardType.setBoardTypeStatCd("D");
+        boardType.setUpdDtime(currentDateTime);
+        boardType.setUpdId(userId);
 
         clanBoardTypeRepository.save(boardType);
     }
