@@ -25,6 +25,8 @@ public class ChatService {
   private final com.bandi.backend.repository.ChatMessageRepository chatMessageRepository;
   private final com.bandi.backend.repository.ChatRoomRepository chatRoomRepository;
 
+  private final com.bandi.backend.repository.BandChatMessageRepository bandChatMessageRepository;
+
   public List<ChatRoomListDto> getGroupChatList(String userId) {
     String sql = """
             SELECT
@@ -98,11 +100,12 @@ public class ChatService {
                     )
                 ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
                 'BAND' AS ROOM_TYPE,
-                NULL AS ATTACH_FILE_PATH
+                CMA.FILE_PATH AS ATTACH_FILE_PATH
             FROM
                 BN_USER BNU
             INNER JOIN BN_GROUP BNG ON BNG.BN_NO = BNU.BN_NO
             INNER JOIN BN_CHAT_ROOM CNR ON CNR.BN_NO = BNU.BN_NO
+            LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
             WHERE
                 BNU.BN_USER_ID = :userId
                 AND BNU.BN_USER_STAT_CD = 'A'
@@ -152,9 +155,11 @@ public class ChatService {
             CNR.BN_NO        AS ROOM_NO,
             CNR.BN_ROOM_NM   AS ROOM_NM,
             'BAND'           AS ROOM_TYPE,
-            NULL             AS ATTACH_FILE_PATH
+            CMA.FILE_PATH    AS ATTACH_FILE_PATH
         FROM
             BN_CHAT_ROOM CNR
+        INNER JOIN BN_GROUP BNG ON BNG.BN_NO = CNR.BN_NO
+        LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
         WHERE
             CNR.BN_NO = :roomNo
         """;
@@ -177,44 +182,88 @@ public class ChatService {
   }
 
   @Transactional
-  public List<com.bandi.backend.dto.ChatMessageDto> getChatMessages(Long roomNo, String userId, Long lastMsgNo) {
-    StringBuilder sql = new StringBuilder(
-        """
-                SELECT
-                    MSG.CN_MSG_NO,
-                    MSG.CN_NO,
-                    MSG.SND_USER_ID,
-                    USR.USER_NICK_NM,
-                    MSG.MSG,
-                    MSG.MSG_TYPE_CD,
-                    MSG.SND_DTIME,
-                    NULL AS PROFILE_URL,
-                    (
-                      (SELECT COUNT(1) FROM CN_USER WHERE CN_NO = MSG.CN_NO AND CN_USER_STAT_CD = 'A' AND CN_USER_APPR_STAT_CD = 'CN')
-                      -
-                      (SELECT COUNT(1) FROM CN_CHAT_MESSAGE_READ WHERE CN_MSG_NO = MSG.CN_MSG_NO)
-                    ) AS UNREAD_CNT,
-                    MSG.ATTACH_NO,
-                    CMA.FILE_PATH AS ATTACH_FILE_PATH,
-                    CMA.FILE_NAME AS ATTACH_FILE_NM,
-                    MSG.VOTE_NO,
-                    MSG.PARENT_MSG_NO,
-                    P_MSG.MSG AS PARENT_MSG_CONTENT,
-                    P_USR.USER_NICK_NM AS PARENT_MSG_NICK
-                FROM CN_CHAT_MESSAGE MSG
-                LEFT JOIN MM_USER USR ON USR.USER_ID = MSG.SND_USER_ID
-                LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = MSG.ATTACH_NO
-                LEFT JOIN CN_CHAT_MESSAGE P_MSG ON P_MSG.CN_MSG_NO = MSG.PARENT_MSG_NO
-                LEFT JOIN MM_USER P_USR ON P_USR.USER_ID = P_MSG.SND_USER_ID
-                WHERE MSG.CN_NO = :roomNo
-                AND MSG.CHAT_STAT_CD = 'A'
-            """);
+  public List<com.bandi.backend.dto.ChatMessageDto> getChatMessages(Long roomNo, String userId, Long lastMsgNo,
+      String roomType) {
+    StringBuilder sql = new StringBuilder();
 
-    if (lastMsgNo != null) {
-      sql.append(" AND MSG.CN_MSG_NO < :lastMsgNo ");
+    if ("BAND".equals(roomType)) {
+      sql.append("""
+              SELECT
+                  MSG.BN_CHAT_MSG_NO,
+                  MSG.BN_NO,
+                  MSG.BN_CHAT_SND_USER_ID,
+                  USR.USER_NICK_NM,
+                  MSG.BN_CHAT_MSG,
+                  MSG.BN_CHAT_MSG_TYPE_CD,
+                  MSG.BN_CHAT_SND_DTIME,
+                  NULL AS PROFILE_URL,
+                  (
+                    (SELECT COUNT(1) FROM BN_USER WHERE BN_NO = MSG.BN_NO AND BN_USER_STAT_CD = 'A')
+                    -
+                    (SELECT COUNT(1) FROM BN_CHAT_MESSAGE_READ WHERE BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO)
+                  ) AS UNREAD_CNT,
+                  MSG.ATTACH_NO,
+                  CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                  CMA.FILE_NAME AS ATTACH_FILE_NM,
+                  NULL AS VOTE_NO,
+                  MSG.PARENT_MSG_NO,
+                  P_MSG.BN_CHAT_MSG AS PARENT_MSG_CONTENT,
+                  P_USR.USER_NICK_NM AS PARENT_MSG_NICK
+              FROM BN_CHAT_MESSAGE MSG
+              LEFT JOIN MM_USER USR ON USR.USER_ID = MSG.BN_CHAT_SND_USER_ID
+              LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = MSG.ATTACH_NO
+              LEFT JOIN BN_CHAT_MESSAGE P_MSG ON P_MSG.BN_CHAT_MSG_NO = MSG.PARENT_MSG_NO
+              LEFT JOIN MM_USER P_USR ON P_USR.USER_ID = P_MSG.BN_CHAT_SND_USER_ID
+              WHERE MSG.BN_NO = :roomNo
+              AND MSG.BN_CHAT_STAT_CD = 'A'
+          """);
+    } else {
+      sql.append(
+          """
+                  SELECT
+                      MSG.CN_MSG_NO,
+                      MSG.CN_NO,
+                      MSG.SND_USER_ID,
+                      USR.USER_NICK_NM,
+                      MSG.MSG,
+                      MSG.MSG_TYPE_CD,
+                      MSG.SND_DTIME,
+                      NULL AS PROFILE_URL,
+                      (
+                        (SELECT COUNT(1) FROM CN_USER WHERE CN_NO = MSG.CN_NO AND CN_USER_STAT_CD = 'A' AND CN_USER_APPR_STAT_CD = 'CN')
+                        -
+                        (SELECT COUNT(1) FROM CN_CHAT_MESSAGE_READ WHERE CN_MSG_NO = MSG.CN_MSG_NO)
+                      ) AS UNREAD_CNT,
+                      MSG.ATTACH_NO,
+                      CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                      CMA.FILE_NAME AS ATTACH_FILE_NM,
+                      MSG.VOTE_NO,
+                      MSG.PARENT_MSG_NO,
+                      P_MSG.MSG AS PARENT_MSG_CONTENT,
+                      P_USR.USER_NICK_NM AS PARENT_MSG_NICK
+                  FROM CN_CHAT_MESSAGE MSG
+                  LEFT JOIN MM_USER USR ON USR.USER_ID = MSG.SND_USER_ID
+                  LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = MSG.ATTACH_NO
+                  LEFT JOIN CN_CHAT_MESSAGE P_MSG ON P_MSG.CN_MSG_NO = MSG.PARENT_MSG_NO
+                  LEFT JOIN MM_USER P_USR ON P_USR.USER_ID = P_MSG.SND_USER_ID
+                  WHERE MSG.CN_NO = :roomNo
+                  AND MSG.CHAT_STAT_CD = 'A'
+              """);
     }
 
-    sql.append(" ORDER BY MSG.CN_MSG_NO DESC LIMIT 30 ");
+    if (lastMsgNo != null) {
+      if ("BAND".equals(roomType)) {
+        sql.append(" AND MSG.BN_CHAT_MSG_NO < :lastMsgNo ");
+      } else {
+        sql.append(" AND MSG.CN_MSG_NO < :lastMsgNo ");
+      }
+    }
+
+    if ("BAND".equals(roomType)) {
+      sql.append(" ORDER BY MSG.BN_CHAT_MSG_NO DESC LIMIT 30 ");
+    } else {
+      sql.append(" ORDER BY MSG.CN_MSG_NO DESC LIMIT 30 ");
+    }
 
     Query query = entityManager.createNativeQuery(sql.toString());
     query.setParameter("roomNo", roomNo);
@@ -276,6 +325,17 @@ public class ChatService {
         } catch (Exception e) {
           // Ignore unique constraint violation or multiple reads
         }
+      } else if (!senderId.equals(userId) && "BAND".equals(roomType)) {
+        try {
+          entityManager.createNativeQuery(
+              "INSERT INTO BN_CHAT_MESSAGE_READ (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID, BN_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID) DO NOTHING")
+              .setParameter("msgNo", msgNo)
+              .setParameter("userId", userId)
+              .setParameter("readDtime", currentDateTime)
+              .executeUpdate();
+        } catch (Exception e) {
+          // Ignore unique constraint violation or multiple reads
+        }
       }
     }
     return messages;
@@ -287,6 +347,115 @@ public class ChatService {
 
     String currentDateTime = java.time.LocalDateTime.now()
         .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+    String roomType = dto.getRoomType();
+
+    if ("BAND".equals(roomType)) {
+      com.bandi.backend.entity.band.BandChatMessage message = new com.bandi.backend.entity.band.BandChatMessage();
+      message.setBnNo(dto.getCnNo());
+      message.setSndUserId(dto.getSndUserId());
+      message.setMsg(dto.getMsg());
+      message.setMsgTypeCd(dto.getMsgTypeCd() != null ? dto.getMsgTypeCd() : "TEXT");
+      message.setAttachNo(dto.getAttachNo());
+      message.setSndDtime(currentDateTime);
+      message.setChatStatCd("A");
+      message.setInsDtime(currentDateTime);
+      message.setInsDtime(currentDateTime);
+      message.setUpdDtime(currentDateTime);
+      message.setParentMsgNo(dto.getParentMsgNo());
+
+      com.bandi.backend.entity.band.BandChatMessage savedMessage = bandChatMessageRepository.save(message);
+
+      // Mark sender as read
+      try {
+        entityManager.createNativeQuery(
+            "INSERT INTO BN_CHAT_MESSAGE_READ (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID, BN_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID) DO NOTHING")
+            .setParameter("msgNo", savedMessage.getBnMsgNo())
+            .setParameter("userId", dto.getSndUserId())
+            .setParameter("readDtime", currentDateTime)
+            .executeUpdate();
+      } catch (Exception e) {
+      }
+
+      String userNickNm = "Unknown";
+      String userProfileUrl = null;
+
+      try {
+        Query query = entityManager.createNativeQuery(
+            "SELECT USER_NICK_NM FROM MM_USER WHERE USER_ID = :userId");
+        query.setParameter("userId", dto.getSndUserId());
+        Object result = query.getSingleResult();
+        if (result != null) {
+          userNickNm = (String) result;
+        }
+      } catch (Exception e) {
+        // Ignore
+      }
+
+      int unreadCount = 0;
+      try {
+        Query countQuery = entityManager.createNativeQuery(
+            "SELECT COUNT(1) FROM BN_USER WHERE BN_NO = :roomNo AND BN_USER_STAT_CD = 'A'");
+        countQuery.setParameter("roomNo", dto.getCnNo());
+        unreadCount = ((Number) countQuery.getSingleResult()).intValue();
+        unreadCount = Math.max(0, unreadCount - 1);
+      } catch (Exception e) {
+      }
+
+      String parentMsgContent = null;
+      String parentMsgUserNickNm = null;
+
+      if (savedMessage.getParentMsgNo() != null) {
+        try {
+          Query parentQuery = entityManager.createNativeQuery(
+              "SELECT M.BN_CHAT_MSG, U.USER_NICK_NM " +
+                  "FROM BN_CHAT_MESSAGE M " +
+                  "LEFT JOIN MM_USER U ON U.USER_ID = M.BN_CHAT_SND_USER_ID " +
+                  "WHERE M.BN_CHAT_MSG_NO = :parentMsgNo");
+          parentQuery.setParameter("parentMsgNo", savedMessage.getParentMsgNo());
+          Object result = parentQuery.getSingleResult();
+
+          if (result instanceof Object[]) {
+            Object[] parentResult = (Object[]) result;
+            parentMsgContent = (String) parentResult[0];
+            parentMsgUserNickNm = (String) parentResult[1];
+          }
+
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+
+      String attachFilePath = null;
+      String attachFileName = null;
+      if (savedMessage.getAttachNo() != null) {
+        com.bandi.backend.entity.common.CmAttachment attachment = cmAttachmentRepository
+            .findById(savedMessage.getAttachNo()).orElse(null);
+        if (attachment != null) {
+          attachFilePath = attachment.getFilePath();
+          attachFileName = attachment.getFileName();
+        }
+      }
+
+      return com.bandi.backend.dto.ChatMessageDto.builder()
+          .cnMsgNo(savedMessage.getBnMsgNo())
+          .cnNo(savedMessage.getBnNo())
+          .sndUserId(savedMessage.getSndUserId())
+          .userNickNm(userNickNm)
+          .msg(savedMessage.getMsg())
+          .msgTypeCd(savedMessage.getMsgTypeCd())
+          .sndDtime(savedMessage.getSndDtime())
+          .userProfileUrl(userProfileUrl)
+          .isMyMessage(true)
+          .unreadCount(unreadCount)
+          .parentMsgNo(savedMessage.getParentMsgNo())
+          .parentMsgContent(parentMsgContent)
+          .parentMsgUserNickNm(parentMsgUserNickNm)
+          .attachNo(savedMessage.getAttachNo())
+          .attachFilePath(attachFilePath)
+          .attachFileName(attachFileName)
+          .build();
+    }
 
     com.bandi.backend.entity.clan.ClanChatMessage message = new com.bandi.backend.entity.clan.ClanChatMessage();
     message.setCnNo(dto.getCnNo());

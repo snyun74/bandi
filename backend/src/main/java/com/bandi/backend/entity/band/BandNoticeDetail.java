@@ -11,24 +11,6 @@ import lombok.Setter;
 public class BandNoticeDetail {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "bn_comment_no")
-    private Long bnCommentNo;
-
-    @Column(name = "bn_notice_no")
-    private Long bnNoticeNo;
-
-    @Column(name = "comment_user_id", length = 20)
-    private String commentUserId;
-
-    @Column(name = "parent_comment_no")
-    private Long parentCommentNo;
-
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;
-
-    @Column(name = "comment_stat_cd", length = 20)
-    private String commentStatCd;
 
     @Column(name = "ins_dtime", length = 14)
     private String insDtime;

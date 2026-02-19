@@ -55,6 +55,10 @@ const ChatRoom: React.FC = () => {
     useEffect(() => {
         const roomInfo = location.state as { roomNm: string; roomType: string; attachFilePath?: string } | undefined;
         if (roomInfo) {
+            if (roomInfo.roomType === 'BAND') {
+                navigate(`/main/jam/chat/${roomNo}`, { state: roomInfo, replace: true });
+                return;
+            }
             setCurrentRoomName(roomInfo.roomNm);
             setCurrentRoomType(roomInfo.roomType);
             setCurrentRoomProfile(roomInfo.attachFilePath);
@@ -65,6 +69,10 @@ const ChatRoom: React.FC = () => {
                     throw new Error("Failed to fetch room info");
                 })
                 .then(data => {
+                    if (data.roomType === 'BAND') {
+                        navigate(`/main/jam/chat/${roomNo}`, { state: data, replace: true });
+                        return;
+                    }
                     setCurrentRoomName(data.roomNm);
                     setCurrentRoomType(data.roomType);
                     setCurrentRoomProfile(data.attachFilePath);
@@ -74,7 +82,7 @@ const ChatRoom: React.FC = () => {
                     setCurrentRoomName("Unknown Room");
                 });
         }
-    }, [location.state, roomNo]);
+    }, [location.state, roomNo, navigate]);
 
     const showAlert = (message: string) => {
         setAlertMessage(message);
@@ -87,8 +95,8 @@ const ChatRoom: React.FC = () => {
 
         try {
             const url = lastMsgNo
-                ? `/api/chat/${roomNo}/messages?userId=${userId}&lastMsgNo=${lastMsgNo}`
-                : `/api/chat/${roomNo}/messages?userId=${userId}`;
+                ? `/api/chat/${roomNo}/messages?userId=${userId}&lastMsgNo=${lastMsgNo}&roomType=${currentRoomType || 'CLAN'}`
+                : `/api/chat/${roomNo}/messages?userId=${userId}&roomType=${currentRoomType || 'CLAN'}`;
 
             const response = await fetch(url);
             if (response.ok) {
@@ -186,7 +194,8 @@ const ChatRoom: React.FC = () => {
                         sndUserId: userId,
                         msg: isImage ? '사진을 보냈습니다.' : '파일을 보냈습니다.',
                         msgTypeCd: isImage ? 'IMAGE' : 'FILE',
-                        attachNo: uploadData.attachNo
+                        attachNo: uploadData.attachNo,
+                        roomType: currentRoomType || 'CLAN'
                     })
                 });
 
@@ -228,7 +237,8 @@ const ChatRoom: React.FC = () => {
                     sndUserId: userId,
                     msg: inputText,
                     msgTypeCd: 'TEXT',
-                    parentMsgNo: replyTo?.cnMsgNo
+                    parentMsgNo: replyTo?.cnMsgNo,
+                    roomType: currentRoomType || 'CLAN'
                 })
             });
 
@@ -266,12 +276,15 @@ const ChatRoom: React.FC = () => {
                     </div>
                     <h1 className="text-xl font-bold text-[#003C48]">{currentRoomName}</h1>
                 </div>
-                <button
-                    onClick={() => navigate(`/main/vote/list/${roomNo}`)}
-                    className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-sm font-bold shadow-md"
-                >
-                    투표하기
-                </button>
+                {/* Vote Button - Only for CLAN chat */}
+                {currentRoomType === 'CLAN' && (
+                    <button
+                        onClick={() => navigate(`/main/vote/list/${roomNo}`)}
+                        className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-sm font-bold shadow-md"
+                    >
+                        투표하기
+                    </button>
+                )}
             </div>
 
             {/* Message List */}
@@ -388,9 +401,12 @@ const ChatRoom: React.FC = () => {
                     <button onClick={handleFileSelect} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
                         <FaPaperclip className="text-lg text-[#003C48]" /> <span>파일 업로드</span>
                     </button>
-                    <button onClick={() => { setIsMenuOpen(false); setIsVoteModalOpen(true); }} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
-                        <FaInbox className="text-lg text-[#003C48]" /> <span>투표 올리기</span>
-                    </button>
+                    {/* Vote Create Button - Only for CLAN chat */}
+                    {currentRoomType === 'CLAN' && (
+                        <button onClick={() => { setIsMenuOpen(false); setIsVoteModalOpen(true); }} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
+                            <FaInbox className="text-lg text-[#003C48]" /> <span>투표 올리기</span>
+                        </button>
+                    )}
                     <button className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
                         <FaDollarSign className="text-lg text-[#003C48]" /> <span>정산하기</span>
                     </button>

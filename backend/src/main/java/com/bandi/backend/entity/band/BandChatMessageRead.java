@@ -12,13 +12,13 @@ import lombok.Setter;
 public class BandChatMessageRead {
 
     @Id
-    @Column(name = "bn_msg_no")
+    @Column(name = "bn_chat_msg_no")
     private Long bnMsgNo;
 
     @Id
-    @Column(name = "read_user_id", length = 20)
+    @Column(name = "bn_chat_read_user_id", length = 20)
     private String readUserId;
 
-    @Column(name = "read_dtime", length = 14)
+    @Column(name = "bn_chat_read_dtime", length = 14, nullable = false)
     private String readDtime;
 }

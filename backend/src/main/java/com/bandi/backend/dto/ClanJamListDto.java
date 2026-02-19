@@ -22,6 +22,7 @@ public class ClanJamListDto {
     private boolean isConfirmed;
     @JsonProperty("status")
     private String status;
+    private String description;
     private List<JamRoleDto> roles;
     private boolean isFull; // For sorting convenience
 

@@ -19,24 +19,24 @@ public class BnUser {
     @Column(name = "BN_USER_ID", length = 20)
     private String bnUserId;
 
-    @Column(name = "BN_ROLE_CD", length = 20)
+    @Column(name = "BN_ROLE_CD", length = 20, nullable = false)
     private String bnRoleCd;
 
     @Column(name = "BN_JOIN_DATE", length = 8)
     private String bnJoinDate;
 
-    @Column(name = "BN_USER_STAT_CD", length = 20)
+    @Column(name = "BN_USER_STAT_CD", length = 20, nullable = false)
     private String bnUserStatCd;
 
-    @Column(name = "INS_DTIME", length = 14)
+    @Column(name = "INS_DTIME", length = 14, nullable = false)
     private String insDtime;
 
-    @Column(name = "INS_ID", length = 20)
+    @Column(name = "INS_ID", length = 20, nullable = false)
     private String insId;
 
-    @Column(name = "UPD_DTIME", length = 14)
+    @Column(name = "UPD_DTIME", length = 14, nullable = false)
     private String updDtime;
 
-    @Column(name = "UPD_ID", length = 20)
+    @Column(name = "UPD_ID", length = 20, nullable = false)
     private String updId;
 }

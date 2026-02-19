@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaCheckSquare, FaRegSquare, FaTimes } from 'react-icons/fa';
+import { FaChevronLeft, FaCheckSquare, FaRegSquare, FaTimes, FaCamera } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 
 interface CommDetail {
@@ -19,6 +19,11 @@ const ClanJamCreate: React.FC = () => {
     const [songTitle, setSongTitle] = useState('');
     const [artist, setArtist] = useState('');
     const [description, setDescription] = useState('');
+
+    // Image Upload
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Session Config
     const [availableSessions, setAvailableSessions] = useState<CommDetail[]>([]);
@@ -94,6 +99,18 @@ const ClanJamCreate: React.FC = () => {
         setIsModalOpen(true);
     };
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleCreateRoom = async () => {
         // Validation
         if (!title.trim()) {
@@ -152,21 +169,20 @@ const ClanJamCreate: React.FC = () => {
             sessions: sessionCodes
         };
 
+        const formData = new FormData();
+        formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+        if (selectedImage) {
+            formData.append('file', selectedImage);
+        }
+
         try {
             const response = await fetch('/api/bands', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
+                body: formData, // No 'Content-Type' header, browser sets it with boundary
             });
 
             if (response.ok) {
                 showModal("방이 생성되었습니다.");
-                // Note: We need to handle navigation AFTER the modal is closed for success, 
-                // but CommonModal onConfirm just closes it. 
-                // We can set a flag or just handle it in the onConfirm if we change state.
-                // For simplicity, let's just make onConfirm navigate if success message.
             } else {
                 showModal("방 생성에 실패했습니다.");
             }
@@ -188,6 +204,29 @@ const ClanJamCreate: React.FC = () => {
 
             {/* Content Scrollable Area */}
             <div className="flex-1 overflow-y-auto px-6 pb-20 space-y-6">
+
+                {/* Profile Image Upload */}
+                <div className="flex flex-col items-center justify-center -mt-2 mb-2">
+                    <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <div className="w-24 h-24 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
+                            {previewUrl ? (
+                                <img src={previewUrl} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <FaCamera size={32} className="text-white" />
+                            )}
+                        </div>
+                        <div className="absolute bottom-0 right-0 bg-[#00BDF8] rounded-full p-2 border-2 border-white shadow-sm">
+                            <FaCamera size={14} className="text-white" />
+                        </div>
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageChange}
+                        accept="image/*"
+                        className="hidden"
+                    />
+                </div>
 
                 {/* Room Title */}
                 <div>

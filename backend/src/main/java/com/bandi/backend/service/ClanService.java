@@ -203,8 +203,50 @@ public class ClanService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<com.bandi.backend.dto.ClanMemberProjection> getClanMembers(Long clanId) {
-        return clanGroupRepository.findClanMembers(clanId);
+    public java.util.List<com.bandi.backend.dto.ClanMemberDetailDto> getClanMembers(Long clanId) {
+        // 1. Fetch Members
+        java.util.List<com.bandi.backend.dto.ClanMemberProjection> members = clanGroupRepository
+                .findClanMembers(clanId);
+
+        // 2. Fetch Sessions
+        java.util.List<com.bandi.backend.dto.MemberSessionDto> sessions = clanGroupRepository
+                .findAllMemberSessions(clanId);
+
+        // 3. Helper to decode Session Type (Part)
+        java.util.Map<String, String> partNameMap = new java.util.HashMap<>();
+        // Fetch known codes mapping (optimizing DB calls or reusing existing logic)
+        // For efficiency, we could fetch all relevant codes or just rely on 'getIcon'
+        // frontend logic if we pass raw code.
+        // But user requirement implies "Part Name" might be needed.
+        // Let's reuse getSessionName helper logic or similar bulk fetch.
+        // Since we are inside service, we can use entityManager.
+        try {
+            String sql = "SELECT COMM_DETAIL_CD, COMM_DETAIL_NM FROM CM_COMM_DETAIL WHERE COMM_CD = 'BD100'";
+            java.util.List<Object[]> results = entityManager.createNativeQuery(sql).getResultList();
+            for (Object[] row : results) {
+                partNameMap.put((String) row[0], (String) row[1]);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch session names map: " + e.getMessage());
+        }
+
+        // 4. Map Sessions to Members
+        java.util.Map<String, java.util.List<com.bandi.backend.dto.MemberSessionDto>> sessionsByUserId = sessions
+                .stream()
+                .peek(s -> s.setPart(partNameMap.getOrDefault(s.getSessionTypeCd(), s.getSessionTypeCd()))) // Decode
+                .collect(java.util.stream.Collectors.groupingBy(com.bandi.backend.dto.MemberSessionDto::getUserId));
+
+        // 5. Build Result DTOs
+        return members.stream().map(m -> com.bandi.backend.dto.ClanMemberDetailDto.builder()
+                .cnNo(m.getCnNo())
+                .cnUserId(m.getCnUserId())
+                .cnUserRoleCd(m.getCnUserRoleCd())
+                .cnUserApprStatCd(m.getCnUserApprStatCd())
+                .userNm(m.getUserNm())
+                .userNickNm(m.getUserNickNm())
+                .sessions(sessionsByUserId.getOrDefault(m.getCnUserId(), new java.util.ArrayList<>()))
+                .build())
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -571,5 +613,68 @@ public class ClanService {
         like.setUpdId(userId);
 
         clanBoardDetailLikeRepository.save(like);
+    }
+
+    @Transactional
+    public void updateClan(Long clanId, com.bandi.backend.dto.ClanUpdateDto dto, MultipartFile file) {
+        // 1. Permission Check
+        String role = getMemberRole(clanId, dto.getUserId());
+        if (!"01".equals(role) && !"02".equals(role)) {
+            throw new RuntimeException("클랜장 또는 간부만 클랜 정보를 수정할 수 있습니다.");
+        }
+
+        ClanGroup clan = clanGroupRepository.findById(clanId)
+                .orElseThrow(() -> new RuntimeException("Clan not found"));
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        // 2. Update Image if provided
+        if (file != null && !file.isEmpty()) {
+            try {
+                String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+                File dir = new File(uploadDir);
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+
+                String originalFileName = file.getOriginalFilename();
+                String extension = "";
+                if (originalFileName != null && originalFileName.contains(".")) {
+                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+                }
+                String savedFileName = UUID.randomUUID().toString() + extension;
+                File dest = new File(dir, savedFileName);
+                file.transferTo(dest);
+
+                CmAttachment attachment = new CmAttachment();
+                attachment.setFileName(originalFileName);
+                attachment.setFilePath("/common_images/" + savedFileName);
+                attachment.setFileSize(file.getSize());
+                attachment.setMimeType(file.getContentType());
+                attachment.setInsDtime(currentDateTime);
+                attachment.setInsId(dto.getUserId());
+                attachment.setUpdDtime(currentDateTime);
+                attachment.setUpdId(dto.getUserId());
+
+                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
+                clan.setAttachNo(savedAttachment.getAttachNo());
+
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to store file", e);
+            }
+        }
+
+        // 3. Update Text Fields
+        if (dto.getCnDesc() != null) {
+            clan.setCnDesc(dto.getCnDesc());
+        }
+        if (dto.getCnUrl() != null) {
+            clan.setCnUrl(dto.getCnUrl());
+        }
+
+        clan.setUpdDtime(currentDateTime);
+        clan.setUpdId(dto.getUserId());
+
+        clanGroupRepository.save(clan);
     }
 }

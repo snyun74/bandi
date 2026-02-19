@@ -18,4 +18,8 @@ public interface MyJamProjection {
     String getBnConfFg();
 
     String getBnPasswdFg();
+
+    String getBnPart();
+
+    String getBnImg();
 }

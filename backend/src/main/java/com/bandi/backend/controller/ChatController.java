@@ -43,9 +43,11 @@ public class ChatController {
     public ResponseEntity<List<com.bandi.backend.dto.ChatMessageDto>> getChatMessages(
             @org.springframework.web.bind.annotation.PathVariable Long roomNo,
             @RequestParam String userId,
-            @RequestParam(required = false) Long lastMsgNo) {
+            @RequestParam(required = false) Long lastMsgNo,
+            @RequestParam(required = false, defaultValue = "CLAN") String roomType) {
 
-        List<com.bandi.backend.dto.ChatMessageDto> messages = chatService.getChatMessages(roomNo, userId, lastMsgNo);
+        List<com.bandi.backend.dto.ChatMessageDto> messages = chatService.getChatMessages(roomNo, userId, lastMsgNo,
+                roomType);
         return ResponseEntity.ok(messages);
     }
 

@@ -18,24 +18,6 @@ public class BandNotice {
     @Column(name = "bn_no")
     private Long bnNo;
 
-    @Column(name = "title", length = 400)
-    private String title;
-
-    @Column(name = "content", columnDefinition = "TEXT")
-    private String content;
-
-    @Column(name = "writer_user_id", length = 20)
-    private String writerUserId;
-
-    @Column(name = "pin_yn", length = 1)
-    private String pinYn;
-
-    @Column(name = "std_date", length = 8)
-    private String stdDate;
-
-    @Column(name = "end_date", length = 8)
-    private String endDate;
-
     @Column(name = "ins_dtime", length = 14)
     private String insDtime;
 

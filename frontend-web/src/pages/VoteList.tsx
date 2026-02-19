@@ -56,7 +56,7 @@ const VoteList: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white font-['Jua'] flex flex-col" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="w-full bg-white font-['Jua'] flex flex-col" style={{ fontFamily: '"Jua", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 bg-white">
                 <button onClick={() => navigate(-1)} className="text-gray-500 mr-2 flex items-center text-sm">
@@ -66,7 +66,7 @@ const VoteList: React.FC = () => {
 
             <h1 className="text-xl font-bold text-[#003C48] text-center mb-6">투표 목록</h1>
 
-            <div className="px-4 space-y-3 flex-1 overflow-y-auto pb-10">
+            <div className="px-4 space-y-3 pb-10">
                 {loading ? (
                     <div className="text-center text-gray-400 mt-10">로딩 중...</div>
                 ) : votes.length === 0 ? (

@@ -15,9 +15,6 @@ public class Notice {
     @Column(name = "notice_no")
     private Long noticeNo;
 
-    @Column(name = "notice_cd", length = 20)
-    private String noticeCd;
-
     @Column(name = "title", length = 400)
     private String title;
 

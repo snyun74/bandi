@@ -215,8 +215,8 @@ const VoteDetail: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
-            <div className="max-w-md mx-auto bg-white min-h-screen shadow-sm flex flex-col">
+        <div className="w-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+            <div className="max-w-md mx-auto bg-white min-h-[calc(100vh-120px)] shadow-sm flex flex-col">
 
                 {/* Header */}
                 <div className="flex items-center p-4 border-b border-gray-100 bg-white sticky top-0 z-10">
@@ -229,7 +229,7 @@ const VoteDetail: React.FC = () => {
 
                 {/* Content */}
                 {voteDetail ? (
-                    <div className="p-6 flex-1 overflow-y-auto">
+                    <div className="p-6 flex-1">
 
                         <h2 className="text-2xl font-bold text-[#003C48] text-center mb-1">{voteDetail.title}</h2>
 

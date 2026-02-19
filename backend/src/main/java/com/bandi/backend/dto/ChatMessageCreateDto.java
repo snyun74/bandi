@@ -17,4 +17,5 @@ public class ChatMessageCreateDto {
     private Long attachNo; // Optional
     private Long parentMsgNo; // Optional (Reply)
     private Long voteNo; // Optional (Vote)
+    private String roomType; // "CLAN" or "BAND"
 }

@@ -9,9 +9,13 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: admin0325
     driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:

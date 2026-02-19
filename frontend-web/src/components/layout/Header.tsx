@@ -23,11 +23,21 @@ const Header: React.FC = () => {
     return (
         <header className="fixed top-0 left-0 right-0 h-[50px] bg-white border-b border-gray-100 flex items-center justify-between px-4 z-50">
             {/* Left: Logo */}
-            <img src="/images/bandicon.png" alt="Bandicon" className="h-[24px] w-auto object-contain" />
+            <img
+                src="/images/bandicon.png"
+                alt="Bandicon"
+                className="h-[24px] w-auto object-contain cursor-pointer"
+                onClick={() => navigate('/main')}
+            />
 
             {/* Right: Greeting & Chat */}
             <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-800">{userName}님</span>
+                <span
+                    className="text-sm font-semibold text-gray-800 cursor-pointer hover:text-[#00BDF8] transition-colors"
+                    onClick={() => navigate('/main/profile')}
+                >
+                    {userName}님
+                </span>
                 <MessageCircle
                     className="w-6 h-6 text-gray-700 cursor-pointer hover:text-[#00BDF8] transition-colors"
                     onClick={() => navigate('/main/chat/list')}

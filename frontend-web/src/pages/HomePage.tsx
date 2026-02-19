@@ -1,9 +1,43 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaUnlink } from 'react-icons/fa';
+import JamEvaluationModal from "../components/common/JamEvaluationModal";
 
-const HomePage: React.FC = () => {
+export default function HomePage() {
     const navigate = useNavigate();
+    const [pendingEvaluation, setPendingEvaluation] = useState<any>(null);
+
+    useEffect(() => {
+        checkPendingEvaluation();
+    }, []);
+
+    const checkPendingEvaluation = async () => {
+        const userId = localStorage.getItem("userId");
+        if (!userId) return;
+
+        try {
+            // const userRole = JSON.parse(userRoleString); // Incorrect
+            // const userId = userRole.userId; // Incorrect
+
+            const response = await fetch(`/api/bands/evaluation/pending?userId=${userId}`);
+            if (response.ok) {
+                if (response.status === 204) {
+                    // No content
+                    setPendingEvaluation(null);
+                } else {
+                    const data = await response.json();
+                    setPendingEvaluation(data);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to check pending evaluation", error);
+        }
+    };
+
+    const handleEvaluationComplete = () => {
+        setPendingEvaluation(null);
+        checkPendingEvaluation(); // Check again in case there are multiple pending evaluations? The API currently returns one arbitrary pending eval.
+    };
     const [expandedDayId, setExpandedDayId] = useState<number | null>(null);
 
     // Helper: Get formatted date string MM/DD
@@ -74,7 +108,7 @@ const HomePage: React.FC = () => {
                     throw new Error('No clan found');
                 })
                 .then(data => setMyClan(data))
-                .catch(err => {
+                .catch(() => {
                     setMyClan(null);
                 });
 
@@ -207,13 +241,26 @@ const HomePage: React.FC = () => {
 
                 {myJams.length > 0 ? (
                     <div
-                        onClick={() => navigate(`/main/clan/jam/room/${myJams[currentJamIndex].bnNo}`)}
+                        onClick={() => {
+                            const jam = myJams[currentJamIndex];
+                            if (jam.bnType === 'CLAN') {
+                                navigate(`/main/clan/jam/room/${jam.bnNo}`);
+                            } else {
+                                navigate(`/main/jam/room/${jam.bnNo}`);
+                            }
+                        }}
                         className="bg-white border border-[#00BDF8] rounded-xl p-4 flex items-center shadow-sm relative cursor-pointer hover:bg-blue-50 transition-colors"
                     >
                         {/* Album Art / Icon */}
                         <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 mr-4 bg-gray-100">
-                            {/* Placeholder or actual image if available in projection */}
-                            <span className="text-gray-400 font-bold text-xs">J</span>
+                            {myJams[currentJamIndex].bnImg ? (
+                                <img src={myJams[currentJamIndex].bnImg} alt={myJams[currentJamIndex].bnNm} className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                    <FaUnlink size={20} />
+                                    <span className="text-[10px] mt-1">미연결</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Info */}
@@ -235,7 +282,14 @@ const HomePage: React.FC = () => {
                         {/* More Link / Count */}
                         <div className="absolute bottom-3 right-4 flex flex-col items-end">
                             <span className="text-xs text-gray-400 mb-1">{currentJamIndex + 1} / {myJams.length}</span>
-                            <span className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]" style={{ fontFamily: '"Jua", sans-serif' }}>
+                            <span
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/main/jam/my');
+                                }}
+                                className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
+                                style={{ fontFamily: '"Jua", sans-serif' }}
+                            >
                                 더보기
                             </span>
                         </div>
@@ -311,8 +365,14 @@ const HomePage: React.FC = () => {
                 <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 연습실</h3>
                 <div className="w-full h-[150px] bg-[#F3F4F6] rounded-xl"></div>
             </section>
+            {/* Evaluation Modal */}
+            {pendingEvaluation && (
+                <JamEvaluationModal
+                    evaluation={pendingEvaluation}
+                    onComplete={handleEvaluationComplete}
+                />
+            )}
         </div>
     );
 };
 
-export default HomePage;

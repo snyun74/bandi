@@ -15,9 +15,6 @@ public class Board {
     @Column(name = "board_no")
     private Long boardNo;
 
-    @Column(name = "board_cd", length = 20)
-    private String boardCd;
-
     @Column(name = "writer_user_id", length = 20)
     private String writerUserId;
 

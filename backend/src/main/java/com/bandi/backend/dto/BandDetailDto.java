@@ -24,5 +24,6 @@ public class BandDetailDto {
     @JsonProperty("canManage")
     private boolean canManage;
     private String status; // True if user can manage the band (Leader/Executive)
+    private String imgUrl;
     private List<ClanJamListDto.JamRoleDto> roles;
 }

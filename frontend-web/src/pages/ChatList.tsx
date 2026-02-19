@@ -212,7 +212,13 @@ const ChatList: React.FC = () => {
                                     chatList.map((chat) => (
                                         <div
                                             key={`${chat.roomType}-${chat.roomNo}`}
-                                            onClick={() => navigate(`/main/chat/room/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } })}
+                                            onClick={() => {
+                                                if (chat.roomType === 'BAND') {
+                                                    navigate(`/main/jam/chat/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
+                                                } else {
+                                                    navigate(`/main/chat/room/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
+                                                }
+                                            }}
                                             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                         >
                                             <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 ${!chat.attachFilePath ? (chat.roomType === 'CLAN' ? 'bg-black' : 'bg-indigo-500') : ''}`}>

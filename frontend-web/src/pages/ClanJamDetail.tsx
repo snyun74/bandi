@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit } from 'react-icons/fa';
 import { GiGrandPiano } from "react-icons/gi";
 import CommonModal from '../components/common/CommonModal';
 
@@ -26,6 +26,7 @@ interface BandDetail {
     isConfirmed: boolean;
     status: string;
     canManage: boolean;
+    imgUrl?: string;
     roles: JamRole[];
 }
 
@@ -47,6 +48,11 @@ const ClanJamDetail: React.FC = () => {
         message: '',
         onConfirm: () => { },
     });
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editForm, setEditForm] = useState({ desc: '', previewUrl: '' });
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleDelete = () => {
         showConfirm("정말 합주방을 삭제하시겠습니까?", async () => {
@@ -115,30 +121,6 @@ const ClanJamDetail: React.FC = () => {
         return <div className="w-8 h-8 bg-gray-200 rounded-full" />;
     };
 
-    if (isLoading) return <div className="p-4">Loading...</div>;
-
-    if (!bandDetail) {
-        return (
-            <div className="flex flex-col h-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
-                <div className="bg-white px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
-                    <button onClick={() => navigate(-1)} className="text-gray-600 mr-2">
-                        <FaChevronLeft size={24} />
-                    </button>
-                    <h1 className="text-lg text-[#003C48] font-bold leading-tight">합주 상세</h1>
-                </div>
-                <div className="flex-1 flex items-center justify-center p-4">
-                    <p className="text-gray-500">합주 정보를 불러올 수 없습니다.</p>
-                </div>
-                <CommonModal
-                    isOpen={modalConfig.isOpen}
-                    type={modalConfig.type}
-                    message={modalConfig.message}
-                    onConfirm={modalConfig.onConfirm}
-                    onCancel={closeModal}
-                />
-            </div>
-        );
-    }
 
     const handleConfirmToggle = async () => {
         if (!bandDetail || !bandDetail.canManage) return;
@@ -320,6 +302,89 @@ const ClanJamDetail: React.FC = () => {
         });
     };
 
+
+    const handleEditClick = () => {
+        if (!bandDetail) return;
+        setEditForm({
+            desc: bandDetail.description || '',
+            previewUrl: bandDetail.imgUrl || ''
+        });
+        setSelectedFile(null);
+        setIsEditModalOpen(true);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            setEditForm(prev => ({
+                ...prev,
+                previewUrl: URL.createObjectURL(file)
+            }));
+        }
+    };
+
+    const handleUpdateBand = async () => {
+        if (!jamId || !userId) return;
+
+        const formData = new FormData();
+        const updateData = {
+            userId: userId,
+            description: editForm.desc
+        };
+
+        formData.append('data', new Blob([JSON.stringify(updateData)], { type: 'application/json' }));
+        if (selectedFile) {
+            formData.append('file', selectedFile);
+        }
+
+        try {
+            const response = await fetch(`/api/bands/${jamId}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            if (response.ok) {
+                showAlert("합주방 정보가 수정되었습니다.");
+                setIsEditModalOpen(false);
+                // Refresh data
+                const res = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setBandDetail(data);
+                }
+            } else {
+                const error = await response.text();
+                showAlert(`수정 실패: ${error}`);
+            }
+        } catch (error) {
+            console.error("Update failed", error);
+            showAlert("오류가 발생했습니다.");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col h-full bg-gray-50 font-['Jua'] items-center justify-center">
+                <div className="text-[#003C48] font-bold">로딩중...</div>
+            </div>
+        );
+    }
+
+    if (!bandDetail) {
+        return (
+            <div className="flex flex-col h-full bg-gray-50 font-['Jua'] items-center justify-center">
+                <div className="text-[#003C48] font-bold">합주방 정보를 찾을 수 없습니다.</div>
+                <button
+                    onClick={() => navigate(-1)}
+                    className="mt-4 bg-[#00BDF8] text-white px-4 py-2 rounded-xl font-bold"
+                >
+                    돌아가기
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
             {/* Header */}
@@ -328,6 +393,24 @@ const ClanJamDetail: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-gray-600">
                         <FaChevronLeft size={24} />
                     </button>
+                    {/* Profile Image */}
+                    <div className="relative">
+                        <div
+                            className={`w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 flex items-center justify-center bg-gray-50 ${bandDetail.canManage ? 'cursor-pointer' : ''}`}
+                            onClick={bandDetail.canManage ? handleEditClick : undefined}
+                        >
+                            {bandDetail.imgUrl ? (
+                                <img src={bandDetail.imgUrl} alt={bandDetail.title} className="w-full h-full object-cover" />
+                            ) : (
+                                <FaGuitar size={20} className="text-gray-300" />
+                            )}
+                        </div>
+                        {bandDetail.canManage && (
+                            <div className="absolute -bottom-1 -right-1 bg-gray-800 bg-opacity-50 text-white p-0.5 rounded-full pointer-events-none">
+                                <FaRegEdit size={8} />
+                            </div>
+                        )}
+                    </div>
                     <div>
                         <h1 className="text-lg text-[#003C48] font-bold leading-tight">{bandDetail.title}</h1>
                         <p className="text-xs text-gray-500">{bandDetail.songTitle} : {bandDetail.artist}</p>
@@ -342,7 +425,16 @@ const ClanJamDetail: React.FC = () => {
                             {bandDetail.status === 'E' ? "종료됨" : bandDetail.isConfirmed ? "확정" : "미확정"}
                         </button>
                     )}
-                    <button className="bg-[#00BDF8] text-white text-xs px-3 py-1.5 rounded-full font-bold">
+                    <button
+                        onClick={() => navigate(`/main/jam/chat/${jamId}`, {
+                            state: {
+                                roomNm: bandDetail.title,
+                                roomType: 'BAND',
+                                attachFilePath: bandDetail.imgUrl
+                            }
+                        })}
+                        className="bg-[#00BDF8] text-white text-xs px-3 py-1.5 rounded-full font-bold"
+                    >
                         단체 채팅
                     </button>
                 </div>
@@ -443,7 +535,24 @@ const ClanJamDetail: React.FC = () => {
                         {/* Schedule */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
                             <h3 className="text-[#003C48] font-bold text-sm mb-3">합주 일정 조율</h3>
-                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-sm">
+                            <button
+                                onClick={() => {
+                                    if (!bandDetail.isConfirmed) {
+                                        showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                        return;
+                                    }
+                                    const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                                    if (!isMember) {
+                                        showAlert("합주 참여자만 이용할 수 있습니다.");
+                                        return;
+                                    }
+                                    navigate(`/main/jam/schedule/${jamId}`);
+                                }}
+                                className={`w-full font-bold py-2.5 rounded-xl shadow-sm text-sm transition-colors ${bandDetail.isConfirmed && bandDetail.roles.some(r => r.isCurrentUser)
+                                    ? 'bg-[#00BDF8] text-white'
+                                    : 'bg-gray-200 text-gray-400'
+                                    }`}
+                            >
                                 캘린더 보러가기
                             </button>
                         </div>
@@ -502,6 +611,65 @@ const ClanJamDetail: React.FC = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={closeModal}
             />
+
+            {/* Edit Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-lg animate-fade-in-up">
+                        <h2 className="text-xl font-bold text-[#003C48] mb-4 text-center">합주방 정보 수정</h2>
+
+                        <div className="flex justify-center mb-6">
+                            <div
+                                className="w-24 h-24 rounded-full bg-gray-100 border-2 border-[#00BDF8] overflow-hidden flex items-center justify-center cursor-pointer relative"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                {editForm.previewUrl ? (
+                                    <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <FaGuitar size={40} className="text-[#00BDF8]" />
+                                )}
+                                <div className="absolute bottom-0 right-0 bg-[#00BDF8] text-white p-1.5 rounded-full">
+                                    <FaRegEdit size={12} />
+                                </div>
+                            </div>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                hidden
+                                accept="image/*"
+                            />
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-[#003C48] mb-1">합주방 소개</label>
+                                <textarea
+                                    value={editForm.desc}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, desc: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8] h-24 resize-none"
+                                    placeholder="합주방 소개를 입력하세요"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6">
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleUpdateBand}
+                                className="flex-1 bg-[#00BDF8] text-white font-bold py-3 rounded-xl hover:bg-[#00ACD8] transition-colors"
+                            >
+                                수정완료
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

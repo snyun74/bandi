@@ -12,36 +12,37 @@ public class BandChatMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "bn_msg_no")
+    @Column(name = "BN_CHAT_MSG_NO")
     private Long bnMsgNo;
 
-    @Column(name = "bn_no")
+    @Column(name = "BN_NO", nullable = false)
     private Long bnNo;
 
-    @Column(name = "snd_user_id", length = 20)
+    @Column(name = "bn_chat_snd_user_id", length = 20, nullable = false)
     private String sndUserId;
 
-    @Column(name = "msg_type_cd", length = 20)
+    @Column(name = "bn_chat_msg_type_cd", length = 20, nullable = false)
     private String msgTypeCd;
 
-    @Column(name = "msg", columnDefinition = "TEXT")
+    @Column(name = "bn_chat_msg", columnDefinition = "TEXT", nullable = false)
     private String msg;
 
     @Column(name = "attach_no")
     private Long attachNo;
 
-    @Column(name = "snd_dtime", length = 14)
+    @Column(name = "bn_chat_snd_dtime", length = 14, nullable = false)
     private String sndDtime;
 
-    @Column(name = "chat_stat_cd", length = 20)
+    @Column(name = "bn_chat_stat_cd", length = 20, nullable = false)
     private String chatStatCd;
 
-    @Column(name = "ins_dtime", length = 14)
+    @Column(name = "ins_dtime", length = 14, nullable = false)
     private String insDtime;
 
-    @Column(name = "upd_dtime", length = 14)
+    @Column(name = "upd_dtime", length = 14, nullable = false)
     private String updDtime;
 
-    @Column(name = "upd_id", length = 20)
-    private String updId;
+    @Column(name = "parent_msg_no")
+    private Long parentMsgNo;
+
 }

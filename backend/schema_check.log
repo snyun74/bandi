@@ -1,0 +1,27 @@
+==================================================
+ SCHEMA INSPECTOR - CHECKING BN_CHAT_MESSAGE 
+==================================================
+COLUMN: bn_chat_msg_no | TYPE: bigint | NULLABLE: NO
+COLUMN: bn_no | TYPE: bigint | NULLABLE: NO
+COLUMN: bn_chat_snd_user_id | TYPE: character varying | NULLABLE: NO
+COLUMN: bn_chat_msg_type_cd | TYPE: character varying | NULLABLE: NO
+COLUMN: bn_chat_msg | TYPE: text | NULLABLE: NO
+COLUMN: attach_no | TYPE: bigint | NULLABLE: YES
+COLUMN: bn_chat_snd_dtime | TYPE: character varying | NULLABLE: NO
+COLUMN: bn_chat_stat_cd | TYPE: character varying | NULLABLE: NO
+COLUMN: ins_dtime | TYPE: character varying | NULLABLE: NO
+COLUMN: upd_dtime | TYPE: character varying | NULLABLE: NO
+COLUMN: bn_msg_no | TYPE: bigint | NULLABLE: NO
+COLUMN: chat_stat_cd | TYPE: character varying | NULLABLE: YES
+COLUMN: msg | TYPE: text | NULLABLE: YES
+COLUMN: msg_type_cd | TYPE: character varying | NULLABLE: YES
+COLUMN: snd_dtime | TYPE: character varying | NULLABLE: YES
+COLUMN: snd_user_id | TYPE: character varying | NULLABLE: YES
+COLUMN: upd_id | TYPE: character varying | NULLABLE: YES
+COLUMN: parent_msg_no | TYPE: bigint | NULLABLE: YES
+==================================================
+ CHECKING BN_CHAT_MESSAGE_READ 
+COLUMN: bn_chat_msg_no
+COLUMN: bn_chat_read_user_id
+COLUMN: bn_chat_read_dtime
+==================================================

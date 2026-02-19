@@ -11,6 +11,7 @@ interface ClanDetailData {
     logoText: string;
     attachFilePath?: string; // Added field
     unreadChatCount?: number; // Added field
+    cnUrl?: string; // Added field
 }
 
 const ClanDetail: React.FC = () => {
@@ -24,6 +25,16 @@ const ClanDetail: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedPreviewDate, setSelectedPreviewDate] = useState<string | null>(null); // Moved here
 
+    const [myRole, setMyRole] = useState<string>('NONE');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editForm, setEditForm] = useState<{
+        desc: string;
+        url: string;
+        imageFile: File | null;
+        previewUrl: string | null;
+    }>({ desc: '', url: '', imageFile: null, previewUrl: null });
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
     useEffect(() => {
         const fetchMethod = async () => {
             if (!id) return;
@@ -35,17 +46,17 @@ const ClanDetail: React.FC = () => {
                 const month = today.getMonth() + 1;
 
                 // Parallel fetch for clan details, notices, top posts, and schedules
-                const [clanRes, noticeRes, topRes, scheduleRes, jamRes] = await Promise.all([
+                const [clanRes, noticeRes, topRes, scheduleRes, jamRes, roleRes] = await Promise.all([
                     fetch(clanUrl),
                     fetch(`/api/clans/${id}/notices?limit=5`),
                     fetch(`/api/clans/${id}/boards/top`),
                     fetch(`/api/clan/schedule?clanId=${id}&year=${year}&month=${month}`),
-                    fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`) // Fetch recent jams
+                    fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`), // Fetch recent jams
+                    userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null)
                 ]);
 
                 if (clanRes.ok) {
                     const data = await clanRes.json();
-                    console.log("Clan Detail Response:", data);
                     setClan({
                         id: data.cnNo,
                         name: data.cnNm,
@@ -54,8 +65,14 @@ const ClanDetail: React.FC = () => {
                         logoColor: "bg-black",
                         logoText: data.cnNm ? data.cnNm.substring(0, 1) : "?",
                         attachFilePath: data.attachFilePath,
-                        unreadChatCount: data.unreadChatCount
+                        unreadChatCount: data.unreadChatCount,
+                        cnUrl: data.cnUrl
                     });
+                }
+
+                if (roleRes && roleRes.ok) {
+                    const role = await roleRes.text();
+                    setMyRole(role);
                 }
 
                 if (noticeRes.ok) {
@@ -119,6 +136,69 @@ const ClanDetail: React.FC = () => {
 
     const selectedSchedules = selectedPreviewDate ? schedules.filter((s: any) => s.sttDate === selectedPreviewDate) : [];
 
+    const handleEditClick = () => {
+        if (myRole !== '01' && myRole !== '02') {
+            // Optional: alert("권한이 없습니다.");
+            return;
+        }
+        if (clan) {
+            setEditForm({
+                desc: clan.description || '',
+                url: clan.cnUrl || '',
+                imageFile: null,
+                previewUrl: clan.attachFilePath || null
+            });
+            setIsEditModalOpen(true);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setEditForm(prev => ({ ...prev, imageFile: file, previewUrl: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleUpdateClan = async () => {
+        if (!id) return;
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+
+        try {
+            const formData = new FormData();
+            const updateData = {
+                userId: userId,
+                cnDesc: editForm.desc,
+                cnUrl: editForm.url
+            };
+            formData.append('data', new Blob([JSON.stringify(updateData)], { type: 'application/json' }));
+            if (editForm.imageFile) {
+                formData.append('file', editForm.imageFile);
+            }
+
+            const response = await fetch(`/api/clans/${id}`, {
+                method: 'PUT',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("클랜 정보가 수정되었습니다.");
+                setIsEditModalOpen(false);
+                window.location.reload(); // Simple reload to refresh data
+            } else {
+                const err = await response.json();
+                alert(err.message || "수정 실패");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("오류가 발생했습니다.");
+        }
+    };
+
     if (loading) return <div className="text-center py-10">Loading...</div>;
     if (!clan) return <div className="text-center py-10">Clan not found</div>;
 
@@ -140,26 +220,34 @@ const ClanDetail: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-6">
                 {/* Clan Info Card */}
                 <div className="flex items-start gap-4 mb-6">
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'}`}>
+                    <div
+                        className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'} ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:opacity-80' : ''} relative`}
+                        onClick={handleEditClick}
+                    >
                         {clan.attachFilePath ? (
                             <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                         ) : (
                             <span className="text-white text-3xl font-bold">{clan.logoText}</span>
                         )}
+                        {(myRole === '01' || myRole === '02') && (
+                            <div className="absolute bottom-0 right-0 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full">
+                                <FaRegEdit size={10} />
+                            </div>
+                        )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                         <h2 className="text-[#003C48] text-xl font-bold mb-1">{clan.name}</h2>
-                        <p className="text-[#003C48] text-sm mb-1">{clan.description}</p>
+                        <p className="text-[#003C48] text-sm mb-1 whitespace-pre-wrap break-words">{clan.description}</p>
                         <p className="text-[#003C48] text-sm font-medium">멤버 : {clan.memberCount}명</p>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-xs text-gray-600 shadow-sm">
+                    <div className="flex flex-col gap-2 shrink-0">
+                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-xs text-gray-600 shadow-sm whitespace-nowrap">
                             <FaCommentDots size={12} className="text-[#00BDF8]" /> 단체 채팅
                             {clan.unreadChatCount !== undefined && clan.unreadChatCount > 0 && (
                                 <span className="bg-[#00BDF8] text-white text-[10px] rounded-full px-1.5 h-4 flex items-center justify-center -mr-1 min-w-[16px]">{clan.unreadChatCount}</span>
                             )}
                         </button>
-                        <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-xs text-gray-600 shadow-sm">
+                        <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-xs text-gray-600 shadow-sm whitespace-nowrap">
                             <FaUserFriends size={12} className="text-[#00BDF8]" /> 멤버 현황
                             <span className="bg-[#00BDF8] text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
                         </button>
@@ -308,8 +396,76 @@ const ClanDetail: React.FC = () => {
                         <div className="text-gray-400 text-sm py-4 text-center">등록된 인기 게시글이 없습니다.</div>
                     )}
                 </div>
-
             </div>
+
+            {/* Edit Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-lg animate-fade-in-up">
+                        <h2 className="text-xl font-bold text-[#003C48] mb-4 text-center">클랜 정보 수정</h2>
+
+                        <div className="flex justify-center mb-6">
+                            <div
+                                className="w-24 h-24 rounded-full bg-gray-100 border-2 border-[#00BDF8] overflow-hidden flex items-center justify-center cursor-pointer relative"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                {editForm.previewUrl ? (
+                                    <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-[#00BDF8] text-3xl font-bold">{clan?.logoText}</span>
+                                )}
+                                <div className="absolute bottom-0 right-0 bg-[#00BDF8] text-white p-1.5 rounded-full">
+                                    <FaRegEdit size={12} />
+                                </div>
+                            </div>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                hidden
+                                accept="image/*"
+                            />
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-[#003C48] mb-1">클랜 소개</label>
+                                <textarea
+                                    value={editForm.desc}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, desc: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8] h-24 resize-none"
+                                    placeholder="클랜 소개를 입력하세요"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-[#003C48] mb-1">URL (유튜브/참고자료)</label>
+                                <input
+                                    type="text"
+                                    value={editForm.url}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, url: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8]"
+                                    placeholder="URL을 입력하세요"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6">
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleUpdateClan}
+                                className="flex-1 bg-[#00BDF8] text-white font-bold py-3 rounded-xl hover:bg-[#00ACD8] transition-colors"
+                            >
+                                수정완료
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

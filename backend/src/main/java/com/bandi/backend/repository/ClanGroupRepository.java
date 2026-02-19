@@ -110,4 +110,14 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "ORDER BY " +
                         "    ordBy, CN.CN_USER_ROLE_CD", nativeQuery = true)
         List<ClanMemberProjection> findClanMembers(@Param("clanId") Long clanId);
+
+        @Query("SELECT new com.bandi.backend.dto.MemberSessionDto(" +
+                        "s.bnSessionJoinUserId, g.bnSongNm, g.bnSingerNm, '', s.bnSessionTypeCd) " +
+                        "FROM BnSession s " +
+                        "JOIN BnGroup g ON s.bnNo = g.bnNo " +
+                        "WHERE g.cnNo = :clanId " +
+                        "AND g.bnStatCd = 'A' " +
+                        "AND g.bnConfFg IN ('N', 'Y') " +
+                        "AND s.bnSessionJoinUserId IS NOT NULL")
+        List<com.bandi.backend.dto.MemberSessionDto> findAllMemberSessions(@Param("clanId") Long clanId);
 }

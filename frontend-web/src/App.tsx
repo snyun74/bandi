@@ -18,6 +18,7 @@ import VoteDetail from './pages/VoteDetail';
 import VoteStatus from './pages/VoteStatus';
 import ChatList from './pages/ChatList';
 import ChatRoom from './pages/ChatRoom';
+import JamChatRoom from './pages/JamChatRoom';
 import PrivateChatRoom from './pages/PrivateChatRoom';
 import FriendAdd from './pages/FriendAdd';
 import ClanNoticeList from './pages/ClanNoticeList';
@@ -34,6 +35,12 @@ import VoteList from './pages/VoteList';
 import BoardList from './pages/BoardList';
 import BoardWrite from './pages/BoardWrite';
 import BoardDetail from './pages/BoardDetail';
+import MyJamList from './pages/MyJamList';
+import MyProfile from './pages/MyProfile';
+import JamScheduleCapture from './pages/JamScheduleCapture';
+import JamVoteDetail from './pages/JamVoteDetail';
+import JamVoteStatus from './pages/JamVoteStatus';
+import JamVoteList from './pages/JamVoteList';
 import './App.css';
 
 function App() {
@@ -48,6 +55,7 @@ function App() {
         <Route path="/main" element={<MainLayout />}>
           <Route index element={<HomePage />} /> {/* Default to Home */}
           <Route path="home" element={<HomePage />} />
+          <Route path="profile" element={<MyProfile />} />
           <Route path="freejam" element={<FreeJam />} />
           <Route path="board" element={<Board />} />
           <Route path="clan" element={<Clan />} />
@@ -59,6 +67,7 @@ function App() {
           <Route path="clan/notice/:clanId" element={<ClanNoticeList />} />
           <Route path="chat/list" element={<ChatList />} />
           <Route path="chat/room/:roomNo" element={<ChatRoom />} />
+          <Route path="jam/chat/:roomNo" element={<JamChatRoom />} />
           <Route path="chat/private/:roomNo" element={<PrivateChatRoom />} />
           <Route path="chat/friend/add" element={<FriendAdd />} />
           <Route path="clan/notice/:clanId/create" element={<ClanNoticeCreate />} />
@@ -70,6 +79,8 @@ function App() {
           <Route path="jam" element={<ClanJamList />} />
           <Route path="jam/create" element={<ClanJamCreate />} />
           <Route path="clan/jam/room/:jamId" element={<ClanJamDetail />} />
+          <Route path="jam/room/:jamId" element={<ClanJamDetail />} />
+          <Route path="jam/my" element={<MyJamList />} />
           <Route path="clan/jam/:clanId/create" element={<ClanJamCreate />} />
           <Route path="clan/board/:clanId/:boardTypeNo" element={<ClanBoardPostList />} />
           <Route path="clan/board/:clanId/:boardTypeNo/create" element={<ClanBoardPostCreate />} />
@@ -77,11 +88,18 @@ function App() {
           <Route path="vote/status/:voteId" element={<VoteStatus />} />
           <Route path="vote/list/:roomNo" element={<VoteList />} />
           <Route path="vote/:voteId" element={<VoteDetail />} />
+          <Route path="jam/vote/status/:voteId" element={<JamVoteStatus />} />
+          <Route path="jam/vote/list/:roomNo" element={<JamVoteList />} />
+          <Route path="jam/vote/:voteId" element={<JamVoteDetail />} />
+          <Route path="jam/vote/status/:voteId" element={<JamVoteStatus />} />
+          <Route path="jam/vote/list/:roomNo" element={<JamVoteList />} />
+          <Route path="jam/vote/:voteId" element={<JamVoteDetail />} />
           <Route path="membersador" element={<Membersador />} />
 
           <Route path="board/list/:boardTypeFg" element={<BoardList />} />
           <Route path="board/write/:boardTypeFg" element={<BoardWrite />} />
           <Route path="board/detail/:boardNo" element={<BoardDetail />} />
+          <Route path="jam/schedule/:jamId" element={<JamScheduleCapture />} />
         </Route>
       </Routes>
     </BrowserRouter>

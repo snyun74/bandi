@@ -19,6 +19,6 @@ public class ClanChatMessageRead {
     @Column(name = "READ_USER_ID", length = 20)
     private String readUserId;
 
-    @Column(name = "READ_DTIME", length = 14)
+    @Column(name = "READ_DTIME", length = 14, nullable = false)
     private String readDtime;
 }

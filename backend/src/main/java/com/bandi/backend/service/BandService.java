@@ -24,6 +24,8 @@ public class BandService {
     private final BnUserRepository bnUserRepository;
     private final BnSessionRepository bnSessionRepository;
     private final com.bandi.backend.repository.ClanUserRepository clanUserRepository;
+    private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
+    private final com.bandi.backend.repository.BandChatRoomRepository bandChatRoomRepository;
 
     @Transactional
     public Long createBand(BandCreateRequestDto dto) {
@@ -46,6 +48,9 @@ public class BandService {
         group.setBnLeaderId(userId);
         group.setBnConfFg("N"); // Default N
         group.setBnStatCd("A");
+        if (dto.getAttachNo() != null) {
+            group.setAttachNo(dto.getAttachNo());
+        }
         group.setInsDtime(currentDateTime);
         group.setInsId(userId);
         group.setUpdDtime(currentDateTime);
@@ -84,6 +89,17 @@ public class BandService {
             }
         }
 
+        // 4. Create Chat Room
+        com.bandi.backend.entity.band.BandChatRoom chatRoom = new com.bandi.backend.entity.band.BandChatRoom();
+        chatRoom.setBnNo(bnNo);
+        chatRoom.setBnRoomNm(dto.getTitle());
+        chatRoom.setInsDtime(currentDateTime);
+        chatRoom.setInsId(userId);
+        chatRoom.setUpdDtime(currentDateTime);
+        chatRoom.setUpdId(userId);
+
+        bandChatRoomRepository.save(chatRoom);
+
         return bnNo;
     }
 
@@ -107,12 +123,19 @@ public class BandService {
                         return false;
                     }
 
-                    // Search Filter
                     if (keyword != null && !keyword.isEmpty()) {
                         if (g.getBnNm() == null || !g.getBnNm().contains(keyword)) {
                             return false;
                         }
                     }
+
+                    // User Request: BN_CONF_FG IN ('N', 'Y') for Table View (Applying globally for
+                    // consistency)
+                    String confFg = g.getBnConfFg();
+                    if (confFg == null || (!"N".equals(confFg) && !"Y".equals(confFg))) {
+                        return false;
+                    }
+
                     return true;
                 })
                 .sorted((b1, b2) -> b2.getBnNo().compareTo(b1.getBnNo())) // Initial sort by desc
@@ -171,6 +194,7 @@ public class BandService {
                     .title(group.getBnNm())
                     .songTitle(group.getBnSongNm())
                     .artist(group.getBnSingerNm())
+                    .description(group.getBnDesc())
                     .isSecret("Y".equals(group.getBnPasswdFg()))
                     .isMember(isMember)
                     .isConfirmed("Y".equals(group.getBnConfFg()))
@@ -264,6 +288,8 @@ public class BandService {
         } else {
             throw new RuntimeException("Session not found");
         }
+
+        updateBandLeader(dto.getBnNo());
     }
 
     @Transactional
@@ -311,6 +337,8 @@ public class BandService {
                     dto.getUserId());
             bnUserRepository.deleteById(bnUserId);
         }
+
+        updateBandLeader(dto.getBnNo());
     }
 
     // Helper methods (Placeholder for actual DB calls or injected services)
@@ -378,13 +406,7 @@ public class BandService {
 
     @Transactional(readOnly = true)
     public BandDetailDto getBandDetail(Long bnNo, String userId) {
-        // 1. Check if user is a member of the band
-        com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(bnNo, userId);
-        boolean isMember = bnUserRepository.existsById(bnUserId);
-
-        if (!isMember) {
-            throw new RuntimeException("해당 합주방의 멤버가 아닙니다.");
-        }
+        // 1. (Check removed)
 
         // 2. Fetch Group Info
         BnGroup group = bnGroupRepository.findById(bnNo)
@@ -461,6 +483,15 @@ public class BandService {
             }
         }
 
+        String imgUrl = null;
+        if (group.getAttachNo() != null) {
+            com.bandi.backend.entity.common.CmAttachment attachment = cmAttachmentRepository
+                    .findById(group.getAttachNo()).orElse(null);
+            if (attachment != null) {
+                imgUrl = attachment.getFilePath();
+            }
+        }
+
         return BandDetailDto.builder()
                 .id(group.getBnNo())
                 .title(group.getBnNm())
@@ -472,6 +503,7 @@ public class BandService {
                 .isConfirmed("Y".equals(group.getBnConfFg()))
                 .canManage(canManage)
                 .status(group.getBnConfFg())
+                .imgUrl(imgUrl)
                 .roles(roleDtos)
                 .build();
     }
@@ -514,8 +546,118 @@ public class BandService {
         bnGroupRepository.save(group);
     }
 
+    private final com.bandi.backend.repository.BnEvaluationResultRepository bnEvaluationResultRepository;
+    private final com.bandi.backend.repository.BnEvaluationRepository bnEvaluationRepository;
+
+    @Transactional(readOnly = true)
+    public com.bandi.backend.dto.PendingEvaluationDto getPendingEvaluation(String userId) {
+        // 1. Find ANY pending evaluation for this user
+        // We can use the BnEvaluationRepository. But wait, it's a composite key entity.
+        // We need a query method in repository to find by UserId and EvalYn='N'
+        // Let's add that to repository first. Or use EntityManager here for quick
+        // prototyping.
+        // Given complexity, let's use EntityManager for the dynamic check.
+
+        String sql = "SELECT BN_NO FROM BN_EVALUATION WHERE BN_EVAL_USER_ID = :userId AND BN_EVAL_YN = 'N' ORDER BY INS_DTIME ASC LIMIT 1";
+        try {
+            Long bnNo = (Long) entityManager.createNativeQuery(sql)
+                    .setParameter("userId", userId)
+                    .getSingleResult();
+
+            if (bnNo != null) {
+                // Fetch Band Info
+                BnGroup group = bnGroupRepository.findById(bnNo).orElseThrow();
+
+                // Fetch Targets (Participants of the session, excluding self)
+                java.util.List<BnSession> sessions = bnSessionRepository.findAll().stream()
+                        .filter(s -> s.getBnNo().equals(bnNo) && s.getBnSessionJoinUserId() != null
+                                && !s.getBnSessionJoinUserId().equals(userId))
+                        .collect(java.util.stream.Collectors.toList());
+
+                java.util.List<com.bandi.backend.dto.PendingEvaluationDto.EvaluationTargetDto> targets = sessions
+                        .stream()
+                        .map(s -> {
+                            String targetUserId = s.getBnSessionJoinUserId();
+                            String nick = getUserNickname(targetUserId);
+                            String part = getSessionName(s.getBnSessionTypeCd());
+                            return new com.bandi.backend.dto.PendingEvaluationDto.EvaluationTargetDto(targetUserId,
+                                    nick,
+                                    part);
+                        })
+                        .collect(java.util.stream.Collectors.toList());
+
+                return com.bandi.backend.dto.PendingEvaluationDto.builder()
+                        .bnNo(bnNo)
+                        .title(group.getBnNm())
+                        .songTitle(group.getBnSongNm())
+                        .artist(group.getBnSingerNm())
+                        .targets(targets)
+                        .build();
+            }
+        } catch (jakarta.persistence.NoResultException e) {
+            return null; // No pending evaluation
+        } catch (Exception e) {
+            log.error("Error checking pending evaluation", e);
+        }
+        return null;
+    }
+
     @Transactional
-    public void updateBandStatus(Long bnNo, String userId, String status) { // status: 'Y' or 'N'
+    public void createTestEvaluation(String userId) {
+        Long bnNo = 1L; // Assuming ID 1 exists. If not, it might fail foreign key check if enforced.
+        // Let's check for ANY band.
+        java.util.List<BnGroup> groups = bnGroupRepository.findAll();
+        if (!groups.isEmpty()) {
+            bnNo = groups.get(0).getBnNo();
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        com.bandi.backend.entity.band.BnEvaluation eval = new com.bandi.backend.entity.band.BnEvaluation();
+        eval.setBnNo(bnNo);
+        eval.setBnEvalUserId(userId);
+        eval.setBnEvalYn("N");
+        eval.setInsDtime(currentDateTime);
+        eval.setInsId(userId);
+        eval.setUpdDtime(currentDateTime);
+        eval.setUpdId(userId);
+
+        bnEvaluationRepository.save(eval);
+    }
+
+    @Transactional
+    public void submitEvaluation(com.bandi.backend.dto.EvaluationSubmissionDto dto) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String userId = dto.getUserId();
+        Long bnNo = dto.getBnNo();
+
+        // 1. Save Results
+        for (com.bandi.backend.dto.EvaluationSubmissionDto.EvaluationResultDto result : dto.getResults()) {
+            com.bandi.backend.entity.band.BnEvaluationResult entity = new com.bandi.backend.entity.band.BnEvaluationResult();
+            entity.setBnNo(bnNo);
+            entity.setBnEvalUserId(userId);
+            entity.setBnSessionJoinUserId(result.getTargetUserId());
+            entity.setBnEvalScore(result.getScore());
+            entity.setBnMoodMakerFg(result.isMoodMaker() ? "Y" : "N");
+            entity.setInsDtime(currentDateTime);
+            entity.setInsId(userId);
+            entity.setUpdDtime(currentDateTime);
+            entity.setUpdId(userId);
+            bnEvaluationResultRepository.save(entity);
+        }
+
+        // 2. Update Status in BN_EVALUATION
+        com.bandi.backend.entity.band.BnEvaluationId id = new com.bandi.backend.entity.band.BnEvaluationId(bnNo,
+                userId);
+        com.bandi.backend.entity.band.BnEvaluation evaluation = bnEvaluationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Evaluation record not found"));
+        evaluation.setBnEvalYn("Y");
+        evaluation.setUpdDtime(currentDateTime);
+        evaluation.setUpdId(userId);
+        bnEvaluationRepository.save(evaluation);
+    }
+
+    @Transactional
+    public void updateBandStatus(Long bnNo, String userId, String status) {
         BnGroup group = bnGroupRepository.findById(bnNo)
                 .orElseThrow(() -> new RuntimeException("Band not found"));
 
@@ -549,7 +691,18 @@ public class BandService {
             }
         }
 
+        // Handle End Jam Logic (Status 'E')
+        if ("E".equals(status)) {
+            String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            // Insert evaluation targets
+            bnEvaluationRepository.insertEvaluationsFromSession(bnNo, currentDateTime, userId);
+        }
+
         group.setBnConfFg(status);
+        if ("E".equals(status)) {
+            group.setBnStatCd("E");
+        }
+
         group.setUpdDtime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         group.setUpdId(userId);
         bnGroupRepository.save(group);
@@ -565,6 +718,49 @@ public class BandService {
         }
 
         return password != null && password.equals(group.getBnPasswd());
+    }
+
+    @Transactional
+    public void updateBand(Long bnNo, com.bandi.backend.dto.BandUpdateDto dto) {
+        BnGroup group = bnGroupRepository.findById(bnNo)
+                .orElseThrow(() -> new RuntimeException("Band not found"));
+
+        // Permission Check
+        boolean hasPermission = false;
+        if (group.getBnLeaderId().equals(dto.getUserId())) {
+            hasPermission = true;
+        }
+
+        if (!hasPermission && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
+            com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(
+                    group.getCnNo(), dto.getUserId());
+            com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId).orElse(null);
+            if (clanUser != null) {
+                String role = clanUser.getCnUserRoleCd();
+                if ("01".equals(role) || "02".equals(role)) {
+                    hasPermission = true;
+                }
+            }
+        }
+
+        if (!hasPermission) {
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
+
+        // Update fields
+        if (dto.getDescription() != null) {
+            group.setBnDesc(dto.getDescription());
+        }
+
+        if (dto.getAttachNo() != null) {
+            group.setAttachNo(dto.getAttachNo());
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        group.setUpdDtime(currentDateTime);
+        group.setUpdId(dto.getUserId());
+
+        bnGroupRepository.save(group);
     }
 
     @Transactional
@@ -645,10 +841,166 @@ public class BandService {
                 bnUserRepository.deleteById(bnUserId);
             }
         }
+
+        updateBandLeader(bnNo);
+    }
+
+    private void updateBandLeader(Long bnNo) {
+        // 1. Get all occupied sessions for this band
+        java.util.List<BnSession> sessions = bnSessionRepository.findAll().stream()
+                .filter(s -> s.getBnNo().equals(bnNo) && s.getBnSessionJoinUserId() != null)
+                .collect(java.util.stream.Collectors.toList());
+
+        if (sessions.isEmpty()) {
+            return; // No members left
+        }
+
+        // 2. Get Priority Map (COMM_ORDER)
+        java.util.Map<String, Integer> orderMap = getSessionOrderMap();
+
+        // 3. Sort by Order ASC, then by Update Time (First come first serve)
+        sessions.sort((s1, s2) -> {
+            int order1 = orderMap.getOrDefault(s1.getBnSessionTypeCd(), 999);
+            int order2 = orderMap.getOrDefault(s2.getBnSessionTypeCd(), 999);
+            if (order1 != order2) {
+                return Integer.compare(order1, order2);
+            }
+            return s1.getUpdDtime().compareTo(s2.getUpdDtime());
+        });
+
+        // 4. Determine New Leader
+        String newLeaderId = sessions.get(0).getBnSessionJoinUserId();
+
+        // 5. Update BN_GROUP
+        BnGroup group = bnGroupRepository.findById(bnNo).orElseThrow();
+        if (!newLeaderId.equals(group.getBnLeaderId())) {
+            group.setBnLeaderId(newLeaderId);
+            group.setUpdDtime(java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+            group.setUpdId("SYSTEM"); // Or some system ID
+            bnGroupRepository.save(group);
+        }
+
+        // 6. Update BN_USER Roles
+        java.util.List<BnUser> users = bnUserRepository.findByBnNo(bnNo);
+        for (BnUser user : users) {
+            String newRole = user.getBnUserId().equals(newLeaderId) ? "LEAD" : "NORL";
+            if (!newRole.equals(user.getBnRoleCd())) {
+                user.setBnRoleCd(newRole);
+                user.setUpdDtime(java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+                user.setUpdId("SYSTEM");
+                bnUserRepository.save(user);
+            }
+        }
     }
 
     @Transactional(readOnly = true)
     public java.util.List<com.bandi.backend.repository.projection.MyJamProjection> getMyJams(String userId) {
         return bnGroupRepository.findMyJams(userId);
+    }
+
+    // --- Jam Schedule Methods ---
+
+    private final com.bandi.backend.repository.BnPlanScheduleRepository bnPlanScheduleRepository;
+    private final com.bandi.backend.repository.BnPlanScheduleLikeRepository bnPlanScheduleLikeRepository;
+    private final com.bandi.backend.repository.BnPlanScheduleTimeRepository bnPlanScheduleTimeRepository;
+
+    @Transactional
+    public void createSchedule(com.bandi.backend.dto.BandScheduleDto dto) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String bnSchDate = dto.getStartDate();
+        String userId = dto.getUserId();
+        Long bnNo = dto.getBnNo();
+
+        // 1. Save BN_PLAN_SCHEDULE
+        com.bandi.backend.entity.band.BnPlanSchedule planSchedule = new com.bandi.backend.entity.band.BnPlanSchedule();
+        planSchedule.setBnNo(bnNo);
+        planSchedule.setBnSchDate(bnSchDate);
+        planSchedule.setInsDtime(currentDateTime);
+        planSchedule.setInsId(userId);
+        planSchedule.setUpdDtime(currentDateTime);
+        planSchedule.setUpdId(userId);
+        bnPlanScheduleRepository.save(planSchedule);
+
+        // 2. Save BN_PLAN_SCHEDULE_LIKE
+        com.bandi.backend.entity.band.BnPlanScheduleLike planLike = new com.bandi.backend.entity.band.BnPlanScheduleLike();
+        planLike.setBnNo(bnNo);
+        planLike.setBnSchDate(bnSchDate);
+        planLike.setBnUserId(userId);
+        planLike.setInsDtime(currentDateTime);
+        planLike.setInsId(userId);
+        planLike.setUpdDtime(currentDateTime);
+        planLike.setUpdId(userId);
+        bnPlanScheduleLikeRepository.save(planLike);
+
+        // 3. Save BN_PLAN_SCHEDULE_TIME (Loop hours)
+        // DTO start/end are "HH0000" / "HH5900" (6 chars)
+        int startHour = Integer.parseInt(dto.getStartTime().substring(0, 2));
+        int endHour = Integer.parseInt(dto.getEndTime().substring(0, 2));
+
+        for (int hour = startHour; hour <= endHour; hour++) {
+            String timeStr = String.format("%02d00", hour); // "HH00" format as per spec
+
+            com.bandi.backend.entity.band.BnPlanScheduleTime planTime = new com.bandi.backend.entity.band.BnPlanScheduleTime();
+            planTime.setBnNo(bnNo);
+            planTime.setBnSchDate(bnSchDate);
+            planTime.setBnUserId(userId);
+            planTime.setBnSchTime(timeStr);
+            planTime.setInsDtime(currentDateTime);
+            planTime.setInsId(userId);
+            planTime.setUpdDtime(currentDateTime);
+            planTime.setUpdId(userId);
+
+            bnPlanScheduleTimeRepository.save(planTime);
+        }
+    }
+
+    @Transactional
+    public void deleteSchedule(Long bnNo, String userId, String date) {
+        // 1. Delete TIME records
+        java.util.List<com.bandi.backend.entity.band.BnPlanScheduleTime> times = bnPlanScheduleTimeRepository
+                .findByBnNo(bnNo);
+        for (com.bandi.backend.entity.band.BnPlanScheduleTime t : times) {
+            if (t.getBnUserId().equals(userId) && t.getBnSchDate().equals(date)) {
+                bnPlanScheduleTimeRepository.delete(t);
+            }
+        }
+
+        // 2. Delete LIKE record
+        com.bandi.backend.entity.band.BnPlanScheduleLikeId likeId = new com.bandi.backend.entity.band.BnPlanScheduleLikeId(
+                bnNo, date, userId);
+        if (bnPlanScheduleLikeRepository.existsById(likeId)) {
+            bnPlanScheduleLikeRepository.deleteById(likeId);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.bandi.backend.dto.BandScheduleDto> getSchedules(Long bnNo) {
+        java.util.List<com.bandi.backend.entity.band.BnPlanScheduleTime> times = bnPlanScheduleTimeRepository
+                .findByBnNo(bnNo);
+
+        return times.stream()
+                .map(t -> {
+                    // Convert "HH00" to "HH0000" / "HH5900" for frontend compatibility
+                    String hourStr = t.getBnSchTime().substring(0, 2);
+                    String startStr = hourStr + "0000";
+                    String endStr = hourStr + "5900"; // Or "6000" if exclusive? Frontend handles inclusive logic.
+                    // Use 5900 to match insertion logic style essentially covering that hour.
+
+                    return com.bandi.backend.dto.BandScheduleDto.builder()
+                            .bnSchNo(0L) // No single ID anymore
+                            .bnNo(t.getBnNo())
+                            .title("합주조율")
+                            .content("합주내용")
+                            .startDate(t.getBnSchDate())
+                            .startTime(startStr)
+                            .endDate(t.getBnSchDate()) // Assume same date for now
+                            .endTime(endStr)
+                            .allDayYn("P")
+                            .userId(t.getBnUserId())
+                            .build();
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 }

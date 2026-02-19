@@ -16,4 +16,5 @@ public class BandCreateRequestDto {
     private String password;
     private String userId;
     private List<String> sessions;
+    private Long attachNo;
 }

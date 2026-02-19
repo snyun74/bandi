@@ -17,19 +17,19 @@ public class ClanChatRoom implements Persistable<Long> {
     private Long cnNo; // PK derived from group? Schema says cn_no is int8. Assuming 1:1 with group or
                        // similar.
 
-    @Column(name = "cn_room_nm", length = 200)
+    @Column(name = "cn_room_nm", length = 200, nullable = false)
     private String cnRoomNm;
 
-    @Column(name = "ins_dtime", length = 14)
+    @Column(name = "ins_dtime", length = 14, nullable = false)
     private String insDtime;
 
-    @Column(name = "ins_id", length = 20)
+    @Column(name = "ins_id", length = 20, nullable = false)
     private String insId;
 
-    @Column(name = "upd_dtime", length = 14)
+    @Column(name = "upd_dtime", length = 14, nullable = false)
     private String updDtime;
 
-    @Column(name = "upd_id", length = 20)
+    @Column(name = "upd_id", length = 20, nullable = false)
     private String updId;
 
     @Transient

@@ -3,6 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaSearch } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 
+interface MemberSession {
+    userId: string;
+    songTitle: string;
+    artist: string;
+    part: string;
+    sessionTypeCd: string;
+}
+
 interface ClanMember {
     cnNo: number;
     cnUserId: string;
@@ -10,6 +18,7 @@ interface ClanMember {
     cnUserApprStatCd: string; // RQ: Request, CN: Confirmed
     userNm: string;
     userNickNm: string;
+    sessions: MemberSession[];
 }
 
 const ClanMemberStatus: React.FC = () => {
@@ -17,6 +26,7 @@ const ClanMemberStatus: React.FC = () => {
     const { clanId } = useParams<{ clanId: string }>();
     const [allMembers, setAllMembers] = useState<ClanMember[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     // Modal State
     const [modal, setModal] = useState({
@@ -304,8 +314,11 @@ const ClanMemberStatus: React.FC = () => {
                             className="flex-1 outline-none text-sm placeholder-gray-400"
                         />
                     </div>
-                    <button className="whitespace-nowrap bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-sm font-bold">
-                        접어두기
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="whitespace-nowrap bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-sm font-bold transition-all hover:bg-[#00a0d2]"
+                    >
+                        {isExpanded ? '접어두기' : '펼치기'}
                     </button>
                 </div>
 
@@ -337,26 +350,40 @@ const ClanMemberStatus: React.FC = () => {
                         <span className="text-[#00BDF8] text-xs font-bold">{activeMembers.length}명</span>
                     </div>
                     {activeMembers.map((member, index) => (
-                        <div
-                            key={member.cnUserId}
-                            className={`flex justify-between items-center p-3 ${index !== activeMembers.length - 1 ? 'border-b border-gray-100' : ''
-                                }`}
-                        >
-                            <div className="flex items-center gap-2 text-[#003C48]">
-                                {/* Assuming Generation is not available in query yet, omitting or relying on nickname convention if any */}
-                                <span className="text-sm font-bold">{member.userNickNm}</span>
+                        <div key={member.cnUserId} className={`flex flex-col p-3 ${index !== activeMembers.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2 text-[#003C48]">
+                                    <span className="text-sm font-bold">{member.userNickNm}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {getRoleBadge(member.cnUserRoleCd)}
+                                    {currentUserRole === '01' && member.cnUserRoleCd !== '01' && (
+                                        <button
+                                            onClick={() => openRoleChangeModal(member.cnUserId, member.cnUserRoleCd)}
+                                            className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-lg font-bold hover:bg-gray-200"
+                                        >
+                                            변경
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                {getRoleBadge(member.cnUserRoleCd)}
-                                {currentUserRole === '01' && member.cnUserRoleCd !== '01' && (
-                                    <button
-                                        onClick={() => openRoleChangeModal(member.cnUserId, member.cnUserRoleCd)}
-                                        className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-lg font-bold hover:bg-gray-200"
-                                    >
-                                        변경
-                                    </button>
-                                )}
-                            </div>
+
+                            {/* Session List */}
+                            {isExpanded && member.sessions && member.sessions.length > 0 && (
+                                <div className="mt-3 pl-3 border-l-2 border-gray-100 space-y-2 animate-fade-in-down">
+                                    {member.sessions.map((session, sIdx) => (
+                                        <div key={sIdx} className="text-xs text-gray-600 flex items-center gap-2">
+                                            <span className="font-bold text-[#00BDF8] min-w-[40px]">{session.part}</span>
+                                            <span className="text-gray-500 truncate">{session.songTitle} - {session.artist}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {isExpanded && (!member.sessions || member.sessions.length === 0) && (
+                                <div className="mt-3 pl-3 text-xs text-gray-400 italic animate-fade-in-down">
+                                    참여 중인 합주가 없습니다.
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

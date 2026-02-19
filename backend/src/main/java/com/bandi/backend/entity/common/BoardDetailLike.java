@@ -8,19 +8,18 @@ import lombok.Setter;
 @Table(name = "CM_BOARD_DETAIL_LIKE")
 @Getter
 @Setter
+@IdClass(BoardDetailLikeId.class)
 public class BoardDetailLike {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "board_detail_like_no")
-    private Long boardDetailLikeNo;
-
     @Column(name = "reply_no")
     private Long replyNo;
 
+    @Id
     @Column(name = "board_no")
     private Long boardNo;
 
+    @Id
     @Column(name = "user_id", length = 20)
     private String userId;
 

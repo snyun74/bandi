@@ -1,7 +1,9 @@
 package com.bandi.backend.controller;
 
 import com.bandi.backend.dto.ClanCreateDto;
+import com.bandi.backend.dto.ClanUpdateDto;
 
+import com.bandi.backend.dto.BandCreateRequestDto;
 import com.bandi.backend.entity.clan.ClanBoardType;
 import com.bandi.backend.service.ClanService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.bandi.backend.dto.ClanMemberDetailDto;
+import com.bandi.backend.dto.MemberSessionDto;
 
 @RestController
 @RequestMapping("/api/clans")
@@ -177,7 +181,8 @@ public class ClanController {
     @GetMapping("/{clanId}/members")
     public ResponseEntity<?> getClanMembers(@PathVariable Long clanId) {
         try {
-            return ResponseEntity.ok(clanService.getClanMembers(clanId));
+            List<ClanMemberDetailDto> members = clanService.getClanMembers(clanId);
+            return ResponseEntity.ok(members);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
@@ -335,6 +340,21 @@ public class ClanController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Failed to add comment like", "error", e.getMessage()));
+        }
+    }
+
+    @PutMapping(value = "/{clanId}", consumes = { "multipart/form-data" })
+    public ResponseEntity<?> updateClan(
+            @PathVariable Long clanId,
+            @RequestPart("data") com.bandi.backend.dto.ClanUpdateDto dto,
+            @RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
+        try {
+            clanService.updateClan(clanId, dto, file);
+            return ResponseEntity.ok(Map.of("message", "Clan updated successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to update clan", "error", e.getMessage()));
         }
     }
 }
