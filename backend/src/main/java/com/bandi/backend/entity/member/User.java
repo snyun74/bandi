@@ -48,4 +48,7 @@ public class User {
 
     @Column(name = "upd_id", length = 20)
     private String updId;
+
+    @Column(name = "attach_no")
+    private Long attachNo;
 }

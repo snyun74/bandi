@@ -23,6 +23,14 @@ interface ChatMessage {
     attachFileName?: string;
 }
 
+interface UserProfileDto {
+    userId: string;
+    userNm: string;
+    userNickNm: string;
+    email: string;
+    profileImageUrl: string | null;
+}
+
 const PrivateChatRoom: React.FC = () => {
     const { roomNo } = useParams<{ roomNo: string }>();
     const navigate = useNavigate();
@@ -46,6 +54,7 @@ const PrivateChatRoom: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [friendName, setFriendName] = useState("Friend");
+    const [myProfile, setMyProfile] = useState<UserProfileDto | null>(null);
 
     useEffect(() => {
         const state = location.state as { friendName: string; } | undefined;
@@ -115,6 +124,21 @@ const PrivateChatRoom: React.FC = () => {
         }, 3000);
         return () => clearInterval(interval);
     }, [fetchMessages]);
+
+    useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            fetch(`/api/user/profile/${userId}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return null;
+                })
+                .then(data => {
+                    if (data) setMyProfile(data);
+                })
+                .catch(err => console.error(err));
+        }
+    }, []);
 
     useEffect(() => {
         if (!isFetchingOld && messagesContainerRef.current && prevScrollHeightRef.current > 0) {
@@ -235,7 +259,7 @@ const PrivateChatRoom: React.FC = () => {
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const handleKeyDown = () => {
         // User requested Enter to create a new line, not send.
     };
 
@@ -247,8 +271,13 @@ const PrivateChatRoom: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="mr-3 text-[#003C48]">
                         <FaChevronLeft size={22} />
                     </button>
+                    {/* My Profile */}
                     <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-gray-100">
-                        <span className="text-gray-500 font-bold text-xs">{friendName.substring(0, 1)}</span>
+                        {myProfile?.profileImageUrl ? (
+                            <img src={myProfile.profileImageUrl} alt="My Profile" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-gray-500 font-bold text-xs">{myProfile?.userNickNm ? myProfile.userNickNm.substring(0, 1) : '나'}</span>
+                        )}
                     </div>
                     <h1 className="text-xl font-bold text-[#003C48]">{friendName}</h1>
                 </div>

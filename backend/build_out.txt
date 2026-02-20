@@ -1,0 +1,50 @@
+
+> Task :compileJava
+D:\Project\bandi\backend\src\main\java\com\bandi\backend\service\UserService.java:68: error: cannot find symbol
+                        .sessionTypeCd(st.getCommDetailCd())
+                                         ^
+  symbol:   method getCommDetailCd()
+  location: variable st of type CommDetail
+D:\Project\bandi\backend\src\main\java\com\bandi\backend\service\UserService.java:69: error: cannot find symbol
+                        .sessionTypeNm(st.getCommDetailNm())
+                                         ^
+  symbol:   method getCommDetailNm()
+  location: variable st of type CommDetail
+D:\Project\bandi\backend\src\main\java\com\bandi\backend\service\UserService.java:70: error: cannot find symbol
+                        .score(userSkillMap.getOrDefault(st.getCommDetailCd(), 1L)) // Default 1
+                                                           ^
+  symbol:   method getCommDetailCd()
+  location: variable st of type CommDetail
+D:\Project\bandi\backend\src\main\java\com\bandi\backend\service\UserService.java:72: error: incompatible types: inference variable T has incompatible bounds
+                .collect(Collectors.toList());
+                        ^
+    equality constraints: UserSkillDto
+    lower bounds: Object
+  where T is a type-variable:
+    T extends Object declared in method <T>toList()
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+4 errors
+
+> Task :compileJava FAILED
+
+[Incubating] Problems report is available at: file:///D:/Project/bandi/backend/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler output below.
+  D:\Project\bandi\backend\src\main\java\com\bandi\backend\service\UserService.java:68: error: cannot find symbol
+                          .sessionTypeCd(st.getCommDetailCd())
+                                           ^
+    symbol:   method getCommDetailCd()
+    location: variable st of type CommDetail
+  4 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 10s
+1 actionable task: 1 executed

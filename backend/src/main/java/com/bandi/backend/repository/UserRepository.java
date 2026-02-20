@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<User, String> {
+    User findByUserId(String userId);
+
     java.util.List<User> findByUserIdIn(java.util.List<String> userIds);
 
     java.util.List<User> findByUserNmContainingOrUserNickNmContaining(String userNm, String userNickNm);

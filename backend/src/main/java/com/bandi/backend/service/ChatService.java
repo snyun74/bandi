@@ -196,7 +196,7 @@ public class ChatService {
                   MSG.BN_CHAT_MSG,
                   MSG.BN_CHAT_MSG_TYPE_CD,
                   MSG.BN_CHAT_SND_DTIME,
-                  NULL AS PROFILE_URL,
+                  (SELECT CMA2.FILE_PATH FROM CM_ATTACHMENT CMA2 WHERE CMA2.ATTACH_NO = USR.ATTACH_NO) AS PROFILE_URL,
                   (
                     (SELECT COUNT(1) FROM BN_USER WHERE BN_NO = MSG.BN_NO AND BN_USER_STAT_CD = 'A')
                     -
@@ -228,7 +228,7 @@ public class ChatService {
                       MSG.MSG,
                       MSG.MSG_TYPE_CD,
                       MSG.SND_DTIME,
-                      NULL AS PROFILE_URL,
+                      (SELECT CMA2.FILE_PATH FROM CM_ATTACHMENT CMA2 WHERE CMA2.ATTACH_NO = USR.ATTACH_NO) AS PROFILE_URL,
                       (
                         (SELECT COUNT(1) FROM CN_USER WHERE CN_NO = MSG.CN_NO AND CN_USER_STAT_CD = 'A' AND CN_USER_APPR_STAT_CD = 'CN')
                         -
@@ -636,7 +636,7 @@ public class ChatService {
                     MSG.MSG,
                     MSG.MSG_TYPE_CD,
                     MSG.SND_DTIME,
-                    NULL AS PROFILE_URL,
+                    (SELECT CMA2.FILE_PATH FROM CM_ATTACHMENT CMA2 WHERE CMA2.ATTACH_NO = USR.ATTACH_NO) AS PROFILE_URL,
                     (
                       (
                         CASE WHEN EXISTS (

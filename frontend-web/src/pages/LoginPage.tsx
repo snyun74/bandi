@@ -146,8 +146,8 @@ const LoginPage: React.FC = () => {
 
                     {/* Footer Links */}
                     <div className="flex justify-end gap-4 mt-4 text-xs text-gray-500 pr-2">
-                        <button className="hover:text-gray-800">아이디 찾기</button>
-                        <button className="hover:text-gray-800">비밀번호 찾기</button>
+                        <button onClick={() => navigate('/find-id')} className="hover:text-gray-800">아이디 찾기</button>
+                        <button onClick={() => navigate('/find-password')} className="hover:text-gray-800">비밀번호 찾기</button>
                     </div>
                 </div>
             </div>

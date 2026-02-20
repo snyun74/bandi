@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import FindIdPage from './pages/FindIdPage';
+import FindPasswordPage from './pages/FindPasswordPage';
 import KakaoCallback from './pages/auth/KakaoCallback';
 import SignupPage from './pages/SignupPage';
 import MainLayout from './components/layout/MainLayout';
@@ -41,6 +43,7 @@ import JamScheduleCapture from './pages/JamScheduleCapture';
 import JamVoteDetail from './pages/JamVoteDetail';
 import JamVoteStatus from './pages/JamVoteStatus';
 import JamVoteList from './pages/JamVoteList';
+import CustomerCenterPage from './pages/CustomerCenterPage';
 import './App.css';
 
 function App() {
@@ -48,6 +51,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/find-id" element={<FindIdPage />} />
+        <Route path="/find-password" element={<FindPasswordPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
 
@@ -56,6 +61,7 @@ function App() {
           <Route index element={<HomePage />} /> {/* Default to Home */}
           <Route path="home" element={<HomePage />} />
           <Route path="profile" element={<MyProfile />} />
+          <Route path="customer-center" element={<CustomerCenterPage />} />
           <Route path="freejam" element={<FreeJam />} />
           <Route path="board" element={<Board />} />
           <Route path="clan" element={<Clan />} />

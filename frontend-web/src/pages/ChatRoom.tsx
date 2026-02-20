@@ -407,9 +407,11 @@ const ChatRoom: React.FC = () => {
                             <FaInbox className="text-lg text-[#003C48]" /> <span>투표 올리기</span>
                         </button>
                     )}
+                    {/*
                     <button className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
                         <FaDollarSign className="text-lg text-[#003C48]" /> <span>정산하기</span>
                     </button>
+                    */}
                 </div>
             )}
 

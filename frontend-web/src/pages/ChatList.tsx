@@ -36,6 +36,7 @@ const ChatList: React.FC = () => {
         userId: string;
         userNm: string;
         userNickNm: string;
+        profileUrl?: string;
         unreadCount?: number;
     }
     const [friends, setFriends] = useState<Friend[]>([]);
@@ -264,8 +265,12 @@ const ChatList: React.FC = () => {
                                     {friends.length > 0 ? (
                                         friends.map((friend, index) => (
                                             <div key={friend.userId} onClick={() => handleFriendClick(friend.userId, friend.userNm)} className={`flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors ${index !== friends.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                <div className="w-10 h-10 rounded-full border border-[#003C48] flex items-center justify-center text-[#003C48] mr-3">
-                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                <div className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white">
+                                                    {friend.profileUrl ? (
+                                                        <img src={friend.profileUrl} alt={friend.userNm} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                    )}
                                                 </div>
                                                 <span className="text-[#003C48] font-bold text-sm">{friend.userNm}</span>
                                                 {(friend.unreadCount || 0) > 0 && (
@@ -314,8 +319,12 @@ const ChatList: React.FC = () => {
                                     newFriends.map((friend) => (
                                         <div key={friend.userId} className="flex items-center justify-between p-2">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full border border-[#003C48] flex items-center justify-center text-[#003C48]">
-                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                <div className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] bg-white">
+                                                    {friend.profileUrl ? (
+                                                        <img src={friend.profileUrl} alt={friend.userNm} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                    )}
                                                 </div>
                                                 <span className="text-[#003C48] font-bold text-sm">{friend.userNm}</span>
                                             </div>
@@ -348,8 +357,12 @@ const ChatList: React.FC = () => {
                                 {friends.length > 0 ? (
                                     friends.map((friend, index) => (
                                         <div key={friend.userId} onClick={() => handleFriendClick(friend.userId, friend.userNm)} className={`flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors ${index !== friends.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                            <div className="w-10 h-10 rounded-full border border-[#003C48] flex items-center justify-center text-[#003C48] mr-3">
-                                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                            <div className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white">
+                                                {friend.profileUrl ? (
+                                                    <img src={friend.profileUrl} alt={friend.userNm} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                )}
                                             </div>
                                             <span className="text-[#003C48] font-bold text-sm">{friend.userNm}</span>
                                             {(friend.unreadCount || 0) > 0 && (

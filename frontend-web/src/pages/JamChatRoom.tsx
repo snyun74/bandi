@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaInbox } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
+import SettlementCreationModal from '../components/SettlementCreationModal';
 
 interface ChatMessage {
     cnMsgNo: number;
@@ -41,6 +42,7 @@ const JamChatRoom: React.FC = () => {
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
+    const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -392,9 +394,8 @@ const JamChatRoom: React.FC = () => {
                     <button onClick={handleCreateVote} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
                         <FaPoll className="text-lg text-[#003C48]" /> <span>투표하기</span>
                     </button>
-                    {/* Settlement Button - Disabled for now but kept in UI */}
-                    <button className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-gray-400 cursor-not-allowed text-sm font-medium transition-colors text-left" onClick={() => showAlert("준비 중인 기능입니다.")}>
-                        <FaDollarSign className="text-lg text-gray-400" /> <span>정산하기 (준비중)</span>
+                    <button onClick={() => { setIsMenuOpen(false); setIsSettlementModalOpen(true); }} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
+                        <FaDollarSign className="text-lg text-[#00BDF8]" /> <span>정산하기</span>
                     </button>
                 </div>
             )}
@@ -434,6 +435,48 @@ const JamChatRoom: React.FC = () => {
                                 fetchMessages();
                             } else {
                                 showAlert("투표 생성에 실패했습니다.");
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            showAlert("오류가 발생했습니다.");
+                        }
+                    }}
+                />
+            )}
+
+            {isSettlementModalOpen && (
+                <SettlementCreationModal
+                    roomId={roomNo || ''}
+                    onClose={() => setIsSettlementModalOpen(false)}
+                    onSubmit={async (data) => {
+                        const userId = localStorage.getItem('userId');
+                        if (!userId) return;
+
+                        let content = `[정산 요청]\n은행: ${data.bank}\n계좌번호: ${data.accountNumber}\n총 금액: ${data.totalAmount.toLocaleString()}원\n\n[정산 대상]\n`;
+                        data.users.forEach(u => {
+                            content += `- ${u.userNm}: ${u.amount.toLocaleString()}원\n`;
+                        });
+
+                        try {
+                            const res = await fetch('/api/jam-chat/message', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    cnNo: Number(roomNo),
+                                    sndUserId: userId,
+                                    msg: content.trim(),
+                                    msgTypeCd: 'TEXT',
+                                })
+                            });
+
+                            if (res.ok) {
+                                const newMessage = await res.json();
+                                const processedMessage = { ...newMessage, isMyMessage: true };
+                                setMessages(prev => [...prev, processedMessage]);
+                                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                                setIsSettlementModalOpen(false);
+                            } else {
+                                showAlert("정산 메시지 전송에 실패했습니다.");
                             }
                         } catch (error) {
                             console.error(error);

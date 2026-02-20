@@ -59,35 +59,36 @@ public class JamChatService {
     public List<ChatMessageDto> getChatMessages(Long roomNo, String userId, Long lastMsgNo) {
         StringBuilder sql = new StringBuilder();
 
-        sql.append("""
-                    SELECT
-                        MSG.BN_CHAT_MSG_NO,
-                        MSG.BN_NO,
-                        MSG.BN_CHAT_SND_USER_ID,
-                        USR.USER_NICK_NM,
-                        MSG.BN_CHAT_MSG,
-                        MSG.BN_CHAT_MSG_TYPE_CD,
-                        MSG.BN_CHAT_SND_DTIME,
-                        NULL AS PROFILE_URL,
-                        (
-                            (SELECT COUNT(1) FROM BN_USER WHERE BN_NO = MSG.BN_NO AND BN_USER_STAT_CD = 'A')
-                            -
-                            (SELECT COUNT(1) FROM BN_CHAT_MESSAGE_READ WHERE BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO)
-                        ) AS UNREAD_CNT,
-                        MSG.ATTACH_NO,
-                        CMA.FILE_PATH AS ATTACH_FILE_PATH,
-                        CMA.FILE_NAME AS ATTACH_FILE_NM,
-                        MSG.PARENT_MSG_NO,
-                        P_MSG.BN_CHAT_MSG AS PARENT_MSG_CONTENT,
-                        P_USR.USER_NICK_NM AS PARENT_MSG_NICK
-                    FROM BN_CHAT_MESSAGE MSG
-                    LEFT JOIN MM_USER USR ON USR.USER_ID = MSG.BN_CHAT_SND_USER_ID
-                    LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = MSG.ATTACH_NO AND MSG.BN_CHAT_MSG_TYPE_CD != 'VOTE'
-                    LEFT JOIN BN_CHAT_MESSAGE P_MSG ON P_MSG.BN_CHAT_MSG_NO = MSG.PARENT_MSG_NO
-                    LEFT JOIN MM_USER P_USR ON P_USR.USER_ID = P_MSG.BN_CHAT_SND_USER_ID
-                    WHERE MSG.BN_NO = :roomNo
-                    AND MSG.BN_CHAT_STAT_CD = 'A'
-                """);
+        sql.append(
+                """
+                            SELECT
+                                MSG.BN_CHAT_MSG_NO,
+                                MSG.BN_NO,
+                                MSG.BN_CHAT_SND_USER_ID,
+                                USR.USER_NICK_NM,
+                                MSG.BN_CHAT_MSG,
+                                MSG.BN_CHAT_MSG_TYPE_CD,
+                                MSG.BN_CHAT_SND_DTIME,
+                                (SELECT CMA2.FILE_PATH FROM CM_ATTACHMENT CMA2 WHERE CMA2.ATTACH_NO = USR.ATTACH_NO) AS PROFILE_URL,
+                                (
+                                    (SELECT COUNT(1) FROM BN_USER WHERE BN_NO = MSG.BN_NO AND BN_USER_STAT_CD = 'A')
+                                    -
+                                    (SELECT COUNT(1) FROM BN_CHAT_MESSAGE_READ WHERE BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO)
+                                ) AS UNREAD_CNT,
+                                MSG.ATTACH_NO,
+                                CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                                CMA.FILE_NAME AS ATTACH_FILE_NM,
+                                MSG.PARENT_MSG_NO,
+                                P_MSG.BN_CHAT_MSG AS PARENT_MSG_CONTENT,
+                                P_USR.USER_NICK_NM AS PARENT_MSG_NICK
+                            FROM BN_CHAT_MESSAGE MSG
+                            LEFT JOIN MM_USER USR ON USR.USER_ID = MSG.BN_CHAT_SND_USER_ID
+                            LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = MSG.ATTACH_NO AND MSG.BN_CHAT_MSG_TYPE_CD != 'VOTE'
+                            LEFT JOIN BN_CHAT_MESSAGE P_MSG ON P_MSG.BN_CHAT_MSG_NO = MSG.PARENT_MSG_NO
+                            LEFT JOIN MM_USER P_USR ON P_USR.USER_ID = P_MSG.BN_CHAT_SND_USER_ID
+                            WHERE MSG.BN_NO = :roomNo
+                            AND MSG.BN_CHAT_STAT_CD = 'A'
+                        """);
 
         if (lastMsgNo != null) {
             sql.append(" AND MSG.BN_CHAT_MSG_NO < :lastMsgNo ");
@@ -269,6 +270,39 @@ public class JamChatService {
                 .attachFilePath(attachFilePath)
                 .attachFileName(attachFileName)
                 .build();
+    }
+
+    @Transactional
+    public List<com.bandi.backend.dto.FriendResponseDto> getChatRoomUsers(Long roomNo) {
+        String sql = """
+                SELECT
+                    U.USER_ID,
+                    U.USER_NM,
+                    U.USER_NICK_NM,
+                    CMA.FILE_PATH
+                FROM BN_USER BU
+                JOIN MM_USER U ON U.USER_ID = BU.BN_USER_ID
+                LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = U.ATTACH_NO
+                WHERE BU.BN_NO = :roomNo
+                AND BU.BN_USER_STAT_CD = 'A'
+                """;
+
+        Query query = entityManager.createNativeQuery(sql);
+        query.setParameter("roomNo", roomNo);
+
+        List<Object[]> results = query.getResultList();
+        List<com.bandi.backend.dto.FriendResponseDto> users = new ArrayList<>();
+
+        for (Object[] row : results) {
+            com.bandi.backend.dto.FriendResponseDto dto = com.bandi.backend.dto.FriendResponseDto.builder()
+                    .userId((String) row[0])
+                    .userNm((String) row[1])
+                    .userNickNm((String) row[2])
+                    .profileUrl((String) row[3])
+                    .build();
+            users.add(dto);
+        }
+        return users;
     }
 
     @Transactional

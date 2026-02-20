@@ -1,6 +1,5 @@
 package com.bandi.backend.controller;
 
-import com.bandi.backend.entity.member.User;
 import com.bandi.backend.service.FriendService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +16,8 @@ public class FriendController {
     private final FriendService friendService;
 
     @GetMapping("/search")
-    public ResponseEntity<List<User>> searchFriend(@RequestParam String keyword, @RequestParam String userId) {
+    public ResponseEntity<List<com.bandi.backend.dto.FriendResponseDto>> searchFriend(@RequestParam String keyword,
+            @RequestParam String userId) {
         return ResponseEntity.ok(friendService.searchFriend(keyword, userId));
     }
 

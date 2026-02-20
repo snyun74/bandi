@@ -2,8 +2,10 @@ package com.bandi.backend.service;
 
 import com.bandi.backend.entity.member.GroupFriend;
 import com.bandi.backend.entity.member.User;
+import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.repository.GroupFriendRepository;
 import com.bandi.backend.repository.UserRepository;
+import com.bandi.backend.repository.CmAttachmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,9 +22,29 @@ public class FriendService {
     private final GroupFriendRepository groupFriendRepository;
     private final com.bandi.backend.repository.ChatRoomRepository chatRoomRepository;
     private final ChatService chatService;
+    private final CmAttachmentRepository cmAttachmentRepository;
 
-    public List<User> searchFriend(String keyword, String userId) {
-        return userRepository.searchUsersExcludeSelf(keyword, userId);
+    public List<com.bandi.backend.dto.FriendResponseDto> searchFriend(String keyword, String userId) {
+        List<User> users = userRepository.searchUsersExcludeSelf(keyword, userId);
+        return users.stream()
+                .map(user -> {
+                    String profileUrl = null;
+                    if (user.getAttachNo() != null) {
+                        CmAttachment attachment = cmAttachmentRepository.findById(user.getAttachNo()).orElse(null);
+                        if (attachment != null) {
+                            profileUrl = attachment.getFilePath();
+                        }
+                    }
+
+                    return com.bandi.backend.dto.FriendResponseDto.builder()
+                            .userId(user.getUserId())
+                            .userNm(user.getUserNm())
+                            .userNickNm(user.getUserNickNm())
+                            .profileUrl(profileUrl)
+                            .unreadCount(0L) // Unused for basic search display
+                            .build();
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional
@@ -100,12 +122,23 @@ public class FriendService {
         List<User> users = userRepository.findByUserIdIn(friendUserIds);
 
         return users.stream()
-                .map(user -> com.bandi.backend.dto.FriendResponseDto.builder()
-                        .userId(user.getUserId())
-                        .userNm(user.getUserNm())
-                        .userNickNm(user.getUserNickNm())
-                        .unreadCount(chatService.getUnreadMessageCount(myUserId, user.getUserId()))
-                        .build())
+                .map(user -> {
+                    String profileUrl = null;
+                    if (user.getAttachNo() != null) {
+                        CmAttachment attachment = cmAttachmentRepository.findById(user.getAttachNo()).orElse(null);
+                        if (attachment != null) {
+                            profileUrl = attachment.getFilePath();
+                        }
+                    }
+
+                    return com.bandi.backend.dto.FriendResponseDto.builder()
+                            .userId(user.getUserId())
+                            .userNm(user.getUserNm())
+                            .userNickNm(user.getUserNickNm())
+                            .profileUrl(profileUrl)
+                            .unreadCount(chatService.getUnreadMessageCount(myUserId, user.getUserId()))
+                            .build();
+                })
                 .collect(java.util.stream.Collectors.toList());
     }
 

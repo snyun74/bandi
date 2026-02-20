@@ -41,6 +41,12 @@ public class JamChatController {
         return ResponseEntity.ok(messages);
     }
 
+    @GetMapping("/{roomNo}/users")
+    public ResponseEntity<List<com.bandi.backend.dto.FriendResponseDto>> getChatRoomUsers(@PathVariable Long roomNo) {
+        List<com.bandi.backend.dto.FriendResponseDto> users = jamChatService.getChatRoomUsers(roomNo);
+        return ResponseEntity.ok(users);
+    }
+
     @PostMapping("/message")
     public ResponseEntity<ChatMessageDto> createMessage(@RequestBody ChatMessageCreateDto dto) {
         log.info("Received message create request: {}", dto);
