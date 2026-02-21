@@ -95,6 +95,10 @@ public class UserService {
                 .userNm(user.getUserNm())
                 .userNickNm(user.getUserNickNm())
                 .email(user.getEmail())
+                .genderCd(user.getGenderCd())
+                .mbti(user.getMbti())
+                .adminYn(user.getAdminYn())
+                .skillsConfigured(!userSkills.isEmpty())
                 .profileImageUrl(profileImageUrl)
                 .mannerScore(mannerScore)
                 .moodMakerCount(moodMakerCount)
@@ -115,6 +119,10 @@ public class UserService {
             user.setUserNickNm(dto.getUserNickNm());
         if (dto.getEmail() != null)
             user.setEmail(dto.getEmail());
+        if (dto.getGenderCd() != null)
+            user.setGenderCd(dto.getGenderCd());
+        if (dto.getMbti() != null)
+            user.setMbti(dto.getMbti());
         user.setUpdDtime(currentDateTime);
         user.setUpdId(dto.getUserId());
 

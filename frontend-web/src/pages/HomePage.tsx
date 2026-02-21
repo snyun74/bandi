@@ -2,14 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUnlink } from 'react-icons/fa';
 import JamEvaluationModal from "../components/common/JamEvaluationModal";
+import ProfileEditModal from "../components/profile/ProfileEditModal";
 
 export default function HomePage() {
     const navigate = useNavigate();
     const [pendingEvaluation, setPendingEvaluation] = useState<any>(null);
+    const [profileIncomplete, setProfileIncomplete] = useState(false);
+    const [mainBanner, setMainBanner] = useState<{ url: string; isVideo: boolean; linkUrl: string | null } | null>(null);
+    const [isBannerLoading, setIsBannerLoading] = useState(true);
 
     useEffect(() => {
         checkPendingEvaluation();
+        checkProfileComplete();
+        fetchMainBanner();
     }, []);
+
+    const fetchMainBanner = async () => {
+        try {
+            const res = await fetch('/api/admin/banners/MAIN');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.fileUrl) {
+                    const isVideo = data.mimeType?.startsWith('video/') || data.fileUrl.match(/\.(mp4|webm|ogg)$/i) !== null;
+                    setMainBanner({ url: data.fileUrl, isVideo, linkUrl: data.adBannerLinkUrl || null });
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch main banner", error);
+        } finally {
+            setIsBannerLoading(false);
+        }
+    };
 
     const checkPendingEvaluation = async () => {
         const userId = localStorage.getItem("userId");
@@ -36,7 +59,28 @@ export default function HomePage() {
 
     const handleEvaluationComplete = () => {
         setPendingEvaluation(null);
-        checkPendingEvaluation(); // Check again in case there are multiple pending evaluations? The API currently returns one arbitrary pending eval.
+        checkPendingEvaluation();
+    };
+
+    const checkProfileComplete = async () => {
+        const userId = localStorage.getItem("userId");
+        if (!userId) return;
+        try {
+            const res = await fetch(`/api/user/profile/${userId}`);
+            if (res.ok) {
+                const data = await res.json();
+                const isIncomplete =
+                    !data.genderCd || String(data.genderCd).trim() === '' || String(data.genderCd) === 'null' ||
+                    !data.mbti || String(data.mbti).trim() === '' || String(data.mbti) === 'null' ||
+                    !data.skillsConfigured;
+                console.log("Profile Data:", data, "isIncomplete:", isIncomplete);
+                if (isIncomplete) {
+                    setProfileIncomplete(true);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to check profile", e);
+        }
     };
     const [expandedDayId, setExpandedDayId] = useState<number | null>(null);
 
@@ -137,12 +181,31 @@ export default function HomePage() {
 
     return (
         <div className="flex flex-col space-y-6 pb-4">
-            {/* Banner Section - Full Width */}
-            <section className="relative w-full h-auto bg-red-500 overflow-hidden flex items-center justify-center">
-                {/* Banner Image - Full Width/Height */}
-                <div className="w-full">
-                    <img src="/images/main_logo.png" alt="New Album" className="w-full h-auto object-contain" />
-                </div>
+            {/* Banner Section - Original Auto Height */}
+            <section className="relative w-full h-auto min-h-[100px] bg-[#003C48] overflow-hidden flex items-center justify-center">
+                {isBannerLoading ? (
+                    <div className="w-full h-40 bg-gray-200 animate-pulse"></div>
+                ) : mainBanner ? (
+                    mainBanner.linkUrl ? (
+                        <a href={mainBanner.linkUrl.startsWith('http') ? mainBanner.linkUrl : `http://${mainBanner.linkUrl}`} target="_blank" rel="noopener noreferrer" className="w-full">
+                            {mainBanner.isVideo ? (
+                                <video src={mainBanner.url} autoPlay loop muted playsInline className="w-full h-auto object-contain cursor-pointer" />
+                            ) : (
+                                <img src={mainBanner.url} alt="Main Banner" className="w-full h-auto object-contain cursor-pointer" />
+                            )}
+                        </a>
+                    ) : (
+                        <div className="w-full">
+                            {mainBanner.isVideo ? (
+                                <video src={mainBanner.url} autoPlay loop muted playsInline className="w-full h-auto object-contain" />
+                            ) : (
+                                <img src={mainBanner.url} alt="Main Banner" className="w-full h-auto object-contain" />
+                            )}
+                        </div>
+                    )
+                ) : (
+                    <img src="/images/main_logo.png" alt="Default Main Banner" className="w-full h-auto object-contain" />
+                )}
             </section>
 
             {/* Schedule Section */}
@@ -326,9 +389,9 @@ export default function HomePage() {
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1 pr-12">
+                        <div className="flex-1 pr-12 overflow-hidden">
                             <h4 className="text-[#003C48] text-lg font-bold mb-1" style={{ fontFamily: '"Jua", sans-serif' }}>{myClan.cnNm}</h4>
-                            <p className="text-gray-600 text-[13px] mb-1 truncate">{myClan.cnDesc}</p>
+                            <p className="text-gray-600 text-[13px] mb-1 truncate">{myClan.cnDesc ? (myClan.cnDesc.length > 20 ? myClan.cnDesc.substring(0, 20) + '...' : myClan.cnDesc) : ''}</p>
                             <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClan.userCnt}명</p>
                         </div>
 
@@ -365,8 +428,17 @@ export default function HomePage() {
                 <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 연습실</h3>
                 <div className="w-full h-[150px] bg-[#F3F4F6] rounded-xl"></div>
             </section>
+            {/* Profile Incomplete Modal */}
+            {profileIncomplete && (
+                <ProfileEditModal
+                    isOpen={profileIncomplete}
+                    onClose={() => setProfileIncomplete(false)}
+                    userId={localStorage.getItem('userId') || ''}
+                    onProfileUpdate={() => setProfileIncomplete(false)}
+                />
+            )}
             {/* Evaluation Modal */}
-            {pendingEvaluation && (
+            {!profileIncomplete && pendingEvaluation && (
                 <JamEvaluationModal
                     evaluation={pendingEvaluation}
                     onComplete={handleEvaluationComplete}

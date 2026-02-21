@@ -46,6 +46,9 @@ import JamVoteDetail from './pages/JamVoteDetail';
 import JamVoteStatus from './pages/JamVoteStatus';
 import JamVoteList from './pages/JamVoteList';
 import CustomerCenterPage from './pages/CustomerCenterPage';
+import AdminPage from './pages/AdminPage';
+import AdminBannerPage from './pages/AdminBannerPage';
+import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
 import './App.css';
 
 function App() {
@@ -63,6 +66,9 @@ function App() {
           <Route index element={<HomePage />} /> {/* Default to Home */}
           <Route path="home" element={<HomePage />} />
           <Route path="profile" element={<MyProfile />} />
+          <Route path="admin" element={<AdminPage />} />
+          <Route path="admin/banners" element={<AdminBannerPage />} />
+          <Route path="admin/clans" element={<AdminClanApprovalPage />} />
           <Route path="profile/scraps" element={<MyScrapList />} />
           <Route path="profile/posts" element={<MyPostList />} />
           <Route path="customer-center" element={<CustomerCenterPage />} />

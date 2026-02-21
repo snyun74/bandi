@@ -51,4 +51,10 @@ public class User {
 
     @Column(name = "attach_no")
     private Long attachNo;
+
+    @Column(name = "mbti", length = 4)
+    private String mbti;
+
+    @Column(name = "admin_yn", length = 1)
+    private String adminYn;
 }

@@ -19,6 +19,7 @@ interface UserProfileDto {
     profileImageUrl: string | null;
     mannerScore?: number;
     moodMakerCount?: number;
+    adminYn?: string;
     skills: UserSkillDto[];
 }
 
@@ -66,12 +67,22 @@ const MyProfile: React.FC = () => {
                     </button>
                     <h1 className="text-xl text-[#003C48] font-bold">프로필</h1>
                 </div>
-                <button
-                    onClick={handleLogoutClick}
-                    className="bg-[#FF6B6B] text-white text-xs font-bold px-3 py-1.5 rounded-full"
-                >
-                    로그아웃
-                </button>
+                <div className="flex items-center gap-2">
+                    {profile?.adminYn === 'Y' && (
+                        <button
+                            onClick={() => navigate('/main/admin')}
+                            className="bg-[#003C48] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow hover:bg-[#002B36] transition-colors"
+                        >
+                            ADMIN
+                        </button>
+                    )}
+                    <button
+                        onClick={handleLogoutClick}
+                        className="bg-[#FF6B6B] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow hover:bg-[#FF5252] transition-colors"
+                    >
+                        로그아웃
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaChevronLeft, FaCamera } from 'react-icons/fa';
+import { FaCamera } from 'react-icons/fa';
 import { BsPersonCircle } from 'react-icons/bs';
 import CommonModal from '../common/CommonModal';
 
@@ -14,6 +14,8 @@ interface UserProfileDto {
     userNm: string;
     userNickNm: string;
     email: string;
+    genderCd: string | null;
+    mbti: string | null;
     profileImageUrl: string | null;
     skills: UserSkillDto[];
 }
@@ -22,15 +24,23 @@ interface ProfileEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     userId: string;
-    onProfileUpdate: () => void; // Callback to refresh parent
+    onProfileUpdate: () => void;
 }
 
+const MBTI_LIST = [
+    'ISTJ', 'ISFJ', 'INFJ', 'INTJ',
+    'ISTP', 'ISFP', 'INFP', 'INTP',
+    'ESTP', 'ESFP', 'ENFP', 'ENTP',
+    'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ',
+];
+
 const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, userId, onProfileUpdate }) => {
-    const [profile, setProfile] = useState<UserProfileDto | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [nickname, setNickname] = useState('');
     const [email, setEmail] = useState('');
+    const [genderCd, setGenderCd] = useState('');
+    const [mbti, setMbti] = useState('');
     const [skills, setSkills] = useState<UserSkillDto[]>([]);
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,15 +56,11 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
 
     const handleAlertConfirm = () => {
         setIsAlertOpen(false);
-        if (alertCallback) {
-            alertCallback();
-        }
+        if (alertCallback) alertCallback();
     };
 
     useEffect(() => {
-        if (isOpen && userId) {
-            fetchProfile();
-        }
+        if (isOpen && userId) fetchProfile();
     }, [isOpen, userId]);
 
     const fetchProfile = async () => {
@@ -62,17 +68,16 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
             const response = await fetch(`/api/user/profile/${userId}`);
             if (response.ok) {
                 const data: UserProfileDto = await response.json();
-                setProfile(data);
                 setNickname(data.userNickNm || '');
                 setEmail(data.email || '');
+                setGenderCd((data.genderCd && data.genderCd !== 'null') ? data.genderCd : '');
+                setMbti((data.mbti && data.mbti !== 'null') ? data.mbti : '');
                 setSkills(data.skills || []);
                 setPreviewImage(data.profileImageUrl);
                 setSelectedFile(null);
-            } else {
-                console.error("Failed to fetch profile");
             }
         } catch (error) {
-            console.error("Error fetching profile:", error);
+            console.error('Error fetching profile:', error);
         }
     };
 
@@ -81,50 +86,53 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
             const file = e.target.files[0];
             setSelectedFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result as string);
-            };
+            reader.onloadend = () => setPreviewImage(reader.result as string);
             reader.readAsDataURL(file);
         }
     };
 
     const handleSkillChange = (sessionTypeCd: string, newScore: number) => {
-        setSkills(prevSkills =>
-            prevSkills.map(skill =>
-                skill.sessionTypeCd === sessionTypeCd
-                    ? { ...skill, score: newScore }
-                    : skill
-            )
-        );
+        setSkills(prev => prev.map(s => s.sessionTypeCd === sessionTypeCd ? { ...s, score: newScore } : s));
     };
 
     const handleSubmit = async () => {
+        // 필수값 검증
+        if (!nickname.trim()) {
+            showAlert('닉네임을 입력해 주세요.');
+            return;
+        }
+        if (!genderCd) {
+            showAlert('성별을 선택해 주세요.');
+            return;
+        }
+        if (!mbti) {
+            showAlert('MBTI를 선택해 주세요.');
+            return;
+        }
+        // 세션별 실력: score가 0인 항목이 있으면 (range min=1이라 사실 항상 1 이상이지만 방어)
+        const unsetSkill = skills.find(s => !s.score || s.score < 1);
+        if (unsetSkill) {
+            showAlert(`'${unsetSkill.sessionTypeNm}' 실력을 설정해 주세요.`);
+            return;
+        }
+
         setLoading(true);
         try {
-            const formData = new FormData();
-
             const updateDto = {
-                userId: userId,
+                userId,
                 userNickNm: nickname,
-                email: email,
-                skills: skills
+                email,
+                genderCd,
+                mbti,
+                skills,
             };
+            const formData = new FormData();
+            formData.append('data', new Blob([JSON.stringify(updateDto)], { type: 'application/json' }));
+            if (selectedFile) formData.append('file', selectedFile);
 
-            // Append JSON data as a Blob with application/json type
-            const jsonBlob = new Blob([JSON.stringify(updateDto)], { type: "application/json" });
-            formData.append("data", jsonBlob);
-
-            if (selectedFile) {
-                formData.append("file", selectedFile);
-            }
-
-            const response = await fetch('/api/user/profile', {
-                method: 'PUT',
-                body: formData
-            });
-
+            const response = await fetch('/api/user/profile', { method: 'PUT', body: formData });
             if (response.ok) {
-                showAlert("프로필이 저장되었습니다.", () => {
+                showAlert('프로필이 저장되었습니다.', () => {
                     onProfileUpdate();
                     onClose();
                 });
@@ -133,8 +141,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                 showAlert(`저장 실패: ${errorText}`);
             }
         } catch (error) {
-            console.error("Error updating profile:", error);
-            showAlert("오류가 발생했습니다.");
+            showAlert('오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }
@@ -169,20 +176,17 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                             <div className="absolute bottom-1 right-1 bg-white p-2.5 rounded-full shadow-lg border border-gray-100 group-hover:scale-110 transition-transform">
                                 <FaCamera className="text-[#00BDF8] text-lg" />
                             </div>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                            />
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         </div>
                     </div>
 
                     {/* Form Fields */}
-                    <div className="space-y-5 mb-8">
+                    <div className="space-y-5 mb-6">
+                        {/* 닉네임 */}
                         <div>
-                            <label className="block text-[#003C48] font-bold mb-2 text-sm">닉네임</label>
+                            <label className="block text-[#003C48] font-bold mb-2 text-sm">
+                                닉네임 <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={nickname}
@@ -191,6 +195,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                 placeholder="닉네임을 입력하세요"
                             />
                         </div>
+
+                        {/* 이메일 */}
                         <div>
                             <label className="block text-[#003C48] font-bold mb-2 text-sm">이메일</label>
                             <input
@@ -201,11 +207,57 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                 placeholder="이메일을 입력하세요"
                             />
                         </div>
+
+                        {/* 성별 */}
+                        <div>
+                            <label className="block text-[#003C48] font-bold mb-2 text-sm">
+                                성별 <span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex gap-3">
+                                {[{ cd: 'M', label: '남성' }, { cd: 'F', label: '여성' }].map(({ cd, label }) => (
+                                    <button
+                                        key={cd}
+                                        type="button"
+                                        onClick={() => setGenderCd(cd)}
+                                        className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all ${genderCd === cd
+                                            ? 'bg-[#00BDF8] text-white border-[#00BDF8] shadow-md'
+                                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#00BDF8]'
+                                            }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* MBTI */}
+                        <div>
+                            <label className="block text-[#003C48] font-bold mb-2 text-sm">
+                                MBTI <span className="text-red-500">*</span>
+                            </label>
+                            <div className="grid grid-cols-4 gap-2">
+                                {MBTI_LIST.map((type) => (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        onClick={() => setMbti(type)}
+                                        className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${mbti === type
+                                            ? 'bg-[#003C48] text-white border-[#003C48] shadow-md'
+                                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#003C48]'
+                                            }`}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Skills Section */}
                     <div className="bg-gray-50 rounded-2xl p-5 space-y-4">
-                        <h3 className="text-[#003C48] font-bold text-sm mb-1">세션별 실력 (자가평가)</h3>
+                        <h3 className="text-[#003C48] font-bold text-sm mb-1">
+                            세션별 실력 (자가평가) <span className="text-red-500">*</span>
+                        </h3>
                         <div className="space-y-4">
                             {skills.map((skill) => (
                                 <div key={skill.sessionTypeCd} className="flex items-center gap-3">
