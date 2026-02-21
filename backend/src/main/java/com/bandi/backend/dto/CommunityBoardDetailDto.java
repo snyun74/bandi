@@ -18,6 +18,8 @@ public class CommunityBoardDetailDto {
     private String regDate;
     private Long likeCnt;
     private Boolean isLiked;
+    private Long scrapCnt;
+    private Boolean isScrapped;
     private String youtubeUrl;
     private String attachFilePath;
     private List<CommunityBoardCommentDto> comments;

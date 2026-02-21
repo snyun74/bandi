@@ -16,6 +16,7 @@ import com.bandi.backend.repository.BoardLikeRepository;
 import com.bandi.backend.repository.BoardDetailLikeRepository;
 import com.bandi.backend.repository.BoardAttachmentRepository;
 import com.bandi.backend.repository.CmAttachmentRepository;
+import com.bandi.backend.repository.CmScrapRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,7 @@ public class BoardService {
     private final BoardDetailLikeRepository boardDetailLikeRepository;
     private final BoardAttachmentRepository boardAttachmentRepository;
     private final CmAttachmentRepository cmAttachmentRepository;
+    private final CmScrapRepository cmScrapRepository;
     private final com.bandi.backend.repository.UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -138,6 +140,10 @@ public class BoardService {
         long likeCnt = boardLikeRepository.countByBoardNo(boardNo);
         boolean isLiked = !userId.isEmpty() && boardLikeRepository.existsByBoardNoAndUserId(boardNo, userId);
 
+        long scrapCnt = cmScrapRepository.countByScrapTableNmAndScrapTablePkNo("CM_BOARD", boardNo);
+        boolean isScrapped = !userId.isEmpty()
+                && cmScrapRepository.existsByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CM_BOARD", boardNo);
+
         // Fetch attachment if exists
         String attachFilePath = null;
         // Assuming one attachment per board for now as per logic
@@ -167,6 +173,8 @@ public class BoardService {
                 .regDate(board.getInsDtime())
                 .likeCnt(likeCnt)
                 .isLiked(isLiked)
+                .scrapCnt(scrapCnt)
+                .isScrapped(isScrapped)
                 .youtubeUrl(board.getYoutubeUrl())
                 .attachFilePath(attachFilePath)
                 .build();
@@ -274,5 +282,24 @@ public class BoardService {
         like.setUpdId(userId);
 
         boardDetailLikeRepository.save(like);
+    }
+
+    @Transactional
+    public void toggleScrap(Long boardNo, String userId) {
+        if (cmScrapRepository.existsByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CM_BOARD", boardNo)) {
+            cmScrapRepository.deleteByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CM_BOARD", boardNo);
+        } else {
+            String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            com.bandi.backend.entity.member.CmScrap scrap = new com.bandi.backend.entity.member.CmScrap();
+            scrap.setUserId(userId);
+            scrap.setScrapTableNm("CM_BOARD");
+            scrap.setScrapTablePkNo(boardNo);
+            scrap.setScrapDate(currentDateTime.substring(0, 8));
+            scrap.setInsDtime(currentDateTime);
+            scrap.setInsId(userId);
+            scrap.setUpdDtime(currentDateTime);
+            scrap.setUpdId(userId);
+            cmScrapRepository.save(scrap);
+        }
     }
 }

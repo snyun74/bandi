@@ -1,7 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+
+const UserAvatar: React.FC<{ userId: string }> = ({ userId }) => {
+    const [img, setImg] = React.useState<string | null | undefined>(undefined);
+    React.useEffect(() => {
+        fetch(`/api/user/profile/${userId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => setImg(d?.profileImageUrl || null))
+            .catch(() => setImg(null));
+    }, [userId]);
+    if (img === undefined) return <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />;
+    if (img) return <img src={img} alt="" className="w-8 h-8 rounded-full shrink-0 object-cover" />;
+    return <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">{userId.substring(0, 1)}</div>;
+};
 
 interface NoticeDetail {
     cnNoticeNo: number;
@@ -11,6 +24,8 @@ interface NoticeDetail {
     writerUserId: string;
     attachFilePath?: string;
     youtubeUrl?: string;
+    scrapCnt?: number;
+    isScrapped?: boolean;
 }
 
 interface CommentItem {
@@ -53,13 +68,48 @@ const ClanNoticeDetail: React.FC = () => {
 
     const fetchNotice = async () => {
         try {
-            const res = await fetch(`/api/clans/${clanId}/notices/${noticeId}`);
+            const safeUserId = userId || "";
+            const res = await fetch(`/api/clans/${clanId}/notices/${noticeId}?userId=${safeUserId}`);
             if (res.ok) {
                 const data = await res.json();
                 setNotice(data);
             }
         } catch (error) {
             console.error("Failed to fetch notice", error);
+        }
+    };
+
+    const handleScrap = async () => {
+        if (!userId || !noticeId) {
+            setModalConfig({
+                isOpen: true,
+                type: 'alert',
+                message: '로그인이 필요합니다.',
+                onConfirm: closeModal
+            });
+            return;
+        }
+        try {
+            const res = await fetch(`/api/clans/${clanId}/notices/${noticeId}/scrap`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            if (res.ok) {
+                const wasScrapped = notice?.isScrapped;
+                setModalConfig({
+                    isOpen: true,
+                    type: 'alert',
+                    message: wasScrapped ? "보관이 취소되었습니다." : "보관했습니다.",
+                    onConfirm: () => {
+                        closeModal();
+                        fetchNotice(); // Refresh to get updated count
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Failed to scrap notice", e);
         }
     };
 
@@ -202,9 +252,7 @@ const ClanNoticeDetail: React.FC = () => {
                 <div
                     className={`flex gap-3 ${comment.parentCommentNo > 0 ? 'ml-10 mt-2' : ''}`}
                 >
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 shrink-0">
-                        {comment.commentUserId.substring(0, 1)}
-                    </div>
+                    <UserAvatar userId={comment.commentUserId} />
                     <div className="flex-1">
                         <div className="flex justify-between items-baseline mb-1">
                             <span className="text-[#003C48] font-bold text-xs">{comment.userNickNm || comment.commentUserId}</span>
@@ -314,7 +362,12 @@ const ClanNoticeDetail: React.FC = () => {
 
                 {/* Comments Section */}
                 <div className="bg-gray-50 p-6 min-h-[200px]">
-                    <h3 className="text-[#003C48] font-bold mb-4 text-sm">댓글 {comments.length}</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-[#003C48] font-bold mb-0 text-sm">댓글 {comments.length}</h3>
+                        <div className={`flex items-center gap-1 cursor-pointer text-sm ${notice.isScrapped ? 'text-gray-800' : 'text-gray-400'}`} onClick={handleScrap}>
+                            {notice.isScrapped ? <FaBookmark className="text-[#0E3B46]" /> : <FaRegBookmark />} <span>({notice.scrapCnt || 0})</span>
+                        </div>
+                    </div>
 
                     {/* Comment Input (Top) */}
                     <div className="flex flex-col gap-2 mb-6">
@@ -356,7 +409,7 @@ const ClanNoticeDetail: React.FC = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={closeModal}
             />
-        </div>
+        </div >
     );
 };
 

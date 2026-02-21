@@ -39,6 +39,8 @@ import BoardWrite from './pages/BoardWrite';
 import BoardDetail from './pages/BoardDetail';
 import MyJamList from './pages/MyJamList';
 import MyProfile from './pages/MyProfile';
+import MyScrapList from './pages/MyScrapList';
+import MyPostList from './pages/MyPostList';
 import JamScheduleCapture from './pages/JamScheduleCapture';
 import JamVoteDetail from './pages/JamVoteDetail';
 import JamVoteStatus from './pages/JamVoteStatus';
@@ -61,6 +63,8 @@ function App() {
           <Route index element={<HomePage />} /> {/* Default to Home */}
           <Route path="home" element={<HomePage />} />
           <Route path="profile" element={<MyProfile />} />
+          <Route path="profile/scraps" element={<MyScrapList />} />
+          <Route path="profile/posts" element={<MyPostList />} />
           <Route path="customer-center" element={<CustomerCenterPage />} />
           <Route path="freejam" element={<FreeJam />} />
           <Route path="board" element={<Board />} />

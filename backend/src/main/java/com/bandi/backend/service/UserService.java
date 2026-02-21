@@ -3,6 +3,8 @@ package com.bandi.backend.service;
 import com.bandi.backend.dto.UserProfileDto;
 import com.bandi.backend.dto.UserProfileUpdateDto;
 import com.bandi.backend.dto.UserSkillDto;
+import com.bandi.backend.dto.MyScrapDto;
+import com.bandi.backend.dto.MyPostDto;
 import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.entity.common.CommDetail;
 import com.bandi.backend.entity.member.User;
@@ -12,6 +14,7 @@ import com.bandi.backend.repository.CommDetailRepository;
 import com.bandi.backend.repository.UserRepository;
 import com.bandi.backend.repository.UserSessionSkillRepository;
 import com.bandi.backend.repository.BnEvaluationResultRepository;
+import com.bandi.backend.repository.CmScrapRepository;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class UserService {
     private final CmAttachmentRepository cmAttachmentRepository;
     private final CommDetailRepository commDetailRepository;
     private final BnEvaluationResultRepository bnEvaluationResultRepository;
+    private final CmScrapRepository cmScrapRepository;
 
     public UserProfileDto getUserProfile(String userId) {
         User user = userRepository.findByUserId(userId);
@@ -170,5 +174,48 @@ public class UserService {
         }
 
         userRepository.save(user);
+    }
+
+    public List<MyScrapDto> getMyScrapList(String userId) {
+        List<Map<String, Object>> result = cmScrapRepository.findMyScraps(userId);
+        return result.stream().map(row -> {
+            MyScrapDto dto = new MyScrapDto();
+            dto.setScrapNo(row.get("scrapNo") != null ? ((Number) row.get("scrapNo")).longValue() : null);
+            dto.setScrapTableNm((String) row.get("scrapTableNm"));
+            dto.setScrapTablePkNo(
+                    row.get("scrapTablePkNo") != null ? ((Number) row.get("scrapTablePkNo")).longValue() : null);
+            dto.setParam1((String) row.get("param1"));
+            dto.setParam2((String) row.get("param2"));
+            dto.setTitle((String) row.get("title"));
+            dto.setWriterName((String) row.get("writerName"));
+            dto.setLikeCnt(row.get("likeCnt") != null ? ((Number) row.get("likeCnt")).longValue() : 0L);
+            dto.setReplyCnt(row.get("replyCnt") != null ? ((Number) row.get("replyCnt")).longValue() : 0L);
+            dto.setScrapDate((String) row.get("scrapDate"));
+            dto.setOriginalRegDate((String) row.get("originalRegDate"));
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    private MyPostDto mapToMyPostDto(Map<String, Object> row) {
+        MyPostDto dto = new MyPostDto();
+        dto.setPostType((String) row.get("post_type"));
+        dto.setPkNo(row.get("pk_no") != null ? ((Number) row.get("pk_no")).longValue() : null);
+        dto.setParam1((String) row.get("param1"));
+        dto.setParam2((String) row.get("param2"));
+        dto.setTitle((String) row.get("title"));
+        dto.setLikeCnt(row.get("like_cnt") != null ? ((Number) row.get("like_cnt")).longValue() : 0L);
+        dto.setReplyCnt(row.get("reply_cnt") != null ? ((Number) row.get("reply_cnt")).longValue() : 0L);
+        dto.setRegDate((String) row.get("reg_date"));
+        return dto;
+    }
+
+    public List<MyPostDto> getMyPosts(String userId, int page, int size) {
+        return cmScrapRepository.findMyPosts(userId, size, page * size)
+                .stream().map(this::mapToMyPostDto).collect(Collectors.toList());
+    }
+
+    public List<MyPostDto> getMyCommentedPosts(String userId, int page, int size) {
+        return cmScrapRepository.findMyCommentedPosts(userId, size, page * size)
+                .stream().map(this::mapToMyPostDto).collect(Collectors.toList());
     }
 }

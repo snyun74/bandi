@@ -24,4 +24,6 @@ public class ClanNoticeDto {
     private String youtubeUrl;
     private String attachFilePath;
     private String insDtime;
+    private Long scrapCnt;
+    private Boolean isScrapped;
 }

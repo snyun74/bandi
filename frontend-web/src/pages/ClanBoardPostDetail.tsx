@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark } from 'react-icons/fa';
+import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark } from 'react-icons/fa';
+import CommonModal from '../components/common/CommonModal';
+
+const UserAvatar: React.FC<{ userId: string; size?: string }> = ({ userId, size = 'w-8 h-8' }) => {
+    const [img, setImg] = React.useState<string | null | undefined>(undefined);
+    React.useEffect(() => {
+        fetch(`/api/user/profile/${userId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => setImg(d?.profileImageUrl || null))
+            .catch(() => setImg(null));
+    }, [userId]);
+    if (img === undefined) return <div className={`${size} bg-gray-200 rounded-full flex-shrink-0`} />;
+    if (img) return <img src={img} alt="" className={`${size} rounded-full flex-shrink-0 object-cover`} />;
+    return <div className={`${size} bg-gray-300 rounded-full flex-shrink-0 flex items-center justify-center text-xs text-white`}>👤</div>;
+};
 
 interface Comment {
     cnReplyNo: number;
@@ -19,6 +33,7 @@ interface Comment {
 
 interface PostDetail {
     cnBoardNo: number;
+    boardTypeNm?: string;
     title: string;
     content: string;
     writerUserId: string;
@@ -27,6 +42,8 @@ interface PostDetail {
     youtubeUrl?: string;
     likeCnt: number;
     replyCnt: number;
+    scrapCnt: number;
+    isScrapped: boolean;
     attachFilePath?: string;
 }
 
@@ -40,6 +57,10 @@ const ClanBoardPostDetail: React.FC = () => {
 
     const [commentInput, setCommentInput] = useState("");
     const userId = localStorage.getItem('userId');
+
+    // Scrap Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
 
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -69,7 +90,8 @@ const ClanBoardPostDetail: React.FC = () => {
 
     const fetchPostDetail = async () => {
         try {
-            const res = await fetch(`/api/clans/boards/posts/${boardNo}`);
+            const safeUserId = userId || "";
+            const res = await fetch(`/api/clans/boards/posts/${boardNo}?userId=${safeUserId}`);
             if (res.ok) {
                 const data = await res.json();
                 setPost(data);
@@ -172,6 +194,29 @@ const ClanBoardPostDetail: React.FC = () => {
         }
     };
 
+    const handleScrap = async () => {
+        if (!userId || !boardNo) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
+        try {
+            const res = await fetch(`/api/clans/boards/posts/${boardNo}/scrap`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            if (res.ok) {
+                const wasScrapped = post?.isScrapped;
+                setModalMessage(wasScrapped ? "보관이 취소되었습니다." : "보관했습니다.");
+                setIsModalOpen(true);
+                fetchPostDetail(); // Refresh to get updated count
+            }
+        } catch (e) {
+            console.error("Failed to scrap post", e);
+        }
+    };
+
     const handleCommentLike = async (replyNo: number) => {
         if (!userId) {
             alert("로그인이 필요합니다.");
@@ -247,7 +292,7 @@ const ClanBoardPostDetail: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">자유 게시판</h1>
+                <h1 className="text-xl text-[#003C48] font-bold">{post.boardTypeNm || '클랜 게시판'}</h1>
             </div>
 
             <div className="flex-1 pb-[130px]">
@@ -256,8 +301,8 @@ const ClanBoardPostDetail: React.FC = () => {
                     <h2 className="text-lg font-bold text-[#003C48] mb-4">{post.title}</h2>
 
                     <div className="flex items-center mb-4 pb-4 border-b border-gray-200">
-                        <div className="w-8 h-8 bg-gray-300 rounded-full mr-2 flex items-center justify-center text-xs text-white">
-                            👤
+                        <div className="mr-2 flex-shrink-0">
+                            <UserAvatar userId={post.writerUserId} size="w-8 h-8" />
                         </div>
                         <div>
                             <div className="text-sm font-bold text-gray-800">{post.userNickNm}</div>
@@ -303,6 +348,9 @@ const ClanBoardPostDetail: React.FC = () => {
                         <div className="flex items-center gap-1">
                             <FaRegCommentDots /> <span>({post.replyCnt})</span>
                         </div>
+                        <div className={`flex items-center gap-1 cursor-pointer ${post.isScrapped ? 'text-gray-800' : 'text-gray-400'}`} onClick={handleScrap}>
+                            {post.isScrapped ? <FaBookmark className="text-[#0E3B46]" /> : <FaRegBookmark />} <span>({post.scrapCnt || 0})</span>
+                        </div>
                     </div>
                 </div>
 
@@ -316,8 +364,8 @@ const ClanBoardPostDetail: React.FC = () => {
                                 <div className="flex justify-between items-start mb-1">
                                     <div className="flex gap-2 w-full">
                                         {/* Comment User Icon */}
-                                        <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-[10px]">
-                                            👤
+                                        <div className="flex-shrink-0">
+                                            <UserAvatar userId={comment.writerUserId} size="w-8 h-8" />
                                         </div>
                                         <div className="w-full">
                                             <div className="flex items-center gap-2">
@@ -397,6 +445,13 @@ const ClanBoardPostDetail: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            <CommonModal
+                isOpen={isModalOpen}
+                type="alert"
+                message={modalMessage}
+                onConfirm={() => setIsModalOpen(false)}
+            />
         </div>
     );
 };

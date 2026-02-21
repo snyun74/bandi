@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaRegEdit, FaCommentDots, FaUserFriends } from 'react-icons/fa';
+import CommonModal from '../components/common/CommonModal';
 
 interface ClanDetailData {
     id: number;
@@ -28,12 +29,20 @@ const ClanDetail: React.FC = () => {
     const [myRole, setMyRole] = useState<string>('NONE');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState<{
+        nm: string;
         desc: string;
         url: string;
         imageFile: File | null;
         previewUrl: string | null;
-    }>({ desc: '', url: '', imageFile: null, previewUrl: null });
+    }>({ nm: '', desc: '', url: '', imageFile: null, previewUrl: null });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+
+    const showAlert = (msg: string) => {
+        setAlertMessage(msg);
+        setIsAlertOpen(true);
+    };
 
     useEffect(() => {
         const fetchMethod = async () => {
@@ -143,6 +152,7 @@ const ClanDetail: React.FC = () => {
         }
         if (clan) {
             setEditForm({
+                nm: clan.name || '',
                 desc: clan.description || '',
                 url: clan.cnUrl || '',
                 imageFile: null,
@@ -168,10 +178,21 @@ const ClanDetail: React.FC = () => {
         const userId = localStorage.getItem('userId');
         if (!userId) return;
 
+        // 필수값 검증
+        if (!editForm.nm.trim()) {
+            showAlert('클랜 이름을 입력해 주세요.');
+            return;
+        }
+        if (!editForm.desc.trim()) {
+            showAlert('클랜 소개를 입력해 주세요.');
+            return;
+        }
+
         try {
             const formData = new FormData();
             const updateData = {
                 userId: userId,
+                cnNm: editForm.nm,
                 cnDesc: editForm.desc,
                 cnUrl: editForm.url
             };
@@ -186,16 +207,16 @@ const ClanDetail: React.FC = () => {
             });
 
             if (response.ok) {
-                alert("클랜 정보가 수정되었습니다.");
                 setIsEditModalOpen(false);
-                window.location.reload(); // Simple reload to refresh data
+                showAlert('클랜 정보가 수정되었습니다.');
+                // alert 확인 후 리로드를 위해 onConfirm에서 처리
             } else {
                 const err = await response.json();
-                alert(err.message || "수정 실패");
+                showAlert(err.message || '수정 실패');
             }
         } catch (e) {
             console.error(e);
-            alert("오류가 발생했습니다.");
+            showAlert('오류가 발생했습니다.');
         }
     };
 
@@ -205,16 +226,11 @@ const ClanDetail: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
             {/* Header */}
-            <div className="flex items-center px-4 py-4 mb-2 justify-between">
-                <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
-                        <FaChevronLeft size={24} />
-                    </button>
-                    <h1 className="text-xl text-[#003C48] font-bold">클랜</h1>
-                </div>
-                <button className="text-gray-500">
-                    <FaRegEdit size={20} />
+            <div className="flex items-center px-4 py-4 mb-2">
+                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                    <FaChevronLeft size={24} />
                 </button>
+                <h1 className="text-xl text-[#003C48] font-bold">클랜</h1>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-6">
@@ -237,7 +253,6 @@ const ClanDetail: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                         <h2 className="text-[#003C48] text-xl font-bold mb-1">{clan.name}</h2>
-                        <p className="text-[#003C48] text-sm mb-1 whitespace-pre-wrap break-words">{clan.description}</p>
                         <p className="text-[#003C48] text-sm font-medium">멤버 : {clan.memberCount}명</p>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
@@ -429,6 +444,16 @@ const ClanDetail: React.FC = () => {
 
                         <div className="space-y-4">
                             <div>
+                                <label className="block text-sm font-bold text-[#003C48] mb-1">클랜 이름</label>
+                                <input
+                                    type="text"
+                                    value={editForm.nm}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, nm: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8]"
+                                    placeholder="클랜 이름을 입력하세요"
+                                />
+                            </div>
+                            <div>
                                 <label className="block text-sm font-bold text-[#003C48] mb-1">클랜 소개</label>
                                 <textarea
                                     value={editForm.desc}
@@ -466,6 +491,17 @@ const ClanDetail: React.FC = () => {
                     </div>
                 </div>
             )}
+            <CommonModal
+                isOpen={isAlertOpen}
+                type="alert"
+                message={alertMessage}
+                onConfirm={() => {
+                    setIsAlertOpen(false);
+                    if (alertMessage === '클랜 정보가 수정되었습니다.') {
+                        window.location.reload();
+                    }
+                }}
+            />
         </div>
     );
 };

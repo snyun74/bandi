@@ -74,6 +74,8 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
 
         @Query(value = "SELECT " +
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +
+                        "    B.CN_BOARD_TYPE_NO AS \"cnBoardTypeNo\", " +
+                        "    T.CN_BOARD_TYPE_NM AS \"boardTypeNm\", " +
                         "    B.TITLE AS \"title\", " +
                         "    B.CONTENT AS \"content\", " +
                         "    B.WRITER_USER_ID AS \"writerUserId\", " +
@@ -87,6 +89,7 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\" "
                         +
                         "FROM CN_BOARD B " +
+                        "LEFT JOIN CN_BOARD_TYPE T ON B.CN_BOARD_TYPE_NO = T.CN_BOARD_TYPE_NO " +
                         "WHERE B.CN_BOARD_NO = :boardNo", nativeQuery = true)
         java.util.Map<String, Object> findBoardDetailMap(@Param("boardNo") Long boardNo);
 }

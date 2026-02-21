@@ -9,6 +9,7 @@ import com.bandi.backend.repository.ClanGroupRepository;
 import com.bandi.backend.repository.ClanUserRepository;
 import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.repository.CmAttachmentRepository;
+import com.bandi.backend.repository.CmScrapRepository;
 import com.bandi.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,7 @@ public class ClanService {
     private final com.bandi.backend.repository.ClanBoardDetailRepository clanBoardDetailRepository;
     private final com.bandi.backend.repository.ClanBoardLikeRepository clanBoardLikeRepository;
     private final com.bandi.backend.repository.ClanBoardDetailLikeRepository clanBoardDetailLikeRepository;
+    private final CmScrapRepository cmScrapRepository;
 
     @Transactional
     public Long createClan(ClanCreateDto dto, MultipartFile file) {
@@ -432,7 +434,7 @@ public class ClanService {
     }
 
     @Transactional
-    public com.bandi.backend.dto.ClanBoardDetailDto getBoardPostDetail(Long boardNo) {
+    public com.bandi.backend.dto.ClanBoardDetailDto getBoardPostDetail(Long boardNo, String userId) {
         // Increment View Count
         com.bandi.backend.entity.clan.ClanBoard board = clanBoardRepository.findById(boardNo)
                 .orElseThrow(() -> new RuntimeException("Board not found"));
@@ -451,6 +453,14 @@ public class ClanService {
 
         com.bandi.backend.dto.ClanBoardDetailDto dto = new com.bandi.backend.dto.ClanBoardDetailDto();
         dto.setCnBoardNo(((Number) result.get("cnBoardNo")).longValue());
+
+        Number bTypeNo = (Number) result.get("cnBoardTypeNo");
+        if (bTypeNo != null)
+            dto.setCnBoardTypeNo(bTypeNo.longValue());
+
+        String bTypeNm = (String) result.get("boardTypeNm");
+        dto.setBoardTypeNm(bTypeNm != null ? bTypeNm : "클랜 게시판");
+
         dto.setTitle((String) result.get("title"));
         dto.setContent((String) result.get("content")); // Clob handling might be needed but driver usually handles
                                                         // string
@@ -461,6 +471,12 @@ public class ClanService {
         dto.setViewCnt(0L); // No view cnt
         dto.setLikeCnt(((Number) result.get("boardLikeCnt")).longValue());
         dto.setReplyCnt(((Number) result.get("boardReplyCnt")).longValue());
+
+        long scrapCnt = cmScrapRepository.countByScrapTableNmAndScrapTablePkNo("CN_BOARD", boardNo);
+        boolean isScrapped = !userId.isEmpty()
+                && cmScrapRepository.existsByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CN_BOARD", boardNo);
+        dto.setScrapCnt(scrapCnt);
+        dto.setIsScrapped(isScrapped);
 
         // Fetch user nickname if not in map (just safety, map should have it from
         // query)
@@ -665,6 +681,9 @@ public class ClanService {
         }
 
         // 3. Update Text Fields
+        if (dto.getCnNm() != null && !dto.getCnNm().isBlank()) {
+            clan.setCnNm(dto.getCnNm());
+        }
         if (dto.getCnDesc() != null) {
             clan.setCnDesc(dto.getCnDesc());
         }
@@ -676,5 +695,24 @@ public class ClanService {
         clan.setUpdId(dto.getUserId());
 
         clanGroupRepository.save(clan);
+    }
+
+    @Transactional
+    public void toggleScrap(Long boardNo, String userId) {
+        if (cmScrapRepository.existsByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CN_BOARD", boardNo)) {
+            cmScrapRepository.deleteByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CN_BOARD", boardNo);
+        } else {
+            String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            com.bandi.backend.entity.member.CmScrap scrap = new com.bandi.backend.entity.member.CmScrap();
+            scrap.setUserId(userId);
+            scrap.setScrapTableNm("CN_BOARD");
+            scrap.setScrapTablePkNo(boardNo);
+            scrap.setScrapDate(currentDateTime.substring(0, 8));
+            scrap.setInsDtime(currentDateTime);
+            scrap.setInsId(userId);
+            scrap.setUpdDtime(currentDateTime);
+            scrap.setUpdId(userId);
+            cmScrapRepository.save(scrap);
+        }
     }
 }

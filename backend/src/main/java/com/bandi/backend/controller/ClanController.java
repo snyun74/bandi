@@ -283,9 +283,11 @@ public class ClanController {
     }
 
     @GetMapping("/boards/posts/{boardNo}")
-    public ResponseEntity<?> getBoardPostDetail(@PathVariable Long boardNo) {
+    public ResponseEntity<?> getBoardPostDetail(@PathVariable Long boardNo,
+            @RequestParam(required = false) String userId) {
         try {
-            return ResponseEntity.ok(clanService.getBoardPostDetail(boardNo));
+            String safeUserId = (userId != null) ? userId : "";
+            return ResponseEntity.ok(clanService.getBoardPostDetail(boardNo, safeUserId));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Failed to fetch board post detail", "error", e.getMessage()));
@@ -340,6 +342,18 @@ public class ClanController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Failed to add comment like", "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/boards/posts/{boardNo}/scrap")
+    public ResponseEntity<?> toggleScrap(@PathVariable Long boardNo, @RequestBody Map<String, String> body) {
+        try {
+            String userId = body.get("userId");
+            clanService.toggleScrap(boardNo, userId);
+            return ResponseEntity.ok(Map.of("message", "Scrap toggled successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to toggle scrap", "error", e.getMessage()));
         }
     }
 

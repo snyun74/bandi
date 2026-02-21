@@ -6,9 +6,12 @@ import com.bandi.backend.entity.clan.ClanNotice;
 import com.bandi.backend.entity.clan.ClanNoticeDetail;
 import com.bandi.backend.repository.ClanNoticeDetailRepository;
 import com.bandi.backend.repository.ClanNoticeRepository;
+import com.bandi.backend.repository.CmScrapRepository;
+import com.bandi.backend.entity.member.CmScrap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -24,6 +27,7 @@ public class ClanNoticeController {
         private final ClanNoticeDetailRepository clanNoticeDetailRepository;
         private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
         private final com.bandi.backend.repository.ClanNoticeAttachmentRepository clanNoticeAttachmentRepository;
+        private final CmScrapRepository cmScrapRepository;
         // Assuming ClanNoticeAttachmentRepository exists or needs to be created.
         // I saw ClanNoticeAttachment.java in file search.
         // I will check for ClanNoticeAttachmentRepository.java existence first?
@@ -148,7 +152,8 @@ public class ClanNoticeController {
 
         // Get Single Notice Detail
         @GetMapping("/{clanId}/notices/{noticeId}")
-        public ResponseEntity<ClanNoticeDto> getClanNotice(@PathVariable Long clanId, @PathVariable Long noticeId) {
+        public ResponseEntity<ClanNoticeDto> getClanNotice(@PathVariable Long clanId, @PathVariable Long noticeId,
+                        @RequestParam(required = false) String userId) {
                 return clanNoticeRepository.findById(noticeId)
                                 .map(notice -> {
                                         String attachFilePath = null;
@@ -178,6 +183,15 @@ public class ClanNoticeController {
                                                         .youtubeUrl(notice.getYoutubeUrl())
                                                         .attachFilePath(attachFilePath)
                                                         .insDtime(notice.getInsDtime())
+                                                        .scrapCnt(cmScrapRepository
+                                                                        .countByScrapTableNmAndScrapTablePkNo(
+                                                                                        "CN_NOTICE", noticeId))
+                                                        .isScrapped(userId != null && !userId.isEmpty()
+                                                                        && cmScrapRepository
+                                                                                        .existsByUserIdAndScrapTableNmAndScrapTablePkNo(
+                                                                                                        userId,
+                                                                                                        "CN_NOTICE",
+                                                                                                        noticeId))
                                                         .build();
                                 })
                                 .map(ResponseEntity::ok)
@@ -230,5 +244,36 @@ public class ClanNoticeController {
                 clanNoticeDetailRepository.save(comment);
 
                 return ResponseEntity.ok(java.util.Map.of("message", "Comment added successfully"));
+        }
+
+        @PostMapping("/{clanId}/notices/{noticeId}/scrap")
+        @Transactional
+        public ResponseEntity<?> toggleScrap(@PathVariable Long clanId, @PathVariable Long noticeId,
+                        @RequestBody java.util.Map<String, String> body) {
+                try {
+                        String userId = body.get("userId");
+                        if (cmScrapRepository.existsByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CN_NOTICE",
+                                        noticeId)) {
+                                cmScrapRepository.deleteByUserIdAndScrapTableNmAndScrapTablePkNo(userId, "CN_NOTICE",
+                                                noticeId);
+                        } else {
+                                String currentDateTime = java.time.LocalDateTime.now()
+                                                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                                CmScrap scrap = new CmScrap();
+                                scrap.setUserId(userId);
+                                scrap.setScrapTableNm("CN_NOTICE");
+                                scrap.setScrapTablePkNo(noticeId);
+                                scrap.setScrapDate(currentDateTime.substring(0, 8));
+                                scrap.setInsDtime(currentDateTime);
+                                scrap.setInsId(userId);
+                                scrap.setUpdDtime(currentDateTime);
+                                scrap.setUpdId(userId);
+                                cmScrapRepository.save(scrap);
+                        }
+                        return ResponseEntity.ok(java.util.Map.of("message", "Scrap toggled successfully"));
+                } catch (Exception e) {
+                        return ResponseEntity.badRequest().body(
+                                        java.util.Map.of("message", "Failed to toggle scrap", "error", e.getMessage()));
+                }
         }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaCopy, FaCheck } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
 import SettlementCreationModal from '../components/SettlementCreationModal';
@@ -27,6 +27,51 @@ interface ChatMessage {
 }
 
 const JamChatRoom: React.FC = () => {
+    // 정산 메시지 렌더링 컴포넌트 (외부 선언 - 리렌더링 안정성)
+    const [copiedMap, setCopiedMap] = React.useState<Record<number, boolean>>({});
+
+    const renderSettlementMsg = (msg: ChatMessage) => {
+        const lines = msg.msg.split('\n');
+        const acctLine = lines.find(l => l.startsWith('계좌번호:'));
+        const accountNo = acctLine ? acctLine.replace('계좌번호:', '').trim() : '';
+
+        const handleCopy = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(accountNo).then(() => {
+                setCopiedMap(prev => ({ ...prev, [msg.cnMsgNo]: true }));
+                setTimeout(() => setCopiedMap(prev => ({ ...prev, [msg.cnMsgNo]: false })), 2000);
+            });
+        };
+
+        return (
+            <div className="min-w-[200px]">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+                    <FaDollarSign className="text-[#00BDF8]" size={14} />
+                    <span className="font-bold text-[#003C48] text-sm">정산 요청</span>
+                </div>
+                {lines.map((line, i) => {
+                    if (line.startsWith('계좌번호:')) {
+                        const copied = copiedMap[msg.cnMsgNo];
+                        return (
+                            <div key={i} className="flex items-center gap-2 my-1 bg-blue-50 rounded-lg px-2 py-1.5">
+                                <span className="text-sm text-[#003C48] font-medium flex-1">{line}</span>
+                                <button
+                                    onClick={handleCopy}
+                                    className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full transition-all shrink-0 ${copied ? 'bg-green-500 text-white' : 'bg-[#00BDF8] text-white hover:bg-[#009bc9]'}`}
+                                >
+                                    {copied ? <FaCheck size={9} /> : <FaCopy size={9} />}
+                                    {copied ? '복사됨' : '복사'}
+                                </button>
+                            </div>
+                        );
+                    }
+                    if (line === '[정산 요청]' || line === '') return null;
+                    return <div key={i} className="text-sm text-[#003C48] py-0.5 whitespace-pre-wrap">{line}</div>;
+                })}
+            </div>
+        );
+    };
+
     const { roomNo } = useParams<{ roomNo: string }>();
     const navigate = useNavigate();
     const location = useLocation();
@@ -357,6 +402,8 @@ const JamChatRoom: React.FC = () => {
                                                         투표하러 가기
                                                     </button>
                                                 </div>
+                                            ) : msg.msg.startsWith('[정산 요청]') ? (
+                                                renderSettlementMsg(msg)
                                             ) : (
                                                 <div className="whitespace-pre-wrap">{msg.msg}</div>
                                             )}

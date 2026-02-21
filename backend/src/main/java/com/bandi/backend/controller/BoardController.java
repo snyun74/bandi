@@ -71,4 +71,11 @@ public class BoardController {
         boardService.addCommentLike(replyNo, dto.getUserId());
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/posts/{boardNo}/scrap")
+    public ResponseEntity<?> toggleScrap(@PathVariable Long boardNo,
+            @RequestBody com.bandi.backend.dto.CommunityBoardLikeDto dto) {
+        boardService.toggleScrap(boardNo, dto.getUserId());
+        return ResponseEntity.ok().build();
+    }
 }

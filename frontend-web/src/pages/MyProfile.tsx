@@ -152,7 +152,7 @@ const MyProfile: React.FC = () => {
                         </button>
                     </div>
                     <div className="border-b border-gray-100">
-                        <button className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                        <button onClick={() => navigate('/main/profile/scraps')} className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
                             <div className="flex items-center gap-3 text-[#003C48] font-bold">
                                 <FaBookmark className="text-gray-500" />
                                 <span>스크랩</span>
@@ -161,7 +161,7 @@ const MyProfile: React.FC = () => {
                         </button>
                     </div>
                     <div className="border-b border-gray-100">
-                        <button className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+                        <button onClick={() => navigate('/main/profile/posts')} className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
                             <div className="flex items-center gap-3 text-[#003C48] font-bold">
                                 <FaPen className="text-gray-500" />
                                 <span>내가 쓴 글</span>
