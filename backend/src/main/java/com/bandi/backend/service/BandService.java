@@ -846,6 +846,8 @@ public class BandService {
     }
 
     private void updateBandLeader(Long bnNo) {
+        BnGroup group = bnGroupRepository.findById(bnNo).orElseThrow();
+
         // 1. Get all occupied sessions for this band
         java.util.List<BnSession> sessions = bnSessionRepository.findAll().stream()
                 .filter(s -> s.getBnNo().equals(bnNo) && s.getBnSessionJoinUserId() != null)
@@ -855,33 +857,40 @@ public class BandService {
             return; // No members left
         }
 
-        // 2. Get Priority Map (COMM_ORDER)
-        java.util.Map<String, Integer> orderMap = getSessionOrderMap();
+        String newLeaderId;
 
-        // 3. Sort by Order ASC, then by Update Time (First come first serve)
-        sessions.sort((s1, s2) -> {
-            int order1 = orderMap.getOrDefault(s1.getBnSessionTypeCd(), 999);
-            int order2 = orderMap.getOrDefault(s2.getBnSessionTypeCd(), 999);
-            if (order1 != order2) {
-                return Integer.compare(order1, order2);
+        if ("CLAN".equals(group.getBnType())) {
+            // ─── 클랜합주방: 세션 우선순위 기반으로 방장 결정 ───────────────────
+            // 2-1. Get Priority Map (COMM_ORDER)
+            java.util.Map<String, Integer> orderMap = getSessionOrderMap();
+
+            // 2-2. Sort by Order ASC, then by Update Time (First come first serve)
+            sessions.sort((s1, s2) -> {
+                int order1 = orderMap.getOrDefault(s1.getBnSessionTypeCd(), 999);
+                int order2 = orderMap.getOrDefault(s2.getBnSessionTypeCd(), 999);
+                if (order1 != order2) {
+                    return Integer.compare(order1, order2);
+                }
+                return s1.getUpdDtime().compareTo(s2.getUpdDtime());
+            });
+
+            newLeaderId = sessions.get(0).getBnSessionJoinUserId();
+
+            // 2-3. Update BN_GROUP.BN_LEADER_ID (클랜합주방만 변경)
+            if (!newLeaderId.equals(group.getBnLeaderId())) {
+                group.setBnLeaderId(newLeaderId);
+                group.setUpdDtime(java.time.LocalDateTime.now()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+                group.setUpdId("SYSTEM");
+                bnGroupRepository.save(group);
             }
-            return s1.getUpdDtime().compareTo(s2.getUpdDtime());
-        });
-
-        // 4. Determine New Leader
-        String newLeaderId = sessions.get(0).getBnSessionJoinUserId();
-
-        // 5. Update BN_GROUP
-        BnGroup group = bnGroupRepository.findById(bnNo).orElseThrow();
-        if (!newLeaderId.equals(group.getBnLeaderId())) {
-            group.setBnLeaderId(newLeaderId);
-            group.setUpdDtime(java.time.LocalDateTime.now()
-                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-            group.setUpdId("SYSTEM"); // Or some system ID
-            bnGroupRepository.save(group);
+        } else {
+            // ─── 자유합주방: 최초 생성자(BN_LEADER_ID)를 방장으로 고정 ─────────
+            // BN_LEADER_ID는 변경하지 않음 (최초 등록자가 항상 방장)
+            newLeaderId = group.getBnLeaderId();
         }
 
-        // 6. Update BN_USER Roles
+        // 3. Update BN_USER Roles (공통: 방장/일반 역할 갱신)
         java.util.List<BnUser> users = bnUserRepository.findByBnNo(bnNo);
         for (BnUser user : users) {
             String newRole = user.getBnUserId().equals(newLeaderId) ? "LEAD" : "NORL";
