@@ -85,9 +85,9 @@ jobs:
             echo "프론트엔드 배포 완료!"
 
             echo "===== 백엔드 배포 시작 ====="
-            # 실행 중인 모든 JAR 프로세스 종료 (pkill로 한번에 처리)
+            # 실행 중인 모든 JAR 프로세스 종료 (java 프로세스만 정확히 타겟팅)
             echo "기존 백엔드 프로세스 종료 중..."
-            pkill -f "backend-0.0.1-SNAPSHOT.jar"
+            pkill -f "java.*backend-0.0.1-SNAPSHOT.jar"
             sleep 5
             echo "프로세스 종료 완료"
 
