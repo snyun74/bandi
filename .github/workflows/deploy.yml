@@ -85,16 +85,27 @@ jobs:
             echo "프론트엔드 배포 완료!"
 
             echo "===== 백엔드 배포 시작 ====="
-            # 실행 중인 모든 JAR 프로세스 종료 (java 프로세스만 정확히 타겟팅)
-            echo "기존 백엔드 프로세스 종료 중..."
-            pkill -f "java.*backend-0.0.1-SNAPSHOT.jar"
-            sleep 5
-            echo "프로세스 종료 완료"
+            APP_PID_FILE="/home/ubuntu/bandi/app.pid"
 
-            # 새 JAR 파일로 Spring Boot 실행
+            # PID 파일로 기존 프로세스 종료
+            if [ -f "$APP_PID_FILE" ]; then
+                OLD_PID=$(cat "$APP_PID_FILE")
+                echo "기존 프로세스(PID: $OLD_PID) 종료 중..."
+                kill -15 "$OLD_PID"
+                sleep 5
+                rm -f "$APP_PID_FILE"
+                echo "프로세스 종료 완료"
+            else
+                echo "실행 중인 백엔드 프로세스 없음 (PID 파일 없음)"
+            fi
+
+            # 새 Spring Boot 프로세스 시작
             echo "새 버전 백엔드 시작..."
             nohup java -jar /home/ubuntu/bandi/backend-0.0.1-SNAPSHOT.jar > /home/ubuntu/bandi/app.log 2>&1 &
-            disown $!
+            NEW_PID=$!
+            echo $NEW_PID > "$APP_PID_FILE"
+            disown $NEW_PID
+            echo "새 프로세스 시작됨 (PID: $NEW_PID)"
 
             echo "===== 배포 완료! ====="
             exit 0
