@@ -35,9 +35,10 @@ public class JamChatController {
     public ResponseEntity<List<ChatMessageDto>> getChatMessages(
             @PathVariable Long roomNo,
             @RequestParam String userId,
-            @RequestParam(required = false) Long lastMsgNo) {
+            @RequestParam(required = false) Long lastMsgNo,
+            @RequestParam(required = false) Long afterMsgNo) {
 
-        List<ChatMessageDto> messages = jamChatService.getChatMessages(roomNo, userId, lastMsgNo);
+        List<ChatMessageDto> messages = jamChatService.getChatMessages(roomNo, userId, lastMsgNo, afterMsgNo);
         return ResponseEntity.ok(messages);
     }
 

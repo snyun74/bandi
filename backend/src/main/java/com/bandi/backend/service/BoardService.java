@@ -67,7 +67,7 @@ public class BoardService {
         if (file != null && !file.isEmpty()) {
             try {
                 // Use the same upload directory as ClanService
-                String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
                 File dir = new File(uploadDir);
                 if (!dir.exists()) {
                     dir.mkdirs();

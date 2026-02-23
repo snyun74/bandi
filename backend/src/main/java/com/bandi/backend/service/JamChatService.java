@@ -56,7 +56,7 @@ public class JamChatService {
     }
 
     @Transactional
-    public List<ChatMessageDto> getChatMessages(Long roomNo, String userId, Long lastMsgNo) {
+    public List<ChatMessageDto> getChatMessages(Long roomNo, String userId, Long lastMsgNo, Long afterMsgNo) {
         StringBuilder sql = new StringBuilder();
 
         sql.append(
@@ -93,6 +93,9 @@ public class JamChatService {
         if (lastMsgNo != null) {
             sql.append(" AND MSG.BN_CHAT_MSG_NO < :lastMsgNo ");
         }
+        if (afterMsgNo != null) {
+            sql.append(" AND MSG.BN_CHAT_MSG_NO > :afterMsgNo ");
+        }
 
         sql.append(" ORDER BY MSG.BN_CHAT_MSG_NO DESC LIMIT 30 ");
 
@@ -100,6 +103,9 @@ public class JamChatService {
         query.setParameter("roomNo", roomNo);
         if (lastMsgNo != null) {
             query.setParameter("lastMsgNo", lastMsgNo);
+        }
+        if (afterMsgNo != null) {
+            query.setParameter("afterMsgNo", afterMsgNo);
         }
 
         List<Object[]> results = query.getResultList();
@@ -316,7 +322,7 @@ public class JamChatService {
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         try {
-            String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+            String uploadDir = "/home/ubuntu/bandi/dist/common_images";
             java.io.File dir = new java.io.File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();

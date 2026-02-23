@@ -94,6 +94,7 @@ const JamChatRoom: React.FC = () => {
     const prevScrollHeightRef = useRef<number>(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const latestMsgNoRef = useRef<number>(0); // 폴링용: 마지막 메시지 번호 추적
 
     const [currentRoomName, setCurrentRoomName] = useState("Jam Chat Room");
     // const [currentRoomType, setCurrentRoomType] = useState("BAND"); // Always BAND
@@ -152,6 +153,10 @@ const JamChatRoom: React.FC = () => {
                     setIsFetchingOld(false);
                 } else {
                     setMessages(chronologized);
+                    // 초기 로드 시 최신 메시지 번호 기록 (폴링 기준점)
+                    if (chronologized.length > 0) {
+                        latestMsgNoRef.current = chronologized[chronologized.length - 1].cnMsgNo;
+                    }
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
                 }
             } else {
@@ -164,12 +169,66 @@ const JamChatRoom: React.FC = () => {
         }
     }, [roomNo]);
 
+    // 새 메시지만 가져오는 폴링 함수
+    const fetchNewMessages = useCallback(async () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId || latestMsgNoRef.current === 0) return;
+
+        try {
+            const url = `/api/jam-chat/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.length > 0) {
+                    const processedData = data.map((item: any) => ({
+                        ...item,
+                        isMyMessage: item.sndUserId === userId || item.isMyMessage
+                    })).reverse();
+
+                    setMessages(prev => [...prev, ...processedData]);
+                    latestMsgNoRef.current = processedData[processedData.length - 1].cnMsgNo;
+                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, [roomNo]);
+
     useEffect(() => {
         setMessages([]);
         setLoading(true);
         setHasMore(true);
+        latestMsgNoRef.current = 0;
         fetchMessages();
     }, [fetchMessages]);
+
+    // 3초마다 새 메시지 폴링
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchNewMessages();
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [fetchNewMessages]);
+
+    // 10초마다 읽음 카운트 갱신
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const userId = localStorage.getItem('userId');
+            if (!userId || latestMsgNoRef.current === 0) return;
+            try {
+                const response = await fetch(`/api/jam-chat/${roomNo}/messages?userId=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setMessages(prev => prev.map(msg => {
+                        const updated = data.find((d: any) => d.cnMsgNo === msg.cnMsgNo);
+                        return updated !== undefined ? { ...msg, unreadCount: updated.unreadCount } : msg;
+                    }));
+                }
+            } catch { }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [roomNo]);
 
     useEffect(() => {
         if (!isFetchingOld && messagesContainerRef.current && prevScrollHeightRef.current > 0) {
@@ -286,6 +345,7 @@ const JamChatRoom: React.FC = () => {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
                 setMessages(prev => [...prev, processedMessage]);
+                latestMsgNoRef.current = newMessage.cnMsgNo; // 폴링 기준점 업데이트
                 setInputText("");
                 setReplyTo(null);
                 setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);

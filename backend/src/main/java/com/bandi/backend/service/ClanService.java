@@ -56,7 +56,7 @@ public class ClanService {
         // 1. Save File & CmAttachment if file exists
         if (file != null && !file.isEmpty()) {
             try {
-                String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
                 File dir = new File(uploadDir);
                 if (!dir.exists()) {
                     dir.mkdirs();
@@ -361,7 +361,7 @@ public class ClanService {
         // 1. Save File & CmAttachment if file exists
         if (file != null && !file.isEmpty()) {
             try {
-                String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
                 File dir = new File(uploadDir);
                 if (!dir.exists()) {
                     dir.mkdirs();
@@ -647,7 +647,7 @@ public class ClanService {
         // 2. Update Image if provided
         if (file != null && !file.isEmpty()) {
             try {
-                String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
                 File dir = new File(uploadDir);
                 if (!dir.exists()) {
                     dir.mkdirs();

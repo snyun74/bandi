@@ -19,9 +19,6 @@ public class GroupFriend {
     @Column(name = "friend_user_id", length = 20)
     private String friendUserId;
 
-    @Column(name = "cm_group_no", length = 10)
-    private String cmGroupNo;
-
     @Column(name = "friend_stat_cd", length = 20)
     private String friendStatCd;
 

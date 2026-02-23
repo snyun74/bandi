@@ -587,7 +587,7 @@ public class ChatService {
         .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
     try {
-      String uploadDir = "d:/Project/bandi/frontend-web/public/common_images";
+      String uploadDir = "/home/ubuntu/bandi/dist/common_images";
       java.io.File dir = new java.io.File(uploadDir);
       if (!dir.exists()) {
         dir.mkdirs();
