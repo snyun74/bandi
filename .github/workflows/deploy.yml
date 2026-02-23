@@ -4,6 +4,9 @@ on:
   push:
     branches: [ "main" ] # main 브랜치에 push될 때 자동 실행
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
