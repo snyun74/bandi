@@ -49,7 +49,13 @@ public class UserService {
     public UserProfileDto getUserProfile(String userId) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {
-            throw new RuntimeException("User not found: " + userId);
+            log.warn("User not found in MM_USER: {}. Returning default profile.", userId);
+            return UserProfileDto.builder()
+                    .userId(userId)
+                    .userNm("알 수 없음")
+                    .userNickNm("알 수 없음")
+                    .profileImageUrl(null)
+                    .build();
         }
 
         // 1. Get Profile Image
