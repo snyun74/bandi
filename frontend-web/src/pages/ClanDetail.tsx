@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegEdit, FaCommentDots, FaUserFriends } from 'react-icons/fa';
+import { FaChevronLeft, FaRegEdit, FaCommentDots, FaUserFriends, FaMusic } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import GatheringCreateModal from '../components/GatheringCreateModal';
+import GatheringApplyModal from '../components/GatheringApplyModal';
 
 interface ClanDetailData {
     id: number;
@@ -23,6 +25,7 @@ const ClanDetail: React.FC = () => {
     const [topPosts, setTopPosts] = useState<any[]>([]);
     const [schedules, setSchedules] = useState<any[]>([]);
     const [recentJams, setRecentJams] = useState<any[]>([]); // Added state
+    const [gatherings, setGatherings] = useState<any[]>([]); // New state for clan gatherings
     const [loading, setLoading] = useState(true);
     const [selectedPreviewDate, setSelectedPreviewDate] = useState<string | null>(null); // Moved here
 
@@ -35,9 +38,15 @@ const ClanDetail: React.FC = () => {
         imageFile: File | null;
         previewUrl: string | null;
     }>({ nm: '', desc: '', url: '', imageFile: null, previewUrl: null });
+    const [isGatheringCreateModalOpen, setIsGatheringCreateModalOpen] = useState(false);
+    const [isGatheringApplyModalOpen, setIsGatheringApplyModalOpen] = useState(false);
+    const [selectedGathering, setSelectedGathering] = useState<any>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [onConfirmAction, setOnConfirmAction] = useState<(() => void) | null>(null);
 
     const showAlert = (msg: string) => {
         setAlertMessage(msg);
@@ -55,13 +64,14 @@ const ClanDetail: React.FC = () => {
                 const month = today.getMonth() + 1;
 
                 // Parallel fetch for clan details, notices, top posts, and schedules
-                const [clanRes, noticeRes, topRes, scheduleRes, jamRes, roleRes] = await Promise.all([
+                const [clanRes, noticeRes, topRes, scheduleRes, jamRes, roleRes, gatheringsRes] = await Promise.all([
                     fetch(clanUrl),
                     fetch(`/api/clans/${id}/notices?limit=5`),
                     fetch(`/api/clans/${id}/boards/top`),
                     fetch(`/api/clan/schedule?clanId=${id}&year=${year}&month=${month}`),
                     fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`), // Fetch recent jams
-                    userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null)
+                    userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null),
+                    fetch(`/api/clans/gatherings/clan/${id}?userId=${userId || ''}`) // Fetch active gatherings
                 ]);
 
                 if (clanRes.ok) {
@@ -104,6 +114,17 @@ const ClanDetail: React.FC = () => {
                     setRecentJams(jamData);
                 }
 
+                if (gatheringsRes && gatheringsRes.ok) {
+                    const gatherData = await gatheringsRes.json();
+                    // Sort: N (Recruiting) first, then by gatherNo DESC
+                    const sortedGather = gatherData.sort((a: any, b: any) => {
+                        if (a.gatherProcFg === 'N' && b.gatherProcFg !== 'N') return -1;
+                        if (a.gatherProcFg !== 'N' && b.gatherProcFg === 'N') return 1;
+                        return b.gatherNo - a.gatherNo;
+                    });
+                    setGatherings(sortedGather);
+                }
+
             } catch (error) {
                 console.error("Failed to fetch clan data", error);
             } finally {
@@ -144,6 +165,44 @@ const ClanDetail: React.FC = () => {
     };
 
     const selectedSchedules = selectedPreviewDate ? schedules.filter((s: any) => s.sttDate === selectedPreviewDate) : [];
+
+    const handleGatheringApplyClick = (gather: any) => {
+        if (gather.applied) return;
+        setSelectedGathering(gather);
+        setIsGatheringApplyModalOpen(true);
+    };
+
+    const handleGatheringCancelClick = (gatherNo: number) => {
+        setConfirmMessage('참여 신청을 취소하시겠습니까?');
+        setOnConfirmAction(() => () => executeGatheringCancel(gatherNo));
+        setIsConfirmOpen(true);
+    };
+
+    const executeGatheringCancel = async (gatherNo: number) => {
+        setIsConfirmOpen(false);
+        try {
+            const userId = localStorage.getItem('userId');
+            const response = await fetch(`/api/clans/gatherings/${gatherNo}/apply?userId=${userId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                showAlert('참여 신청이 취소되었습니다.');
+                // Refresh gatherings
+                const gatheringsRes = await fetch(`/api/clans/gatherings/clan/${id}?userId=${userId || ''}`);
+                if (gatheringsRes.ok) {
+                    const gatherData = await gatheringsRes.json();
+                    setGatherings(gatherData);
+                }
+            } else {
+                const err = await response.json();
+                showAlert(err.message || '취소 실패');
+            }
+        } catch (error) {
+            console.error(error);
+            showAlert('오류가 발생했습니다.');
+        }
+    };
 
     const handleEditClick = () => {
         if (myRole !== '01' && myRole !== '02') {
@@ -233,7 +292,7 @@ const ClanDetail: React.FC = () => {
                 <h1 className="text-xl text-[#003C48] font-bold">클랜</h1>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-6">
+            <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-5">
                 {/* Clan Info Card */}
                 <div className="flex items-start gap-4 mb-6">
                     <div
@@ -266,6 +325,11 @@ const ClanDetail: React.FC = () => {
                             <FaUserFriends size={12} className="text-[#00BDF8]" /> 멤버 현황
                             <span className="bg-[#00BDF8] text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
                         </button>
+                        {myRole === '01' && (
+                            <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-3 py-1 flex items-center gap-1 text-xs text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-colors">
+                                <FaMusic size={12} /> 합주 모집
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -296,6 +360,65 @@ const ClanDetail: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Gathering Notices - Only visible if there are active gatherings */}
+                {gatherings.length > 0 && (
+                    <div className="bg-white rounded-2xl border-2 border-[#FF8A80] shadow-md overflow-hidden animate-pulse-subtle">
+                        <div className="bg-[#FF8A80] px-4 py-2 flex justify-between items-center">
+                            <div
+                                className={`flex items-center gap-2 text-white font-bold text-sm ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:underline' : ''}`}
+                                onClick={() => {
+                                    if (myRole === '01' || myRole === '02') {
+                                        navigate(`/main/clan/gathering/management/${id}`);
+                                    }
+                                }}
+                            >
+                                <span>🎵 합주 모집 공고</span>
+                            </div>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            {gatherings.map((gather) => (
+                                <div key={gather.gatherNo} className="bg-gray-50 rounded-xl p-3 border border-gray-100 flex justify-between items-center gap-4">
+                                    <div className="flex-1 min-w-0 pr-4">
+                                        <h4 className="text-[#003C48] font-bold text-[15px] truncate">{gather.title}</h4>
+                                        <p className="text-gray-400 text-[11px] mt-1">합주일 : {gather.gatherDate && `${gather.gatherDate.substring(0, 4)}.${gather.gatherDate.substring(4, 6)}.${gather.gatherDate.substring(6, 8)}`}</p>
+                                    </div>
+                                    <div className="flex shrink-0">
+                                        {gather.gatherProcFg === 'Y' ? (
+                                            <button
+                                                disabled
+                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-gray-200 text-gray-400 cursor-default whitespace-nowrap shadow-sm"
+                                            >
+                                                모집종료
+                                            </button>
+                                        ) : gather.gatherProcFg === 'M' ? (
+                                            <button
+                                                disabled
+                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-green-100 text-green-500 cursor-default whitespace-nowrap shadow-sm"
+                                            >
+                                                매핑완료
+                                            </button>
+                                        ) : gather.applied ? (
+                                            <button
+                                                onClick={() => handleGatheringCancelClick(gather.gatherNo)}
+                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-gray-500 text-white hover:bg-gray-600 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                            >
+                                                참여취소
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleGatheringApplyClick(gather)}
+                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-[#FF8A80] text-white hover:bg-[#FF7060] transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                            >
+                                                참여하기
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Clan Jam Rooms */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative">
@@ -502,6 +625,38 @@ const ClanDetail: React.FC = () => {
                     }
                 }}
             />
+            <CommonModal
+                isOpen={isConfirmOpen}
+                type="confirm"
+                message={confirmMessage}
+                onConfirm={() => {
+                    if (onConfirmAction) onConfirmAction();
+                    setIsConfirmOpen(false);
+                }}
+                onCancel={() => setIsConfirmOpen(false)}
+            />
+
+            {/* Gathering Modals */}
+            {isGatheringCreateModalOpen && (
+                <GatheringCreateModal
+                    clanId={Number(id)}
+                    userId={localStorage.getItem('userId') || ''}
+                    onClose={() => setIsGatheringCreateModalOpen(false)}
+                    onSubmit={() => {
+                        window.location.reload(); // Refresh to show new notice
+                    }}
+                />
+            )}
+            {isGatheringApplyModalOpen && selectedGathering && (
+                <GatheringApplyModal
+                    gathering={selectedGathering}
+                    userId={localStorage.getItem('userId') || ''}
+                    onClose={() => setIsGatheringApplyModalOpen(false)}
+                    onSubmit={() => {
+                        window.location.reload(); // Refresh to show applied status
+                    }}
+                />
+            )}
         </div>
     );
 };

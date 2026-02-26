@@ -49,6 +49,8 @@ import CustomerCenterPage from './pages/CustomerCenterPage';
 import AdminPage from './pages/AdminPage';
 import AdminBannerPage from './pages/AdminBannerPage';
 import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
+import GatheringManagement from './pages/GatheringManagement';
+import GatheringMatchResult from './pages/GatheringMatchResult';
 import './App.css';
 
 function App() {
@@ -81,6 +83,8 @@ function App() {
           <Route path="clan/members/:clanId" element={<ClanMemberStatus />} />
           <Route path="clan/intro/:id" element={<ClanIntro />} />
           <Route path="clan/notice/:clanId" element={<ClanNoticeList />} />
+          <Route path="clan/gathering/management/:clanId" element={<GatheringManagement />} />
+          <Route path="clan/gathering/match-results/:gatherNo" element={<GatheringMatchResult />} />
           <Route path="chat/list" element={<ChatList />} />
           <Route path="chat/room/:roomNo" element={<ChatRoom />} />
           <Route path="jam/chat/:roomNo" element={<JamChatRoom />} />

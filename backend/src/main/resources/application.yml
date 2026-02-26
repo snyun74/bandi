@@ -33,7 +33,7 @@ spring:
     activate:
       on-profile: local
 server:
-  port: 8080 # 로컬에서는 8080 사용
+  port: 8084 # 로컬에서도 8084 사용 (8080 충돌 방지 및 프록시 설정 일치)
 kakao:
   client-id: b7b74bba84f701122fa1bacf9697f578
   redirect-uri: http://127.0.0.1:5173/auth/kakao/callback
