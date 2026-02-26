@@ -115,6 +115,7 @@ const PrivateChatRoom: React.FC = () => {
 
     const fetchNewMessages = useCallback(async () => {
         const userId = localStorage.getItem('userId');
+        console.log(`[Polling] fetchNewMessages tick. userId: ${userId}, isInitialLoadDone: ${isInitialLoadDone.current}, latestMsgNo: ${latestMsgNoRef.current}`);
         if (!userId || !isInitialLoadDone.current) return;
 
         try {
