@@ -78,8 +78,19 @@ jobs:
             set +e  # 개별 명령어 실패 시 스크립트 중단 방지
 
             echo "===== 프론트엔드 배포 시작 ====="
-            sudo rm -rf /var/www/html/*
-            sudo cp -r /home/ubuntu/bandi/frontend-dist/* /var/www/html/
+            # Use sh -c to ensure the glob expands with sudo privileges safely
+            sudo sh -c 'rm -rf /var/www/html/*'
+            
+            # Fallback pathing in case strip_components behaved differently
+            if [ -d "/home/ubuntu/bandi/frontend-dist/frontend-web/dist" ]; then
+                echo "Found nested dist folder."
+                sudo sh -c 'cp -r /home/ubuntu/bandi/frontend-dist/frontend-web/dist/* /var/www/html/'
+            else
+                echo "Found direct dist files."
+                sudo sh -c 'cp -r /home/ubuntu/bandi/frontend-dist/* /var/www/html/'
+            fi
+            
+            sudo chown -R www-data:www-data /var/www/html
             sudo systemctl daemon-reload
             sudo systemctl reload nginx
             echo "프론트엔드 배포 완료!"
