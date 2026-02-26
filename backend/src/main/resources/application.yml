@@ -1,9 +1,8 @@
-server:
-  port: 8084
-
 spring:
   application:
     name: bandi-backend
+  profiles:
+    active: local # 기본값은 로컬로 설정
   datasource:
     url: jdbc:postgresql://127.0.0.1:5432/bandi?sslmode=disable
     username: ${DB_USERNAME:postgres}
@@ -28,6 +27,24 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     com.bandi.backend: DEBUG
 
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+server:
+  port: 8080 # 로컬에서는 8080 사용
 kakao:
   client-id: b7b74bba84f701122fa1bacf9697f578
   redirect-uri: http://127.0.0.1:5173/auth/kakao/callback
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 8084 # 서버(운영)에서는 8084 사용
+kakao:
+  client-id: b7b74bba84f701122fa1bacf9697f578
+  redirect-uri: https://bandi.astems.co.kr/api/auth/kakao/callback
