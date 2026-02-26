@@ -84,7 +84,7 @@ public class ClanNoticeController {
                 Long attachNo = null;
                 if (file != null && !file.isEmpty()) {
                         try {
-                                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+                                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
                                 java.io.File dir = new java.io.File(uploadDir);
                                 if (!dir.exists())
                                         dir.mkdirs();

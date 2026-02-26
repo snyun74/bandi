@@ -52,6 +52,7 @@ const PrivateChatRoom: React.FC = () => {
     const prevScrollHeightRef = useRef<number>(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const latestMsgNoRef = useRef<number>(0);
 
     const [friendName, setFriendName] = useState("Friend");
     const [myProfile, setMyProfile] = useState<UserProfileDto | null>(null);
@@ -95,6 +96,9 @@ const PrivateChatRoom: React.FC = () => {
                     setIsFetchingOld(false);
                 } else {
                     setMessages(chronologized);
+                    if (chronologized.length > 0) {
+                        latestMsgNoRef.current = chronologized[chronologized.length - 1].cnMsgNo;
+                    }
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
                 }
             } else {
@@ -107,23 +111,65 @@ const PrivateChatRoom: React.FC = () => {
         }
     }, [roomNo]);
 
+    const fetchNewMessages = useCallback(async () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId || latestMsgNoRef.current === 0) return;
+
+        try {
+            const url = `/api/chat/private/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.length > 0) {
+                    const processedData = data.map((item: any) => ({
+                        ...item,
+                        isMyMessage: item.sndUserId === userId || item.isMyMessage
+                    })).reverse();
+
+                    setMessages(prev => [...prev, ...processedData]);
+                    latestMsgNoRef.current = processedData[processedData.length - 1].cnMsgNo;
+                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, [roomNo]);
+
     useEffect(() => {
         setMessages([]);
         setLoading(true);
         setHasMore(true);
+        latestMsgNoRef.current = 0;
         fetchMessages();
+    }, [fetchMessages]);
 
-        // Polling for new messages every 3 seconds
+    // 3초마다 새 메시지 폴링
+    useEffect(() => {
         const interval = setInterval(() => {
-            // To implement efficient polling, we should fetch only new messages.
-            // But current API structure in ChatController (getPrivateChatMessages) doesn't explicitly support "newer than" param easily without modification.
-            // or I can just re-fetch the latest page? That's heavy.
-            // For now, let's keep it simple without polling or add a simple refresh.
-            // Actually, `ChatRoom.tsx` didn't have polling. I will add it if requested or if I have time.
-            // User goal: "navigate to a new chat room to start a conversation". Basic functionality first.
+            fetchNewMessages();
         }, 3000);
         return () => clearInterval(interval);
-    }, [fetchMessages]);
+    }, [fetchNewMessages]);
+
+    // 10초마다 읽음 카운트 갱신
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const userId = localStorage.getItem('userId');
+            if (!userId || latestMsgNoRef.current === 0) return;
+            try {
+                const response = await fetch(`/api/chat/private/${roomNo}/messages?userId=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setMessages(prev => prev.map(msg => {
+                        const updated = data.find((d: any) => d.cnMsgNo === msg.cnMsgNo);
+                        return updated !== undefined ? { ...msg, unreadCount: updated.unreadCount } : msg;
+                    }));
+                }
+            } catch { }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [roomNo]);
 
     useEffect(() => {
         const userId = localStorage.getItem('userId');
@@ -190,7 +236,7 @@ const PrivateChatRoom: React.FC = () => {
             const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData });
             if (uploadRes.ok) {
                 const uploadData = await uploadRes.json();
-                const isImage = file.type.startsWith('image/');
+                const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
 
                 const msgRes = await fetch('/api/chat/private/message', {
                     method: 'POST',
@@ -213,6 +259,7 @@ const PrivateChatRoom: React.FC = () => {
                         attachFileName: newMessage.attachFileName || uploadData.fileName
                     };
                     setMessages(prev => [...prev, processedMessage]);
+                    latestMsgNoRef.current = newMessage.cnMsgNo;
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                 }
             } else {
@@ -250,6 +297,7 @@ const PrivateChatRoom: React.FC = () => {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
                 setMessages(prev => [...prev, processedMessage]);
+                latestMsgNoRef.current = newMessage.cnMsgNo;
                 setInputText("");
                 setReplyTo(null);
                 setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);

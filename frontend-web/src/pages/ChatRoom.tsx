@@ -48,6 +48,8 @@ const ChatRoom: React.FC = () => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const latestMsgNoRef = useRef<number>(0);
+
     const [currentRoomName, setCurrentRoomName] = useState("Chat Room");
     const [currentRoomType, setCurrentRoomType] = useState("");
     const [currentRoomProfile, setCurrentRoomProfile] = useState<string | undefined>(undefined);
@@ -115,6 +117,9 @@ const ChatRoom: React.FC = () => {
                     setIsFetchingOld(false);
                 } else {
                     setMessages(chronologized);
+                    if (chronologized.length > 0) {
+                        latestMsgNoRef.current = chronologized[chronologized.length - 1].cnMsgNo;
+                    }
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
                 }
             } else {
@@ -125,14 +130,65 @@ const ChatRoom: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [roomNo]);
+    }, [roomNo, currentRoomType]);
+
+    const fetchNewMessages = useCallback(async () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId || latestMsgNoRef.current === 0) return;
+
+        try {
+            const url = `/api/chat/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}&roomType=${currentRoomType || 'CLAN'}`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.length > 0) {
+                    const processedData = data.map((item: any) => ({
+                        ...item,
+                        isMyMessage: item.sndUserId === userId || item.isMyMessage
+                    })).reverse();
+
+                    setMessages(prev => [...prev, ...processedData]);
+                    latestMsgNoRef.current = processedData[processedData.length - 1].cnMsgNo;
+                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, [roomNo, currentRoomType]);
 
     useEffect(() => {
         setMessages([]);
         setLoading(true);
         setHasMore(true);
+        latestMsgNoRef.current = 0;
         fetchMessages();
     }, [fetchMessages]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchNewMessages();
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [fetchNewMessages]);
+
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const userId = localStorage.getItem('userId');
+            if (!userId || latestMsgNoRef.current === 0) return;
+            try {
+                const response = await fetch(`/api/chat/${roomNo}/messages?userId=${userId}&roomType=${currentRoomType || 'CLAN'}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setMessages(prev => prev.map(msg => {
+                        const updated = data.find((d: any) => d.cnMsgNo === msg.cnMsgNo);
+                        return updated !== undefined ? { ...msg, unreadCount: updated.unreadCount } : msg;
+                    }));
+                }
+            } catch { }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [roomNo, currentRoomType]);
 
     useEffect(() => {
         if (!isFetchingOld && messagesContainerRef.current && prevScrollHeightRef.current > 0) {
@@ -184,7 +240,7 @@ const ChatRoom: React.FC = () => {
             const uploadRes = await fetch('/api/chat/upload', { method: 'POST', body: formData });
             if (uploadRes.ok) {
                 const uploadData = await uploadRes.json();
-                const isImage = file.type.startsWith('image/');
+                const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
 
                 const msgRes = await fetch('/api/chat/message', {
                     method: 'POST',
@@ -208,6 +264,7 @@ const ChatRoom: React.FC = () => {
                         attachFileName: newMessage.attachFileName || uploadData.fileName
                     };
                     setMessages(prev => [...prev, processedMessage]);
+                    latestMsgNoRef.current = newMessage.cnMsgNo;
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                 }
             } else {
@@ -246,6 +303,7 @@ const ChatRoom: React.FC = () => {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
                 setMessages(prev => [...prev, processedMessage]);
+                latestMsgNoRef.current = newMessage.cnMsgNo;
                 setInputText("");
                 setReplyTo(null);
                 setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);

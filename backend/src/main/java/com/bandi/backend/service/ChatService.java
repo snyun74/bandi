@@ -183,6 +183,7 @@ public class ChatService {
 
   @Transactional
   public List<com.bandi.backend.dto.ChatMessageDto> getChatMessages(Long roomNo, String userId, Long lastMsgNo,
+      Long afterMsgNo,
       String roomType) {
     StringBuilder sql = new StringBuilder();
 
@@ -259,6 +260,14 @@ public class ChatService {
       }
     }
 
+    if (afterMsgNo != null) {
+      if ("BAND".equals(roomType)) {
+        sql.append(" AND MSG.BN_CHAT_MSG_NO > :afterMsgNo ");
+      } else {
+        sql.append(" AND MSG.CN_MSG_NO > :afterMsgNo ");
+      }
+    }
+
     if ("BAND".equals(roomType)) {
       sql.append(" ORDER BY MSG.BN_CHAT_MSG_NO DESC LIMIT 30 ");
     } else {
@@ -269,6 +278,9 @@ public class ChatService {
     query.setParameter("roomNo", roomNo);
     if (lastMsgNo != null) {
       query.setParameter("lastMsgNo", lastMsgNo);
+    }
+    if (afterMsgNo != null) {
+      query.setParameter("afterMsgNo", afterMsgNo);
     }
 
     List<Object[]> results = query.getResultList();
@@ -587,7 +599,7 @@ public class ChatService {
         .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
     try {
-      String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+      String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
       java.io.File dir = new java.io.File(uploadDir);
       if (!dir.exists()) {
         dir.mkdirs();
@@ -625,7 +637,8 @@ public class ChatService {
   }
 
   @Transactional
-  public List<com.bandi.backend.dto.ChatMessageDto> getPrivateChatMessages(Long roomNo, String userId, Long lastMsgNo) {
+  public List<com.bandi.backend.dto.ChatMessageDto> getPrivateChatMessages(Long roomNo, String userId, Long lastMsgNo,
+      Long afterMsgNo) {
     StringBuilder sql = new StringBuilder(
         """
                 SELECT
@@ -668,6 +681,9 @@ public class ChatService {
     if (lastMsgNo != null) {
       sql.append(" AND MSG.MM_MSG_NO < :lastMsgNo ");
     }
+    if (afterMsgNo != null) {
+      sql.append(" AND MSG.MM_MSG_NO > :afterMsgNo ");
+    }
 
     sql.append(" ORDER BY MSG.MM_MSG_NO DESC LIMIT 30 ");
 
@@ -675,6 +691,9 @@ public class ChatService {
     query.setParameter("roomNo", roomNo);
     if (lastMsgNo != null) {
       query.setParameter("lastMsgNo", lastMsgNo);
+    }
+    if (afterMsgNo != null) {
+      query.setParameter("afterMsgNo", afterMsgNo);
     }
 
     List<Object[]> results = query.getResultList();

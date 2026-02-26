@@ -44,9 +44,11 @@ public class ChatController {
             @org.springframework.web.bind.annotation.PathVariable Long roomNo,
             @RequestParam String userId,
             @RequestParam(required = false) Long lastMsgNo,
+            @RequestParam(required = false) Long afterMsgNo,
             @RequestParam(required = false, defaultValue = "CLAN") String roomType) {
 
         List<com.bandi.backend.dto.ChatMessageDto> messages = chatService.getChatMessages(roomNo, userId, lastMsgNo,
+                afterMsgNo,
                 roomType);
         return ResponseEntity.ok(messages);
     }
@@ -81,10 +83,11 @@ public class ChatController {
     public ResponseEntity<List<com.bandi.backend.dto.ChatMessageDto>> getPrivateChatMessages(
             @org.springframework.web.bind.annotation.PathVariable Long roomNo,
             @RequestParam String userId,
-            @RequestParam(required = false) Long lastMsgNo) {
+            @RequestParam(required = false) Long lastMsgNo,
+            @RequestParam(required = false) Long afterMsgNo) {
 
         List<com.bandi.backend.dto.ChatMessageDto> messages = chatService.getPrivateChatMessages(roomNo, userId,
-                lastMsgNo);
+                lastMsgNo, afterMsgNo);
         return ResponseEntity.ok(messages);
     }
 

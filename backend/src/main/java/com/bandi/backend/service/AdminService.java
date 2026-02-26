@@ -92,7 +92,7 @@ public class AdminService {
 
         try {
             if (file != null && !file.isEmpty()) {
-                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
                 File dir = new File(uploadDir);
                 if (!dir.exists()) {
                     dir.mkdirs();

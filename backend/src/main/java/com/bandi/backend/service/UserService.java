@@ -129,7 +129,7 @@ public class UserService {
         // 2. Handle File Upload
         if (file != null && !file.isEmpty()) {
             try {
-                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
                 File dir = new File(uploadDir);
                 if (!dir.exists())
                     dir.mkdirs();

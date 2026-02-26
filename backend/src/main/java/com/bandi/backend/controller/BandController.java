@@ -46,7 +46,7 @@ public class BandController {
             try {
                 String currentDateTime = java.time.LocalDateTime.now()
                         .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
                 java.io.File dir = new java.io.File(uploadDir);
                 if (!dir.exists())
                     dir.mkdirs();
@@ -147,7 +147,7 @@ public class BandController {
             try {
                 String currentDateTime = java.time.LocalDateTime.now()
                         .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
                 java.io.File dir = new java.io.File(uploadDir);
                 if (!dir.exists())
                     dir.mkdirs();

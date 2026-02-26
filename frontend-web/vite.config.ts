@@ -16,6 +16,11 @@ export default defineConfig({
         target: 'http://localhost:8084',
         changeOrigin: true,
       },
+      '/common_images': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+
     },
   },
 })

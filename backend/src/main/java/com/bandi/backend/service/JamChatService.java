@@ -322,7 +322,7 @@ public class JamChatService {
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         try {
-            String uploadDir = "/home/ubuntu/bandi/dist/common_images";
+            String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
             java.io.File dir = new java.io.File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();

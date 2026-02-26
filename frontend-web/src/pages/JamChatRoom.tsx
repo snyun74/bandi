@@ -280,7 +280,7 @@ const JamChatRoom: React.FC = () => {
             const uploadRes = await fetch('/api/jam-chat/upload', { method: 'POST', body: formData });
             if (uploadRes.ok) {
                 const uploadData = await uploadRes.json();
-                const isImage = file.type.startsWith('image/');
+                const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
 
                 const msgRes = await fetch('/api/jam-chat/message', {
                     method: 'POST',
@@ -303,6 +303,7 @@ const JamChatRoom: React.FC = () => {
                         attachFileName: newMessage.attachFileName || uploadData.fileName
                     };
                     setMessages(prev => [...prev, processedMessage]);
+                    latestMsgNoRef.current = newMessage.cnMsgNo;
                     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                 }
             } else {
@@ -580,6 +581,7 @@ const JamChatRoom: React.FC = () => {
                                 const newMessage = await res.json();
                                 const processedMessage = { ...newMessage, isMyMessage: true };
                                 setMessages(prev => [...prev, processedMessage]);
+                                latestMsgNoRef.current = newMessage.cnMsgNo;
                                 setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
                                 setIsSettlementModalOpen(false);
                             } else {
