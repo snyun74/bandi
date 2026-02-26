@@ -53,6 +53,7 @@ const PrivateChatRoom: React.FC = () => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const latestMsgNoRef = useRef<number>(0);
+    const isInitialLoadDone = useRef<boolean>(false);
 
     const [friendName, setFriendName] = useState("Friend");
     const [myProfile, setMyProfile] = useState<UserProfileDto | null>(null);
@@ -108,12 +109,13 @@ const PrivateChatRoom: React.FC = () => {
             console.error("Error:", error);
         } finally {
             setLoading(false);
+            isInitialLoadDone.current = true;
         }
     }, [roomNo]);
 
     const fetchNewMessages = useCallback(async () => {
         const userId = localStorage.getItem('userId');
-        if (!userId || latestMsgNoRef.current === 0) return;
+        if (!userId || !isInitialLoadDone.current) return;
 
         try {
             const url = `/api/chat/private/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}`;
@@ -141,6 +143,7 @@ const PrivateChatRoom: React.FC = () => {
         setLoading(true);
         setHasMore(true);
         latestMsgNoRef.current = 0;
+        isInitialLoadDone.current = false;
         fetchMessages();
     }, [fetchMessages]);
 
@@ -156,7 +159,7 @@ const PrivateChatRoom: React.FC = () => {
     useEffect(() => {
         const interval = setInterval(async () => {
             const userId = localStorage.getItem('userId');
-            if (!userId || latestMsgNoRef.current === 0) return;
+            if (!userId || !isInitialLoadDone.current) return;
             try {
                 const response = await fetch(`/api/chat/private/${roomNo}/messages?userId=${userId}`);
                 if (response.ok) {

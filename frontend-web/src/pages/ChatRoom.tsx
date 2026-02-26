@@ -49,6 +49,7 @@ const ChatRoom: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const latestMsgNoRef = useRef<number>(0);
+    const isInitialLoadDone = useRef<boolean>(false);
 
     const [currentRoomName, setCurrentRoomName] = useState("Chat Room");
     const [currentRoomType, setCurrentRoomType] = useState("");
@@ -129,12 +130,13 @@ const ChatRoom: React.FC = () => {
             console.error("Error:", error);
         } finally {
             setLoading(false);
+            isInitialLoadDone.current = true;
         }
     }, [roomNo, currentRoomType]);
 
     const fetchNewMessages = useCallback(async () => {
         const userId = localStorage.getItem('userId');
-        if (!userId || latestMsgNoRef.current === 0) return;
+        if (!userId || !isInitialLoadDone.current) return;
 
         try {
             const url = `/api/chat/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}&roomType=${currentRoomType || 'CLAN'}`;
@@ -162,6 +164,7 @@ const ChatRoom: React.FC = () => {
         setLoading(true);
         setHasMore(true);
         latestMsgNoRef.current = 0;
+        isInitialLoadDone.current = false;
         fetchMessages();
     }, [fetchMessages]);
 
@@ -175,7 +178,7 @@ const ChatRoom: React.FC = () => {
     useEffect(() => {
         const interval = setInterval(async () => {
             const userId = localStorage.getItem('userId');
-            if (!userId || latestMsgNoRef.current === 0) return;
+            if (!userId || !isInitialLoadDone.current) return;
             try {
                 const response = await fetch(`/api/chat/${roomNo}/messages?userId=${userId}&roomType=${currentRoomType || 'CLAN'}`);
                 if (response.ok) {

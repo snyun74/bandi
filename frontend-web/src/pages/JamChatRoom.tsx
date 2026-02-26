@@ -95,6 +95,7 @@ const JamChatRoom: React.FC = () => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const latestMsgNoRef = useRef<number>(0); // 폴링용: 마지막 메시지 번호 추적
+    const isInitialLoadDone = useRef<boolean>(false);
 
     const [currentRoomName, setCurrentRoomName] = useState("Jam Chat Room");
     // const [currentRoomType, setCurrentRoomType] = useState("BAND"); // Always BAND
@@ -166,13 +167,14 @@ const JamChatRoom: React.FC = () => {
             console.error("Error:", error);
         } finally {
             setLoading(false);
+            isInitialLoadDone.current = true;
         }
     }, [roomNo]);
 
     // 새 메시지만 가져오는 폴링 함수
     const fetchNewMessages = useCallback(async () => {
         const userId = localStorage.getItem('userId');
-        if (!userId || latestMsgNoRef.current === 0) return;
+        if (!userId || !isInitialLoadDone.current) return;
 
         try {
             const url = `/api/jam-chat/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}`;
@@ -200,6 +202,7 @@ const JamChatRoom: React.FC = () => {
         setLoading(true);
         setHasMore(true);
         latestMsgNoRef.current = 0;
+        isInitialLoadDone.current = false;
         fetchMessages();
     }, [fetchMessages]);
 
@@ -215,7 +218,7 @@ const JamChatRoom: React.FC = () => {
     useEffect(() => {
         const interval = setInterval(async () => {
             const userId = localStorage.getItem('userId');
-            if (!userId || latestMsgNoRef.current === 0) return;
+            if (!userId || !isInitialLoadDone.current) return;
             try {
                 const response = await fetch(`/api/jam-chat/${roomNo}/messages?userId=${userId}`);
                 if (response.ok) {
