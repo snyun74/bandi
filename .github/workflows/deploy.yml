@@ -44,6 +44,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          tar -czvf dist.tar.gz dist/
 
       # 6. 백엔드 JAR 파일 EC2로 전송
       - name: Copy Backend JAR to EC2
@@ -56,15 +57,16 @@ jobs:
           target: "/home/ubuntu/bandi/"
           strip_components: 3  # backend/build/libs/ 경로 제거하고 파일만 전송
 
-      # 7. 프론트엔드 빌드 결과물 EC2로 전송 (strip없이 파일구조 유지)
+      # 7. 프론트엔드 빌드 결과물(압축) EC2로 전송
       - name: Copy Frontend Build to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "frontend-web/dist"
+          source: "frontend-web/dist.tar.gz"
           target: "/home/ubuntu/bandi/"
+          strip_components: 1
 
       # 8. EC2에서 배포 스크립트 실행
       - name: Deploy on EC2 via SSH
@@ -74,14 +76,24 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set +e  # 개별 명령어 실패 시 스크립트 중단 방지
+            set -e  # 오류 발생 시 배포 즉시 중단 (로그에서 원인 파악 가능)
 
             echo "===== 프론트엔드 배포 시작 ====="
-            sudo sh -c 'rm -rf /var/www/html/*'
-            sudo sh -c 'cp -r /home/ubuntu/bandi/frontend-web/dist/* /var/www/html/'
+            cd /home/ubuntu/bandi
+            if [ ! -f "dist.tar.gz" ]; then
+                echo "ERROR: dist.tar.gz 파일이 전송되지 않았습니다! SCP 작업을 확인하세요."
+                exit 1
+            fi
+
+            # 기존 dist 폴더가 있다면 삭제 후 압축 해제
+            rm -rf dist
+            tar -xzvf dist.tar.gz
+
+            # Nginx 경로로 완벽하게 이동
+            sudo rm -rf /var/www/html/*
+            sudo cp -r dist/* /var/www/html/
             
             sudo chown -R www-data:www-data /var/www/html
-            sudo systemctl daemon-reload
             sudo systemctl reload nginx
             echo "프론트엔드 배포 완료!"
 
