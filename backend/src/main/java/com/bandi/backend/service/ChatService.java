@@ -31,7 +31,7 @@ public class ChatService {
     String sql = """
             SELECT
                 CNR.CN_NO        AS ROOM_NO, -- 클랜채팅방번호
-                CNR.CN_ROOM_NM   AS ROOM_NM, -- 클랜채팅방이름
+                COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM, -- 클랜채팅방이름
                 (
                   SELECT MSG.MSG
                   FROM CN_CHAT_MESSAGE MSG
@@ -74,7 +74,7 @@ public class ChatService {
 
             SELECT
                 CNR.BN_NO        AS ROOM_NO, -- 합주채팅방번호
-                CNR.BN_ROOM_NM   AS ROOM_NM, -- 합주채팅방이름
+                COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM, -- 합주채팅방이름
                 (
                   SELECT MSG.BN_CHAT_MSG
                   FROM BN_CHAT_MESSAGE MSG
@@ -141,7 +141,7 @@ public class ChatService {
     String sql = """
         SELECT
             CNR.CN_NO        AS ROOM_NO,
-            CNR.CN_ROOM_NM   AS ROOM_NM,
+            COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM,
             'CLAN'           AS ROOM_TYPE,
             CMA.FILE_PATH    AS ATTACH_FILE_PATH
         FROM
@@ -153,7 +153,7 @@ public class ChatService {
         UNION ALL
         SELECT
             CNR.BN_NO        AS ROOM_NO,
-            CNR.BN_ROOM_NM   AS ROOM_NM,
+            COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM,
             'BAND'           AS ROOM_TYPE,
             CMA.FILE_PATH    AS ATTACH_FILE_PATH
         FROM
