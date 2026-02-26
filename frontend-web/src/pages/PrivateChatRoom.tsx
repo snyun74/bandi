@@ -154,7 +154,7 @@ const PrivateChatRoom: React.FC = () => {
             fetchNewMessages();
         }, 3000);
         return () => clearInterval(interval);
-    }, []); // Removed fetchNewMessages from dependency array to guarantee interval execution
+    }, [fetchNewMessages]);
 
     // 10초마다 읽음 카운트 갱신
     useEffect(() => {
