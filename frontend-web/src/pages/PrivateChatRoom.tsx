@@ -77,8 +77,8 @@ const PrivateChatRoom: React.FC = () => {
 
         try {
             const url = lastMsgNo
-                ? `/api/chat/private/${roomNo}/messages?userId=${userId}&lastMsgNo=${lastMsgNo}`
-                : `/api/chat/private/${roomNo}/messages?userId=${userId}`;
+                ? `/api/chat/private/${roomNo}/messages?userId=${userId}&lastMsgNo=${lastMsgNo}&t=${Date.now()}`
+                : `/api/chat/private/${roomNo}/messages?userId=${userId}&t=${Date.now()}`;
 
             const response = await fetch(url);
             if (response.ok) {
@@ -119,8 +119,8 @@ const PrivateChatRoom: React.FC = () => {
         if (!userId || !isInitialLoadDone.current) return;
 
         try {
-            const url = `/api/chat/private/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}`;
-            const response = await fetch(url);
+            const url = `/api/chat/private/${roomNo}/messages?userId=${userId}&afterMsgNo=${latestMsgNoRef.current}&t=${Date.now()}`;
+            const response = await fetch(url, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
             if (response.ok) {
                 const data = await response.json();
                 if (data.length > 0) {
@@ -162,7 +162,7 @@ const PrivateChatRoom: React.FC = () => {
             const userId = localStorage.getItem('userId');
             if (!userId || !isInitialLoadDone.current) return;
             try {
-                const response = await fetch(`/api/chat/private/${roomNo}/messages?userId=${userId}`);
+                const response = await fetch(`/api/chat/private/${roomNo}/messages?userId=${userId}&t=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
                 if (response.ok) {
                     const data = await response.json();
                     setMessages(prev => prev.map(msg => {
