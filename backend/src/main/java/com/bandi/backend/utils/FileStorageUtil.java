@@ -16,8 +16,8 @@ public class FileStorageUtil {
             // Local Windows environment
             return System.getProperty("user.dir") + "\\uploads\\common_images";
         } else {
-            // Server Linux environment
-            return "/home/ubuntu/bandi/dist/common_images";
+            // Server Linux environment: Persist across deployments
+            return "/home/ubuntu/bandi/uploads/common_images";
         }
     }
 }
