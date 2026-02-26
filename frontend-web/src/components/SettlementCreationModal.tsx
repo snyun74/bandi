@@ -89,7 +89,7 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Jua", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Pretendard", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center p-4">
@@ -191,7 +191,7 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
             />
 
             {isPromptOpen && (
-                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Jua", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Pretendard", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
                     <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 scale-100 p-8 text-center">
                         <h3 className="text-xl font-bold text-gray-900 mb-3">금액 입력</h3>
                         <input

@@ -157,7 +157,7 @@ const MyPostList: React.FC = () => {
     );
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 sticky top-0 bg-white z-10 border-b border-gray-100">
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">

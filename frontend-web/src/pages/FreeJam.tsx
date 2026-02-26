@@ -86,7 +86,7 @@ const FreeJam: React.FC = () => {
     };
 
     return (
-        <div className="p-4 pb-20" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="p-4 pb-20" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900">자유 합주방</h2>

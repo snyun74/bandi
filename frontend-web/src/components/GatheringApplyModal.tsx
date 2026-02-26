@@ -85,7 +85,7 @@ const GatheringApplyModal: React.FC<GatheringApplyModalProps> = ({ gathering, us
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 font-['Jua']">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 font-['Pretendard']">
             <div className="bg-white w-full max-w-sm rounded-[20px] shadow-xl overflow-hidden relative flex flex-col max-h-[90vh]">
 
                 {/* Header */}

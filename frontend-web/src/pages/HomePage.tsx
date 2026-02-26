@@ -210,7 +210,7 @@ export default function HomePage() {
 
             {/* Schedule Section */}
             <section className="px-4">
-                <h3 className="text-lg font-bold text-gray-900 mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>다가오는 합주 일정</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-3" style={{ fontFamily: '"Pretendard", sans-serif' }}>다가오는 합주 일정</h3>
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 min-h-[100px]">
 
                     {/* Days Header - Always Visible */}
@@ -237,18 +237,18 @@ export default function HomePage() {
                                             {selectedItem.events.map((evt: any, idx: number) => (
                                                 <div key={idx} className="flex items-center gap-1 py-1.5 border-b border-dotted border-blue-300 last:border-none">
                                                     {/* Date & Time Prefix */}
-                                                    <span className="text-[#00BDF8] text-[13px] whitespace-nowrap" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                                    <span className="text-[#00BDF8] text-[13px] whitespace-nowrap" style={{ fontFamily: '"Pretendard", sans-serif' }}>
                                                         {evt.type}) {selectedItem.date}({selectedItem.day}) {evt.time} ~
                                                     </span>
                                                     {/* Title - Truncated */}
-                                                    <span className="text-[#00BDF8] text-[13px] font-bold truncate flex-1" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                                    <span className="text-[#00BDF8] text-[13px] font-bold truncate flex-1" style={{ fontFamily: '"Pretendard", sans-serif' }}>
                                                         {evt.title}
                                                     </span>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-[#00BDF8] text-[13px] text-center pt-4" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                        <div className="text-[#00BDF8] text-[13px] text-center pt-4" style={{ fontFamily: '"Pretendard", sans-serif' }}>
                                             {selectedItem.sub || '등록된 상세 일정이 없습니다.'}
                                         </div>
                                     )}
@@ -264,13 +264,13 @@ export default function HomePage() {
                                 let content;
                                 if (item.events && item.events.length > 0) {
                                     content = item.events.map((evt: any, idx: number) => (
-                                        <div key={idx} className="leading-tight whitespace-nowrap text-[11px] tracking-tighter text-[#00BDF8]" style={{ fontFamily: '"Jua", sans-serif' }}>
+                                        <div key={idx} className="leading-tight whitespace-nowrap text-[11px] tracking-tighter text-[#00BDF8]" style={{ fontFamily: '"Pretendard", sans-serif' }}>
                                             {evt.type}일정
                                         </div>
                                     ));
                                 } else {
                                     content = (
-                                        <div className={`${item.active || item.special ? '' : 'text-[#00BDF8]'} leading-tight block whitespace-nowrap text-[11px] tracking-tighter text-[#00BDF8]`} style={{ fontFamily: '"Jua", sans-serif' }}>
+                                        <div className={`${item.active || item.special ? '' : 'text-[#00BDF8]'} leading-tight block whitespace-nowrap text-[11px] tracking-tighter text-[#00BDF8]`} style={{ fontFamily: '"Pretendard", sans-serif' }}>
                                             {item.active ? 'Today' : item.sub}
                                         </div>
                                     );
@@ -300,7 +300,7 @@ export default function HomePage() {
 
             {/* My Room Section */}
             <section className="px-4">
-                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 합주</h3>
+                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Pretendard", sans-serif' }}>내 합주</h3>
 
                 {myJams.length > 0 ? (
                     <div
@@ -328,7 +328,7 @@ export default function HomePage() {
 
                         {/* Info */}
                         <div className="flex-1 pr-12 overflow-hidden">
-                            <h4 className="text-[#003C48] text-lg font-bold mb-1 truncate" style={{ fontFamily: '"Jua", sans-serif' }}>
+                            <h4 className="text-[#003C48] text-lg font-bold mb-1 truncate" style={{ fontFamily: '"Pretendard", sans-serif' }}>
                                 <span className={`mr-1 text-sm ${myJams[currentJamIndex].bnType === 'CLAN' ? 'text-[#00BDF8]' : 'text-gray-500'}`}>
                                     [{myJams[currentJamIndex].bnType === 'CLAN' ? '클랜' : '자유'}]
                                 </span>
@@ -351,7 +351,7 @@ export default function HomePage() {
                                     navigate('/main/jam/my');
                                 }}
                                 className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
-                                style={{ fontFamily: '"Jua", sans-serif' }}
+                                style={{ fontFamily: '"Pretendard", sans-serif' }}
                             >
                                 더보기
                             </span>
@@ -372,7 +372,7 @@ export default function HomePage() {
 
             {/* My Clan Section */}
             <section className="px-4">
-                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 클랜</h3>
+                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Pretendard", sans-serif' }}>내 클랜</h3>
                 {myClan ? (
                     <div
                         onClick={() => navigate(`/main/clan/detail/${myClan.cnNo}`)}
@@ -390,7 +390,7 @@ export default function HomePage() {
 
                         {/* Info */}
                         <div className="flex-1 pr-12 overflow-hidden">
-                            <h4 className="text-[#003C48] text-lg font-bold mb-1" style={{ fontFamily: '"Jua", sans-serif' }}>{myClan.cnNm}</h4>
+                            <h4 className="text-[#003C48] text-lg font-bold mb-1" style={{ fontFamily: '"Pretendard", sans-serif' }}>{myClan.cnNm}</h4>
                             <p className="text-gray-600 text-[13px] mb-1 truncate">{myClan.cnDesc ? (myClan.cnDesc.length > 20 ? myClan.cnDesc.substring(0, 20) + '...' : myClan.cnDesc) : ''}</p>
                             <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClan.userCnt}명</p>
                         </div>
@@ -403,7 +403,7 @@ export default function HomePage() {
                                     navigate('/main/clan/my');
                                 }}
                                 className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
-                                style={{ fontFamily: '"Jua", sans-serif' }}
+                                style={{ fontFamily: '"Pretendard", sans-serif' }}
                             >
                                 더보기
                             </span>
@@ -425,7 +425,7 @@ export default function HomePage() {
 
             {/* Practice Room Section */}
             <section className="px-4 pb-5">
-                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Jua", sans-serif' }}>내 연습실</h3>
+                <h3 className="text-lg font-bold text-[#003C48] mb-3" style={{ fontFamily: '"Pretendard", sans-serif' }}>내 연습실</h3>
                 <div className="w-full h-[150px] bg-[#F3F4F6] rounded-xl"></div>
             </section>
             {/* Profile Incomplete Modal */}

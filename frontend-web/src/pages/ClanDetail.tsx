@@ -283,7 +283,7 @@ const ClanDetail: React.FC = () => {
     if (!clan) return <div className="text-center py-10">Clan not found</div>;
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">

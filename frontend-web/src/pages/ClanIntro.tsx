@@ -244,7 +244,7 @@ const ClanIntro: React.FC = () => {
     if (!clan) return <div className="text-center py-10">Clan not found</div>;
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <CommonModal
                 isOpen={modal.isOpen}

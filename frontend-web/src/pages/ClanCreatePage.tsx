@@ -110,7 +110,7 @@ const ClanCreatePage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <CommonModal
                 isOpen={modal.isOpen}

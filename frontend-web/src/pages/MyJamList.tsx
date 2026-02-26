@@ -55,7 +55,7 @@ const MyJamList: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="bg-white px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-2">

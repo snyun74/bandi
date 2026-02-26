@@ -365,7 +365,7 @@ const ClanJamDetail: React.FC = () => {
 
     if (isLoading) {
         return (
-            <div className="flex flex-col h-full bg-gray-50 font-['Jua'] items-center justify-center">
+            <div className="flex flex-col h-full bg-gray-50 font-['Pretendard'] items-center justify-center">
                 <div className="text-[#003C48] font-bold">로딩중...</div>
             </div>
         );
@@ -373,7 +373,7 @@ const ClanJamDetail: React.FC = () => {
 
     if (!bandDetail) {
         return (
-            <div className="flex flex-col h-full bg-gray-50 font-['Jua'] items-center justify-center">
+            <div className="flex flex-col h-full bg-gray-50 font-['Pretendard'] items-center justify-center">
                 <div className="text-[#003C48] font-bold">합주방 정보를 찾을 수 없습니다.</div>
                 <button
                     onClick={() => navigate(-1)}
@@ -386,7 +386,7 @@ const ClanJamDetail: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="bg-white px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
                 <div className="flex items-center gap-2">

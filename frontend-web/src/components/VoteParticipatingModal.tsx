@@ -123,7 +123,7 @@ const VoteParticipatingModal: React.FC<VoteParticipatingModalProps> = ({ voteId,
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <div className="bg-white w-full max-w-sm rounded-[20px] shadow-xl overflow-hidden relative flex flex-col max-h-[90vh]">
 
                 {/* Header */}

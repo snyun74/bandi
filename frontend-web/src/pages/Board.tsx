@@ -50,7 +50,7 @@ const Board: React.FC = () => {
     };
 
     return (
-        <div className="p-4 pb-20" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="p-4 pb-20" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <h2 className="text-xl font-bold text-[#003C48] mb-6">게시판</h2>
 

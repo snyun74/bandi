@@ -150,7 +150,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/50" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/50" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative">
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white sticky top-0 z-10">

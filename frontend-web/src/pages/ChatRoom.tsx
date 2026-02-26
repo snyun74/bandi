@@ -321,7 +321,7 @@ const ChatRoom: React.FC = () => {
     };
 
     return (
-        <div className="fixed top-[50px] bottom-[60px] left-0 right-0 z-40 flex flex-col bg-[#f2f4f5] font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="fixed top-[50px] bottom-[60px] left-0 right-0 z-40 flex flex-col bg-[#f2f4f5] font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex-none flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
                 <div className="flex items-center">

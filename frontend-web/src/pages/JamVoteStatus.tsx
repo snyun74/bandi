@@ -40,7 +40,7 @@ const JamVoteStatus: React.FC = () => {
     const maxCount = Math.max(...voteStatus.options.map((o: any) => o.count), 0);
 
     return (
-        <div className="w-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="w-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <div className="max-w-md mx-auto bg-white min-h-[calc(100vh-120px)] shadow-sm flex flex-col">
 
                 {/* Header */}

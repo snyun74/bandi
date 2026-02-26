@@ -267,7 +267,7 @@ const BoardDetail: React.FC = () => {
     const boardName = post.boardTypeFg === "0" ? "자유 게시판" : "초보자 게시판";
 
     return (
-        <div className="flex flex-col bg-white font-['Jua'] min-h-full" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col bg-white font-['Pretendard'] min-h-full" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 bg-white sticky top-0 z-10 border-b border-gray-100">
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">

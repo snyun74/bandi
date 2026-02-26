@@ -101,7 +101,7 @@ const AdminClanApprovalPage: React.FC = () => {
 
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-3 bg-white sticky top-0 z-10 shadow-sm">
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-3">

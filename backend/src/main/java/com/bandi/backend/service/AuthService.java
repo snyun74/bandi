@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserAccountRepository userAccountRepository;
     private final CommDetailRepository commDetailRepository;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Transactional(readOnly = true)
     public boolean checkUserIdDuplicate(String userId) {
@@ -73,8 +76,8 @@ public class AuthService {
         account.setLoginTypeCd("NORL");
         account.setEmail(dto.getEmail());
 
-        // Encrypt Password (SHA-256)
-        account.setPasswd(encryptPassword(dto.getPassword()));
+        // Encrypt Password (BCrypt)
+        account.setPasswd(passwordEncoder.encode(dto.getPassword()));
 
         // Audit
         account.setInsDtime(nowDtime);
@@ -100,12 +103,9 @@ public class AuthService {
             throw new RuntimeException("존재하지 않는 사용자입니다.");
         }
 
-        String encryptedPassword = encryptPassword(password);
-
-        log.info("Login Debug - Encrypted Password: '{}'", encryptedPassword);
         log.info("Login Debug - DB Password: '{}'", account.getPasswd());
 
-        if (!account.getPasswd().equals(encryptedPassword)) {
+        if (!passwordEncoder.matches(password, account.getPasswd())) {
             log.warn("Login Failed - Password Mismatch");
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
@@ -147,19 +147,6 @@ public class AuthService {
     }
 
     private String encryptPassword(String password) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1)
-                    hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Password encryption failed", e);
-        }
+        return passwordEncoder.encode(password);
     }
 }

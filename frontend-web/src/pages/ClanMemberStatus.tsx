@@ -45,6 +45,7 @@ const ClanMemberStatus: React.FC = () => {
     const [allMembers, setAllMembers] = useState<ClanMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Modal State
     const [modal, setModal] = useState({
@@ -100,6 +101,26 @@ const ClanMemberStatus: React.FC = () => {
 
     const joinRequests = allMembers.filter(m => m.cnUserApprStatCd === 'RQ');
     const activeMembers = allMembers.filter(m => m.cnUserApprStatCd === 'CN');
+
+    const filteredMembers = activeMembers.filter(member => {
+        if (!searchQuery.trim()) return true;
+
+        const query = searchQuery.toLowerCase().trim();
+
+        // Search by Nickname or Name
+        if (member.userNickNm.toLowerCase().includes(query) || member.userNm.toLowerCase().includes(query)) return true;
+
+        // Search by Session (Song title, Artist)
+        if (member.sessions && member.sessions.length > 0) {
+            return member.sessions.some(session =>
+                session.songTitle.toLowerCase().includes(query) ||
+                session.artist.toLowerCase().includes(query) ||
+                session.part.toLowerCase().includes(query)
+            );
+        }
+
+        return false;
+    });
 
     // Get current user ID from localStorage
     const currentUserId = localStorage.getItem('userId');
@@ -233,7 +254,7 @@ const ClanMemberStatus: React.FC = () => {
     if (loading) return <div className="text-center py-10">Loading...</div>;
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <CommonModal
                 isOpen={modal.isOpen}
                 type={modal.type}
@@ -330,6 +351,8 @@ const ClanMemberStatus: React.FC = () => {
                             type="text"
                             placeholder="닉네임, 곡명, 아티스트로 검색"
                             className="flex-1 outline-none text-sm placeholder-gray-400"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <button
@@ -365,10 +388,10 @@ const ClanMemberStatus: React.FC = () => {
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-2">
                     <div className="px-3 py-2 border-b border-gray-100 flex items-baseline gap-2 mb-2">
                         <h2 className="text-[#003C48] font-bold text-sm">멤버 목록</h2>
-                        <span className="text-[#00BDF8] text-xs font-bold">{activeMembers.length}명</span>
+                        <span className="text-[#00BDF8] text-xs font-bold">{filteredMembers.length}명</span>
                     </div>
-                    {activeMembers.map((member, index) => (
-                        <div key={member.cnUserId} className={`flex flex-col p-3 ${index !== activeMembers.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                    {filteredMembers.map((member, index) => (
+                        <div key={member.cnUserId} className={`flex flex-col p-3 ${index !== filteredMembers.length - 1 ? 'border-b border-gray-100' : ''}`}>
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2 text-[#003C48]">
                                     <UserAvatar userId={member.cnUserId} size={22} />

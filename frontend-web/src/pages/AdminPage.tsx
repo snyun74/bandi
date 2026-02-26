@@ -11,7 +11,7 @@ const AdminPage: React.FC = () => {
     ];
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <div className="p-6">
                 <h2 className="text-xl font-bold text-[#003C48] mb-6">관리자 메뉴</h2>
 

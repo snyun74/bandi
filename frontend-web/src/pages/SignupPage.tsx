@@ -207,7 +207,7 @@ const SignupPage: React.FC = () => {
                 onCancel={() => setModal(prev => ({ ...prev, isOpen: false }))}
             />
 
-            <div className="min-h-screen bg-white flex flex-col font-['Jua']">
+            <div className="min-h-screen bg-white flex flex-col font-['Pretendard']">
                 <div className="flex-1 w-full max-w-md mx-auto px-6 py-8 flex flex-col">
                     <div className="text-center mb-10">
                         <h1 className="text-3xl text-[#003C48] font-bold tracking-wide">

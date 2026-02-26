@@ -171,7 +171,7 @@ const ChatList: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header Tabs */}
             <div className="flex border-b border-gray-200 relative">
                 <button onClick={() => navigate(-1)} className="absolute left-4 top-4 text-[#003C48] z-10">

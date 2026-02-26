@@ -100,7 +100,7 @@ const Clan: React.FC = () => {
     };
 
     return (
-        <div className="p-4 pb-20" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="p-4 pb-20" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <CommonModal
                 isOpen={modal.isOpen}
                 type={modal.type}

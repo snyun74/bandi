@@ -144,7 +144,7 @@ const FriendAdd: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <CommonModal
                 isOpen={modalConfig.isOpen}
                 type={modalConfig.type}

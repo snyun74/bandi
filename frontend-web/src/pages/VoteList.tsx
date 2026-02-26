@@ -56,7 +56,7 @@ const VoteList: React.FC = () => {
     };
 
     return (
-        <div className="w-full bg-white font-['Jua'] flex flex-col" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="w-full bg-white font-['Pretendard'] flex flex-col" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 bg-white">
                 <button onClick={() => navigate(-1)} className="text-gray-500 mr-2 flex items-center text-sm">

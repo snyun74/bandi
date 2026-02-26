@@ -215,7 +215,7 @@ const VoteDetail: React.FC = () => {
     }
 
     return (
-        <div className="w-full bg-gray-50 font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="w-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <div className="max-w-md mx-auto bg-white min-h-[calc(100vh-120px)] shadow-sm flex flex-col">
 
                 {/* Header */}

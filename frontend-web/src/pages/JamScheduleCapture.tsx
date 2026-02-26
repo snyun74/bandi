@@ -452,7 +452,7 @@ const JamScheduleCapture: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Jua']" style={{ fontFamily: '"Jua", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-white z-20">
                 <button onClick={() => navigate(-1)} className="text-gray-600">
@@ -480,7 +480,7 @@ const JamScheduleCapture: React.FC = () => {
                     <Calendar
                         onChange={handleDateChange}
                         value={date}
-                        className="w-full border-none !font-['Jua'] custom-calendar"
+                        className="w-full border-none !font-['Pretendard'] custom-calendar"
                         locale="ko-KR"
                         formatDay={(locale, date) => date.getDate().toString()}
                         onActiveStartDateChange={({ activeStartDate }) => {

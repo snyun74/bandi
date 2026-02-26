@@ -21,7 +21,7 @@ const QaDetailModal: React.FC<QaDetailModalProps> = ({ isOpen, onClose, qa, answ
     if (!isOpen || !qa) return null;
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Jua", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Pretendard", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
             <div className="bg-[#F5F6F8] rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col h-[80vh]">
                 {/* Header */}
                 <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0 rounded-t-3xl">
