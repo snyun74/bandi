@@ -151,7 +151,7 @@ public class UserService {
 
                 CmAttachment attachment = new CmAttachment();
                 attachment.setFileName(originalFileName);
-                attachment.setFilePath("/common_images/" + savedFileName);
+                attachment.setFilePath("/api/common_images/" + savedFileName);
                 attachment.setFileSize(file.getSize());
                 attachment.setMimeType(file.getContentType());
                 attachment.setInsDtime(currentDateTime);

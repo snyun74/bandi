@@ -99,7 +99,7 @@ public class ClanNoticeController {
 
                                 com.bandi.backend.entity.common.CmAttachment attachment = new com.bandi.backend.entity.common.CmAttachment();
                                 attachment.setFileName(originalFileName);
-                                attachment.setFilePath("/common_images/" + savedFileName);
+                                attachment.setFilePath("/api/common_images/" + savedFileName);
                                 attachment.setFileSize(file.getSize());
                                 attachment.setMimeType(file.getContentType());
                                 attachment.setInsDtime(currentDateTime);
