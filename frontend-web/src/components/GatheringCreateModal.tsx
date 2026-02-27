@@ -18,8 +18,7 @@ interface GatheringCreateModalProps {
 
 const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, userId, onClose, onSubmit }) => {
     const [title, setTitle] = useState('');
-    const [gatherDate, setGatherDate] = useState('');
-    const [roomCnt, setRoomCnt] = useState(1);
+
     const [weights, setWeights] = useState<WeightEntry[]>([]);
     const [availableWeightTypes, setAvailableWeightTypes] = useState<any[]>([]);
 
@@ -99,24 +98,20 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
             showAlert('합주 제목을 입력해주세요.');
             return;
         }
-        if (!gatherDate) {
-            showAlert('합주 일자를 선택해주세요.');
-            return;
-        }
-
         if (selectedSessions.length === 0) {
             showAlert('최소 1개 이상의 모집 세션을 선택해주세요.');
             return;
         }
 
-        const formattedDate = gatherDate.replace(/-/g, ''); // YYYY-MM-DD to YYYYMMDD
+        const today = new Date();
+        const formattedDate = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
 
         const payload = {
             cnNo: clanId,
             userId: userId,
             title,
             gatherDate: formattedDate,
-            roomCnt,
+            roomCnt: 0,
             weights: weights.map(w => ({
                 gatherTypeCd: w.gatherTypeCd,
                 weightValue: w.weightValue,
@@ -173,29 +168,7 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                         />
                     </div>
 
-                    {/* Date and Rooms */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-[#003C48] mb-2">합주일자</label>
-                            <input
-                                type="date"
-                                value={gatherDate}
-                                onChange={(e) => setGatherDate(e.target.value)}
-                                className="w-full bg-gray-100 rounded-xl px-3 py-3 text-[#003C48] text-sm focus:outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-[#003C48] mb-2">방 개수</label>
-                            <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                value={roomCnt}
-                                onChange={(e) => setRoomCnt(parseInt(e.target.value))}
-                                className="w-full bg-gray-100 rounded-xl px-4 py-3 text-[#003C48] focus:outline-none"
-                            />
-                        </div>
-                    </div>
+
 
                     {/* Sessions */}
                     <div>
@@ -234,39 +207,53 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                         </div>
                     </div>
 
-                    {/* Weights */}
+                    {/* Matching Options (Toggles) */}
                     <div>
-                        <label className="block text-sm font-bold text-[#003C48] mb-3">매칭 가중치 설정 (1~10)</label>
-                        <div className="space-y-4">
-                            {weights.map((w, idx) => (
-                                <div key={w.gatherTypeCd} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[#003C48] text-sm font-bold">{w.name || w.gatherTypeCd}</span>
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">중요도:</span>
-                                                <input
-                                                    type="range"
-                                                    min="1"
-                                                    max="10"
-                                                    value={w.weightValue}
-                                                    onChange={(e) => handleWeightChange(idx, parseInt(e.target.value))}
-                                                    className="w-20 accent-[#FF8A80]"
-                                                />
-                                                <span className="text-xs font-bold text-[#FF8A80] w-4">{w.weightValue}</span>
-                                            </div>
+                        <label className="block text-sm font-bold text-[#003C48] mb-3">매칭 옵션 설정</label>
+                        <div className="space-y-3">
+                            {weights.map((w, idx) => {
+                                const isSkill = w.gatherTypeCd === 'SKILL' || w.name?.includes('기술');
+                                const isGender = w.gatherTypeCd === 'GENDER' || w.name?.includes('성별');
+                                const isMbti = w.gatherTypeCd === 'MBTI' || w.name?.includes('MBTI');
+
+                                let label = w.name || w.gatherTypeCd;
+                                let onText = "ON";
+                                let offText = "OFF";
+
+                                if (isSkill) {
+                                    label = "세션 기술능력";
+                                    onText = "세션평균(Lv 평균)";
+                                    offText = "세션기준(Lv2 or Lv4)";
+                                } else if (isGender) {
+                                    label = "멤버균등배분";
+                                } else if (isMbti) {
+                                    label = "MBTI균등배분";
+                                }
+
+                                const isActive = w.balanceApplyYn === 'Y';
+
+                                return (
+                                    <div key={w.gatherTypeCd} className="bg-white rounded-[15px] p-4 border border-gray-100 shadow-sm flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-[#003C48] text-[14px] font-bold">{label}</span>
+                                            <span className={`text-[11px] font-medium mt-0.5 ${isActive ? 'text-[#FF8A80]' : 'text-gray-400'}`}>
+                                                {isActive ? onText : offText}
+                                            </span>
                                         </div>
+
+                                        <button
+                                            onClick={() => handleBalanceToggle(idx)}
+                                            className={`relative w-14 h-7 rounded-full transition-colors duration-200 focus:outline-none ${isActive ? 'bg-[#FF8A80]' : 'bg-gray-200'
+                                                }`}
+                                        >
+                                            <div
+                                                className={`absolute top-1 left-1 bg-white w-5 h-5 rounded-full shadow-sm transform transition-transform duration-200 ${isActive ? 'translate-x-7' : 'translate-x-0'
+                                                    }`}
+                                            />
+                                        </button>
                                     </div>
-                                    <label className="flex items-center space-x-2 cursor-pointer select-none" onClick={() => handleBalanceToggle(idx)}>
-                                        {w.balanceApplyYn === 'Y' ? (
-                                            <FaCheckSquare className="text-[#FF8A80] text-sm" />
-                                        ) : (
-                                            <FaSquare className="text-gray-300 text-sm" />
-                                        )}
-                                        <span className="text-[11px] text-gray-600">멤버 간 균등 배분 (평준화)</span>
-                                    </label>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

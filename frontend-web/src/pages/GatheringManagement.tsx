@@ -219,7 +219,7 @@ const GatheringManagement: React.FC = () => {
                                         <span className="text-gray-400 text-[10px]">등록일: {g.regDate && `${g.regDate.substring(0, 4)}.${g.regDate.substring(4, 6)}.${g.regDate.substring(6, 8)}`}</span>
                                     </div>
                                     <h3 className="text-[#003C48] font-bold text-lg leading-tight mb-1">{g.title}</h3>
-                                    <p className="text-gray-500 text-xs">합주일: {g.gatherDate && `${g.gatherDate.substring(0, 4)}.${g.gatherDate.substring(4, 6)}.${g.gatherDate.substring(6, 8)}`}</p>
+                                    <p className="text-gray-500 text-xs">전체 : {g.applicantCnt || 0}명, 남자 : {g.maleCnt || 0}명, 여자 : {g.femaleCnt || 0}명</p>
                                 </div>
                             </div>
 
@@ -233,7 +233,7 @@ const GatheringManagement: React.FC = () => {
                                         <FaCheckCircle className="mb-1.5" size={16} />
                                         <span className="text-[10px] font-bold">모집종료</span>
                                     </button>
-                                ) : g.gatherProcFg === 'Y' || g.gatherProcFg === 'M' ? (
+                                ) : g.gatherProcFg === 'Y' ? (
                                     <button
                                         onClick={() => handleReopenRecruitmentClick(g.gatherNo)}
                                         className="flex flex-col items-center justify-center py-3 rounded-2xl transition-all border bg-blue-50 border-blue-100 text-blue-500 hover:bg-blue-100 active:scale-95 shadow-sm"
@@ -246,8 +246,8 @@ const GatheringManagement: React.FC = () => {
                                         disabled
                                         className="flex flex-col items-center justify-center py-3 rounded-2xl transition-all border bg-gray-50 border-gray-50 text-gray-300"
                                     >
-                                        <FaCheckCircle className="mb-1.5" size={16} />
-                                        <span className="text-[10px] font-bold">모집종료</span>
+                                        <FaRedo className="mb-1.5" size={16} />
+                                        <span className="text-[10px] font-bold">모집재개 불가</span>
                                     </button>
                                 )}
 

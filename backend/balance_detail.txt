@@ -1,0 +1,13 @@
+ room_nm  | member_cnt | skill_score_tot | skill_score_avg |   scores   |         mbtis          
+----------+------------+-----------------+-----------------+------------+------------------------
+ «’¡÷ 1∆¿ |          3 |              12 |            4.00 | 5, 3, 4    | ISTP, ISTP, ENTP
+ «’¡÷ 2∆¿ |          4 |              11 |            2.75 | 3, 3, 1, 4 | ENTJ, INTP, ESFP, ESFP
+ «’¡÷ 3∆¿ |          4 |              11 |            2.75 | 3, 3, 1, 4 | ENTP, INTJ, ESTJ, INTP
+ «’¡÷ 4∆¿ |          4 |              11 |            2.75 | 2, 4, 1, 4 | ESTP, ENTP, ESTP, INFP
+ «’¡÷ 5∆¿ |          4 |              11 |            2.75 | 1, 4, 4, 2 | ISTJ, ENTJ, ISFJ, ESTP
+ «’¡÷ 6∆¿ |          4 |              10 |            2.50 | 1, 4, 2, 3 | ISTP, ENFP, ENFJ, ISTJ
+ «’¡÷ 7∆¿ |          3 |               9 |            3.00 | 1, 4, 4    | INFJ, ISFJ, ENTJ
+ «’¡÷ 8∆¿ |          3 |              10 |            3.33 | 1, 4, 5    | INFJ, ISTJ, ENTP
+ «’¡÷ 9∆¿ |          3 |              11 |            3.67 | 2, 5, 4    | ENTP, ISFP, ESFP
+(9 rows)
+

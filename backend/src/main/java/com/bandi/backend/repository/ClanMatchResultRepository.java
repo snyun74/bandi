@@ -12,6 +12,10 @@ public interface ClanMatchResultRepository extends JpaRepository<ClanMatchResult
 
     List<ClanMatchResult> findByRoomNo(Long roomNo);
 
+    ClanMatchResult findByGatherNoAndRoomNoAndUserId(Long gatherNo, Long roomNo, String userId);
+
+    ClanMatchResult findByGatherNoAndRoomNoAndSessionTypeCd(Long gatherNo, Long roomNo, String sessionTypeCd);
+
     @Modifying
     @Query("DELETE FROM ClanMatchResult r WHERE r.gatherNo = :gatherNo")
     void deleteByGatherNo(@Param("gatherNo") Long gatherNo);

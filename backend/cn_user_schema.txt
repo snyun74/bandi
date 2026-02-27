@@ -1,0 +1,16 @@
+                                    Table "public.cn_user"
+        Column        |         Type          | Collation | Nullable |         Default         
+----------------------+-----------------------+-----------+----------+-------------------------
+ cn_no                | bigint                |           | not null | 
+ cn_user_id           | character varying(20) |           | not null | 
+ cn_user_role_cd      | character varying(20) |           | not null | 
+ cn_join_date         | character varying(8)  |           | not null | 
+ cn_user_stat_cd      | character varying(20) |           | not null | 
+ ins_dtime            | character varying(14) |           | not null | 
+ ins_id               | character varying(20) |           | not null | 
+ upd_dtime            | character varying(14) |           | not null | 
+ upd_id               | character varying(20) |           | not null | 
+ cn_user_appr_stat_cd | character varying(20) |           | not null | 'RQ'::character varying
+Indexes:
+    "cn_user_pkey" PRIMARY KEY, btree (cn_no, cn_user_id)
+

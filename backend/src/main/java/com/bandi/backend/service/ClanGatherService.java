@@ -5,6 +5,7 @@ import com.bandi.backend.entity.clan.*;
 import com.bandi.backend.entity.member.User;
 import com.bandi.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import com.bandi.backend.entity.common.CommDetail;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClanGatherService {
 
     private final ClanGatherRepository clanGatherRepository;
@@ -191,6 +193,11 @@ public class ClanGatherService {
                         return wDto;
                     }).collect(Collectors.toList());
 
+            List<ClanGatherApply> applicants = clanGatherApplyRepository.findByGatherNo(g.getGatherNo());
+            int applicantCnt = applicants.size();
+            int maleCnt = (int) applicants.stream().filter(a -> "M".equals(a.getUserGenderCd())).count();
+            int femaleCnt = (int) applicants.stream().filter(a -> "F".equals(a.getUserGenderCd())).count();
+
             return ClanGatherResponseDto.builder()
                     .gatherNo(g.getGatherNo())
                     .cnNo(g.getCnNo())
@@ -202,6 +209,9 @@ public class ClanGatherService {
                     .regDate(g.getRegDate())
                     .weights(weights)
                     .isApplied(isApplied)
+                    .applicantCnt(applicantCnt)
+                    .maleCnt(maleCnt)
+                    .femaleCnt(femaleCnt)
                     .build();
         }).collect(Collectors.toList());
     }
@@ -303,23 +313,22 @@ public class ClanGatherService {
                 .orElseThrow(() -> new RuntimeException("합주 모집 공고를 찾을 수 없습니다."));
 
         // 1. 권한 체크
+        log.info("[Match] Checking permission - gatherNo: {}, clanNo: {}, userId: {}", gatherNo, gather.getCnNo(),
+                userId);
         String role = clanUserRepository.findById(new ClanUserId(gather.getCnNo(), userId))
                 .map(ClanUser::getCnUserRoleCd)
                 .orElse("NONE");
+        log.info("[Match] Found role: {}", role);
+
         if (!"01".equals(role) && !"02".equals(role)) {
             throw new RuntimeException("클랜 관리자 또는 운영진만 매칭을 진행할 수 있습니다.");
         }
-
         if (!"Y".equals(gather.getGatherProcFg()) && !"M".equals(gather.getGatherProcFg())) {
             throw new RuntimeException("모집종료('Y') 또는 매핑완료('M') 상태인 공고만 매칭을 진행할 수 있습니다.");
         }
 
         // 2. 가중치 보조 데이터 로드
         List<ClanGatherWeight> weights = clanGatherWeightRepository.findByGatherNo(gatherNo);
-        int skillWeight = weights.stream().filter(w -> "SKILL".equals(w.getGatherTypeCd())).findFirst()
-                .map(ClanGatherWeight::getWeightValue).orElse(5);
-        int gendWeight = weights.stream().filter(w -> "GEND".equals(w.getGatherTypeCd())).findFirst()
-                .map(ClanGatherWeight::getWeightValue).orElse(5);
 
         // 3. 모집 세션 로드 및 방별 목표 인원 도출
         List<ClanGatherSession> sessions = clanGatherSessionRepository.findByGatherNo(gatherNo);
@@ -337,31 +346,23 @@ public class ClanGatherService {
                 .filter(a -> targetSessionCnts.containsKey(a.getSessionTypeCd1st()))
                 .collect(Collectors.toList());
 
-        // 세션별 정렬 (실력 높은 순)
-        Map<String, List<ClanGatherApply>> applicantsBySession = validApplicants.stream()
-                .collect(Collectors.groupingBy(
-                        ClanGatherApply::getSessionTypeCd1st,
-                        Collectors.collectingAndThen(Collectors.toList(), list -> {
-                            list.sort((a, b) -> Integer.compare(b.getSession1stScore(), a.getSession1stScore()));
-                            return list;
-                        })));
+        // 4. 세션별 정렬 -> 전체 점수순 정렬로 변경 (실력별 그룹화를 위해 모든 세션의 고수가 먼저 배치되도록 함)
+        validApplicants.sort((a, b) -> Integer.compare(b.getSession1stScore(), a.getSession1stScore()));
 
         // 5. 방 초기화 플래닝 (순차 채움 방식)
         // 기존: roomCnt 만큼 처음부터 생성하여 흩뿌림
         // 변경: 1개 방부터 시작하여, 세션 정원이 차면 다음 방을 동적으로 생성
         class RoomState {
-            int roomIndex;
             int totalSkill = 0;
             Map<String, Integer> currentSessionCnt = new HashMap<>(); // 세션별 현재 인원
             Map<String, Integer> currentGenderCnt = new HashMap<>(); // 성별별 현재 인원
+            Map<String, Integer> currentMbtiTypeCnt = new HashMap<>(); // MBTI 유형별(I/E) 현재 인원
             List<ClanGatherApply> members = new ArrayList<>();
         }
 
         List<RoomState> rooms = new ArrayList<>();
         // 최소 1개의 방은 무조건 생성
-        RoomState firstRoom = new RoomState();
-        firstRoom.roomIndex = 0;
-        rooms.add(firstRoom);
+        rooms.add(new RoomState());
 
         // 이전 결과가 있다면 삭제 (재매핑)
         List<ClanMatchRoom> oldRooms = clanMatchRoomRepository.findByGatherNo(gatherNo);
@@ -370,63 +371,116 @@ public class ClanGatherService {
             clanMatchRoomRepository.deleteByGatherNo(gatherNo);
         }
 
-        // 6. 매칭 할당 로직 (세션별로 순회하며 순차 배정)
-        for (String sessionCd : targetSessionCnts.keySet()) {
-            List<ClanGatherApply> appsForSession = applicantsBySession.getOrDefault(sessionCd, new ArrayList<>());
-            long sessionTargetCnt = targetSessionCnts.get(sessionCd);
+        // 6. 매칭 할당 로직 (전체 실력순으로 순회하며 최적의 방 배정)
+        for (ClanGatherApply app : validApplicants) {
+            String sessionCd = app.getSessionTypeCd1st();
+            long sessionTargetCnt = targetSessionCnts.getOrDefault(sessionCd, 0L);
 
-            for (ClanGatherApply app : appsForSession) {
-                // 이 사람을 배정할 방 식별: 정원이 차지 않은 기존 방들
-                List<RoomState> eligibleRooms = rooms.stream()
-                        .filter(r -> r.currentSessionCnt.getOrDefault(sessionCd, 0) < sessionTargetCnt)
-                        .collect(Collectors.toList());
+            if (sessionTargetCnt <= 0)
+                continue;
+            // 이 사람을 배정할 방 식별: 정원이 차지 않은 기존 방들
+            List<RoomState> eligibleRooms = rooms.stream()
+                    .filter(r -> r.currentSessionCnt.getOrDefault(sessionCd, 0) < sessionTargetCnt)
+                    .collect(Collectors.toCollection(ArrayList::new));
 
-                // 만약 모든 기존 방의 해당 세션 정원이 찼다면, 새로운 방을 개설
-                if (eligibleRooms.isEmpty()) {
-                    RoomState newRoom = new RoomState();
-                    newRoom.roomIndex = rooms.size();
-                    rooms.add(newRoom);
-                    eligibleRooms.add(newRoom);
-                }
+            // 가용한 방들 중에서 점수 계산 (가중치는 무시하고 토글 여부만 판단)
+            RoomState bestRoom = null;
+            double maxScore = -Double.MAX_VALUE;
 
-                // 가용한 방들 중에서 가중치 점수 계산
-                RoomState bestRoom = null;
-                double maxScore = -Double.MAX_VALUE;
+            boolean isSkillBalanceOn = weights.stream()
+                    .filter(w -> w.getGatherTypeCd().equals("SKILL"))
+                    .map(w -> "Y".equals(w.getBalanceApplyYn())).findFirst().orElse(true);
+            boolean isGenderBalanceOn = weights.stream()
+                    .filter(w -> w.getGatherTypeCd().equals("GENDER"))
+                    .map(w -> "Y".equals(w.getBalanceApplyYn())).findFirst().orElse(true);
+            boolean isMbtiBalanceOn = weights.stream()
+                    .filter(w -> w.getGatherTypeCd().equals("MBTI"))
+                    .map(w -> "Y".equals(w.getBalanceApplyYn())).findFirst().orElse(true);
 
-                for (RoomState r : eligibleRooms) {
-                    double score = 0;
+            for (RoomState r : eligibleRooms) {
+                double score = 0;
 
-                    // 실력 가중치: (다른 방 최대 총합 - 내 방 총합) * 가중치
+                // 1. 실력 로직
+                if (isSkillBalanceOn) {
+                    // ON: 평준화 (팀 간 실력 합계 균등)
                     int maxTotalSkill = eligibleRooms.stream().mapToInt(rm -> rm.totalSkill).max().orElse(0);
-                    score += (maxTotalSkill - r.totalSkill) * skillWeight;
+                    score += (maxTotalSkill - r.totalSkill);
+                } else {
+                    // OFF: 실력별 그룹화 (끼리끼리)
+                    // 내 레벨과 방 멤버들의 평균 레벨 차이가 작을수록 높은 점수
+                    double roomAvgSkill = r.members.isEmpty() ? 0 : (double) r.totalSkill / r.members.size();
+                    if (r.members.isEmpty()) {
+                        // 빈 방: 중간 점수
+                        score += 2.5 * 20.0;
+                    } else {
+                        // 내 레벨과 방 평균 레벨이 비슷할수록 가점 (비중 대폭 강화)
+                        score += (5.0 - Math.abs(app.getSession1stScore() - roomAvgSkill)) * 20.0;
 
-                    // 성별 가중치: (다른 방 최대 같은 성별 - 내 방 같은 성별) * 가중치
-                    if (app.getUserGenderCd() != null && !app.getUserGenderCd().isEmpty()) {
-                        String userGender = app.getUserGenderCd();
-                        int maxSameGender = eligibleRooms.stream()
-                                .mapToInt(rm -> rm.currentGenderCnt.getOrDefault(userGender, 0)).max().orElse(0);
-                        score += (maxSameGender - r.currentGenderCnt.getOrDefault(userGender, 0)) * gendWeight;
-                    }
+                        // 집결(Clustering) 가점: 내 실력과 맞는 방이라면 빈 방보다 이미 사람이 있는 방을 선호
+                        // 이를 통해 고수팀/초보팀이 확실히 먼저 채워지도록 유도
+                        score += r.members.size() * 5.0;
 
-                    if (score > maxScore) {
-                        maxScore = score;
-                        bestRoom = r;
+                        // 실력 편차 감점 로직 (강력 유지)
+                        for (ClanGatherApply member : r.members) {
+                            if (Math.abs(app.getSession1stScore() - member.getSession1stScore()) >= 2) {
+                                score -= 200.0;
+                                break;
+                            }
+                        }
                     }
                 }
 
-                if (bestRoom == null && !eligibleRooms.isEmpty()) {
-                    bestRoom = eligibleRooms.get(0);
+                // 2. 성별 로직
+                if (isGenderBalanceOn && app.getUserGenderCd() != null && !app.getUserGenderCd().isEmpty()) {
+                    String userGender = app.getUserGenderCd();
+                    int maxSameGender = eligibleRooms.stream()
+                            .mapToInt(rm -> rm.currentGenderCnt.getOrDefault(userGender, 0)).max().orElse(0);
+                    score += (maxSameGender - r.currentGenderCnt.getOrDefault(userGender, 0));
                 }
 
-                // 배정 및 상탯값 업데이트
-                if (bestRoom != null) {
-                    bestRoom.members.add(app);
-                    bestRoom.totalSkill += app.getSession1stScore();
-                    bestRoom.currentSessionCnt.put(sessionCd,
-                            bestRoom.currentSessionCnt.getOrDefault(sessionCd, 0) + 1);
-                    if (app.getUserGenderCd() != null && !app.getUserGenderCd().isEmpty()) {
-                        bestRoom.currentGenderCnt.put(app.getUserGenderCd(),
-                                bestRoom.currentGenderCnt.getOrDefault(app.getUserGenderCd(), 0) + 1);
+                // 3. MBTI 로직
+                if (isMbtiBalanceOn && app.getUserMbti() != null && app.getUserMbti().length() > 0) {
+                    String mbtiChar = app.getUserMbti().substring(0, 1).toUpperCase();
+                    if ("I".equals(mbtiChar) || "E".equals(mbtiChar)) {
+                        int maxSameMbti = eligibleRooms.stream()
+                                .mapToInt(rm -> rm.currentMbtiTypeCnt.getOrDefault(mbtiChar, 0)).max().orElse(0);
+                        score += (maxSameMbti - r.currentMbtiTypeCnt.getOrDefault(mbtiChar, 0));
+                    }
+                }
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestRoom = r;
+                }
+            }
+
+            if (bestRoom == null || (maxScore < -10.0 && rooms.size() < gather.getRoomCnt())) {
+                // 가용한 방이 아예 없거나, 실력 편차 패널티가 큰데 아직 목표 팀 수까지 여유가 있는 경우
+                RoomState emptyRoom = eligibleRooms.stream().filter(r -> r.members.isEmpty()).findFirst().orElse(null);
+                if (emptyRoom != null) {
+                    bestRoom = emptyRoom;
+                } else if (bestRoom == null || rooms.size() < gather.getRoomCnt()) {
+                    // 배정 가능한 방이 아예 없거나, 팀 수 여유가 있을 때만 신규 생성
+                    rooms.add(new RoomState());
+                    bestRoom = rooms.get(rooms.size() - 1);
+                }
+            }
+
+            // 배정 및 상탯값 업데이트
+            if (bestRoom != null) {
+                bestRoom.members.add(app);
+                bestRoom.totalSkill += app.getSession1stScore();
+                bestRoom.currentSessionCnt.put(sessionCd,
+                        bestRoom.currentSessionCnt.getOrDefault(sessionCd, 0) + 1);
+                if (app.getUserGenderCd() != null && !app.getUserGenderCd().isEmpty()) {
+                    bestRoom.currentGenderCnt.put(app.getUserGenderCd(),
+                            bestRoom.currentGenderCnt.getOrDefault(app.getUserGenderCd(), 0) + 1);
+                }
+                if (app.getUserMbti() != null && app.getUserMbti().length() > 0) {
+                    String mbtiChar = app.getUserMbti().substring(0, 1).toUpperCase();
+                    if ("I".equals(mbtiChar) || "E".equals(mbtiChar)) {
+                        bestRoom.currentMbtiTypeCnt.put(mbtiChar,
+                                bestRoom.currentMbtiTypeCnt.getOrDefault(mbtiChar, 0) + 1);
                     }
                 }
             }
@@ -500,6 +554,7 @@ public class ClanGatherService {
         List<ClanMatchRoom> rooms = clanMatchRoomRepository.findByGatherNo(gatherNo);
         List<ClanMatchResult> results = clanMatchResultRepository.findByGatherNo(gatherNo);
         List<ClanGatherSession> rawSessions = clanGatherSessionRepository.findByGatherNo(gatherNo);
+        List<ClanGatherApply> allApplicants = clanGatherApplyRepository.findByGatherNo(gatherNo);
 
         Map<String, String> sessionNames = commDetailRepository.findActiveDetailsByCommCd("BD100")
                 .stream().collect(Collectors.toMap(CommDetail::getCommDtlCd, CommDetail::getCommDtlNm));
@@ -507,9 +562,11 @@ public class ClanGatherService {
         // Create standard list of required session names based on CN_BN_SESSION
         // quantities
         List<String> standardRequiredSessions = new ArrayList<>();
+        List<String> standardRequiredSessionCds = new ArrayList<>();
         if (rawSessions != null) {
             for (ClanGatherSession s : rawSessions) {
                 standardRequiredSessions.add(sessionNames.getOrDefault(s.getSessionTypeCd(), s.getSessionTypeCd()));
+                standardRequiredSessionCds.add(s.getSessionTypeCd());
             }
         }
 
@@ -521,6 +578,15 @@ public class ClanGatherService {
             }
         }
 
+        Map<String, String> userGenders = allApplicants.stream()
+                .collect(Collectors.toMap(ClanGatherApply::getUserId,
+                        a -> a.getUserGenderCd() != null ? a.getUserGenderCd() : "M",
+                        (v1, v2) -> v1));
+
+        Map<String, Integer> userScores = allApplicants.stream()
+                .collect(Collectors.toMap(ClanGatherApply::getUserId, ClanGatherApply::getSession1stScore,
+                        (v1, v2) -> v1));
+
         List<GatheringMatchResultDto> dtoList = new ArrayList<>();
         for (ClanMatchRoom room : rooms) {
             GatheringMatchResultDto rdto = new GatheringMatchResultDto();
@@ -530,7 +596,8 @@ public class ClanGatherService {
             rdto.setSkillScoreTot(room.getSkillScoreTot());
             rdto.setMemberCnt(room.getMemberCnt());
             rdto.setSkillScoreAvg(room.getSkillScoreAvg());
-            rdto.setRequiredSessionNmList(standardRequiredSessions); // Insert standard requirements here
+            rdto.setRequiredSessionNmList(standardRequiredSessions);
+            rdto.setRequiredSessionCdList(standardRequiredSessionCds);
 
             List<GatheringMatchMemberDto> filteredMembers = results.stream()
                     .filter(res -> res.getRoomNo().equals(room.getRoomNo()))
@@ -542,6 +609,8 @@ public class ClanGatherService {
                         mdto.setSessionTypeCd(res.getSessionTypeCd());
                         mdto.setSessionTypeNm(
                                 sessionNames.getOrDefault(res.getSessionTypeCd(), res.getSessionTypeCd()));
+                        mdto.setSkillScore(userScores.getOrDefault(res.getUserId(), 0));
+                        mdto.setUserGenderCd(userGenders.getOrDefault(res.getUserId(), "M"));
                         return mdto;
                     }).collect(Collectors.toList());
 
@@ -549,5 +618,66 @@ public class ClanGatherService {
             dtoList.add(rdto);
         }
         return dtoList;
+    }
+
+    @Transactional
+    public void swapMembers(Long gatherNo, MatchSwapRequestDto request) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        // 1. Handle From User
+        if (request.getFromUserId() != null && !request.getFromUserId().isEmpty()) {
+            ClanMatchResult fromResult = clanMatchResultRepository.findByGatherNoAndRoomNoAndUserId(
+                    gatherNo, request.getFromRoomNo(), request.getFromUserId());
+            if (fromResult != null) {
+                fromResult.setRoomNo(request.getToRoomNo());
+                fromResult.setSessionTypeCd(request.getToSessionCd());
+                fromResult.setUpdId(request.getUserId());
+                fromResult.setUpdDtime(currentDateTime);
+                clanMatchResultRepository.save(fromResult);
+            }
+        }
+
+        // 2. Handle To User
+        if (request.getToUserId() != null && !request.getToUserId().isEmpty()) {
+            ClanMatchResult toResult = clanMatchResultRepository.findByGatherNoAndRoomNoAndUserId(
+                    gatherNo, request.getToRoomNo(), request.getToUserId());
+            if (toResult != null) {
+                toResult.setRoomNo(request.getFromRoomNo());
+                toResult.setSessionTypeCd(request.getFromSessionCd());
+                toResult.setUpdId(request.getUserId());
+                toResult.setUpdDtime(currentDateTime);
+                clanMatchResultRepository.save(toResult);
+            }
+        }
+
+        // 3. Recalculate stats for both rooms
+        updateRoomStats(gatherNo, request.getFromRoomNo(), request.getUserId());
+        updateRoomStats(gatherNo, request.getToRoomNo(), request.getUserId());
+    }
+
+    private void updateRoomStats(Long gatherNo, Long roomNo, String userId) {
+        ClanMatchRoom room = clanMatchRoomRepository.findById(roomNo).orElse(null);
+        if (room == null)
+            return;
+
+        List<ClanMatchResult> results = clanMatchResultRepository.findByRoomNo(roomNo);
+        int totalScore = 0;
+        int count = results.size();
+
+        for (ClanMatchResult res : results) {
+            ClanGatherApply apply = clanGatherApplyRepository.findByGatherNoAndUserId(gatherNo, res.getUserId())
+                    .orElse(null);
+            if (apply != null) {
+                totalScore += apply.getSession1stScore();
+            }
+        }
+
+        double avg = count > 0 ? (double) totalScore / count : 0;
+        room.setSkillScoreTot(totalScore);
+        room.setMemberCnt(count);
+        room.setSkillScoreAvg(BigDecimal.valueOf(avg));
+        room.setUpdId(userId);
+        room.setUpdDtime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        clanMatchRoomRepository.save(room);
     }
 }

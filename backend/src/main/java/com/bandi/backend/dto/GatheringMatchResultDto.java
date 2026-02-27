@@ -15,5 +15,6 @@ public class GatheringMatchResultDto {
     private Integer memberCnt;
     private BigDecimal skillScoreAvg;
     private List<String> requiredSessionNmList;
+    private List<String> requiredSessionCdList;
     private List<GatheringMatchMemberDto> members;
 }

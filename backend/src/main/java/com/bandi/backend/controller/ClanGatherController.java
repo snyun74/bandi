@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import com.bandi.backend.dto.GatheringMatchResultDto;
+import com.bandi.backend.dto.MatchSwapRequestDto;
 
 @RestController
 @RequestMapping("/api/clans/gatherings")
@@ -140,6 +141,18 @@ public class ClanGatherController {
             e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Failed to fetch match results", "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{gatherNo}/swap")
+    public ResponseEntity<?> swapMembers(@PathVariable Long gatherNo, @RequestBody MatchSwapRequestDto request) {
+        try {
+            clanGatherService.swapMembers(gatherNo, request);
+            return ResponseEntity.ok(Map.of("message", "Members swapped successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to swap members", "error", e.getMessage()));
         }
     }
 

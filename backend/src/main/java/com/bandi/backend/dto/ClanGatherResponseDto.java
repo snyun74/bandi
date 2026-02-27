@@ -19,4 +19,7 @@ public class ClanGatherResponseDto {
     private String regDate;
     private List<ClanGatherWeightDto> weights;
     private boolean isApplied; // Whether the current user has applied
+    private Integer applicantCnt;
+    private Integer maleCnt;
+    private Integer femaleCnt;
 }
