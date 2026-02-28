@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaRegThumbsUp, FaChevronRight, FaMinusCircle, FaRegCommentDots } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface HotPost {
     id: number;
@@ -222,19 +223,17 @@ const ClanBoardList: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">클랜 게시판</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">클랜 게시판</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-10 relative">
 
                 {/* Hot Section */}
                 <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[#FF5252] font-bold text-lg"># 🔥 Hot 🔥</span>
-                    </div>
+                    <SectionTitle as="h2" className="!mt-0 !mb-2 text-[#FF5252]"># 🔥 Hot 🔥</SectionTitle>
 
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
                         <div className="divide-y divide-gray-100">
@@ -276,11 +275,11 @@ const ClanBoardList: React.FC = () => {
                 {/* Board List Section */}
                 <div>
                     <div className="flex justify-between items-center mb-2">
-                        <h2 className="text-[#003C48] font-bold text-lg">게시판 목록</h2>
+                        <SectionTitle as="h2" className="!mt-0 !mb-0">게시판 목록</SectionTitle>
                         {(userRole === '01' || userRole === '02') && (
                             <button
                                 onClick={() => setIsModalOpen(true)}
-                                className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs px-3 py-1.5 rounded-full font-medium transition-colors"
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[14px] px-3 py-1.5 rounded-full font-medium transition-colors"
                             >
                                 게시판 생성
                             </button>
@@ -301,7 +300,7 @@ const ClanBoardList: React.FC = () => {
                                                 <FaMinusCircle className="text-[#FF8A80] hover:text-red-500 transition-colors" size={20} />
                                             </div>
                                         )}
-                                        <span className="text-[#003C48] font-medium">{board.name}</span>
+                                        <span className="text-[#003C48] font-medium text-[15px]">{board.name}</span>
                                     </div>
                                     <FaChevronRight className="text-gray-400" size={16} />
                                 </div>
@@ -312,7 +311,7 @@ const ClanBoardList: React.FC = () => {
 
                 {/* Modal Overlay */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in-up">
                             <h3 className="text-lg font-bold text-[#003C48] mb-4 text-center">클랜 게시판 추가하기</h3>
                             <input

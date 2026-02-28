@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit } from 'react-icons/fa';
 import { GiGrandPiano } from "react-icons/gi";
+import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 
 interface JamRole {
@@ -389,8 +390,8 @@ const ClanJamDetail: React.FC = () => {
         <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="bg-white px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
-                <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(-1)} className="text-gray-600">
+                <div className="flex items-center gap-2 flex-1">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42]">
                         <FaChevronLeft size={24} />
                     </button>
                     {/* Profile Image */}
@@ -411,16 +412,16 @@ const ClanJamDetail: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div>
-                        <h1 className="text-lg text-[#003C48] font-bold leading-tight">{bandDetail.title}</h1>
-                        <p className="text-xs text-gray-500">{bandDetail.songTitle} : {bandDetail.artist}</p>
+                    <div className="flex-1 min-w-0">
+                        <SectionTitle as="h1" className="!mt-0 !mb-0 truncate leading-tight">{bandDetail.title}</SectionTitle>
+                        <p className="text-xs text-gray-500 truncate">{bandDetail.songTitle} : {bandDetail.artist}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {bandDetail.canManage && (
                         <button
                             onClick={bandDetail.status === 'E' ? undefined : handleConfirmToggle}
-                            className={`text-xs px-3 py-1.5 rounded-full font-bold transition-colors ${bandDetail.status === 'E' ? 'bg-gray-600 text-white cursor-default' : bandDetail.isConfirmed ? 'bg-[#00BDF8] text-white' : 'bg-gray-200 text-gray-600'}`}
+                            className={`text-[14px] px-3 py-1.5 rounded-full font-bold transition-colors ${bandDetail.status === 'E' ? 'bg-gray-600 text-white cursor-default' : bandDetail.isConfirmed ? 'bg-[#00BDF8] text-white' : 'bg-gray-200 text-gray-600'}`}
                         >
                             {bandDetail.status === 'E' ? "종료됨" : bandDetail.isConfirmed ? "확정" : "미확정"}
                         </button>
@@ -433,7 +434,7 @@ const ClanJamDetail: React.FC = () => {
                                 attachFilePath: bandDetail.imgUrl
                             }
                         })}
-                        className="bg-[#00BDF8] text-white text-xs px-3 py-1.5 rounded-full font-bold"
+                        className="bg-[#00BDF8] text-white text-[14px] px-3 py-1.5 rounded-full font-bold"
                     >
                         단체 채팅
                     </button>
@@ -443,7 +444,7 @@ const ClanJamDetail: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {/* Session Status */}
                 <section>
-                    <h2 className="text-[#003C48] font-bold text-lg mb-3">세션 현황</h2>
+                    <SectionTitle className="mb-3">세션 현황</SectionTitle>
                     <div className="bg-white rounded-2xl p-4 shadow-sm grid grid-cols-3 gap-3">
                         {bandDetail.roles.map((role, idx) => {
 
@@ -487,35 +488,35 @@ const ClanJamDetail: React.FC = () => {
                                         {bandDetail.status === 'E' ? (
                                             <button
                                                 disabled
-                                                className="w-full bg-gray-500 text-white text-xs font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
+                                                className="w-full bg-gray-500 text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
                                             >
                                                 종료
                                             </button>
                                         ) : bandDetail.isConfirmed ? (
                                             <button
                                                 disabled
-                                                className="w-full bg-gray-400 text-white text-xs font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
+                                                className="w-full bg-gray-400 text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
                                             >
                                                 확정
                                             </button>
                                         ) : role.status === 'empty' ? (
                                             <button
                                                 onClick={() => handleJoin(role)}
-                                                className="w-full bg-[#EFF1F3] hover:bg-gray-200 text-[#003C48] text-xs font-bold py-1.5 rounded-lg shadow-sm transition-colors"
+                                                className="w-full bg-[#EFF1F3] hover:bg-gray-200 text-[#003C48] text-[14px] font-bold py-1.5 rounded-lg shadow-sm transition-colors"
                                             >
                                                 참여
                                             </button>
                                         ) : role.isCurrentUser ? (
                                             <button
                                                 onClick={() => handleCancelSession(role)}
-                                                className="w-full bg-[#FF8A80] text-white text-xs font-bold py-1.5 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
+                                                className="w-full bg-[#FF8A80] text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
                                             >
                                                 취소
                                             </button>
                                         ) : (
                                             <button
                                                 disabled
-                                                className="w-full bg-[#00BDF8] text-white text-xs font-bold py-1.5 rounded-lg shadow-sm opacity-50 cursor-default"
+                                                className="w-full bg-[#00BDF8] text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm opacity-50 cursor-default"
                                             >
                                                 참여중
                                             </button>
@@ -530,7 +531,7 @@ const ClanJamDetail: React.FC = () => {
 
                 {/* Additional Features */}
                 <section>
-                    <h2 className="text-[#003C48] font-bold text-lg mb-3">추가 기능</h2>
+                    <SectionTitle className="mb-3">추가 기능</SectionTitle>
                     <div className="space-y-3">
                         {/* Schedule */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
@@ -548,7 +549,7 @@ const ClanJamDetail: React.FC = () => {
                                     }
                                     navigate(`/main/jam/schedule/${jamId}`);
                                 }}
-                                className={`w-full font-bold py-2.5 rounded-xl shadow-sm text-sm transition-colors ${bandDetail.isConfirmed && bandDetail.roles.some(r => r.isCurrentUser)
+                                className={`w-full font-bold py-2.5 rounded-xl shadow-sm text-[14px] transition-colors ${bandDetail.isConfirmed && bandDetail.roles.some(r => r.isCurrentUser)
                                     ? 'bg-[#00BDF8] text-white'
                                     : 'bg-gray-200 text-gray-400'
                                     }`}
@@ -560,7 +561,7 @@ const ClanJamDetail: React.FC = () => {
                         {/* Reservation */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
                             <h3 className="text-[#003C48] font-bold text-sm mb-3">합주실 예약</h3>
-                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-sm">
+                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-[14px]">
                                 합주실 보러가기
                             </button>
                         </div>
@@ -568,7 +569,7 @@ const ClanJamDetail: React.FC = () => {
                         {/* Concert */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
                             <h3 className="text-[#003C48] font-bold text-sm mb-3">밴디콘 정기공연</h3>
-                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-sm">
+                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-[14px]">
                                 밴디콘서트 신청하기
                             </button>
                         </div>
@@ -581,7 +582,7 @@ const ClanJamDetail: React.FC = () => {
                 <div className="p-4 bg-white sticky bottom-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     {bandDetail.status === 'E' ? (
                         <button
-                            className="w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-sm cursor-not-allowed"
+                            className="w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-sm cursor-not-allowed text-[14px]"
                             disabled
                         >
                             합주 종료됨
@@ -589,14 +590,14 @@ const ClanJamDetail: React.FC = () => {
                     ) : !bandDetail.isConfirmed ? (
                         <button
                             onClick={handleDelete}
-                            className="w-full bg-[#FF8A80] text-white font-bold py-3 rounded-xl shadow-sm"
+                            className="w-full bg-[#FF8A80] text-white font-bold py-3 rounded-xl shadow-sm text-[14px]"
                         >
                             합주방 삭제
                         </button>
                     ) : (
                         <button
                             onClick={handleEndJam}
-                            className="w-full bg-[#FF8A80] text-white font-bold py-3 rounded-xl shadow-sm hover:opacity-90 transition-opacity"
+                            className="w-full bg-[#FF8A80] text-white font-bold py-3 rounded-xl shadow-sm hover:opacity-90 transition-opacity text-[14px]"
                         >
                             합주 종료
                         </button>

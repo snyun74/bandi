@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPaperPlane, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 const UserAvatar: React.FC<{ userId: string }> = ({ userId }) => {
     const [img, setImg] = React.useState<string | null | undefined>(undefined);
@@ -316,17 +317,17 @@ const ClanNoticeDetail: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">공지 현황</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">공지 현황</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto pb-20">
                 {/* Notice Content */}
                 <div className="px-6 mb-6">
                     <div className="border-b border-gray-100 pb-4 mb-4">
-                        <h2 className="text-[#003C48] text-xl font-bold mb-2">{notice.title}</h2>
+                        <SectionTitle as="h2" className="!mt-0 !mb-0">{notice.title}</SectionTitle>
                     </div>
                     <div className="text-[#003C48] whitespace-pre-wrap min-h-[150px] text-sm leading-relaxed mb-6">
                         {notice.content}
@@ -363,7 +364,7 @@ const ClanNoticeDetail: React.FC = () => {
                 {/* Comments Section */}
                 <div className="bg-gray-50 p-6 min-h-[200px]">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-[#003C48] font-bold mb-0 text-sm">댓글 {comments.length}</h3>
+                        <SectionTitle as="h3" className="!mt-0 !mb-0 text-sm">댓글 {comments.length}</SectionTitle>
                         <div className={`flex items-center gap-1 cursor-pointer text-sm ${notice.isScrapped ? 'text-gray-800' : 'text-gray-400'}`} onClick={handleScrap}>
                             {notice.isScrapped ? <FaBookmark className="text-[#0E3B46]" /> : <FaRegBookmark />} <span>({notice.scrapCnt || 0})</span>
                         </div>

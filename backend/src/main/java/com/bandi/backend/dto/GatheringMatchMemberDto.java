@@ -13,4 +13,5 @@ public class GatheringMatchMemberDto {
     private String sessionTypeNm;
     private Integer skillScore;
     private String userGenderCd;
+    private String userMbti;
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPaperclip } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 const ClanNoticeCreate: React.FC = () => {
     const navigate = useNavigate();
@@ -108,10 +109,10 @@ const ClanNoticeCreate: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">공지 작성</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">공지 작성</SectionTitle>
             </div>
 
             {/* Content Form */}
@@ -119,7 +120,7 @@ const ClanNoticeCreate: React.FC = () => {
 
                 {/* Title */}
                 <div className="space-y-2">
-                    <label className="text-[#003C48] font-bold text-lg">제목 <span className="text-[#FF8A80]">*</span></label>
+                    <SectionTitle as="h2" className="!mt-0 !mb-0">제목 <span className="text-[#FF8A80]">*</span></SectionTitle>
                     <input
                         type="text"
                         value={title}
@@ -131,7 +132,7 @@ const ClanNoticeCreate: React.FC = () => {
                 {/* Options: Pin & Date */}
                 <div className="space-y-2">
                     <div className="flex items-center gap-4">
-                        <label className="text-[#003C48] font-bold text-lg">공지 기간 <span className="text-[#FF8A80]">*</span></label>
+                        <SectionTitle as="h2" className="!mt-0 !mb-0">공지 기간 <span className="text-[#FF8A80]">*</span></SectionTitle>
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"
@@ -164,7 +165,7 @@ const ClanNoticeCreate: React.FC = () => {
 
                 {/* Content */}
                 <div className="space-y-2">
-                    <label className="text-[#003C48] font-bold text-lg">내용 <span className="text-[#FF8A80]">*</span></label>
+                    <SectionTitle as="h2" className="!mt-0 !mb-0">내용 <span className="text-[#FF8A80]">*</span></SectionTitle>
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
@@ -176,7 +177,7 @@ const ClanNoticeCreate: React.FC = () => {
                 <div className="flex gap-2">
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 bg-[#ecf0f1] px-4 py-3 rounded-xl text-[#003C48] font-bold text-sm min-w-fit"
+                        className="flex items-center gap-2 bg-[#ecf0f1] px-4 py-3 rounded-xl text-[#003C48] font-bold text-[14px] min-w-fit"
                     >
                         <FaPaperclip /> {file ? file.name : "파일 업로드"}
                     </button>
@@ -199,7 +200,7 @@ const ClanNoticeCreate: React.FC = () => {
                 <div className="pt-2">
                     <button
                         onClick={handleSubmit}
-                        className="w-full bg-[#00BDF8] text-white py-4 rounded-xl font-bold text-lg shadow-md hover:bg-[#009ce0] transition-colors"
+                        className="w-full bg-[#00BDF8] text-white py-4 rounded-xl font-bold text-[14px] shadow-md hover:bg-[#009ce0] transition-colors"
                     >
                         공지 생성
                     </button>

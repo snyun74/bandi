@@ -771,6 +771,11 @@ public class ClanGatherService {
                 .collect(Collectors.toMap(ClanGatherApply::getUserId, ClanGatherApply::getSession1stScore,
                         (v1, v2) -> v1));
 
+        Map<String, String> userMbtis = allApplicants.stream()
+                .collect(Collectors.toMap(ClanGatherApply::getUserId,
+                        a -> a.getUserMbti() != null ? a.getUserMbti() : "",
+                        (v1, v2) -> v1));
+
         List<GatheringMatchResultDto> dtoList = new ArrayList<>();
         for (ClanMatchRoom room : rooms) {
             GatheringMatchResultDto rdto = new GatheringMatchResultDto();
@@ -795,6 +800,7 @@ public class ClanGatherService {
                                 sessionNames.getOrDefault(res.getSessionTypeCd(), res.getSessionTypeCd()));
                         mdto.setSkillScore(userScores.getOrDefault(res.getUserId(), 0));
                         mdto.setUserGenderCd(userGenders.getOrDefault(res.getUserId(), "M"));
+                        mdto.setUserMbti(userMbtis.getOrDefault(res.getUserId(), ""));
                         return mdto;
                     }).collect(Collectors.toList());
 

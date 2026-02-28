@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaClock } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 
 interface VoteDetail {
@@ -220,18 +221,17 @@ const VoteDetail: React.FC = () => {
 
                 {/* Header */}
                 <div className="flex items-center p-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-                    <button onClick={() => navigate(-1)} className="text-gray-500 mr-2 flex items-center text-sm">
-                        <FaChevronLeft className="mr-1" />
-                        뒤로 가기
+                    <button onClick={() => navigate(-1)} className="text-[#052c42] mr-2">
+                        <FaChevronLeft size={24} />
                     </button>
-                    <h2 className="text-lg font-bold text-[#003C48] flex-1 text-center mr-16">투표 참여</h2>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 text-center mr-16">투표 참여</SectionTitle>
                 </div>
 
                 {/* Content */}
                 {voteDetail ? (
                     <div className="p-6 flex-1">
 
-                        <h2 className="text-2xl font-bold text-[#003C48] text-center mb-1">{voteDetail.title}</h2>
+                        <SectionTitle as="h2" className="text-center mb-1">{voteDetail.title}</SectionTitle>
 
                         <div className="flex justify-end mb-4">
                             <button
@@ -258,8 +258,9 @@ const VoteDetail: React.FC = () => {
                                             }
                                         `}
                                     >
-                                        <div className="font-bold text-lg">
-                                            {item.itemOrder}. {item.itemText}
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-lg opacity-60">{item.itemOrder}.</span>
+                                            <SectionTitle as="h4" className="!mt-0 !mb-0 text-inherit">{item.itemText}</SectionTitle>
                                         </div>
                                     </div>
                                 );
@@ -270,9 +271,9 @@ const VoteDetail: React.FC = () => {
                             <button
                                 onClick={handleSubmit}
                                 disabled={isButtonDisabled}
-                                className={`px-10 py-2.5 rounded-full text-lg font-bold shadow-md transition-transform active:scale-[0.98]
+                                className={`px-10 py-3 rounded-full text-[14px] font-bold shadow-lg transition-all active:scale-[0.98]
                                     ${isButtonDisabled
-                                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed shadow-none'
+                                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                                         : voteDetail?.hasVoted
                                             ? 'bg-red-500 text-white hover:bg-red-600' // Cancel button style
                                             : 'bg-[#00BDF8] text-white hover:bg-[#009bc9]'

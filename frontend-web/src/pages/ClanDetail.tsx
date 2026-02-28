@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaRegEdit, FaCommentDots, FaUserFriends, FaMusic } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import GatheringCreateModal from '../components/GatheringCreateModal';
 import GatheringApplyModal from '../components/GatheringApplyModal';
@@ -286,10 +287,10 @@ const ClanDetail: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">클랜</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">클랜</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-5">
@@ -311,22 +312,22 @@ const ClanDetail: React.FC = () => {
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-[#003C48] text-xl font-bold mb-1">{clan.name}</h2>
+                        <SectionTitle as="h2" className="!mt-0 mb-1">{clan.name}</SectionTitle>
                         <p className="text-[#003C48] text-sm font-medium">멤버 : {clan.memberCount}명</p>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
-                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-xs text-gray-600 shadow-sm whitespace-nowrap">
+                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-[14px] font-bold text-gray-600 shadow-sm whitespace-nowrap">
                             <FaCommentDots size={12} className="text-[#00BDF8]" /> 단체 채팅
                             {clan.unreadChatCount !== undefined && clan.unreadChatCount > 0 && (
                                 <span className="bg-[#00BDF8] text-white text-[10px] rounded-full px-1.5 h-4 flex items-center justify-center -mr-1 min-w-[16px]">{clan.unreadChatCount}</span>
                             )}
                         </button>
-                        <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-xs text-gray-600 shadow-sm whitespace-nowrap">
+                        <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-[14px] font-bold text-gray-600 shadow-sm whitespace-nowrap">
                             <FaUserFriends size={12} className="text-[#00BDF8]" /> 멤버 현황
                             <span className="bg-[#00BDF8] text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
                         </button>
                         {myRole === '01' && (
-                            <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-3 py-1 flex items-center gap-1 text-xs text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-colors">
+                            <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-3 py-1 flex items-center gap-1 text-[14px] font-bold text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-colors">
                                 <FaMusic size={12} /> 합주 모집
                             </button>
                         )}
@@ -387,28 +388,28 @@ const ClanDetail: React.FC = () => {
                                         {gather.gatherProcFg === 'Y' ? (
                                             <button
                                                 disabled
-                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-gray-200 text-gray-400 cursor-default whitespace-nowrap shadow-sm"
+                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-gray-200 text-gray-400 cursor-default whitespace-nowrap shadow-sm"
                                             >
                                                 모집종료
                                             </button>
                                         ) : gather.gatherProcFg === 'M' ? (
                                             <button
                                                 disabled
-                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-green-100 text-green-500 cursor-default whitespace-nowrap shadow-sm"
+                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-green-100 text-green-500 cursor-default whitespace-nowrap shadow-sm"
                                             >
                                                 매핑완료
                                             </button>
                                         ) : gather.applied ? (
                                             <button
                                                 onClick={() => handleGatheringCancelClick(gather.gatherNo)}
-                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-gray-500 text-white hover:bg-gray-600 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-gray-500 text-white hover:bg-gray-600 transition-all shadow-sm active:scale-95 whitespace-nowrap"
                                             >
                                                 참여취소
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={() => handleGatheringApplyClick(gather)}
-                                                className="px-4 py-2 rounded-full text-[12px] font-bold bg-[#FF8A80] text-white hover:bg-[#FF7060] transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-[#FF8A80] text-white hover:bg-[#FF7060] transition-all shadow-sm active:scale-95 whitespace-nowrap"
                                             >
                                                 참여하기
                                             </button>
@@ -422,8 +423,8 @@ const ClanDetail: React.FC = () => {
 
                 {/* Clan Jam Rooms */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-[#003C48] font-bold text-lg">클랜 합주방</h3>
+                    <div className="flex justify-between items-center">
+                        <SectionTitle className="!mt-0 mb-4">클랜 합주방</SectionTitle>
                         <span onClick={() => navigate(`/main/clan/jam/${id}`)} className="text-gray-400 text-xs cursor-pointer">더보기</span>
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-2">
@@ -457,8 +458,8 @@ const ClanDetail: React.FC = () => {
 
                 {/* Calendar */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-[#003C48] font-bold text-lg">클랜 캘린더</h3>
+                    <div className="flex justify-between items-center">
+                        <SectionTitle className="!mt-0 mb-4">클랜 캘린더</SectionTitle>
                         <span onClick={() => navigate(`/main/clan/calendar/${id}`)} className="text-gray-400 text-xs cursor-pointer hover:text-[#00BDF8]">캘린더 보기</span>
                     </div>
                     {/* Today's Schedule Display */}
@@ -512,8 +513,8 @@ const ClanDetail: React.FC = () => {
 
                 {/* Board */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-[#003C48] font-bold text-lg">클랜 게시판</h3>
+                    <div className="flex justify-between items-center">
+                        <SectionTitle className="!mt-0 mb-4">클랜 게시판</SectionTitle>
                         <span onClick={() => navigate(`/main/clan/board/${id}`)} className="text-gray-400 text-xs cursor-pointer">더보기</span>
                     </div>
                     {topPosts.length > 0 ? (

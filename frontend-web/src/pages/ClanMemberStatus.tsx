@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaSearch, FaChevronLeft } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 // 프로필 사진 컴포넌트 (파일 최상단 선언 - 리렌더링 안정성)
 const UserAvatar: React.FC<{ userId: string; size?: number }> = ({ userId, size = 22 }) => {
@@ -336,10 +337,10 @@ const ClanMemberStatus: React.FC = () => {
 
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">멤버 현황</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">멤버 현황</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-4">
@@ -357,7 +358,7 @@ const ClanMemberStatus: React.FC = () => {
                     </div>
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="whitespace-nowrap bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-sm font-bold transition-all hover:bg-[#00a0d2]"
+                        className="whitespace-nowrap bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-[14px] font-bold transition-all hover:bg-[#00a0d2]"
                     >
                         {isExpanded ? '접어두기' : '펼치기'}
                     </button>
@@ -367,7 +368,7 @@ const ClanMemberStatus: React.FC = () => {
                 {canManageRequests && joinRequests.length > 0 && (
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
                         <div className="flex justify-between items-center mb-2">
-                            <h2 className="text-[#003C48] font-bold text-sm">클랜 가입 신청</h2>
+                            <SectionTitle as="h2" className="!mt-0 !mb-0 text-sm">클랜 가입 신청</SectionTitle>
                             <button onClick={handleAcceptAll} className="bg-[#00BDF8] text-white text-[10px] px-2 py-0.5 rounded-full">모두 수락</button>
                         </div>
                         <div className="space-y-2">
@@ -387,7 +388,7 @@ const ClanMemberStatus: React.FC = () => {
                 {/* Member List */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden p-2">
                     <div className="px-3 py-2 border-b border-gray-100 flex items-baseline gap-2 mb-2">
-                        <h2 className="text-[#003C48] font-bold text-sm">멤버 목록</h2>
+                        <SectionTitle as="h2" className="!mt-0 !mb-0 text-sm">멤버 목록</SectionTitle>
                         <span className="text-[#00BDF8] text-xs font-bold">{filteredMembers.length}명</span>
                     </div>
                     {filteredMembers.map((member, index) => (

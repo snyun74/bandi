@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaMinusCircle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface Schedule {
     cnSchNo: number;
@@ -172,10 +173,10 @@ const ClanCalendar: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 bg-white z-10">
                 <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                         <FaChevronLeft size={24} />
                     </button>
-                    <h1 className="text-xl text-[#003C48] font-bold">클랜 캘린더</h1>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0">클랜 캘린더</SectionTitle>
                 </div>
             </div>
 
@@ -248,7 +249,7 @@ const ClanCalendar: React.FC = () => {
                     />
                     <button
                         onClick={handleAddSchedule}
-                        className="bg-[#00BDF8] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-sm whitespace-nowrap"
+                        className="bg-[#00BDF8] text-white px-5 py-2.5 rounded-full text-[14px] font-bold shadow-sm whitespace-nowrap"
                     >
                         추가
                     </button>

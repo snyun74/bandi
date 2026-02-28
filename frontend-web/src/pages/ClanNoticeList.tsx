@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaMinusCircle } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface NoticeItem {
     cnNoticeNo: number;
@@ -51,14 +52,14 @@ const ClanNoticeList: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 mb-2">
                 <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="text-gray-600">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42]">
                         <FaChevronLeft size={24} />
                     </button>
-                    <h1 className="text-xl text-[#003C48] font-bold">클랜 공지</h1>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0">클랜 공지</SectionTitle>
                 </div>
                 {canCreateNotice && (
                     <button
-                        className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-xs font-bold"
+                        className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-[14px] font-bold"
                         onClick={() => navigate(`/main/clan/notice/${clanId}/create`)}
                     >
                         공지 생성
@@ -71,20 +72,26 @@ const ClanNoticeList: React.FC = () => {
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     {/* List Header */}
                     <div className="bg-[#4FC3F7] px-4 py-3">
-                        <span className="text-white font-bold text-lg">공지</span>
+                        <SectionTitle as="h2" className="text-white !mt-0 !mb-0 !text-white">공지</SectionTitle>
                     </div>
 
                     {/* Notice List */}
                     <div className="p-4 space-y-3">
                         {notices.length > 0 ? (
-                            notices.map((notice) => (
+                            notices.map((notice: NoticeItem) => (
                                 <div key={notice.cnNoticeNo} className="flex justify-between items-center">
-                                    <span
+                                    <div
                                         onClick={() => navigate(`/main/clan/notice/${clanId}/detail/${notice.cnNoticeNo}`)}
-                                        className={`text-base font-medium flex items-center cursor-pointer hover:underline ${notice.pinYn === 'Y' ? 'text-[#00BDF8] font-bold' : 'text-[#003C48]'}`}
+                                        className="flex items-center cursor-pointer group"
                                     >
-                                        <span className="mr-2">•</span> {notice.title}
-                                    </span>
+                                        <span className={`mr-2 ${notice.pinYn === 'Y' ? 'text-[#00BDF8]' : 'text-[#003C48]'}`}>•</span>
+                                        <SectionTitle
+                                            as="h3"
+                                            className={`!mt-0 !mb-0 text-base group-hover:underline ${notice.pinYn === 'Y' ? 'text-[#00BDF8]' : 'text-[#003C48]'}`}
+                                        >
+                                            {notice.title}
+                                        </SectionTitle>
+                                    </div>
                                     {canCreateNotice && (
                                         <button className="text-[#FF8A80] hover:text-[#ff5252]">
                                             <FaMinusCircle size={20} />

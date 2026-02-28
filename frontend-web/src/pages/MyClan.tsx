@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface ClanData {
     id: number;
@@ -55,10 +56,10 @@ const MyClan: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">내 클랜</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1">내 클랜</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-4">
@@ -82,7 +83,9 @@ const MyClan: React.FC = () => {
 
                             {/* Info */}
                             <div className="flex-1">
-                                <h3 className="text-[#003C48] text-lg font-bold mb-0.5">{clan.name}</h3>
+                                <SectionTitle as="h3" className="!mt-0 mb-0.5">
+                                    {clan.name}
+                                </SectionTitle>
                                 <p className="text-[#003C48] text-[13px] mb-1">
                                     {clan.description.length > 20 ? `${clan.description.substring(0, 20)}...` : clan.description}
                                 </p>

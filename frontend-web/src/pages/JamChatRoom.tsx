@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaCopy, FaCheck } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
 import SettlementCreationModal from '../components/SettlementCreationModal';
@@ -367,8 +368,8 @@ const JamChatRoom: React.FC = () => {
         <div className="fixed top-[50px] bottom-[60px] left-0 right-0 z-40 flex flex-col bg-[#f2f4f5] font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex-none flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-                <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="mr-3 text-[#003C48]">
+                <div className="flex items-center flex-1 min-w-0">
+                    <button onClick={() => navigate(-1)} className="mr-3 text-[#052c42]">
                         <FaChevronLeft size={22} />
                     </button>
                     <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-indigo-500">
@@ -378,12 +379,12 @@ const JamChatRoom: React.FC = () => {
                             <span className="text-white font-bold text-xs">{currentRoomName.substring(0, 1)}</span>
                         )}
                     </div>
-                    <h1 className="text-xl font-bold text-[#003C48]">{currentRoomName}</h1>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>
                 </div>
                 {/* Vote List Button */}
                 <button
                     onClick={() => navigate(`/main/jam/vote/list/${roomNo}`)}
-                    className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-sm font-bold shadow-md hover:bg-[#009bc9] transition-colors"
+                    className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-[14px] font-bold shadow-md hover:bg-[#009bc9] transition-colors"
                 >
                     투표하기
                 </button>
@@ -461,7 +462,7 @@ const JamChatRoom: React.FC = () => {
                                                     </div>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); navigate(`/main/jam/vote/${msg.attachNo}`); }}
-                                                        className="w-full py-2 bg-[#00BDF8] text-white text-sm font-bold rounded-lg hover:bg-[#009bc9] transition-colors shadow-sm"
+                                                        className="w-full py-2 bg-[#00BDF8] text-white text-[14px] font-bold rounded-lg hover:bg-[#009bc9] transition-colors shadow-sm"
                                                     >
                                                         투표하러 가기
                                                     </button>

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPaperclip } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 const ClanBoardPostCreate: React.FC = () => {
     const navigate = useNavigate();
@@ -111,16 +112,16 @@ const ClanBoardPostCreate: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">게시글 작성</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">게시글 작성</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20">
                 {/* Title */}
                 <div className="mb-4">
-                    <label className="block text-[#003C48] font-bold mb-2">제목</label>
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">제목</SectionTitle>
                     <input
                         type="text"
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8]"
@@ -131,7 +132,7 @@ const ClanBoardPostCreate: React.FC = () => {
 
                 {/* Content */}
                 <div className="mb-4 flex-1">
-                    <label className="block text-[#003C48] font-bold mb-2">내용</label>
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">내용</SectionTitle>
                     <textarea
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8] min-h-[300px] resize-none"
                         value={content}
@@ -147,7 +148,7 @@ const ClanBoardPostCreate: React.FC = () => {
                         className="flex items-center justify-center gap-1 bg-gray-100 border border-gray-200 text-gray-600 px-3 py-3 rounded-xl text-sm min-w-[100px]"
                     >
                         <FaPaperclip />
-                        <span className="truncate max-w-[80px]">{file ? file.name : "파일 업로드"}</span>
+                        <span className="truncate max-w-[80px] text-[14px]">{file ? file.name : "파일 업로드"}</span>
                     </button>
                     <input
                         type="file"
@@ -169,7 +170,7 @@ const ClanBoardPostCreate: React.FC = () => {
                 {/* Submit Button */}
                 <button
                     onClick={handleSubmit}
-                    className="w-full bg-[#00BDF8] text-white py-4 rounded-xl font-bold text-lg shadow-md mb-6"
+                    className="w-full bg-[#00BDF8] text-white py-4 rounded-xl font-bold text-[14px] shadow-md mb-6"
                 >
                     게시글 생성
                 </button>

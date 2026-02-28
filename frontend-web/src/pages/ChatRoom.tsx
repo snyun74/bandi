@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaInbox, FaDollarSign, FaFileAlt } from 'react-icons/fa';
 import VoteCreationModal from '../components/VoteCreationModal';
+import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 
 interface ChatMessage {
@@ -324,8 +325,8 @@ const ChatRoom: React.FC = () => {
         <div className="fixed top-[50px] bottom-[60px] left-0 right-0 z-40 flex flex-col bg-[#f2f4f5] font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex-none flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-                <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="mr-3 text-[#003C48]">
+                <div className="flex items-center flex-1 min-w-0">
+                    <button onClick={() => navigate(-1)} className="mr-3 text-[#052c42]">
                         <FaChevronLeft size={22} />
                     </button>
                     <div className={`w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 ${!currentRoomProfile ? (currentRoomType === 'CLAN' ? 'bg-black' : 'bg-indigo-500') : 'bg-gray-100'}`}>
@@ -335,13 +336,13 @@ const ChatRoom: React.FC = () => {
                             <span className="text-white font-bold text-xs">{currentRoomName.substring(0, 1)}</span>
                         )}
                     </div>
-                    <h1 className="text-xl font-bold text-[#003C48]">{currentRoomName}</h1>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>
                 </div>
                 {/* Vote Button - Only for CLAN chat */}
                 {currentRoomType === 'CLAN' && (
                     <button
                         onClick={() => navigate(`/main/vote/list/${roomNo}`)}
-                        className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-sm font-bold shadow-md"
+                        className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-[14px] font-bold shadow-md"
                     >
                         투표하기
                     </button>
@@ -419,7 +420,7 @@ const ChatRoom: React.FC = () => {
                                                             const voteId = msg.voteNo || msg.attachNo || 0;
                                                             navigate(`/main/vote/${voteId}`);
                                                         }}
-                                                        className={`w-full py-2.5 rounded-lg font-bold text-sm shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2
+                                                        className={`w-full py-2.5 rounded-lg font-bold text-[14px] shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2
                                                             ${msg.isMyMessage
                                                                 ? 'bg-white text-[#00BDF8] hover:bg-gray-50'
                                                                 : 'bg-[#00BDF8] text-white hover:bg-[#009bc9]'

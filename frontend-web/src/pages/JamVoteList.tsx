@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface JamVoteListDto {
     bnVoteNo: number;
@@ -49,12 +50,12 @@ const JamVoteList: React.FC = () => {
         <div className="w-full bg-white font-['Pretendard'] flex flex-col" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 bg-white">
-                <button onClick={() => navigate(-1)} className="text-gray-500 mr-2 flex items-center text-sm">
-                    <FaChevronLeft className="mr-1" /> 뒤로 가기
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-2">
+                    <FaChevronLeft size={24} />
                 </button>
             </div>
 
-            <h1 className="text-xl font-bold text-[#003C48] text-center mb-6">투표 목록</h1>
+            <SectionTitle as="h1" className="text-center mb-6">투표 목록</SectionTitle>
 
             <div className="px-4 space-y-3 pb-10">
                 {loading ? (
@@ -79,9 +80,9 @@ const JamVoteList: React.FC = () => {
                                 `}
                             >
                                 <div className="flex flex-col items-start min-w-0 flex-1 mr-2">
-                                    <span className={`text-lg font-bold truncate w-full ${!isActive ? 'text-gray-400' : ''}`}>
+                                    <SectionTitle as="h4" className={`!mt-0 mb-0.5 truncate w-full ${!isActive ? 'text-gray-400' : ''}`}>
                                         {vote.title}
-                                    </span>
+                                    </SectionTitle>
                                     {!isActive && <span className="text-xs text-gray-400 mt-1">마감됨</span>}
                                     {vote.hasVoted && isActive && <span className="text-xs text-[#00BDF8] mt-1">참여 완료</span>}
                                 </div>

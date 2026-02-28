@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaUserCircle } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 const JamVoteStatus: React.FC = () => {
     const { voteId } = useParams<{ voteId: string }>();
@@ -45,15 +46,14 @@ const JamVoteStatus: React.FC = () => {
 
                 {/* Header */}
                 <div className="flex items-center p-4 border-b border-gray-100 bg-white sticky top-0 z-10">
-                    <button onClick={() => navigate(-1)} className="text-gray-500 mr-2 flex items-center text-sm">
-                        <FaChevronLeft className="mr-1" />
-                        뒤로 가기
+                    <button onClick={() => navigate(-1)} className="text-[#052c42] mr-2">
+                        <FaChevronLeft size={24} />
                     </button>
-                    <h2 className="text-lg font-bold text-[#003C48] flex-1 text-center mr-16">투표 현황</h2>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 text-center mr-16">투표 현황</SectionTitle>
                 </div>
 
                 <div className="p-6 flex-1">
-                    <h2 className="text-2xl font-bold text-[#003C48] text-center mb-8">{voteStatus.title}</h2>
+                    <SectionTitle as="h2" className="text-center mb-8">{voteStatus.title}</SectionTitle>
 
                     {/* Vote Result List */}
                     <div className="space-y-8">
@@ -70,7 +70,7 @@ const JamVoteStatus: React.FC = () => {
                                         className={`flex items-center justify-between px-4 py-3 rounded-t-xl border border-gray-200 shadow-sm relative overflow-hidden ${isZero ? 'bg-gray-100' : ''} ${textColorClass}`}
                                         style={headerStyle}
                                     >
-                                        <span className="font-bold relative z-10">{option.itemText}</span>
+                                        <SectionTitle as="h4" className="!mt-0 !mb-0 relative z-10 text-inherit">{option.itemText}</SectionTitle>
                                         <span className="font-bold relative z-10">{getPercentage(option.count)}% ({option.count}명)</span>
                                     </div>
 

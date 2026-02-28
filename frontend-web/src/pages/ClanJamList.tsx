@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaSearch, FaLock, FaInfoCircle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface JamRole {
     sessionNo?: number;
@@ -282,15 +283,15 @@ const ClanJamList: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 mb-2">
                 <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(-1)} className="text-gray-600">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42]">
                         <FaChevronLeft size={24} />
                     </button>
-                    <h1 className="text-xl text-[#003C48] font-bold">{clanId ? "클랜 합주방" : "자유 합주방"}</h1>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0">{clanId ? "클랜 합주방" : "자유 합주방"}</SectionTitle>
                 </div>
                 {(!clanId || userRole === '01' || userRole === '02') && (
                     <button
                         onClick={() => navigate(clanId ? `/main/clan/jam/${clanId}/create` : `/main/jam/create`)}
-                        className="bg-[#00BDF8] text-white text-sm px-4 py-1.5 rounded-full font-bold shadow-sm"
+                        className="bg-[#00BDF8] text-white text-[14px] px-4 py-1.5 rounded-full font-bold shadow-sm"
                     >
                         방 생성
                     </button>

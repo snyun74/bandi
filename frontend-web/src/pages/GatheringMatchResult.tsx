@@ -11,6 +11,7 @@ interface Member {
     sessionTypeNm: string;
     skillScore: number;
     userGenderCd: string;
+    userMbti?: string;
 }
 
 interface MatchRoom {
@@ -309,8 +310,18 @@ const GatheringMatchResult: React.FC = () => {
                                                                 {/* Name/Status (Left side - Expanded) */}
                                                                 <div className="flex-1 min-w-0 pr-1">
                                                                     {isOccupied ? (
-                                                                        <div className="text-[14px] font-extrabold text-[#003C48] truncate" title={member.userNickNm}>
-                                                                            {member.userNickNm}
+                                                                        <div className="flex flex-col">
+                                                                            <div className="text-[14px] font-extrabold text-[#003C48] truncate" title={member.userNickNm}>
+                                                                                {member.userNickNm}
+                                                                            </div>
+                                                                            <div className="text-[10px] font-bold leading-tight">
+                                                                                <span className={member.userMbti?.[0] === 'E' ? 'text-orange-500' : 'text-blue-500'}>
+                                                                                    {member.userMbti?.[0] || ''}
+                                                                                </span>
+                                                                                <span className="text-gray-400">
+                                                                                    {member.userMbti?.substring(1) || ''}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
                                                                     ) : (
                                                                         <span className="text-[13px] font-bold text-gray-300 italic">미참여</span>

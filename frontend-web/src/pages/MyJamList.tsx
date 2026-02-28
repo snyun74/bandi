@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft } from 'react-icons/fa';
-import { FaUnlink } from 'react-icons/fa'; // Fallback icon
+import { FaChevronLeft, FaUnlink } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface MyJamItem {
     bnNo: number;
@@ -58,10 +58,10 @@ const MyJamList: React.FC = () => {
         <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="bg-white px-4 py-3 flex items-center shadow-sm sticky top-0 z-10">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-2">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-2">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-lg text-[#003C48] font-bold leading-tight">내 합주</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1">내 합주</SectionTitle>
             </div>
 
             <div className="p-4 space-y-4">
@@ -92,14 +92,11 @@ const MyJamList: React.FC = () => {
 
                                 {/* Info */}
                                 <div className={`flex-1 overflow-hidden pr-20 ${isEnded ? 'opacity-60' : ''}`}>
-                                    <h3 className="text-[#003C48] text-lg font-bold truncate mb-0.5">
+                                    <SectionTitle as="h3" className="!mt-0 mb-0.5 truncate">
                                         {jam.bnNm}
-                                    </h3>
+                                    </SectionTitle>
                                     <p className="text-gray-600 text-sm truncate">
-                                        {jam.bnSongNm}
-                                    </p>
-                                    <p className="text-gray-500 text-xs truncate">
-                                        : {jam.bnSingerNm}
+                                        {jam.bnSongNm} : {jam.bnSingerNm}
                                     </p>
                                 </div>
 

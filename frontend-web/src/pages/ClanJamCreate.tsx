@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaCheckSquare, FaRegSquare, FaTimes, FaCamera } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface CommDetail {
     commCd: string;
@@ -196,10 +197,10 @@ const ClanJamCreate: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">방 생성</h1>
+                <SectionTitle as="h1" className="!mt-0 !mb-0">방 생성</SectionTitle>
             </div>
 
             {/* Content Scrollable Area */}
@@ -230,9 +231,9 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Room Title */}
                 <div>
-                    <label className="block text-[#003C48] font-bold mb-2">
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">
                         방제 <span className="text-red-500">*</span>
-                    </label>
+                    </SectionTitle>
                     <input
                         type="text"
                         value={title}
@@ -243,9 +244,9 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Song Title */}
                 <div>
-                    <label className="block text-[#003C48] font-bold mb-2">
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">
                         곡 제목 <span className="text-red-500">*</span>
-                    </label>
+                    </SectionTitle>
                     <input
                         type="text"
                         placeholder="철자를 틀리지 않게 주의하세요"
@@ -257,9 +258,9 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Artist */}
                 <div>
-                    <label className="block text-[#003C48] font-bold mb-2">
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">
                         아티스트 <span className="text-red-500">*</span>
-                    </label>
+                    </SectionTitle>
                     <input
                         type="text"
                         placeholder="철자를 틀리지 않게 주의하세요"
@@ -271,9 +272,9 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Description */}
                 <div>
-                    <label className="block text-[#003C48] font-bold mb-2">
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">
                         방 세부 설명 <span className="text-red-500">*</span>
-                    </label>
+                    </SectionTitle>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -283,9 +284,9 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Basic Session Config */}
                 <div>
-                    <label className="block text-[#003C48] font-bold mb-2">
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">
                         기본 세션 구성 <span className="text-red-500">*</span>
-                    </label>
+                    </SectionTitle>
                     <div className="bg-[#F0F4F8] rounded-xl p-4 grid grid-cols-2 gap-y-3 gap-x-4 max-h-40 overflow-y-auto">
                         {availableSessions.map((session) => (
                             <div
@@ -307,7 +308,7 @@ const ClanJamCreate: React.FC = () => {
                 {/* Additional Session Display - NOW ABOVE CUSTOM INPUT */}
                 {additionalSessions.length > 0 && (
                     <div>
-                        <label className="block text-[#003C48] font-bold mb-2">추가 세션 구성</label>
+                        <SectionTitle as="h2" className="!mt-0 !mb-2">추가 세션 구성</SectionTitle>
                         <div className="bg-[#F0F4F8] rounded-xl p-4 grid grid-cols-2 gap-y-3 gap-x-4">
                             {additionalSessions.map((sessionName, index) => (
                                 <div key={index} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-100">
@@ -326,7 +327,7 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Custom Session Input */}
                 <div>
-                    <label className="block text-[#003C48] font-bold mb-2">커스텀 세션 추가</label>
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">커스텀 세션 추가</SectionTitle>
                     <div className="flex gap-2">
                         <div className="flex-1 relative">
                             <select
@@ -349,7 +350,7 @@ const ClanJamCreate: React.FC = () => {
                         </div>
                         <button
                             onClick={handleAddCustomSession}
-                            className="bg-[#00BDF8] text-white font-bold rounded-xl px-6 py-2 text-sm whitespace-nowrap"
+                            className="bg-[#00BDF8] text-white font-bold rounded-xl px-6 py-2 text-[14px] whitespace-nowrap"
                         >
                             추가
                         </button>
@@ -367,9 +368,9 @@ const ClanJamCreate: React.FC = () => {
                         ) : (
                             <FaRegSquare className="text-gray-400" size={20} />
                         )}
-                        <span className="text-[#003C48] font-bold">
+                        <SectionTitle as="h2" className="!mt-0 !mb-0">
                             비밀방 {isPrivate && <span className="text-red-500">*</span>}
-                        </span>
+                        </SectionTitle>
                     </div>
                 </div>
                 {isPrivate && (
@@ -386,7 +387,7 @@ const ClanJamCreate: React.FC = () => {
                 <div className="flex justify-center pt-4">
                     <button
                         onClick={handleCreateRoom}
-                        className="bg-[#00BDF8] text-white font-bold text-lg px-12 py-3 rounded-full shadow-md hover:bg-[#00ACD8] transition-colors"
+                        className="bg-[#00BDF8] text-white font-bold text-[14px] px-12 py-3 rounded-full shadow-md hover:bg-[#00ACD8] transition-colors"
                     >
                         방 생성
                     </button>

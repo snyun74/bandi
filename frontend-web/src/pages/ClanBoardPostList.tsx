@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPen, FaSearch, FaRegThumbsUp, FaRegCommentDots } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface BoardPost {
     cnBoardNo: number;
@@ -72,10 +73,10 @@ const ClanBoardPostList: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 mb-2 bg-white sticky top-0 z-10">
                 <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                         <FaChevronLeft size={24} />
                     </button>
-                    <h1 className="text-xl text-[#003C48] font-bold">{boardName || '게시판'}</h1>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0">{boardName || '게시판'}</SectionTitle>
                 </div>
                 <button
                     onClick={() => navigate(`/main/clan/board/${clanId}/${boardTypeNo}/create`)}
