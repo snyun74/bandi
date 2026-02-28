@@ -24,11 +24,11 @@ public class ClanGatherController {
     public ResponseEntity<?> createGathering(@RequestBody ClanGatherCreateDto dto) {
         try {
             Long gatherNo = clanGatherService.createGathering(dto);
-            return ResponseEntity.ok(Map.of("message", "Gathering notice created successfully", "gatherNo", gatherNo));
+            return ResponseEntity.ok(Map.of("message", "합주 모집 공고가 등록되었습니다.", "gatherNo", gatherNo));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to create gathering notice", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "합주 공고 등록에 실패했습니다."));
         }
     }
 
@@ -49,11 +49,11 @@ public class ClanGatherController {
     public ResponseEntity<?> applyForGathering(@RequestBody ClanGatherApplyDto dto) {
         try {
             clanGatherService.applyForGathering(dto);
-            return ResponseEntity.ok(Map.of("message", "Application submitted successfully"));
+            return ResponseEntity.ok(Map.of("message", "신청이 완료되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to submit application", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "신청 처리 중 오류가 발생했습니다."));
         }
     }
 
@@ -61,11 +61,11 @@ public class ClanGatherController {
     public ResponseEntity<?> cancelApplication(@PathVariable Long gatherNo, @RequestParam String userId) {
         try {
             clanGatherService.cancelApplication(gatherNo, userId);
-            return ResponseEntity.ok(Map.of("message", "Application cancelled successfully"));
+            return ResponseEntity.ok(Map.of("message", "신청이 취소되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to cancel application", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "신청 취소 중 오류가 발생했습니다."));
         }
     }
 
@@ -87,11 +87,11 @@ public class ClanGatherController {
         try {
             String userId = body.get("userId");
             clanGatherService.closeGathering(gatherNo, userId);
-            return ResponseEntity.ok(Map.of("message", "Recruitment closed successfully"));
+            return ResponseEntity.ok(Map.of("message", "모집이 종료되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to close recruitment", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "모집 종료 처리 중 오류가 발생했습니다."));
         }
     }
 
@@ -100,11 +100,11 @@ public class ClanGatherController {
         try {
             String userId = body.get("userId");
             clanGatherService.reopenGathering(gatherNo, userId);
-            return ResponseEntity.ok(Map.of("message", "Recruitment re-opened successfully"));
+            return ResponseEntity.ok(Map.of("message", "모집이 재개되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to re-open recruitment", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "모집 재개 처리 중 오류가 발생했습니다."));
         }
     }
 
@@ -124,11 +124,11 @@ public class ClanGatherController {
         try {
             String userId = body.get("userId");
             clanGatherService.performMatching(gatherNo, userId);
-            return ResponseEntity.ok(Map.of("message", "Matching completed successfully"));
+            return ResponseEntity.ok(Map.of("message", "매핑이 완료되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to perform matching", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "매핑 처리 중 오류가 발생했습니다."));
         }
     }
 
@@ -161,11 +161,11 @@ public class ClanGatherController {
         try {
             String userId = body.get("userId");
             clanGatherService.completeGathering(gatherNo, userId);
-            return ResponseEntity.ok(Map.of("message", "Gathering completed successfully"));
+            return ResponseEntity.ok(Map.of("message", "합주 모집이 완전 종료되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", "Failed to complete gathering", "error", e.getMessage()));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "완전 종료 처리 중 오류가 발생했습니다."));
         }
     }
 }
