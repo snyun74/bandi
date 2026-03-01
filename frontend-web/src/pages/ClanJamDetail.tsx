@@ -513,7 +513,7 @@ const ClanJamDetail: React.FC = () => {
                                                 {role.part}
                                             </span>
                                             {isOccupied ? (
-                                                <span className="text-[9px] truncate max-w-[80px] font-bold text-[#00BDF8] drop-shadow-sm">
+                                                <span className="text-[9px] truncate max-w-[80px] font-bold text-gray-500 drop-shadow-sm">
                                                     {role.user}
                                                 </span>
                                             ) : (
