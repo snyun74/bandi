@@ -463,14 +463,20 @@ const ClanJamDetail: React.FC = () => {
                                 return (
                                     <div
                                         key={idx}
-                                        className="flex flex-col items-center justify-between bg-white rounded-xl p-2 relative min-h-[135px] overflow-hidden bg-cover bg-center transition-all duration-300 shadow-md border border-gray-100 group"
+                                        className={`flex flex-col items-center justify-between bg-white rounded-xl relative overflow-hidden bg-cover bg-center transition-all duration-300 shadow-md border border-gray-100 group aspect-square ${bandDetail.status !== 'E' && !bandDetail.isConfirmed && (role.status === 'empty' || role.isCurrentUser)
+                                            ? 'cursor-pointer active:scale-95'
+                                            : ''
+                                            }`}
                                         style={bgUrl ? { backgroundImage: `url(${bgUrl})` } : {}}
+                                        onClick={() => {
+                                            if (bandDetail.status === 'E' || bandDetail.isConfirmed) return;
+                                            if (role.status === 'empty') {
+                                                handleJoin(role);
+                                            } else if (role.isCurrentUser) {
+                                                handleCancelSession(role);
+                                            }
+                                        }}
                                     >
-                                        {/* Bright Glassmorphism Overlay if BG exists */}
-                                        {bgUrl && (
-                                            <div className="absolute inset-0 bg-white/75 backdrop-blur-[2px] z-0" />
-                                        )}
-
                                         {/* Status Indicators (Top) */}
                                         <div className="absolute top-1.5 left-2 right-2 flex justify-between items-start z-20">
                                             {/* Crown Icon */}
@@ -484,76 +490,37 @@ const ClanJamDetail: React.FC = () => {
                                             {isOccupied && bandDetail.canManage && !role.isCurrentUser && !bandDetail.isConfirmed && bandDetail.status !== 'E' && (
                                                 <div
                                                     className="text-[#FF8A80] hover:text-red-500 cursor-pointer transition-colors drop-shadow-sm bg-white/20 rounded-full p-0.5 backdrop-blur-sm"
-                                                    onClick={(e) => handleKick(role)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleKick(role);
+                                                    }}
                                                 >
                                                     <FaMinusCircle size={16} />
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* Content Wrapper */}
-                                        <div className="relative z-10 flex flex-col items-center w-full h-full justify-between pt-0.5">
-                                            <div className="flex flex-col items-center">
-                                                {/* Reduced icon size/spacing for compact look */}
-                                                <div className="scale-90 mb-0.5">
-                                                    {getFallbackIcon(role.part, bgUrl)}
-                                                </div>
-                                                <span className="font-bold text-[13px] mb-0.5 text-[#052c42]">
-                                                    {role.part}
-                                                </span>
-                                                {isOccupied ? (
-                                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100/80 border border-gray-200">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.4)]"></div>
-                                                        <span className="text-[10px] truncate max-w-[60px] font-bold text-[#052c42]">
-                                                            {role.user}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-gray-200 bg-gray-50 text-gray-400">
-                                                        공석
-                                                    </span>
-                                                )}
+                                        {/* Center Icon */}
+                                        <div className="relative z-10 flex flex-col items-center w-full h-full justify-center pb-8">
+                                            <div className="scale-110 mb-1">
+                                                {getFallbackIcon(role.part, bgUrl)}
                                             </div>
+                                        </div>
 
-                                            {/* Action Button */}
-                                            <div className="w-full mt-2">
-                                                {bandDetail.status === 'E' ? (
-                                                    <button
-                                                        disabled
-                                                        className="w-full bg-gray-400/80 backdrop-blur-sm text-white text-[11px] font-bold py-1 rounded-lg shadow-sm cursor-not-allowed border border-white/20"
-                                                    >
-                                                        종료됨
-                                                    </button>
-                                                ) : bandDetail.isConfirmed ? (
-                                                    <button
-                                                        disabled
-                                                        className="w-full bg-gray-300/80 backdrop-blur-sm text-gray-500 text-[11px] font-bold py-1 rounded-lg shadow-sm cursor-not-allowed border border-gray-200"
-                                                    >
-                                                        확정됨
-                                                    </button>
-                                                ) : role.status === 'empty' ? (
-                                                    <button
-                                                        onClick={() => handleJoin(role)}
-                                                        className="w-full bg-[#2A2D3E] hover:bg-[#3D4155] text-white text-[11px] font-extrabold py-1.5 rounded-lg shadow-md transition-all active:scale-95 border border-[#1A1C29]"
-                                                    >
-                                                        참여하기
-                                                    </button>
-                                                ) : role.isCurrentUser ? (
-                                                    <button
-                                                        onClick={() => handleCancelSession(role)}
-                                                        className="w-full bg-[#FF8A80] hover:bg-[#ff7060] text-white text-[11px] font-extrabold py-1.5 rounded-lg shadow-md transition-all active:scale-95 border border-[#ff6b5c]"
-                                                    >
-                                                        취소하기
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        disabled
-                                                        className="w-full bg-gray-100/80 text-gray-400 text-[11px] font-bold py-1 rounded-lg shadow-sm cursor-default border border-gray-200"
-                                                    >
-                                                        참여중
-                                                    </button>
-                                                )}
-                                            </div>
+                                        {/* Bottom Info Bar - No Background for 100% Visibility */}
+                                        <div className="absolute bottom-1.5 left-0 right-2 z-20 flex flex-col items-end pointer-events-none">
+                                            <span className="font-bold text-[11px] text-[#052c42] truncate w-full text-right drop-shadow-sm">
+                                                {role.part}
+                                            </span>
+                                            {isOccupied ? (
+                                                <span className="text-[9px] truncate max-w-[80px] font-bold text-[#00BDF8] drop-shadow-sm">
+                                                    {role.user}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-gray-500 drop-shadow-sm">
+                                                    공석
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 );
