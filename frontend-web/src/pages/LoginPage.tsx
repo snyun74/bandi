@@ -31,6 +31,14 @@ const LoginPage: React.FC = () => {
         });
     };
 
+    // Auto Login Check
+    React.useEffect(() => {
+        const storedUserId = localStorage.getItem('userId');
+        if (storedUserId) {
+            navigate('/main');
+        }
+    }, [navigate]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log('Login attempt:', { id });
@@ -49,6 +57,7 @@ const LoginPage: React.FC = () => {
             if (response.ok) {
                 if (data.token) {
                     localStorage.setItem('userId', id); // Store User ID
+                    localStorage.setItem('accessToken', data.token); // Store Access Token
                 }
                 navigate('/main');
             } else {
