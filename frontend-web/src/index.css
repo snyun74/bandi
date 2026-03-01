@@ -1,11 +1,69 @@
 @import "tailwindcss";
 
 @layer base {
-  html, body, #root {
+
+  html,
+  body,
+  #root {
     font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
+
 @layer components {
+
+  /* ==========================================
+     TOP SECTION
+     ========================================== */
+  .top-nick-name {
+    @apply text-sm font-semibold text-gray-800 cursor-pointer hover:text-[#00BDF8] transition-colors;
+  }
+
+  .top-room-detail-title {
+    @apply text-[14px] font-bold text-[#052c42] truncate leading-tight !mt-0 !mb-0;
+  }
+
+  .top-room-detail-subtitle {
+    @apply text-xs text-gray-500 truncate;
+  }
+
+  .top-btn-status {
+    @apply text-[13px] px-3 py-1.5 rounded-full font-bold transition-colors;
+  }
+
+  .top-btn-chat {
+    @apply bg-[#00BDF8] text-white text-[13px] px-3 py-1.5 rounded-full font-bold;
+  }
+
+  /* ==========================================
+     BODY SECTION
+     ========================================== */
+  .body-section-title {
+    @apply text-[14px] font-[700] text-[#052c42] mt-[10px];
+  }
+
+  .body-board-post-title {
+    @apply text-[#003C48] text-[14px] font-medium truncate;
+  }
+
+  .body-room-title {
+    @apply text-[14px] font-bold text-gray-900;
+  }
+
+  .body-room-subtitle {
+    @apply text-[#00BDF8] font-bold text-[13px];
+  }
+
+  .body-modal-title {
+    @apply text-[14px] font-bold text-[#003C48] mb-4 text-center border-b border-gray-100 pb-3;
+  }
+
+  /* ==========================================
+     BOTTOM SECTION
+     ========================================== */
+  .bottom-btn-primary {
+    @apply w-full py-3 text-[14px] text-white font-bold bg-[#00BDF8] rounded-xl hover:bg-cyan-500 transition-colors shadow-lg shadow-cyan-200;
+  }
+
   .form-row {
     @apply flex items-center gap-3;
   }

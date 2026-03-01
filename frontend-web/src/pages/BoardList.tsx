@@ -167,7 +167,7 @@ const BoardList: React.FC = () => {
                                 onClick={() => navigate(`/main/board/detail/${post.boardNo}`)}
                                 className="py-4 cursor-pointer hover:bg-gray-50 transition-colors">
                                 <div className="flex justify-between items-start mb-1">
-                                    <h3 className="text-[#003C48] text-[15px] font-medium truncate flex-1 pr-2">{post.title}</h3>
+                                    <h3 className="body-board-post-title flex-1 pr-2">{post.title}</h3>
                                     <span className="text-gray-400 text-xs whitespace-nowrap">{formatDate(post.regDate)}</span>
                                 </div>
                                 <div className="flex items-center gap-3 mt-1">

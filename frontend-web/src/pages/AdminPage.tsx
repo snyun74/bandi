@@ -13,7 +13,7 @@ const AdminPage: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             <div className="p-6">
-                <h2 className="text-xl font-bold text-[#003C48] mb-6">관리자 메뉴</h2>
+                <h2 className="body-room-title mb-6">관리자 메뉴</h2>
 
                 <div className="grid grid-cols-2 gap-4">
                     {adminMenus.map((menu) => (
@@ -25,7 +25,7 @@ const AdminPage: React.FC = () => {
                             <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:text-[#00BDF8] group-hover:bg-white transition-colors">
                                 {menu.icon}
                             </div>
-                            <span className="font-bold text-sm">{menu.label}</span>
+                            <span className="body-room-title !mt-0">{menu.label}</span>
                         </button>
                     ))}
                 </div>

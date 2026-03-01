@@ -16,7 +16,7 @@ interface SectionTitleProps {
 const SectionTitle: React.FC<SectionTitleProps> = ({ children, className = '', as: Component = 'h3' }) => {
     return (
         <Component
-            className={`text-[14px] font-[700] text-[#052c42] mt-[10px] ${className}`}
+            className={`body-section-title ${className}`}
             style={{ fontFamily: '"Pretendard", sans-serif' }}
         >
             {children}

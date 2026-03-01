@@ -13,6 +13,7 @@ interface ClanData {
 }
 
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 const Clan: React.FC = () => {
     const navigate = useNavigate();
@@ -110,10 +111,10 @@ const Clan: React.FC = () => {
             />
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">클랜</h2>
+                <SectionTitle as="h2" className="!mt-0 !mb-0">{/* text-xl preserved if needed, but following .body-section-title which is 14px */}클랜</SectionTitle>
                 <button
                     onClick={() => navigate('/main/clan/create')}
-                    className="bg-[#00BDF8] text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm"
+                    className="bg-[#00BDF8] text-white px-4 py-1.5 rounded-lg text-[14px] font-bold shadow-sm"
                 >
                     클랜 생성
                 </button>
@@ -138,7 +139,7 @@ const Clan: React.FC = () => {
                 </div>
                 <button
                     onClick={handleSearch}
-                    className="bg-[#00BDF8] text-white px-6 rounded-xl font-bold hover:bg-[#00ACD8] transition-colors"
+                    className="bg-[#00BDF8] text-white px-6 rounded-xl font-bold text-[14px] hover:bg-[#00ACD8] transition-colors"
                 >
                     조회
                 </button>
@@ -161,7 +162,7 @@ const Clan: React.FC = () => {
 
                         {/* Info */}
                         <div className="flex-1">
-                            <h3 className="text-[#003C48] text-lg font-bold mb-0.5">{clan.name}</h3>
+                            <h3 className="body-room-title mb-0.5">{clan.name}</h3>
                             <p className="text-gray-600 text-[13px] mb-1">{clan.description}</p>
                             <p className="text-[#003C48] text-[12px] font-medium">멤버 : {clan.memberCount}명</p>
                         </div>

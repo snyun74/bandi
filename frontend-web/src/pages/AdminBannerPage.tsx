@@ -135,7 +135,7 @@ const AdminBannerPage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-3">
                     <FaChevronLeft size={20} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">배너 및 광고 관리</h1>
+                <h1 className="top-room-detail-title">배너 및 광고 관리</h1>
             </div>
 
             {/* List */}
@@ -147,7 +147,7 @@ const AdminBannerPage: React.FC = () => {
                         <div key={banner.adBannerCd} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-4">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-lg font-bold text-[#003C48]">{banner.adBannerNm}</h3>
+                                    <h3 className="body-section-title !mt-0">{banner.adBannerNm}</h3>
                                     <p className="text-sm text-gray-400 mt-1">코드: {banner.adBannerCd}</p>
                                     <div className="flex items-center gap-2 mt-2">
                                         {banner.fileUrl ? (
@@ -190,21 +190,21 @@ const AdminBannerPage: React.FC = () => {
                             <div className="flex gap-2 mt-2">
                                 <button
                                     onClick={() => handlePreview(banner)}
-                                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-[14px]"
                                 >
                                     {banner.mimeType?.startsWith('video/') ? <FaPlayCircle /> : <FaImage />}
                                     미리보기
                                 </button>
                                 <button
                                     onClick={() => handleFileClick(banner.adBannerCd)}
-                                    className="flex-1 bg-white border border-[#00BDF8] hover:bg-cyan-50 text-[#00BDF8] py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                    className="flex-1 bg-white border border-[#00BDF8] hover:bg-cyan-50 text-[#00BDF8] py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[14px]"
                                 >
                                     <FaUpload />
                                     {selectedFiles[banner.adBannerCd] ? '파일 변경' : '파일 선택'}
                                 </button>
                                 <button
                                     onClick={() => handleSave(banner.adBannerCd)}
-                                    className="flex-1 bg-[#00BDF8] hover:bg-[#00aadd] text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                    className="flex-1 bg-[#00BDF8] hover:bg-[#00aadd] text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm text-[14px]"
                                 >
                                     저장
                                 </button>

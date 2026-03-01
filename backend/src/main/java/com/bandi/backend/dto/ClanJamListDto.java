@@ -41,5 +41,8 @@ public class ClanJamListDto {
         @JsonProperty("isBandLeader")
         private boolean isBandLeader;
         private String userId;
+        private String offImgUrl;
+        private String onImgUrl1;
+        private String onImgUrl2;
     }
 }

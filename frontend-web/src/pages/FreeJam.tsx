@@ -122,9 +122,9 @@ const FreeJam: React.FC = () => {
                         <div className="mb-3">
                             <div className="flex items-center gap-2 mb-1">
                                 {room.isLocked && <FaLock className="text-gray-700 text-sm" />}
-                                <h3 className="text-base font-bold text-gray-900">{room.title}</h3>
+                                <h3 className="body-room-title">{room.title}</h3>
                             </div>
-                            <div className="text-[#00BDF8] font-bold text-[15px]">
+                            <div className="body-room-subtitle">
                                 {room.artist} - {room.songTitle}
                             </div>
                         </div>

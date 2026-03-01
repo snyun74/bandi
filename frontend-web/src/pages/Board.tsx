@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaThumbsUp, FaRegComment, FaChevronRight } from 'react-icons/fa';
+import SectionTitle from '../components/common/SectionTitle';
 
 interface HotPost {
     boardNo: number;
@@ -52,13 +53,13 @@ const Board: React.FC = () => {
     return (
         <div className="p-4 pb-20" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
-            <h2 className="text-xl font-bold text-[#003C48] mb-6">게시판</h2>
+            <SectionTitle as="h2" className="!mb-6 !mt-0">게시판</SectionTitle>
 
             {/* Hot Section */}
             <div className="mb-8">
-                <h3 className="text-lg font-bold text-[#FF5A5A] mb-3 flex items-center gap-1">
+                <SectionTitle className="!text-[#FF5A5A] mb-3 flex items-center gap-1">
                     # 🔥 Hot 🔥
-                </h3>
+                </SectionTitle>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100">
                     {hotPosts.length === 0 ? (
                         <div className="p-4 text-center text-gray-400 text-sm">
@@ -102,14 +103,14 @@ const Board: React.FC = () => {
 
             {/* Board List Section */}
             <div>
-                <h3 className="text-lg font-bold text-[#003C48] mb-3">게시판 목록</h3>
+                <SectionTitle className="mb-3">게시판 목록</SectionTitle>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100">
                     <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/list/0`)}>
-                        <span className="text-[#003C48] font-medium">자유 게시판</span>
+                        <span className="text-[#003C48] font-medium text-[14px]">자유 게시판</span>
                         <FaChevronRight className="text-[#003C48] text-sm" />
                     </div>
                     <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/list/1`)}>
-                        <span className="text-[#003C48] font-medium">초보자 게시판</span>
+                        <span className="text-[#003C48] font-medium text-[14px]">초보자 게시판</span>
                         <FaChevronRight className="text-[#003C48] text-sm" />
                     </div>
                 </div>

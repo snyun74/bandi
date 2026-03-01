@@ -295,40 +295,40 @@ const ClanDetail: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-5">
                 {/* Clan Info Card */}
-                <div className="flex items-start gap-4 mb-6">
+                <div className="flex items-center gap-4 mb-6">
                     <div
-                        className={`w-20 h-20 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'} ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:opacity-80' : ''} relative`}
+                        className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'} ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:opacity-80' : ''} relative shadow-sm`}
                         onClick={handleEditClick}
                     >
                         {clan.attachFilePath ? (
                             <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-white text-3xl font-bold">{clan.logoText}</span>
+                            <span className="text-white text-2xl font-bold">{clan.logoText}</span>
                         )}
                         {(myRole === '01' || myRole === '02') && (
-                            <div className="absolute bottom-0 right-0 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full">
-                                <FaRegEdit size={10} />
+                            <div className="absolute bottom-0 right-0 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full border border-white/20">
+                                <FaRegEdit size={9} />
                             </div>
                         )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <SectionTitle as="h2" className="!mt-0 mb-1">{clan.name}</SectionTitle>
-                        <p className="text-[#003C48] text-sm font-medium">멤버 : {clan.memberCount}명</p>
+                    <div className="flex-1 min-w-0 pr-2">
+                        <SectionTitle as="h2" className="!mt-0 mb-0.5 !text-lg">{clan.name}</SectionTitle>
+                        <p className="text-[#003C48] text-[12px] font-medium opacity-80">멤버 : {clan.memberCount}명</p>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0">
-                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-[14px] font-bold text-gray-600 shadow-sm whitespace-nowrap">
-                            <FaCommentDots size={12} className="text-[#00BDF8]" /> 단체 채팅
+                    <div className="flex flex-col gap-1.5 shrink-0 pt-0.5">
+                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-gray-600 shadow-sm whitespace-nowrap active:scale-95 transition-transform">
+                            <FaCommentDots size={11} className="text-[#00BDF8]" /> 단체 채팅
                             {clan.unreadChatCount !== undefined && clan.unreadChatCount > 0 && (
-                                <span className="bg-[#00BDF8] text-white text-[10px] rounded-full px-1.5 h-4 flex items-center justify-center -mr-1 min-w-[16px]">{clan.unreadChatCount}</span>
+                                <span className="bg-[#00BDF8] text-white text-[9px] rounded-full px-1.5 h-3.5 flex items-center justify-center -mr-1 min-w-[15px]">{clan.unreadChatCount}</span>
                             )}
                         </button>
-                        <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-3 py-1 flex items-center gap-1 text-[14px] font-bold text-gray-600 shadow-sm whitespace-nowrap">
-                            <FaUserFriends size={12} className="text-[#00BDF8]" /> 멤버 현황
-                            <span className="bg-[#00BDF8] text-white text-[10px] rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
+                        <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-gray-600 shadow-sm whitespace-nowrap active:scale-95 transition-transform">
+                            <FaUserFriends size={11} className="text-[#00BDF8]" /> 멤버 현황
+                            <span className="bg-[#00BDF8] text-white text-[9px] rounded-full min-w-[15px] h-3.5 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
                         </button>
                         {myRole === '01' && (
-                            <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-3 py-1 flex items-center gap-1 text-[14px] font-bold text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-colors">
-                                <FaMusic size={12} /> 합주 모집
+                            <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-all active:scale-95">
+                                <FaMusic size={11} /> 합주 모집
                             </button>
                         )}
                     </div>
@@ -388,28 +388,28 @@ const ClanDetail: React.FC = () => {
                                         {gather.gatherProcFg === 'Y' ? (
                                             <button
                                                 disabled
-                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-gray-200 text-gray-400 cursor-default whitespace-nowrap shadow-sm"
+                                                className="px-4 py-2 rounded-full text-[13px] font-bold bg-gray-200 text-gray-400 cursor-default whitespace-nowrap shadow-sm"
                                             >
                                                 모집종료
                                             </button>
                                         ) : gather.gatherProcFg === 'M' ? (
                                             <button
                                                 disabled
-                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-green-100 text-green-500 cursor-default whitespace-nowrap shadow-sm"
+                                                className="px-4 py-2 rounded-full text-[13px] font-bold bg-green-100 text-green-500 cursor-default whitespace-nowrap shadow-sm"
                                             >
                                                 매핑완료
                                             </button>
                                         ) : gather.applied ? (
                                             <button
                                                 onClick={() => handleGatheringCancelClick(gather.gatherNo)}
-                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-gray-500 text-white hover:bg-gray-600 transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                                className="px-4 py-2 rounded-full text-[13px] font-bold bg-gray-500 text-white hover:bg-gray-600 transition-all shadow-sm active:scale-95 whitespace-nowrap"
                                             >
                                                 참여취소
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={() => handleGatheringApplyClick(gather)}
-                                                className="px-4 py-2 rounded-full text-[14px] font-bold bg-[#FF8A80] text-white hover:bg-[#FF7060] transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                                className="px-4 py-2 rounded-full text-[13px] font-bold bg-[#FF8A80] text-white hover:bg-[#FF7060] transition-all shadow-sm active:scale-95 whitespace-nowrap"
                                             >
                                                 참여하기
                                             </button>

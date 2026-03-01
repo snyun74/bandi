@@ -33,7 +33,7 @@ const Header: React.FC = () => {
             {/* Right: Greeting & Chat */}
             <div className="flex items-center gap-3">
                 <span
-                    className="text-sm font-semibold text-gray-800 cursor-pointer hover:text-[#00BDF8] transition-colors"
+                    className="top-nick-name"
                     onClick={() => navigate('/main/profile')}
                 >
                     {userName}님

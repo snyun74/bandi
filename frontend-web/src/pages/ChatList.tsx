@@ -205,7 +205,7 @@ const ChatList: React.FC = () => {
                     <div className="p-4 space-y-6">
                         {/* Group Chat Section - Both CLAN and BAND */}
                         <section>
-                            <h2 className="text-[#003C48] text-lg font-bold mb-3">단체 채팅</h2>
+                            <h2 className="body-section-title mb-3">단체 채팅</h2>
                             <div className="space-y-3">
                                 {loading ? (
                                     <div className="text-center text-gray-400 py-4">로딩 중...</div>
@@ -243,9 +243,9 @@ const ChatList: React.FC = () => {
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${chat.roomType === 'CLAN' ? 'bg-violet-100 text-violet-600' : 'bg-orange-100 text-orange-500'}`}>
                                                         {chat.roomType === 'CLAN' ? '🏰 클랜' : '🎸 합주'}
                                                     </span>
-                                                    <h3 className="text-[#003C48] font-bold text-base leading-tight">{chat.roomNm}</h3>
+                                                    <h3 className="body-board-post-title !m-0 leading-tight">{chat.roomNm}</h3>
                                                 </div>
-                                                <p className={`text-sm truncate ${chat.newMsgReadCnt > 0 ? 'text-gray-400' : 'text-gray-400'}`}>
+                                                <p className="text-xs truncate text-gray-400">
                                                     {chat.newMsg || "대화 내용이 없습니다."}
                                                 </p>
                                             </div>
@@ -264,7 +264,7 @@ const ChatList: React.FC = () => {
 
                         {/* Personal Chat Section - Placeholder for now as query was only for Group */}
                         <section>
-                            <h2 className="text-[#003C48] text-lg font-bold mb-3">개인 채팅</h2>
+                            <h2 className="body-section-title mb-3">개인 채팅</h2>
                             <div className="space-y-3">
                                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                                     {friends.length > 0 ? (

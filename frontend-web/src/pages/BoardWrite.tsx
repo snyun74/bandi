@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPaperclip } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 const BoardWrite: React.FC = () => {
     const navigate = useNavigate();
@@ -106,13 +107,13 @@ const BoardWrite: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">{boardName} 글쓰기</h1>
+                <h1 className="top-room-detail-title">{boardName} 글쓰기</h1>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20">
                 {/* Title */}
                 <div className="mb-4">
-                    <label className="block text-[#003C48] font-bold mb-2">제목</label>
+                    <SectionTitle className="!mt-0 mb-2">제목</SectionTitle>
                     <input
                         type="text"
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8]"
@@ -123,7 +124,7 @@ const BoardWrite: React.FC = () => {
 
                 {/* Content */}
                 <div className="mb-4 flex-1">
-                    <label className="block text-[#003C48] font-bold mb-2">내용</label>
+                    <SectionTitle className="!mt-0 mb-2">내용</SectionTitle>
                     <textarea
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8] min-h-[300px] resize-none"
                         value={content}
@@ -161,7 +162,7 @@ const BoardWrite: React.FC = () => {
                 {/* Submit Button */}
                 <button
                     onClick={handleSubmit}
-                    className="w-full bg-[#00BDF8] text-white py-4 rounded-xl font-bold text-lg shadow-md mb-6"
+                    className="w-full bg-[#00BDF8] text-white py-4 rounded-xl font-bold text-[14px] shadow-md mb-6"
                 >
                     게시글 생성
                 </button>

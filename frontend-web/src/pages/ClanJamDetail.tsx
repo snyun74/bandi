@@ -14,6 +14,9 @@ interface JamRole {
     isCurrentUser?: boolean;
     isBandLeader?: boolean;
     userId?: string;
+    offImgUrl?: string;
+    onImgUrl1?: string;
+    onImgUrl2?: string;
 }
 
 interface BandDetail {
@@ -113,13 +116,15 @@ const ClanJamDetail: React.FC = () => {
         fetchBandDetail();
     }, [jamId, userId, navigate]);
 
-    const getIcon = (part: string) => {
-        if (part.includes('보컬')) return <FaMicrophone size={32} className="text-[#00BDF8]" />;
-        if (part.includes('기타')) return <FaGuitar size={32} className="text-[#00BDF8]" />;
-        if (part.includes('베이스')) return <FaGuitar size={32} className="text-[#00BDF8]" />; // Fallback to FaGuitar for now
-        if (part.includes('드럼')) return <FaDrum size={32} className="text-[#00BDF8]" />;
-        if (part.includes('키보드') || part.includes('건반')) return <GiGrandPiano size={32} className="text-[#00BDF8]" />;
-        return <div className="w-8 h-8 bg-gray-200 rounded-full" />;
+    const getFallbackIcon = (part: string, bgUrl?: string) => {
+        if (bgUrl) return null;
+
+        if (part.includes('보컬')) return <FaMicrophone size={32} className="text-[#00BDF8] mb-2" />;
+        if (part.includes('기타')) return <FaGuitar size={32} className="text-[#00BDF8] mb-2" />;
+        if (part.includes('베이스')) return <FaGuitar size={32} className="text-[#00BDF8] mb-2" />; // Fallback
+        if (part.includes('드럼')) return <FaDrum size={32} className="text-[#00BDF8] mb-2" />;
+        if (part.includes('키보드') || part.includes('건반')) return <GiGrandPiano size={32} className="text-[#00BDF8] mb-2" />;
+        return <div className="w-8 h-8 bg-gray-200 rounded-full mb-2" />;
     };
 
 
@@ -413,15 +418,15 @@ const ClanJamDetail: React.FC = () => {
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <SectionTitle as="h1" className="!mt-0 !mb-0 truncate leading-tight">{bandDetail.title}</SectionTitle>
-                        <p className="text-xs text-gray-500 truncate">{bandDetail.songTitle} : {bandDetail.artist}</p>
+                        <SectionTitle as="h1" className="top-room-detail-title">{bandDetail.title}</SectionTitle>
+                        <p className="top-room-detail-subtitle">{bandDetail.songTitle} : {bandDetail.artist}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     {bandDetail.canManage && (
                         <button
                             onClick={bandDetail.status === 'E' ? undefined : handleConfirmToggle}
-                            className={`text-[14px] px-3 py-1.5 rounded-full font-bold transition-colors ${bandDetail.status === 'E' ? 'bg-gray-600 text-white cursor-default' : bandDetail.isConfirmed ? 'bg-[#00BDF8] text-white' : 'bg-gray-200 text-gray-600'}`}
+                            className={`top-btn-status ${bandDetail.status === 'E' ? 'bg-gray-600 text-white cursor-default' : bandDetail.isConfirmed ? 'bg-[#00BDF8] text-white' : 'bg-gray-200 text-gray-600'}`}
                         >
                             {bandDetail.status === 'E' ? "종료됨" : bandDetail.isConfirmed ? "확정" : "미확정"}
                         </button>
@@ -434,7 +439,7 @@ const ClanJamDetail: React.FC = () => {
                                 attachFilePath: bandDetail.imgUrl
                             }
                         })}
-                        className="bg-[#00BDF8] text-white text-[14px] px-3 py-1.5 rounded-full font-bold"
+                        className="top-btn-chat"
                     >
                         단체 채팅
                     </button>
@@ -446,85 +451,114 @@ const ClanJamDetail: React.FC = () => {
                 <section>
                     <SectionTitle className="mb-3">세션 현황</SectionTitle>
                     <div className="bg-white rounded-2xl p-4 shadow-sm grid grid-cols-3 gap-3">
-                        {bandDetail.roles.map((role, idx) => {
+                        {(() => {
+                            let occupiedCounter = 0;
+                            return bandDetail.roles.map((role, idx) => {
+                                const isOccupied = role.status === 'occupied';
+                                const currentOccupiedIndex = isOccupied ? occupiedCounter++ : -1;
+                                const bgUrl = isOccupied
+                                    ? (currentOccupiedIndex % 2 === 0 ? role.onImgUrl1 : role.onImgUrl2)
+                                    : role.offImgUrl;
 
-                            const isOccupied = role.status === 'occupied';
-
-                            return (
-                                <div key={idx} className="flex flex-col items-center justify-between bg-gray-50 rounded-xl p-3 relative min-h-[160px]">
-                                    {/* Crown Icon (Left) */}
-                                    {isOccupied && role.isBandLeader && (
-                                        <div className="absolute top-2 left-2 flex items-center justify-center text-yellow-400">
-                                            <FaCrown size={20} />
-                                        </div>
-                                    )}
-
-                                    {/* Kick Button (Right) - Only for Managers, Occupied Slots, NOT Current User, AND NOT Confirmed/Ended */}
-                                    {isOccupied && bandDetail.canManage && !role.isCurrentUser && !bandDetail.isConfirmed && bandDetail.status !== 'E' && (
-                                        <div
-                                            className="absolute top-2 right-2 text-[#FF8A80] hover:text-red-500 cursor-pointer transition-colors"
-                                            onClick={(e) => handleKick(role)}
-                                        >
-                                            <FaMinusCircle size={20} />
-                                        </div>
-                                    )}
-
-                                    <div className="mb-2">
-                                        {getIcon(role.part)}
-                                    </div>
-                                    <span className="text-[#003C48] font-bold text-sm mb-1">{role.part}</span>
-                                    {isOccupied ? (
-                                        <div className="flex items-center gap-1">
-                                            {/* Avatar placeholder - replace with actual if available */}
-                                            <div className="w-4 h-4 rounded-full bg-gray-300"></div>
-                                            <span className="text-gray-600 text-xs truncate max-w-[50px]">{role.user}</span>
-                                        </div>
-                                    ) : (
-                                        <span className="text-gray-300 text-xs">공석</span>
-                                    )}
-
-                                    {/* Action Button */}
-                                    <div className="w-full mt-2">
-                                        {bandDetail.status === 'E' ? (
-                                            <button
-                                                disabled
-                                                className="w-full bg-gray-500 text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
-                                            >
-                                                종료
-                                            </button>
-                                        ) : bandDetail.isConfirmed ? (
-                                            <button
-                                                disabled
-                                                className="w-full bg-gray-400 text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm cursor-not-allowed"
-                                            >
-                                                확정
-                                            </button>
-                                        ) : role.status === 'empty' ? (
-                                            <button
-                                                onClick={() => handleJoin(role)}
-                                                className="w-full bg-[#EFF1F3] hover:bg-gray-200 text-[#003C48] text-[14px] font-bold py-1.5 rounded-lg shadow-sm transition-colors"
-                                            >
-                                                참여
-                                            </button>
-                                        ) : role.isCurrentUser ? (
-                                            <button
-                                                onClick={() => handleCancelSession(role)}
-                                                className="w-full bg-[#FF8A80] text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
-                                            >
-                                                취소
-                                            </button>
-                                        ) : (
-                                            <button
-                                                disabled
-                                                className="w-full bg-[#00BDF8] text-white text-[14px] font-bold py-1.5 rounded-lg shadow-sm opacity-50 cursor-default"
-                                            >
-                                                참여중
-                                            </button>
+                                return (
+                                    <div
+                                        key={idx}
+                                        className="flex flex-col items-center justify-between bg-white rounded-xl p-2 relative min-h-[135px] overflow-hidden bg-cover bg-center transition-all duration-300 shadow-md border border-gray-100 group"
+                                        style={bgUrl ? { backgroundImage: `url(${bgUrl})` } : {}}
+                                    >
+                                        {/* Bright Glassmorphism Overlay if BG exists */}
+                                        {bgUrl && (
+                                            <div className="absolute inset-0 bg-white/75 backdrop-blur-[2px] z-0" />
                                         )}
+
+                                        {/* Status Indicators (Top) */}
+                                        <div className="absolute top-1.5 left-2 right-2 flex justify-between items-start z-20">
+                                            {/* Crown Icon */}
+                                            {isOccupied && role.isBandLeader ? (
+                                                <div className="flex items-center justify-center text-yellow-400 drop-shadow-md">
+                                                    <FaCrown size={16} />
+                                                </div>
+                                            ) : <div />}
+
+                                            {/* Kick Button */}
+                                            {isOccupied && bandDetail.canManage && !role.isCurrentUser && !bandDetail.isConfirmed && bandDetail.status !== 'E' && (
+                                                <div
+                                                    className="text-[#FF8A80] hover:text-red-500 cursor-pointer transition-colors drop-shadow-sm bg-white/20 rounded-full p-0.5 backdrop-blur-sm"
+                                                    onClick={(e) => handleKick(role)}
+                                                >
+                                                    <FaMinusCircle size={16} />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Content Wrapper */}
+                                        <div className="relative z-10 flex flex-col items-center w-full h-full justify-between pt-0.5">
+                                            <div className="flex flex-col items-center">
+                                                {/* Reduced icon size/spacing for compact look */}
+                                                <div className="scale-90 mb-0.5">
+                                                    {getFallbackIcon(role.part, bgUrl)}
+                                                </div>
+                                                <span className="font-bold text-[13px] mb-0.5 text-[#052c42]">
+                                                    {role.part}
+                                                </span>
+                                                {isOccupied ? (
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100/80 border border-gray-200">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.4)]"></div>
+                                                        <span className="text-[10px] truncate max-w-[60px] font-bold text-[#052c42]">
+                                                            {role.user}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-gray-200 bg-gray-50 text-gray-400">
+                                                        공석
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Action Button */}
+                                            <div className="w-full mt-2">
+                                                {bandDetail.status === 'E' ? (
+                                                    <button
+                                                        disabled
+                                                        className="w-full bg-gray-400/80 backdrop-blur-sm text-white text-[11px] font-bold py-1 rounded-lg shadow-sm cursor-not-allowed border border-white/20"
+                                                    >
+                                                        종료됨
+                                                    </button>
+                                                ) : bandDetail.isConfirmed ? (
+                                                    <button
+                                                        disabled
+                                                        className="w-full bg-gray-300/80 backdrop-blur-sm text-gray-500 text-[11px] font-bold py-1 rounded-lg shadow-sm cursor-not-allowed border border-gray-200"
+                                                    >
+                                                        확정됨
+                                                    </button>
+                                                ) : role.status === 'empty' ? (
+                                                    <button
+                                                        onClick={() => handleJoin(role)}
+                                                        className="w-full bg-[#2A2D3E] hover:bg-[#3D4155] text-white text-[11px] font-extrabold py-1.5 rounded-lg shadow-md transition-all active:scale-95 border border-[#1A1C29]"
+                                                    >
+                                                        참여하기
+                                                    </button>
+                                                ) : role.isCurrentUser ? (
+                                                    <button
+                                                        onClick={() => handleCancelSession(role)}
+                                                        className="w-full bg-[#FF8A80] hover:bg-[#ff7060] text-white text-[11px] font-extrabold py-1.5 rounded-lg shadow-md transition-all active:scale-95 border border-[#ff6b5c]"
+                                                    >
+                                                        취소하기
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        disabled
+                                                        className="w-full bg-gray-100/80 text-gray-400 text-[11px] font-bold py-1 rounded-lg shadow-sm cursor-default border border-gray-200"
+                                                    >
+                                                        참여중
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            });
+                        })()}
                         {/* Empty slots filler to match grid if needed, or just let CSS grid handle it */}
                     </div>
                 </section>

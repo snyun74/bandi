@@ -107,7 +107,7 @@ const AdminClanApprovalPage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-3">
                     <FaChevronLeft size={20} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">클랜 승인 관리</h1>
+                <h1 className="top-room-detail-title">클랜 승인 관리</h1>
             </div>
 
             {/* List */}
@@ -131,7 +131,7 @@ const AdminClanApprovalPage: React.FC = () => {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <h3 className="text-lg font-bold text-[#003C48] truncate">{clan.cnNm}</h3>
+                                            <h3 className="body-section-title !mt-0 truncate">{clan.cnNm}</h3>
                                             <p className="text-xs text-gray-400 mt-1">등록일: {formatDate(clan.insDtime)}</p>
                                         </div>
                                     </div>
@@ -143,7 +143,7 @@ const AdminClanApprovalPage: React.FC = () => {
                             <div className="flex gap-2 mt-2 border-t border-gray-100 pt-4">
                                 <button
                                     onClick={() => handleStatusChange(clan.cnNo, 'RQ')}
-                                    className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${clan.cnApprStatCd === 'RQ'
+                                    className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-[14px] ${clan.cnApprStatCd === 'RQ'
                                         ? 'bg-amber-500 text-white shadow-sm'
                                         : 'bg-white border border-gray-200 text-gray-500 hover:bg-amber-50'
                                         }`}
@@ -153,7 +153,7 @@ const AdminClanApprovalPage: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => handleStatusChange(clan.cnNo, 'RJ')}
-                                    className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${clan.cnApprStatCd === 'RJ'
+                                    className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-[14px] ${clan.cnApprStatCd === 'RJ'
                                         ? 'bg-red-500 text-white shadow-sm'
                                         : 'bg-white border border-gray-200 text-gray-500 hover:bg-red-50'
                                         }`}
@@ -163,7 +163,7 @@ const AdminClanApprovalPage: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => handleStatusChange(clan.cnNo, 'CN')}
-                                    className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors ${clan.cnApprStatCd === 'CN'
+                                    className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors text-[14px] ${clan.cnApprStatCd === 'CN'
                                         ? 'bg-[#00BDF8] text-white shadow-sm'
                                         : 'bg-white border border-gray-200 text-gray-500 hover:bg-cyan-50'
                                         }`}

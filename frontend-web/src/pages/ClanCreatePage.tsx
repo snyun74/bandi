@@ -123,7 +123,7 @@ const ClanCreatePage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">클랜 생성 신청</h1>
+                <h1 className="top-room-detail-title">클랜 생성 신청</h1>
             </div>
 
             <div className="px-6 flex-1 overflow-y-auto pb-4">
@@ -199,7 +199,7 @@ const ClanCreatePage: React.FC = () => {
             <div className="p-4 bg-white border-t border-gray-100 shrink-0">
                 <button
                     onClick={handleCreate}
-                    className="w-full bg-[#00BDF8] text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:bg-[#00ACD8] transition-colors"
+                    className="w-full bg-[#00BDF8] text-white font-bold py-4 rounded-xl text-[14px] shadow-lg hover:bg-[#00ACD8] transition-colors"
                 >
                     클랜 생성 신청
                 </button>

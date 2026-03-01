@@ -158,7 +158,7 @@ const FriendAdd: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-[#003C48] mr-4">
                     <FaChevronLeft size={22} />
                 </button>
-                <h1 className="text-xl font-bold text-[#003C48]">친구 추가</h1>
+                <h1 className="top-room-detail-title">친구 추가</h1>
             </div>
 
             <div className="p-4 space-y-6">

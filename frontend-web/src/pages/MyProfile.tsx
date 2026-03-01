@@ -65,7 +65,7 @@ const MyProfile: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-gray-600">
                         <FaChevronLeft size={24} />
                     </button>
-                    <h1 className="text-xl text-[#003C48] font-bold">프로필</h1>
+                    <h1 className="top-room-detail-title">프로필</h1>
                 </div>
                 <div className="flex items-center gap-2">
                     {profile?.adminYn === 'Y' && (
@@ -98,7 +98,7 @@ const MyProfile: React.FC = () => {
                         </div>
                         <div>
                             <div className="flex items-end gap-1">
-                                <h2 className="text-[#003C48] text-xl font-bold">
+                                <h2 className="body-section-title">
                                     {profile?.userNickNm || profile?.userNm || '사용자'} 님
                                 </h2>
                             </div>
@@ -155,27 +155,27 @@ const MyProfile: React.FC = () => {
                 <div className="bg-white border-t border-gray-100">
                     <div className="border-b border-gray-100">
                         <button onClick={() => navigate('/main/customer-center')} className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                            <div className="flex items-center gap-3 text-[#003C48] font-bold">
+                            <div className="flex items-center gap-3">
                                 <BsChatSquare className="text-gray-500" size={16} />
-                                <span>고객센터</span>
+                                <span className="body-section-title !m-0">고객센터</span>
                             </div>
                             <FaChevronRight className="text-gray-400" size={14} />
                         </button>
                     </div>
                     <div className="border-b border-gray-100">
                         <button onClick={() => navigate('/main/profile/scraps')} className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                            <div className="flex items-center gap-3 text-[#003C48] font-bold">
+                            <div className="flex items-center gap-3">
                                 <FaBookmark className="text-gray-500" />
-                                <span>스크랩</span>
+                                <span className="body-section-title !m-0">스크랩</span>
                             </div>
                             <FaChevronRight className="text-gray-400" size={14} />
                         </button>
                     </div>
                     <div className="border-b border-gray-100">
                         <button onClick={() => navigate('/main/profile/posts')} className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                            <div className="flex items-center gap-3 text-[#003C48] font-bold">
+                            <div className="flex items-center gap-3">
                                 <FaPen className="text-gray-500" />
-                                <span>내가 쓴 글</span>
+                                <span className="body-section-title !m-0">내가 쓴 글</span>
                             </div>
                             <FaChevronRight className="text-gray-400" size={14} />
                         </button>

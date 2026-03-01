@@ -427,7 +427,7 @@ const ClanJamList: React.FC = () => {
                                                 {/* Lock Icon checks room.secret (bnPasswdFg === 'Y') */}
                                                 {room.secret && <FaLock className="text-[#003C48]" size={14} />}
                                                 <h3
-                                                    className="text-[#003C48] font-bold text-base cursor-pointer hover:underline"
+                                                    className="body-room-title cursor-pointer hover:underline !text-[#003C48]"
                                                     onClick={() => handleRoomClick(room)}
                                                 >
                                                     {room.title}
@@ -440,7 +440,7 @@ const ClanJamList: React.FC = () => {
                                             />
                                         </div>
 
-                                        <div className="text-[#00BDF8] font-bold text-sm">
+                                        <div className="body-room-subtitle">
                                             {room.artist} - {room.songTitle}
                                         </div>
                                     </div>
@@ -553,13 +553,13 @@ const ClanJamList: React.FC = () => {
                 descModal.isOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setDescModal(prev => ({ ...prev, isOpen: false }))}>
                         <div className="bg-white rounded-2xl p-6 w-80 shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-                            <h3 className="text-xl font-bold text-[#003C48] mb-4 text-center border-b border-gray-100 pb-3">{descModal.title}</h3>
+                            <h3 className="body-modal-title">{descModal.title}</h3>
                             <div className="text-gray-600 text-sm mb-6 whitespace-pre-wrap min-h-[100px] max-h-[300px] overflow-y-auto custom-scrollbar leading-relaxed">
                                 {descModal.description}
                             </div>
                             <button
                                 onClick={() => setDescModal(prev => ({ ...prev, isOpen: false }))}
-                                className="w-full py-3 text-white font-bold bg-[#00BDF8] rounded-xl hover:bg-cyan-500 transition-colors shadow-lg shadow-cyan-200"
+                                className="bottom-btn-primary"
                             >
                                 닫기
                             </button>

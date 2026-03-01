@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import SectionTitle from '../components/common/SectionTitle';
 
 const UserAvatar: React.FC<{ userId: string; size?: string }> = ({ userId, size = 'w-8 h-8' }) => {
     const [img, setImg] = React.useState<string | null | undefined>(undefined);
@@ -292,13 +293,12 @@ const ClanBoardPostDetail: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">{post.boardTypeNm || '클랜 게시판'}</h1>
+                <h1 className="top-room-detail-title">{post.boardTypeNm || '클랜 게시판'}</h1>
             </div>
 
             <div className="flex-1 pb-[130px]">
-                {/* Post Content */}
                 <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-[#003C48] mb-4">{post.title}</h2>
+                    <SectionTitle className="!mt-0 mb-4">{post.title}</SectionTitle>
 
                     <div className="flex items-center mb-4 pb-4 border-b border-gray-200">
                         <div className="mr-2 flex-shrink-0">
@@ -356,7 +356,7 @@ const ClanBoardPostDetail: React.FC = () => {
 
                 {/* Comments Section */}
                 <div className="px-4">
-                    <h3 className="text-[#003C48] font-bold text-lg mb-4">댓글</h3>
+                    <SectionTitle className="!mt-0 mb-4">댓글</SectionTitle>
 
                     <div className="space-y-6">
                         {comments.map((comment) => (

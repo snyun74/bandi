@@ -156,7 +156,11 @@ public class BandService {
             boolean isMember = group.getBnLeaderId().equals(userId);
 
             for (BnSession session : sessions) {
-                String sessionName = getSessionName(session.getBnSessionTypeCd());
+                String[] sessionInfo = getSessionInfo(session.getBnSessionTypeCd());
+                String sessionName = sessionInfo[0];
+                String offImg = sessionInfo[1];
+                String onImg1 = sessionInfo[2];
+                String onImg2 = sessionInfo[3];
                 String userNick = null;
                 String status = "empty";
                 boolean isCurrentUser = false;
@@ -180,6 +184,9 @@ public class BandService {
                         .status(status)
                         .isCurrentUser(isCurrentUser)
                         .reservedCount(0)
+                        .offImgUrl(offImg)
+                        .onImgUrl1(onImg1)
+                        .onImgUrl2(onImg2)
                         .build());
             }
 
@@ -347,17 +354,23 @@ public class BandService {
     private jakarta.persistence.EntityManager entityManager;
 
     // Quick helpers using EM to avoid circular dependencies or clutter
-    private String getSessionName(String code) {
+    private String[] getSessionInfo(String code) {
         if (code == null)
-            return "Unknown";
+            return new String[] { "Unknown", null, null, null };
         try {
-            String sql = "SELECT COMM_DETAIL_NM FROM CM_COMM_DETAIL WHERE COMM_CD = 'BD100' AND COMM_DETAIL_CD = :code";
-            return (String) entityManager.createNativeQuery(sql)
+            String sql = "SELECT COMM_DETAIL_NM, REF_01_NM, REF_02_NM, REF_03_NM FROM CM_COMM_DETAIL WHERE COMM_CD = 'BD100' AND COMM_DETAIL_CD = :code";
+            Object[] result = (Object[]) entityManager.createNativeQuery(sql)
                     .setParameter("code", code)
                     .getSingleResult();
+            return new String[] {
+                    (String) result[0],
+                    (String) result[1],
+                    (String) result[2],
+                    (String) result[3]
+            };
         } catch (Exception e) {
-            log.error("Error getting session name for code: {}", code, e);
-            return code; // Fallback
+            log.error("Error getting session info for code: {}", code, e);
+            return new String[] { code, null, null, null }; // Fallback
         }
     }
 
@@ -374,6 +387,7 @@ public class BandService {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private java.util.Map<String, Integer> getSessionOrderMap() {
         try {
             String sql = "SELECT COMM_DETAIL_CD, COMM_ORDER FROM CM_COMM_DETAIL WHERE COMM_CD = 'BD100'";
@@ -426,7 +440,11 @@ public class BandService {
         java.util.List<com.bandi.backend.dto.ClanJamListDto.JamRoleDto> roleDtos = new java.util.ArrayList<>();
 
         for (BnSession session : sessions) {
-            String sessionName = getSessionName(session.getBnSessionTypeCd());
+            String[] sessionInfo = getSessionInfo(session.getBnSessionTypeCd());
+            String sessionName = sessionInfo[0];
+            String offImg = sessionInfo[1];
+            String onImg1 = sessionInfo[2];
+            String onImg2 = sessionInfo[3];
             String userNick = null;
             String status = "empty";
             boolean isCurrentUser = false;
@@ -456,6 +474,9 @@ public class BandService {
                     .isBandLeader(isRoleBandLeader)
                     .reservedCount(0)
                     .userId(session.getBnSessionJoinUserId())
+                    .offImgUrl(offImg)
+                    .onImgUrl1(onImg1)
+                    .onImgUrl2(onImg2)
                     .build());
         }
 
@@ -579,7 +600,7 @@ public class BandService {
                         .map(s -> {
                             String targetUserId = s.getBnSessionJoinUserId();
                             String nick = getUserNickname(targetUserId);
-                            String part = getSessionName(s.getBnSessionTypeCd());
+                            String part = getSessionInfo(s.getBnSessionTypeCd())[0];
                             return new com.bandi.backend.dto.PendingEvaluationDto.EvaluationTargetDto(targetUserId,
                                     nick,
                                     part);
