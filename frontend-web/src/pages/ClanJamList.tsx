@@ -283,9 +283,11 @@ const ClanJamList: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 mb-2">
                 <div className="flex items-center gap-2">
-                    <button onClick={() => navigate(-1)} className="text-[#052c42]">
-                        <FaChevronLeft size={24} />
-                    </button>
+                    {clanId && (
+                        <button onClick={() => navigate(-1)} className="text-[#052c42]">
+                            <FaChevronLeft size={24} />
+                        </button>
+                    )}
                     <SectionTitle as="h1" className="!mt-0 !mb-0">{clanId ? "클랜 합주방" : "자유 합주방"}</SectionTitle>
                 </div>
                 {(!clanId || userRole === '01' || userRole === '02') && (

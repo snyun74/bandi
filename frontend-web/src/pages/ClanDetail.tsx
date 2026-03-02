@@ -335,10 +335,10 @@ const ClanDetail: React.FC = () => {
                 </div>
 
                 {/* Notices */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative">
-                    <div className="flex justify-between items-center mb-4">
-                        <SectionTitle className="!mt-0 !mb-0">🔔 공지</SectionTitle>
-                        <span onClick={() => navigate(`/main/clan/notice/${id}`)} className="text-gray-400 text-xs cursor-pointer">더보기</span>
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative overflow-hidden">
+                    <div className="flex justify-between items-center mb-4 bg-[#00BDF8] -mt-4 -mx-4 px-4 py-2.5 border-b border-[#009dc4]">
+                        <SectionTitle className="!mt-0 !mb-0 text-white"><span className="grayscale brightness-200 mr-1">🔔</span> 공지</SectionTitle>
+                        <span onClick={() => navigate(`/main/clan/notice/${id}`)} className="text-white text-xs cursor-pointer font-bold opacity-90 hover:opacity-100">더보기</span>
                     </div>
                     <div className="space-y-2">
                         {notices.length > 0 ? (
@@ -362,17 +362,17 @@ const ClanDetail: React.FC = () => {
 
                 {/* Gathering Notices - Only visible if there are active gatherings */}
                 {gatherings.length > 0 && (
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative animate-pulse-subtle">
-                        <div className="flex justify-between items-center mb-4">
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative animate-pulse-subtle overflow-hidden">
+                        <div className="flex justify-between items-center mb-4 bg-[#FF8A80] -mt-4 -mx-4 px-4 py-2.5 border-b border-[#ff7060]">
                             <div
-                                className={`flex items-center gap-2 ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:underline' : ''}`}
+                                className={`flex items-center gap-2 ${(myRole === '01' || myRole === '02') ? 'cursor-pointer' : ''}`}
                                 onClick={() => {
                                     if (myRole === '01' || myRole === '02') {
                                         navigate(`/main/clan/gathering/management/${id}`);
                                     }
                                 }}
                             >
-                                <SectionTitle className="!mt-0 !mb-0">🎵 합주 모집 공고</SectionTitle>
+                                <SectionTitle className="!mt-0 !mb-0 text-white"><span className="grayscale brightness-200 mr-1">🎵</span> 합주 모집 공고</SectionTitle>
                             </div>
                         </div>
                         <div className="space-y-3">
@@ -407,7 +407,7 @@ const ClanDetail: React.FC = () => {
                                         ) : (
                                             <button
                                                 onClick={() => handleGatheringApplyClick(gather)}
-                                                className="px-4 py-1.5 rounded-full text-[13px] font-bold bg-[#003C48] text-white hover:bg-[#002a33] transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                                                className="px-4 py-1.5 rounded-full text-[13px] font-bold bg-[#FF8A80] text-white hover:bg-[#ff7060] transition-all shadow-sm active:scale-95 whitespace-nowrap"
                                             >
                                                 참여하기
                                             </button>

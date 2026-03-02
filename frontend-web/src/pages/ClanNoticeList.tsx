@@ -71,7 +71,7 @@ const ClanNoticeList: React.FC = () => {
             <div className="px-4 pb-20">
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     {/* List Header */}
-                    <div className="bg-[#052c42] px-4 py-3">
+                    <div className="bg-[#00BDF8] px-4 py-3 border-b border-[#009dc4]">
                         <SectionTitle as="h2" className="text-white !mt-0 !mb-0">공지</SectionTitle>
                     </div>
 

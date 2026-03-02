@@ -210,7 +210,7 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                     {/* Matching Options (Toggles) */}
                     <div>
                         <label className="block text-sm font-bold text-[#003C48] mb-3">매칭 옵션 설정</label>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {weights.map((w, idx) => {
                                 const isSkill = w.gatherTypeCd === 'SKILL' || w.name?.includes('기술');
                                 const isGender = w.gatherTypeCd === 'GENDER' || w.name?.includes('성별');
@@ -233,7 +233,7 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                                 const isActive = w.balanceApplyYn === 'Y';
 
                                 return (
-                                    <div key={w.gatherTypeCd} className="bg-white rounded-[15px] p-4 border border-gray-100 shadow-sm flex items-center justify-between">
+                                    <div key={w.gatherTypeCd} className="bg-white rounded-[15px] py-2 px-4 border border-gray-100 shadow-sm flex items-center justify-between">
                                         <div className="flex flex-col">
                                             <span className="text-[#003C48] text-[14px] font-bold">{label}</span>
                                             <span className={`text-[11px] font-medium mt-0.5 ${isActive ? 'text-[#FF8A80]' : 'text-gray-400'}`}>
@@ -262,7 +262,7 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                 <div className="p-5 pt-0 mt-auto">
                     <button
                         onClick={handleSubmit}
-                        className="w-full bg-[#FF8A80] text-white py-3.5 rounded-[15px] text-lg font-bold shadow-md hover:bg-[#FF7060] transition-transform active:scale-[0.98]"
+                        className="w-full bg-[#FF8A80] text-white py-2.5 rounded-[15px] text-[14px] font-bold shadow-md hover:bg-[#FF7060] transition-transform active:scale-[0.98]"
                     >
                         모집 공고 올리기
                     </button>
