@@ -16,13 +16,15 @@ import com.bandi.backend.entity.band.BnEvaluationId;
 
 public interface BnEvaluationRepository extends JpaRepository<BnEvaluation, BnEvaluationId> {
 
-    @Modifying
-    @Query(value = "INSERT INTO BN_EVALUATION (BN_NO, BN_EVAL_USER_ID, BN_EVAL_YN, INS_DTIME, INS_ID, UPD_DTIME, UPD_ID) "
-            +
-            "SELECT :bnNo, BN_SESSION_JOIN_USER_ID, 'N', :currentDateTime, :userId, :currentDateTime, :userId " +
-            "FROM BN_SESSION " +
-            "WHERE BN_NO = :bnNo AND BN_SESSION_JOIN_USER_ID IS NOT NULL", nativeQuery = true)
-    void insertEvaluationsFromSession(@Param("bnNo") Long bnNo,
-            @Param("currentDateTime") String currentDateTime,
-            @Param("userId") String userId);
+        @Modifying
+        @Query(value = "INSERT INTO BN_EVALUATION (BN_NO, BN_EVAL_USER_ID, BN_EVAL_YN, INS_DTIME, INS_ID, UPD_DTIME, UPD_ID) "
+                        +
+                        "SELECT DISTINCT :bnNo, BN_SESSION_JOIN_USER_ID, 'N', :currentDateTime, :userId, :currentDateTime, :userId "
+                        +
+                        "FROM BN_SESSION " +
+                        "WHERE BN_NO = :bnNo AND BN_SESSION_JOIN_USER_ID IS NOT NULL " +
+                        "ON CONFLICT DO NOTHING", nativeQuery = true)
+        void insertEvaluationsFromSession(@Param("bnNo") Long bnNo,
+                        @Param("currentDateTime") String currentDateTime,
+                        @Param("userId") String userId);
 }

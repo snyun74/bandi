@@ -6,23 +6,21 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "CN_BOARD_DETAIL_LIKE")
+@IdClass(ClanBoardDetailLikeId.class)
 @Getter
 @Setter
 public class ClanBoardDetailLike {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cn_board_detail_like_no")
-    private Long cnBoardDetailLikeNo;
-
     @Column(name = "cn_reply_no")
     private Long cnReplyNo;
 
-    @Column(name = "cn_board_no")
-    private Long cnBoardNo;
-
+    @Id
     @Column(name = "user_id", length = 20)
     private String userId;
+
+    @Column(name = "cn_board_no")
+    private Long cnBoardNo;
 
     @Column(name = "ins_dtime", length = 14)
     private String insDtime;

@@ -6,18 +6,16 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "CN_BOARD_LIKE")
+@IdClass(ClanBoardLikeId.class)
 @Getter
 @Setter
 public class ClanBoardLike {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cn_board_like_no")
-    private Long cnBoardLikeNo;
-
     @Column(name = "cn_board_no")
     private Long cnBoardNo;
 
+    @Id
     @Column(name = "user_id", length = 20)
     private String userId;
 

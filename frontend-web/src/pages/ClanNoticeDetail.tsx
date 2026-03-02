@@ -221,6 +221,7 @@ const ClanNoticeDetail: React.FC = () => {
 
     if (!notice) return <div className="text-center py-10">Loading...</div>;
 
+
     const renderComments = () => {
         // Group comments by parent
         // Sort root comments by insDtime DESC (Latest first)
@@ -270,7 +271,7 @@ const ClanNoticeDetail: React.FC = () => {
                 {/* Inline Reply Input */}
                 {replyTo === comment.cnCommentNo && (
                     <div className={`mt-2 ${comment.parentCommentNo > 0 ? 'ml-10' : 'ml-10'}`}>
-                        <div className="flex items-end gap-2 bg-white border border-[#00BDF8] rounded-[20px] px-4 py-2 shadow-sm">
+                        <div className="flex items-end gap-2 bg-white border border-[#003C48] rounded-[20px] px-4 py-2 shadow-sm">
                             <textarea
                                 ref={replyTextareaRef}
                                 className="flex-1 outline-none text-sm text-[#003C48] placeholder-gray-400 bg-transparent resize-none overflow-hidden"
@@ -284,7 +285,7 @@ const ClanNoticeDetail: React.FC = () => {
                             />
                             <button
                                 onClick={() => handleAddReply(comment.parentCommentNo > 0 ? comment.parentCommentNo : comment.cnCommentNo)}
-                                className={`p-2 rounded-full transition-colors mb-0.5 ${replyComment.trim() ? 'text-[#00BDF8]' : 'text-gray-300'}`}
+                                className={`p-2 rounded-full transition-colors mb-0.5 ${replyComment.trim() ? 'text-[#003C48]' : 'text-gray-300'}`}
                                 disabled={!replyComment.trim()}
                             >
                                 <FaPaperPlane />
@@ -314,7 +315,7 @@ const ClanNoticeDetail: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']">
             {/* Header */}
             <div className="flex items-center px-4 py-4 mb-2">
                 <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
@@ -385,7 +386,7 @@ const ClanNoticeDetail: React.FC = () => {
                             />
                             <button
                                 onClick={() => handleAddComment(0)}
-                                className={`p-2 rounded-full transition-colors mb-0.5 ${newComment.trim() ? 'text-[#00BDF8]' : 'text-gray-300'}`}
+                                className={`p-2 rounded-full transition-colors mb-0.5 ${newComment.trim() ? 'text-[#003C48]' : 'text-gray-300'}`}
                                 disabled={!newComment.trim()}
                             >
                                 <FaPaperPlane />

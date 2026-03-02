@@ -597,14 +597,19 @@ public class BandService {
 
                 java.util.List<com.bandi.backend.dto.PendingEvaluationDto.EvaluationTargetDto> targets = sessions
                         .stream()
-                        .map(s -> {
-                            String targetUserId = s.getBnSessionJoinUserId();
-                            String nick = getUserNickname(targetUserId);
-                            String part = getSessionInfo(s.getBnSessionTypeCd())[0];
-                            return new com.bandi.backend.dto.PendingEvaluationDto.EvaluationTargetDto(targetUserId,
-                                    nick,
-                                    part);
-                        })
+                        .collect(java.util.stream.Collectors.toMap(
+                                BnSession::getBnSessionJoinUserId,
+                                s -> {
+                                    String targetUserId = s.getBnSessionJoinUserId();
+                                    String nick = getUserNickname(targetUserId);
+                                    String part = getSessionInfo(s.getBnSessionTypeCd())[0];
+                                    return new com.bandi.backend.dto.PendingEvaluationDto.EvaluationTargetDto(
+                                            targetUserId, nick, part);
+                                },
+                                (existing, duplicate) -> existing // 중복 시 첫 번째 항목 유지
+                        ))
+                        .values()
+                        .stream()
                         .collect(java.util.stream.Collectors.toList());
 
                 return com.bandi.backend.dto.PendingEvaluationDto.builder()

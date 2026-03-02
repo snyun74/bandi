@@ -114,7 +114,7 @@ const Clan: React.FC = () => {
                 <SectionTitle as="h2" className="!mt-0 !mb-0">{/* text-xl preserved if needed, but following .body-section-title which is 14px */}클랜</SectionTitle>
                 <button
                     onClick={() => navigate('/main/clan/create')}
-                    className="bg-[#00BDF8] text-white px-4 py-1.5 rounded-lg text-[14px] font-bold shadow-sm"
+                    className="bg-[#00BDF8] text-white px-3 py-1.5 rounded-lg text-[13px] font-bold shadow-sm"
                 >
                     클랜 생성
                 </button>
@@ -131,7 +131,7 @@ const Clan: React.FC = () => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="클랜 명으로 검색"
-                        className="w-full pl-10 pr-4 py-3 border border-[#00BDF8] rounded-xl text-base outline-none focus:ring-1 focus:ring-[#00BDF8] shadow-sm"
+                        className="w-full pl-10 pr-4 py-2 border border-[#00BDF8] rounded-xl text-[13px] outline-none focus:ring-1 focus:ring-[#00BDF8] shadow-sm"
                         onKeyPress={(e) => {
                             if (e.key === 'Enter') handleSearch();
                         }}
@@ -139,7 +139,7 @@ const Clan: React.FC = () => {
                 </div>
                 <button
                     onClick={handleSearch}
-                    className="bg-[#00BDF8] text-white px-6 rounded-xl font-bold text-[14px] hover:bg-[#00ACD8] transition-colors"
+                    className="bg-[#00BDF8] text-white px-4 py-2 rounded-xl font-bold text-[13px] hover:bg-[#00ACD8] transition-colors"
                 >
                     조회
                 </button>

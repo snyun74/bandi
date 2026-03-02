@@ -48,7 +48,7 @@ const ClanNoticeList: React.FC = () => {
     const canCreateNotice = ['01', '02'].includes(userRole);
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="flex flex-col h-full bg-white font-['Pretendard']">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-4 mb-2">
                 <div className="flex items-center gap-4">
@@ -71,8 +71,8 @@ const ClanNoticeList: React.FC = () => {
             <div className="px-4 pb-20">
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     {/* List Header */}
-                    <div className="bg-[#4FC3F7] px-4 py-3">
-                        <SectionTitle as="h2" className="text-white !mt-0 !mb-0 !text-white">공지</SectionTitle>
+                    <div className="bg-[#052c42] px-4 py-3">
+                        <SectionTitle as="h2" className="text-white !mt-0 !mb-0">공지</SectionTitle>
                     </div>
 
                     {/* Notice List */}
@@ -84,10 +84,10 @@ const ClanNoticeList: React.FC = () => {
                                         onClick={() => navigate(`/main/clan/notice/${clanId}/detail/${notice.cnNoticeNo}`)}
                                         className="flex items-center cursor-pointer group"
                                     >
-                                        <span className={`mr-2 ${notice.pinYn === 'Y' ? 'text-[#00BDF8]' : 'text-[#003C48]'}`}>•</span>
+                                        <span className={`mr-2 ${notice.pinYn === 'Y' ? 'font-bold' : ''}`}>•</span>
                                         <SectionTitle
                                             as="h3"
-                                            className={`!mt-0 !mb-0 text-base group-hover:underline ${notice.pinYn === 'Y' ? 'text-[#00BDF8]' : 'text-[#003C48]'}`}
+                                            className={`!mt-0 !mb-0 text-base group-hover:underline ${notice.pinYn === 'Y' ? 'font-bold' : 'font-medium'} text-[#003C48]`}
                                         >
                                             {notice.title}
                                         </SectionTitle>

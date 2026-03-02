@@ -21,25 +21,27 @@ const Header: React.FC = () => {
     }, []);
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-[50px] bg-white border-b border-gray-100 flex items-center justify-between px-4 z-50">
-            {/* Left: Logo */}
+        <header className="fixed top-0 left-0 right-0 h-[60px] bg-white border-b border-gray-100 flex items-center justify-between pl-4 pr-0 z-50">
+            {/* Left: Bandicon Logo */}
             <img
                 src="/images/bandicon.png"
                 alt="Bandicon"
-                className="h-[24px] w-auto object-contain cursor-pointer"
+                className="h-[64px] w-auto object-contain cursor-pointer"
                 onClick={() => navigate('/main')}
             />
 
-            {/* Right: Greeting & Chat */}
-            <div className="flex items-center gap-3">
+            {/* Right: Nickname & Chat Icon */}
+            <div className="flex items-center gap-2">
                 <span
-                    className="top-nick-name"
+                    className="top-nick-name text-[14px]"
                     onClick={() => navigate('/main/profile')}
                 >
                     {userName}님
                 </span>
-                <MessageCircle
-                    className="w-6 h-6 text-gray-700 cursor-pointer hover:text-[#00BDF8] transition-colors"
+                <img
+                    src="/images/talk_icon.png"
+                    alt="Chat"
+                    className="w-[57px] h-[57px] object-contain cursor-pointer hover:scale-110 transition-transform"
                     onClick={() => navigate('/main/chat/list')}
                 />
             </div>

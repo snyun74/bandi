@@ -507,7 +507,7 @@ const JamChatRoom: React.FC = () => {
                         <FaPoll className="text-lg text-[#003C48]" /> <span>투표하기</span>
                     </button>
                     <button onClick={() => { setIsMenuOpen(false); setIsSettlementModalOpen(true); }} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
-                        <FaDollarSign className="text-lg text-[#00BDF8]" /> <span>정산하기</span>
+                        <FaDollarSign className="text-lg text-[#003C48]" /> <span>정산하기</span>
                     </button>
                 </div>
             )}

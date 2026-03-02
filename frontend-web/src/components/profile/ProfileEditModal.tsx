@@ -151,10 +151,10 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/50" style={{ fontFamily: '"Pretendard", sans-serif' }}>
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[65vh] overflow-y-auto relative">
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-white sticky top-0 z-10">
-                    <h2 className="text-xl font-bold text-[#003C48]">프로필 편집</h2>
+                <div className="flex items-center justify-between p-3 border-b border-gray-100 bg-white sticky top-0 z-10">
+                    <h2 className="text-[14px] font-bold text-[#003C48]">프로필 편집</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -162,55 +162,55 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-4">
                     {/* Profile Image */}
-                    <div className="flex justify-center mb-8">
+                    <div className="flex justify-center mb-4">
                         <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
-                            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-50 flex items-center justify-center shadow-inner group-hover:border-indigo-50 transition-colors">
+                            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-50 flex items-center justify-center shadow-inner group-hover:border-indigo-50 transition-colors">
                                 {previewImage ? (
                                     <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <BsPersonCircle className="w-full h-full text-gray-300" />
                                 )}
                             </div>
-                            <div className="absolute bottom-1 right-1 bg-white p-2.5 rounded-full shadow-lg border border-gray-100 group-hover:scale-110 transition-transform">
-                                <FaCamera className="text-[#00BDF8] text-lg" />
+                            <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 group-hover:scale-110 transition-transform">
+                                <FaCamera className="text-[#00BDF8] text-sm" />
                             </div>
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         </div>
                     </div>
 
                     {/* Form Fields */}
-                    <div className="space-y-5 mb-6">
+                    <div className="space-y-3 mb-3">
                         {/* 닉네임 */}
                         <div>
-                            <label className="block text-[#003C48] font-bold mb-2 text-sm">
+                            <label className="block text-[#003C48] font-bold mb-2 text-[14px]">
                                 닉네임 <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={nickname}
                                 onChange={(e) => setNickname(e.target.value)}
-                                className="w-full bg-gray-50 rounded-xl px-4 py-3 text-gray-700 outline-none focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white transition-all border border-transparent focus:border-[#00BDF8]"
+                                className="w-full bg-gray-50 rounded-xl px-4 py-2 text-[13px] text-gray-700 outline-none focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white transition-all border border-transparent focus:border-[#00BDF8]"
                                 placeholder="닉네임을 입력하세요"
                             />
                         </div>
 
                         {/* 이메일 */}
                         <div>
-                            <label className="block text-[#003C48] font-bold mb-2 text-sm">이메일</label>
+                            <label className="block text-[#003C48] font-bold mb-2 text-[14px]">이메일</label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-gray-50 rounded-xl px-4 py-3 text-gray-700 outline-none focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white transition-all border border-transparent focus:border-[#00BDF8]"
+                                className="w-full bg-gray-50 rounded-xl px-4 py-2 text-[13px] text-gray-700 outline-none focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white transition-all border border-transparent focus:border-[#00BDF8]"
                                 placeholder="이메일을 입력하세요"
                             />
                         </div>
 
                         {/* 성별 */}
                         <div>
-                            <label className="block text-[#003C48] font-bold mb-2 text-sm">
+                            <label className="block text-[#003C48] font-bold mb-2 text-[14px]">
                                 성별 <span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-3">
@@ -232,7 +232,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
 
                         {/* MBTI */}
                         <div>
-                            <label className="block text-[#003C48] font-bold mb-2 text-sm">
+                            <label className="block text-[#003C48] font-bold mb-2 text-[14px]">
                                 MBTI <span className="text-red-500">*</span>
                             </label>
                             <div className="grid grid-cols-4 gap-2">
@@ -254,8 +254,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                     </div>
 
                     {/* Skills Section */}
-                    <div className="bg-gray-50 rounded-2xl p-5 space-y-4">
-                        <h3 className="text-[#003C48] font-bold text-sm mb-1">
+                    <div className="bg-gray-50 rounded-2xl p-3 space-y-3">
+                        <h3 className="text-[#003C48] font-bold text-[14px] mb-1">
                             세션별 실력 (자가평가) <span className="text-red-500">*</span>
                         </h3>
                         <div className="space-y-4">
@@ -280,11 +280,11 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                 </div>
 
                 {/* Footer */}
-                <div className="p-5 border-t border-gray-100 bg-gray-50/50 rounded-b-3xl">
+                <div className="p-3 border-t border-gray-100 bg-gray-50/50 rounded-b-3xl">
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="w-full bg-[#00BDF8] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-[#00BDF8]/30 hover:bg-[#009bc9] hover:shadow-[#009bc9]/30 hover:-translate-y-0.5 transition-all disabled:bg-gray-300 disabled:shadow-none disabled:translate-y-0"
+                        className="w-full bg-[#00BDF8] text-white font-bold py-3.5 rounded-xl text-[14px] shadow-lg shadow-[#00BDF8]/30 hover:bg-[#009bc9] hover:shadow-[#009bc9]/30 hover:-translate-y-0.5 transition-all disabled:bg-gray-300 disabled:shadow-none disabled:translate-y-0"
                     >
                         {loading ? '저장 중...' : '저장하기'}
                     </button>

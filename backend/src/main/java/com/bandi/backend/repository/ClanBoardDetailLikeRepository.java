@@ -1,15 +1,16 @@
 package com.bandi.backend.repository;
 
 import com.bandi.backend.entity.clan.ClanBoardDetailLike;
+import com.bandi.backend.entity.clan.ClanBoardDetailLikeId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ClanBoardDetailLikeRepository extends JpaRepository<ClanBoardDetailLike, Long> {
+public interface ClanBoardDetailLikeRepository extends JpaRepository<ClanBoardDetailLike, ClanBoardDetailLikeId> {
 
-    @Query("SELECT l.cnReplyNo, COUNT(l) " +
+    @Query("SELECT l.cnReplyNo, COUNT(l.userId) " +
             "FROM ClanBoardDetailLike l " +
             "WHERE l.cnReplyNo IN :replyIds " +
             "GROUP BY l.cnReplyNo")

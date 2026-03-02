@@ -103,6 +103,7 @@ const JamScheduleCapture: React.FC = () => {
     const isDragging = React.useRef(false);
     const lastToggledHour = React.useRef<number | null>(null);
     const initialSelectionState = React.useRef<boolean>(true); // true = selecting, false = deselecting
+    const justTouched = React.useRef(false); // 터치 후 합성 mousedown 이중 발생 방지
 
     useEffect(() => {
         // Global mouse up handler to end dragging safely
@@ -139,6 +140,9 @@ const JamScheduleCapture: React.FC = () => {
 
     // --- Mouse Handlers (Desktop) ---
     const onMouseDown = (hour: number, e: React.MouseEvent) => {
+        // 터치 이벤트 직후 합성 mousedown이 중복 발생하는 경우 무시
+        if (justTouched.current) return;
+
         isDragging.current = true;
         lastToggledHour.current = hour;
 
@@ -159,6 +163,10 @@ const JamScheduleCapture: React.FC = () => {
 
     // --- Touch Handlers (Mobile) ---
     const onTouchStart = (hour: number, e: React.TouchEvent) => {
+        // 터치 후 500ms 동안 합성 mousedown 무시하도록 플래그 설정
+        justTouched.current = true;
+        setTimeout(() => { justTouched.current = false; }, 500);
+
         isDragging.current = true;
         lastToggledHour.current = hour;
 
@@ -273,24 +281,26 @@ const JamScheduleCapture: React.FC = () => {
         switch (type) {
             case 'vocal': return <FaMicrophone key={idx} className={className} />;
             case 'guitar': return <FaGuitar key={idx} className={className} />;
+            case 'bass': return <FaGuitar key={idx} className={className} />; // 베이스 (기타 아이콘 대체)
             case 'drum': return <FaDrum key={idx} className={className} />;
             case 'keyboard': return <GiGrandPiano key={idx} className={className} />;
-            default: return null;
+            default: return <FaMicrophone key={idx} className={className} />;
         }
     };
 
     const getUserIconType = (member: any) => {
-        let iconType = 'vocal';
-        const typeCd = member.sessionTypeCd;
-        const partName = member.part;
+        const typeCd = (member.sessionTypeCd || '').toLowerCase();
+        const partName = (member.part || '').toLowerCase();
 
-        if (typeCd === 'BD1001' || partName === '보컬') iconType = 'vocal';
-        else if (typeCd === 'BD1002' || partName === '기타') iconType = 'guitar';
-        else if (typeCd === 'BD1003' || partName === '베이스') iconType = 'bass';
-        else if (typeCd === 'BD1004' || partName === '드럼') iconType = 'drum';
-        else if (typeCd === 'BD1005' || partName === '키보드' || partName === '건반') iconType = 'keyboard';
+        if (partName.includes('보컬') || partName.includes('vocal') || typeCd.includes('bd1001')) return 'vocal';
+        if (partName.includes('기타') || partName.includes('guitar') || typeCd.includes('bd1002')) return 'guitar';
+        if (partName.includes('베이스') || partName.includes('bass') || typeCd.includes('bd1003')) return 'bass';
+        if (partName.includes('드럼') || partName.includes('drum') || typeCd.includes('bd1004')) return 'drum';
+        if (partName.includes('키보드') || partName.includes('건반') || partName.includes('keyboard') || typeCd.includes('bd1005')) return 'keyboard';
 
-        return iconType;
+        // 매칭 실패 시 partName으로 디버그 가능하도록 콘솔 출력
+        console.log('[getUserIconType] 매칭 실패 - typeCd:', member.sessionTypeCd, 'part:', member.part);
+        return 'vocal'; // fallback
     };
 
     // Check if a slot is occupied by existing schedules
@@ -326,19 +336,17 @@ const JamScheduleCapture: React.FC = () => {
         let color = 'bg-gray-100';
 
         if (selectedTimeSlots.includes(hour)) {
-            color = 'bg-yellow-300'; // Selected (Editing) state
+            color = 'bg-[#FF6B6B]'; // 내가 선택한 시간대 (빨간 계열)
         } else if (participantIds.length > 0) {
             if (isFull) {
-                color = 'bg-[#4CAF50]'; // Green (Full)
+                color = 'bg-[#2EE59D]'; // 전원 참여 (초록)
             } else {
-                // Determine shade of blue based on ratio? 
-                // For now, simpler: Solid Blue for any partial
-                // User asked: "Different colors according to number". 
-                // Let's try 3 levels of blue: 1-33%, 34-66%, 67-99%?
-                // Or just one Blue for now to be safe and consistent.
-                color = 'bg-[#E1F5FE]'; // Light Blue
-                // If many people, maybe darker?
-                if (participantIds.length / totalMembers > 0.5) color = 'bg-[#81D4FA]';
+                // 일부 참여: 비율에 따라 파란 계열 농도 조절
+                if (participantIds.length / totalMembers > 0.5) {
+                    color = 'bg-[#00BDF8]'; // 과반수 이상 - 진한 파랑
+                } else {
+                    color = 'bg-[#7DDCF8]'; // 과반수 미만 - 연한 파랑
+                }
             }
         }
 
@@ -408,13 +416,7 @@ const JamScheduleCapture: React.FC = () => {
             return (
                 <div
                     key={hour}
-                    className="flex items-center h-8 mb-1 touch-none" // touch-none to prevent scroll on this element
-                    data-hour={hour}
-                    onMouseDown={(e) => onMouseDown(hour, e)}
-                    onMouseEnter={() => onMouseEnter(hour)}
-                    onTouchStart={(e) => onTouchStart(hour, e)}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}
+                    className="flex items-center h-8 mb-1"
                 >
                     {/* Time Label */}
                     <span className="w-9 text-gray-400 text-[10px] font-bold mr-1 text-right select-none pointer-events-none">
@@ -422,12 +424,23 @@ const JamScheduleCapture: React.FC = () => {
                     </span>
 
                     {/* Bar Area */}
-                    <div className="flex items-center pointer-events-none">
-                        {/* Colored Bar */}
-                        <div className={`w-8 h-6 rounded-sm ${status.color} mr-1 transition-colors duration-200 cursor-pointer`}></div>
+                    <div className="flex items-center">
+                        {/* 히트 영역 래퍼: 행 전체 높이로 확장해 클릭 편의성 향상 */}
+                        <div
+                            className="flex items-center justify-center h-full w-8 mr-1 cursor-pointer touch-none"
+                            data-hour={hour}
+                            onMouseDown={(e) => onMouseDown(hour, e)}
+                            onMouseEnter={() => onMouseEnter(hour)}
+                            onTouchStart={(e) => onTouchStart(hour, e)}
+                            onTouchMove={onTouchMove}
+                            onTouchEnd={onTouchEnd}
+                        >
+                            {/* 시각적 박스 (h-6 유지) */}
+                            <div className={`w-full h-6 rounded-sm ${status.color} transition-colors duration-200`} />
+                        </div>
 
-                        {/* Icons Row */}
-                        <div className="flex items-center gap-0.5">
+                        {/* Icons Row - 이벤트 차단 */}
+                        <div className="flex items-center gap-0.5 pointer-events-none">
                             {status.icons.map((icon, idx) => (
                                 <div key={idx} className="w-4 h-4 bg-[#00BDF8] rounded-full flex items-center justify-center flex-shrink-0">
                                     {getIconComponent(icon, idx)}

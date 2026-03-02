@@ -9,7 +9,7 @@ const MainLayout: React.FC = () => {
             <Header />
 
             {/* Content Area with padding for Header and BottomNav */}
-            <main className="flex-1 pt-[50px] pb-[70px]">
+            <main className="flex-1 pt-[60px] pb-[70px]">
                 <Outlet />
             </main>
 

@@ -118,24 +118,24 @@ const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onC
 
                 {/* Header */}
                 <div className="text-center mb-4">
-                    <h2 className="text-lg font-bold text-gray-800">합주할 사람 ~</h2>
-                    <p className="text-sm text-gray-600">{evaluation.songTitle} - {evaluation.artist}</p>
+                    <h2 className="text-[14px] font-bold text-gray-800">합주할 사람 ~</h2>
+                    <p className="text-[14px] text-gray-600">{evaluation.songTitle} - {evaluation.artist}</p>
                 </div>
 
                 {/* Manner Evaluation */}
                 <div className="mb-6">
-                    <h3 className="text-center text-md font-bold text-slate-700 mb-3">매너 평가</h3>
+                    <h3 className="text-center text-[14px] font-bold text-slate-700 mb-3">매너 평가</h3>
                     <div className="space-y-3">
                         {evaluation.targets.map(target => (
                             <div key={target.userId} className="flex items-center justify-between">
-                                <div className="flex items-center w-1/4">
-                                    <FaUserCircle className="text-gray-400 mr-1" />
+                                <div className="flex items-center w-2/5">
+                                    <FaUserCircle className="text-gray-400 mr-1 flex-shrink-0" />
                                     <span className="text-xs text-gray-700 truncate">{target.userNick}</span>
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder="매너 점수를 입력하세요 (0~100)"
-                                    className="w-3/4 p-2 text-xs bg-gray-100 rounded-lg border-none focus:ring-1 focus:ring-blue-300 outline-none"
+                                    placeholder="점수 (0~100)"
+                                    className="w-3/5 p-2 text-xs bg-gray-100 rounded-lg border-none focus:ring-1 focus:ring-blue-300 outline-none"
                                     value={scores[target.userId] || ''}
                                     onChange={(e) => handleScoreChange(target.userId, e.target.value)}
                                 />
@@ -146,7 +146,7 @@ const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onC
 
                 {/* Mood Maker */}
                 <div className="mb-6">
-                    <h3 className="text-center text-md font-bold text-slate-700 mb-3">분위기 메이커</h3>
+                    <h3 className="text-center text-[14px] font-bold text-slate-700 mb-3">분위기 메이커</h3>
                     <div className="space-y-2">
                         {evaluation.targets.map(target => (
                             <div key={target.userId} className="flex items-center cursor-pointer" onClick={() => toggleMoodMaker(target.userId)}>
@@ -166,7 +166,7 @@ const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onC
                 <div className="text-center">
                     <button
                         onClick={handleSubmit}
-                        className="bg-cyan-400 text-white rounded-full px-8 py-2 font-bold hover:bg-cyan-500 transition-colors shadow-md"
+                        className="bg-cyan-400 text-white rounded-full px-8 py-2 font-bold text-[14px] hover:bg-cyan-500 transition-colors shadow-md"
                     >
                         완료
                     </button>
