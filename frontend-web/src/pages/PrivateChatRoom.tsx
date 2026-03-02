@@ -328,7 +328,7 @@ const PrivateChatRoom: React.FC = () => {
                         {myProfile?.profileImageUrl ? (
                             <img src={myProfile.profileImageUrl} alt="My Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-gray-500 font-bold text-xs">{myProfile?.userNickNm ? myProfile.userNickNm.substring(0, 1) : '나'}</span>
+                            <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
                         )}
                     </div>
                     <h1 className="text-xl font-bold text-[#003C48]">{friendName}</h1>
@@ -354,9 +354,7 @@ const PrivateChatRoom: React.FC = () => {
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 font-bold">
-                                                        {msg.userNickNm ? msg.userNickNm.substring(0, 1) : '?'}
-                                                    </div>
+                                                    <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
                                                 )}
                                             </div>
                                         ) : <div className="w-10"></div>}
@@ -373,9 +371,11 @@ const PrivateChatRoom: React.FC = () => {
                                         )}
                                         <div
                                             onClick={() => setReplyTo(msg)}
-                                            className={`px-4 py-2 text-sm leading-relaxed shadow-sm break-words relative cursor-pointer ${msg.isMyMessage
-                                                ? 'bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
-                                                : 'bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
+                                            className={`text-sm leading-relaxed shadow-sm break-words relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
+                                                ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
+                                                : msg.isMyMessage
+                                                    ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
+                                                    : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
                                                 }`}
                                         >
                                             {msg.parentMsgNo && (
@@ -385,9 +385,7 @@ const PrivateChatRoom: React.FC = () => {
                                                 </div>
                                             )}
                                             {msg.msgTypeCd === 'IMAGE' && msg.attachFilePath ? (
-                                                <div className="mt-1">
-                                                    <img src={msg.attachFilePath} alt="Attached" className="max-w-full rounded-lg cursor-pointer max-h-[200px]" onClick={(e) => { e.stopPropagation(); window.open(msg.attachFilePath, '_blank'); }} />
-                                                </div>
+                                                <img src={msg.attachFilePath} alt="Attached" className="max-w-full max-h-[200px] block cursor-pointer" onClick={(e) => { e.stopPropagation(); window.open(msg.attachFilePath, '_blank'); }} />
                                             ) : msg.msgTypeCd === 'FILE' && msg.attachFilePath ? (
                                                 <div className="flex items-center gap-2 mt-1 bg-gray-100 p-2 rounded-lg">
                                                     <div className="bg-white p-2 rounded-full text-indigo-500"><FaFileAlt /></div>

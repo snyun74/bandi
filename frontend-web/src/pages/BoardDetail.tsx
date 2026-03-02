@@ -14,7 +14,11 @@ const UserAvatar: React.FC<{ userId: string; size?: string }> = ({ userId, size 
     }, [userId]);
     if (img === undefined) return <div className={`${size} bg-gray-200 rounded-full flex-shrink-0`} />;
     if (img) return <img src={img} alt="" className={`${size} rounded-full flex-shrink-0 object-cover`} />;
-    return <div className={`${size} bg-gray-300 rounded-full flex-shrink-0 flex items-center justify-center text-xs text-white`}>👤</div>;
+    return (
+        <div className={`${size} bg-gray-100 rounded-full flex-shrink-0 overflow-hidden border border-gray-100`}>
+            <img src="/images/default_profile.png" alt="" className="w-full h-full object-cover opacity-60" />
+        </div>
+    );
 };
 
 interface Comment {

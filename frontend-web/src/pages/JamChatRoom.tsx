@@ -409,9 +409,7 @@ const JamChatRoom: React.FC = () => {
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 font-bold">
-                                                        {msg.userNickNm ? msg.userNickNm.substring(0, 1) : '?'}
-                                                    </div>
+                                                    <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
                                                 )}
                                             </div>
                                         ) : <div className="w-10"></div>}
@@ -428,9 +426,11 @@ const JamChatRoom: React.FC = () => {
                                         )}
                                         <div
                                             onClick={() => setReplyTo(msg)}
-                                            className={`px-4 py-2 text-sm leading-relaxed shadow-sm break-words relative cursor-pointer ${msg.isMyMessage
-                                                ? 'bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
-                                                : 'bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
+                                            className={`text-sm leading-relaxed shadow-sm break-words relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
+                                                ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
+                                                : msg.isMyMessage
+                                                    ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
+                                                    : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
                                                 }`}
                                         >
                                             {msg.parentMsgNo && (
@@ -440,9 +440,7 @@ const JamChatRoom: React.FC = () => {
                                                 </div>
                                             )}
                                             {msg.msgTypeCd === 'IMAGE' && msg.attachFilePath ? (
-                                                <div className="mt-1">
-                                                    <img src={msg.attachFilePath} alt="Attached" className="max-w-full rounded-lg cursor-pointer max-h-[200px]" onClick={(e) => { e.stopPropagation(); window.open(msg.attachFilePath, '_blank'); }} />
-                                                </div>
+                                                <img src={msg.attachFilePath} alt="Attached" className="max-w-full max-h-[200px] block cursor-pointer" onClick={(e) => { e.stopPropagation(); window.open(msg.attachFilePath, '_blank'); }} />
                                             ) : msg.msgTypeCd === 'FILE' && msg.attachFilePath ? (
                                                 <div className="flex items-center gap-2 mt-1 bg-gray-100 p-2 rounded-lg">
                                                     <div className="bg-white p-2 rounded-full text-indigo-500"><FaFileAlt /></div>
@@ -453,16 +451,16 @@ const JamChatRoom: React.FC = () => {
                                                 </div>
                                             ) : msg.msgTypeCd === 'VOTE' && msg.attachNo ? (
                                                 <div className="flex flex-col items-start min-w-[180px]">
-                                                    <div className="flex items-center gap-2 mb-2 border-b border-gray-100 pb-2 w-full">
-                                                        <FaPoll className="text-[#00BDF8]" size={18} />
-                                                        <span className="font-bold text-[#003C48]">투표</span>
+                                                    <div className="flex items-center gap-2 mb-2 border-b border-white/30 pb-2 w-full">
+                                                        <FaPoll className="text-white" size={18} />
+                                                        <span className="font-bold text-white">투표</span>
                                                     </div>
-                                                    <div className="text-sm text-gray-700 mb-3 font-medium px-1">
+                                                    <div className="text-sm text-white/90 mb-3 font-medium px-1">
                                                         {msg.msg.replace("투표가 생성되었습니다: ", "")}
                                                     </div>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); navigate(`/main/jam/vote/${msg.attachNo}`); }}
-                                                        className="w-full py-2 bg-[#00BDF8] text-white text-[14px] font-bold rounded-lg hover:bg-[#009bc9] transition-colors shadow-sm"
+                                                        className="w-full py-2 bg-white text-[#00BDF8] text-[14px] font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-sm"
                                                     >
                                                         투표하러 가기
                                                     </button>
@@ -488,29 +486,33 @@ const JamChatRoom: React.FC = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {replyTo && (
-                <div className="absolute bottom-[60px] left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-3 flex justify-between items-center z-30 shadow-sm animate-slide-up">
-                    <div className="text-sm text-gray-600 truncate mr-4">
-                        <span className="font-bold text-[#00BDF8] mr-1">@{replyTo.userNickNm}</span>
-                        에게 답장: <span className="text-gray-400">{replyTo.msg}</span>
+            {
+                replyTo && (
+                    <div className="absolute bottom-[60px] left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-3 flex justify-between items-center z-30 shadow-sm animate-slide-up">
+                        <div className="text-sm text-gray-600 truncate mr-4">
+                            <span className="font-bold text-[#00BDF8] mr-1">@{replyTo.userNickNm}</span>
+                            에게 답장: <span className="text-gray-400">{replyTo.msg}</span>
+                        </div>
+                        <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1"><FaTimes size={16} /></button>
                     </div>
-                    <button onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-gray-600 p-1"><FaTimes size={16} /></button>
-                </div>
-            )}
+                )
+            }
 
-            {isMenuOpen && (
-                <div className="absolute bottom-[70px] left-4 bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-50 animate-fade-in flex flex-col min-w-[140px]">
-                    <button onClick={handleFileSelect} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
-                        <FaPaperclip className="text-lg text-[#003C48]" /> <span>파일 업로드</span>
-                    </button>
-                    <button onClick={handleCreateVote} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
-                        <FaPoll className="text-lg text-[#003C48]" /> <span>투표하기</span>
-                    </button>
-                    <button onClick={() => { setIsMenuOpen(false); setIsSettlementModalOpen(true); }} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
-                        <FaDollarSign className="text-lg text-[#003C48]" /> <span>정산하기</span>
-                    </button>
-                </div>
-            )}
+            {
+                isMenuOpen && (
+                    <div className="absolute bottom-[70px] left-4 bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-50 animate-fade-in flex flex-col min-w-[140px]">
+                        <button onClick={handleFileSelect} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
+                            <FaPaperclip className="text-lg text-[#003C48]" /> <span>파일 업로드</span>
+                        </button>
+                        <button onClick={handleCreateVote} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
+                            <FaPoll className="text-lg text-[#003C48]" /> <span>투표하기</span>
+                        </button>
+                        <button onClick={() => { setIsMenuOpen(false); setIsSettlementModalOpen(true); }} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
+                            <FaDollarSign className="text-lg text-[#003C48]" /> <span>정산하기</span>
+                        </button>
+                    </div>
+                )
+            }
 
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
 
@@ -526,79 +528,83 @@ const JamChatRoom: React.FC = () => {
 
             <CommonModal isOpen={isAlertOpen} type="alert" message={alertMessage} onConfirm={() => setIsAlertOpen(false)} />
 
-            {isVoteModalOpen && (
-                <VoteCreationModal
-                    onClose={() => setIsVoteModalOpen(false)}
-                    onSubmit={async (voteData) => {
-                        const userId = localStorage.getItem('userId');
-                        if (!userId) return;
-                        try {
-                            const res = await fetch('/api/jam-vote/create', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ...voteData, roomId: roomNo, userId: userId })
-                            });
-                            if (res.ok) {
-                                setIsVoteModalOpen(false);
-                                // Refresh messages to show the new vote bubble immediately?
-                                // Ideally yes, or it happens automatically if websocket/polling?
-                                // Current chat seems to rely on polling or manual refresh?
-                                // ChatRoom.tsx calls fetchMessages();
-                                fetchMessages();
-                            } else {
-                                showAlert("투표 생성에 실패했습니다.");
+            {
+                isVoteModalOpen && (
+                    <VoteCreationModal
+                        onClose={() => setIsVoteModalOpen(false)}
+                        onSubmit={async (voteData) => {
+                            const userId = localStorage.getItem('userId');
+                            if (!userId) return;
+                            try {
+                                const res = await fetch('/api/jam-vote/create', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ ...voteData, roomId: roomNo, userId: userId })
+                                });
+                                if (res.ok) {
+                                    setIsVoteModalOpen(false);
+                                    // Refresh messages to show the new vote bubble immediately?
+                                    // Ideally yes, or it happens automatically if websocket/polling?
+                                    // Current chat seems to rely on polling or manual refresh?
+                                    // ChatRoom.tsx calls fetchMessages();
+                                    fetchMessages();
+                                } else {
+                                    showAlert("투표 생성에 실패했습니다.");
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                showAlert("오류가 발생했습니다.");
                             }
-                        } catch (error) {
-                            console.error(error);
-                            showAlert("오류가 발생했습니다.");
-                        }
-                    }}
-                />
-            )}
+                        }}
+                    />
+                )
+            }
 
-            {isSettlementModalOpen && (
-                <SettlementCreationModal
-                    roomId={roomNo || ''}
-                    onClose={() => setIsSettlementModalOpen(false)}
-                    onSubmit={async (data) => {
-                        const userId = localStorage.getItem('userId');
-                        if (!userId) return;
+            {
+                isSettlementModalOpen && (
+                    <SettlementCreationModal
+                        roomId={roomNo || ''}
+                        onClose={() => setIsSettlementModalOpen(false)}
+                        onSubmit={async (data) => {
+                            const userId = localStorage.getItem('userId');
+                            if (!userId) return;
 
-                        let content = `[정산 요청]\n은행: ${data.bank}\n계좌번호: ${data.accountNumber}\n총 금액: ${data.totalAmount.toLocaleString()}원\n\n[정산 대상]\n`;
-                        data.users.forEach(u => {
-                            content += `- ${u.userNm}: ${u.amount.toLocaleString()}원\n`;
-                        });
-
-                        try {
-                            const res = await fetch('/api/jam-chat/message', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    cnNo: Number(roomNo),
-                                    sndUserId: userId,
-                                    msg: content.trim(),
-                                    msgTypeCd: 'TEXT',
-                                })
+                            let content = `[정산 요청]\n은행: ${data.bank}\n계좌번호: ${data.accountNumber}\n총 금액: ${data.totalAmount.toLocaleString()}원\n\n[정산 대상]\n`;
+                            data.users.forEach(u => {
+                                content += `- ${u.userNm}: ${u.amount.toLocaleString()}원\n`;
                             });
 
-                            if (res.ok) {
-                                const newMessage = await res.json();
-                                const processedMessage = { ...newMessage, isMyMessage: true };
-                                setMessages(prev => [...prev, processedMessage]);
-                                latestMsgNoRef.current = newMessage.cnMsgNo;
-                                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                                setIsSettlementModalOpen(false);
-                            } else {
-                                showAlert("정산 메시지 전송에 실패했습니다.");
+                            try {
+                                const res = await fetch('/api/jam-chat/message', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        cnNo: Number(roomNo),
+                                        sndUserId: userId,
+                                        msg: content.trim(),
+                                        msgTypeCd: 'TEXT',
+                                    })
+                                });
+
+                                if (res.ok) {
+                                    const newMessage = await res.json();
+                                    const processedMessage = { ...newMessage, isMyMessage: true };
+                                    setMessages(prev => [...prev, processedMessage]);
+                                    latestMsgNoRef.current = newMessage.cnMsgNo;
+                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                                    setIsSettlementModalOpen(false);
+                                } else {
+                                    showAlert("정산 메시지 전송에 실패했습니다.");
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                showAlert("오류가 발생했습니다.");
                             }
-                        } catch (error) {
-                            console.error(error);
-                            showAlert("오류가 발생했습니다.");
-                        }
-                    }}
-                />
-            )}
-        </div>
+                        }}
+                    />
+                )
+            }
+        </div >
     );
 };
 

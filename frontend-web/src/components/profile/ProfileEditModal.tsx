@@ -170,7 +170,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                 {previewImage ? (
                                     <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
-                                    <BsPersonCircle className="w-full h-full text-gray-300" />
+                                    <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
                                 )}
                             </div>
                             <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 group-hover:scale-110 transition-transform">

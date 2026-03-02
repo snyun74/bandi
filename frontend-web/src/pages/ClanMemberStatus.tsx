@@ -16,8 +16,8 @@ const UserAvatar: React.FC<{ userId: string; size?: number }> = ({ userId, size 
     if (img === undefined) return <div style={{ width: size, height: size }} className="rounded-full bg-gray-200 flex-shrink-0" />;
     if (img) return <img src={img} alt="" style={{ width: size, height: size }} className="rounded-full object-cover border border-gray-200 flex-shrink-0" />;
     return (
-        <div style={{ width: size, height: size }} className="rounded-full bg-[#003C48] flex items-center justify-center flex-shrink-0">
-            <svg style={{ width: size * 0.6, height: size * 0.6 }} fill="none" stroke="white" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+        <div style={{ width: size, height: size }} className="rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200">
+            <img src="/images/default_profile.png" alt="" style={{ width: size, height: size }} className="w-full h-full object-cover opacity-60" />
         </div>
     );
 };

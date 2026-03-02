@@ -26,7 +26,7 @@ const Header: React.FC = () => {
             <img
                 src="/images/bandicon.png"
                 alt="Bandicon"
-                className="h-[64px] w-auto object-contain cursor-pointer"
+                className="h-[42px] max-h-[80%] w-auto object-contain cursor-pointer"
                 onClick={() => navigate('/main')}
             />
 
@@ -41,7 +41,7 @@ const Header: React.FC = () => {
                 <img
                     src="/images/talk_icon.png"
                     alt="Chat"
-                    className="w-[57px] h-[57px] object-contain cursor-pointer hover:scale-110 transition-transform"
+                    className="w-[40px] h-[40px] max-h-[80%] object-contain cursor-pointer hover:scale-110 transition-transform"
                     onClick={() => navigate('/main/chat/list')}
                 />
             </div>
