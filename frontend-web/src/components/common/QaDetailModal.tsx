@@ -25,7 +25,7 @@ const QaDetailModal: React.FC<QaDetailModalProps> = ({ isOpen, onClose, qa, answ
             <div className="bg-[#F5F6F8] rounded-3xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col h-[80vh]">
                 {/* Header */}
                 <div className="bg-white px-6 py-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0 rounded-t-3xl">
-                    <h2 className="text-xl font-bold text-[#003C48]">상담 상세</h2>
+                    <h2 className="text-[14px] font-bold text-[#003C48]">상담 상세</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <FaTimes size={20} />
                     </button>
@@ -38,8 +38,8 @@ const QaDetailModal: React.FC<QaDetailModalProps> = ({ isOpen, onClose, qa, answ
                             <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">나의 문의</span>
                             <span className="text-xs text-gray-400">{qa.crdDate.replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')}</span>
                         </div>
-                        <h3 className="text-lg font-bold text-[#003C48] mb-2">{qa.title}</h3>
-                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{qa.content}</p>
+                        <h3 className="text-[14px] font-bold text-[#003C48] mb-2">{qa.title}</h3>
+                        <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{qa.content}</p>
                     </div>
 
                     {/* Answers Box */}
@@ -51,7 +51,7 @@ const QaDetailModal: React.FC<QaDetailModalProps> = ({ isOpen, onClose, qa, answ
                                         <span className="text-[11px] font-bold text-white bg-[#00BDF8] px-2 py-0.5 rounded-full">고객센터 답변</span>
                                         <span className="text-xs text-indigo-400">{ans.crdDate.replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')}</span>
                                     </div>
-                                    <p className="text-sm text-[#003C48] leading-relaxed whitespace-pre-wrap">{ans.content}</p>
+                                    <p className="text-[13px] text-[#003C48] leading-relaxed whitespace-pre-wrap">{ans.content}</p>
                                 </div>
                             ))}
                         </div>

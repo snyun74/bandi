@@ -155,4 +155,8 @@ public class AdminService {
 
         clanGroupRepository.save(clan);
     }
+
+    public long getPendingClanCount() {
+        return clanGroupRepository.countPendingClans();
+    }
 }

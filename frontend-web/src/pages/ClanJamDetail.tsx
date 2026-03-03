@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit, FaUnlink } from 'react-icons/fa';
 import { GiGrandPiano } from "react-icons/gi";
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
@@ -402,13 +402,16 @@ const ClanJamDetail: React.FC = () => {
                     {/* Profile Image */}
                     <div className="relative">
                         <div
-                            className={`w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 flex items-center justify-center bg-gray-50 ${bandDetail.canManage ? 'cursor-pointer' : ''}`}
+                            className={`w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 flex items-center justify-center bg-gray-100 ${bandDetail.canManage ? 'cursor-pointer' : ''}`}
                             onClick={bandDetail.canManage ? handleEditClick : undefined}
                         >
                             {bandDetail.imgUrl ? (
                                 <img src={bandDetail.imgUrl} alt={bandDetail.title} className="w-full h-full object-cover" />
                             ) : (
-                                <FaGuitar size={20} className="text-gray-300" />
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                    <FaUnlink size={14} />
+                                    <span className="text-[8px] mt-0.5">미연결</span>
+                                </div>
                             )}
                         </div>
                         {bandDetail.canManage && (
@@ -580,7 +583,7 @@ const ClanJamDetail: React.FC = () => {
 
             {/* Footer - End/Delete Jam */}
             {bandDetail.canManage && (
-                <div className="p-4 bg-white sticky bottom-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <div className="p-4 bg-white z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     {bandDetail.status === 'E' ? (
                         <button
                             className="w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-sm cursor-not-allowed text-[14px]"
@@ -628,7 +631,10 @@ const ClanJamDetail: React.FC = () => {
                                 {editForm.previewUrl ? (
                                     <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
-                                    <FaGuitar size={40} className="text-[#00BDF8]" />
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                        <FaUnlink size={28} />
+                                        <span className="text-[11px] mt-1">미연결</span>
+                                    </div>
                                 )}
                                 <div className="absolute bottom-0 right-0 bg-[#00BDF8] text-white p-1.5 rounded-full">
                                     <FaRegEdit size={12} />

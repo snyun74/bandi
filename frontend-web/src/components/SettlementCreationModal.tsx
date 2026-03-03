@@ -59,12 +59,21 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
 
     useEffect(() => {
         // Automatically split total amount among selected users
-        const amountNum = parseInt(totalAmount) || 0;
+        const amountNum = parseInt(totalAmount.replace(/,/g, '')) || 0;
         if (selectedUsers.length > 0 && amountNum > 0) {
             const splitAmount = Math.floor(amountNum / selectedUsers.length);
             setSelectedUsers(prev => prev.map(u => ({ ...u, amount: splitAmount })));
         }
     }, [totalAmount, selectedUsers.length]);
+
+    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.value.replace(/[^0-9]/g, '');
+        if (!raw) {
+            setTotalAmount('');
+            return;
+        }
+        setTotalAmount(parseInt(raw).toLocaleString('ko-KR'));
+    };
 
     const handleRemoveUser = (userId: string) => {
         setSelectedUsers(prev => prev.filter(u => u.userId !== userId));
@@ -83,7 +92,7 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
         onSubmit({
             bank,
             accountNumber,
-            totalAmount: parseInt(totalAmount),
+            totalAmount: parseInt(totalAmount.replace(/,/g, '')),
             users: selectedUsers
         });
     };
@@ -107,23 +116,24 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
                             placeholder="은행 선택"
                             value={bank}
                             onChange={(e) => setBank(e.target.value)}
-                            className="w-full bg-[#f4f6f8] text-[#003C48] px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
+                            className="w-full bg-[#f4f6f8] text-[13px] text-[#003C48] px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
                         />
                         <input
                             type="text"
                             placeholder="계좌번호 입력"
                             value={accountNumber}
                             onChange={(e) => setAccountNumber(e.target.value)}
-                            className="w-full bg-[#f4f6f8] text-[#003C48] px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
+                            className="w-full bg-[#f4f6f8] text-[13px] text-[#003C48] px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
                         />
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">₩</span>
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-[13px]">₩</span>
                             <input
-                                type="number"
+                                type="text"
+                                inputMode="numeric"
                                 placeholder="금액 입력"
                                 value={totalAmount}
-                                onChange={(e) => setTotalAmount(e.target.value)}
-                                className="w-full bg-[#f4f6f8] text-[#003C48] pl-8 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
+                                onChange={handleAmountChange}
+                                className="w-full bg-[#f4f6f8] text-[13px] text-[#003C48] pl-7 pr-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
                             />
                         </div>
                     </div>
@@ -154,7 +164,7 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
                                     </div>
                                     <span className="text-[#003C48] text-xs font-bold mb-1">{user.userNm}</span>
                                     <div className="flex items-center text-[10px] text-[#003C48] font-bold">
-                                        {user.amount}원
+                                        {user.amount.toLocaleString('ko-KR')}원
                                         <button
                                             onClick={() => {
                                                 setPromptUserId(user.userId);
@@ -176,7 +186,7 @@ const SettlementCreationModal: React.FC<SettlementCreationModalProps> = ({ onClo
                 <div className="p-4 mb-4">
                     <button
                         onClick={handleSubmit}
-                        className="w-full py-4 bg-[#00BDF8] text-white rounded-[20px] shadow-md font-bold text-lg hover:bg-[#009bc9] transition-colors"
+                        className="w-full py-3 bg-[#00BDF8] text-white rounded-[20px] shadow-md font-bold text-[14px] hover:bg-[#009bc9] transition-colors"
                     >
                         정산하기
                     </button>

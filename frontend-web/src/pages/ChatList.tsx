@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaSearch, FaUserPlus } from 'react-icons/fa';
+import { FaChevronLeft, FaSearch, FaUserPlus, FaUnlink } from 'react-icons/fa';
 
 interface ChatRoom {
     roomNo: number;
@@ -222,7 +222,7 @@ const ChatList: React.FC = () => {
                                             }}
                                             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                         >
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 ${!chat.attachFilePath ? (chat.roomType === 'CLAN' ? 'bg-black' : 'bg-indigo-500') : ''}`}>
+                                            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 bg-gray-100">
                                                 {chat.attachFilePath ? (
                                                     <img
                                                         src={chat.attachFilePath}
@@ -230,12 +230,15 @@ const ChatList: React.FC = () => {
                                                         className="w-full h-full object-cover"
                                                         onError={(e) => {
                                                             e.currentTarget.style.display = 'none';
-                                                            e.currentTarget.parentElement!.classList.add(chat.roomType === 'CLAN' ? 'bg-black' : 'bg-indigo-500');
-                                                            e.currentTarget.parentElement!.innerHTML = `<span class="text-white font-bold">${chat.roomNm ? chat.roomNm.substring(0, 1) : '?'}</span>`;
+                                                            const parent = e.currentTarget.parentElement!;
+                                                            parent.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M304.083 405.907c-52.416 52.407-137.029 52.407-189.433 0-52.396-52.406-52.396-137.019 0-189.426l-47.06-47.06c-79.024 79.024-79.024 207.054 0 286.079 79.025 79.024 207.055 79.024 286.078 0l-47.06-47.06.008-.008-.008.007-.008.008zM405.884 304.105l47.06 47.06c79.024-79.025 79.024-207.055 0-286.079-79.025-79.024-207.055-79.024-286.079 0l47.06 47.06c52.406-52.406 137.019-52.406 189.426 0 52.406 52.406 52.406 137.018-.008 189.424l.008.008-.008-.008-.008-.008.008.008-.008-.008.008-.008.008.008-.007.007-.001.001.008.008-.008.007-.007.001.007-.008zM364.273 275.094l-91.9 91.9-30.354-30.353 91.9-91.9-30.354-30.354-91.9 91.9-30.354-30.353 91.9-91.9-30.354-30.354-91.9 91.9L120.603 215.226l91.9-91.9-47.06-47.06-91.9 91.9a136.888 136.888 0 0 0 0 193.505 136.888 136.888 0 0 0 193.505 0l91.9-91.9-30.354-30.354.008-.008-.329.585z"></path></svg><span style="font-size:7px;margin-top:2px">미연결</span></div>`;
                                                         }}
                                                     />
                                                 ) : (
-                                                    <span className="text-white font-bold">{chat.roomNm ? chat.roomNm.substring(0, 1) : '?'}</span>
+                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                                        <FaUnlink size={20} />
+                                                        <span className="text-[10px] mt-1">미연결</span>
+                                                    </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">

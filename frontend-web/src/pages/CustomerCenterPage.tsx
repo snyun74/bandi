@@ -123,25 +123,25 @@ const CustomerCenterPage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-500 mr-2">
                     <FaChevronLeft size={20} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold pb-1">고객센터</h1>
+                <h1 className="text-[14px] text-[#003C48] font-bold pb-1">고객센터</h1>
             </div>
 
             <div className="flex-1 overflow-y-auto pb-20 px-6 py-6">
 
                 {/* Inquiry Form */}
                 <div className="mb-6">
-                    <h2 className="text-xl text-[#003C48] font-bold mb-4">문의사항 작성하기</h2>
+                    <h2 className="text-[14px] text-[#003C48] font-bold mb-4">문의사항 작성하기</h2>
                     <div className="space-y-3">
                         <input
                             type="text"
                             placeholder="제목을 입력하세요."
-                            className="w-full bg-[#F5F6F8] border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] transition-colors"
+                            className="w-full bg-[#F5F6F8] border border-gray-200 rounded-xl px-4 py-3 text-[13px] text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] transition-colors"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                         />
                         <textarea
                             placeholder="내용을 입력하세요."
-                            className="w-full bg-[#F5F6F8] border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] transition-colors resize-none h-32"
+                            className="w-full bg-[#F5F6F8] border border-gray-200 rounded-xl px-4 py-3 text-[13px] text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] transition-colors resize-none h-32"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                         ></textarea>
@@ -151,7 +151,7 @@ const CustomerCenterPage: React.FC = () => {
                         <button
                             onClick={handleSubmit}
                             disabled={loading}
-                            className="bg-[#00BDF8] text-white text-lg font-bold px-12 py-3 rounded-2xl shadow-sm hover:bg-[#009bc9] transition-colors w-1/2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-[#00BDF8] text-white text-[14px] font-bold px-12 py-3 rounded-2xl shadow-sm hover:bg-[#009bc9] transition-colors w-1/2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? '전송중...' : '전송하기'}
                         </button>
@@ -160,8 +160,8 @@ const CustomerCenterPage: React.FC = () => {
 
                 {/* History Header */}
                 <div className="flex items-center gap-2 mb-4 mt-10">
-                    <h2 className="text-xl text-[#003C48] font-bold">내 상담 내역</h2>
-                    <span className="text-xs text-gray-400 font-sans mt-0.5">(최근 1개월 기준)</span>
+                    <h2 className="text-[14px] text-[#003C48] font-bold">내 상담 내역</h2>
+                    <span className="text-[12px] text-gray-400 font-sans mt-0.5">(최근 1개월 기준)</span>
                 </div>
 
                 {/* History Area */}
@@ -181,11 +181,11 @@ const CustomerCenterPage: React.FC = () => {
                                             ) : (
                                                 <span className="shrink-0 text-[10px] font-bold text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full whitespace-nowrap">답변대기</span>
                                             )}
-                                            <span className="text-[#003C48] font-bold text-[15px]">
+                                            <span className="text-[#003C48] font-bold text-[13px]">
                                                 {item.title.length > 14 ? item.title.slice(0, 14) + '...' : item.title}
                                             </span>
                                         </div>
-                                        <span className="text-xs text-[#8A9DB0] font-sans whitespace-nowrap pt-1">
+                                        <span className="text-[13px] text-[#8A9DB0] font-sans whitespace-nowrap pt-1">
                                             {item.crdDate.replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')}
                                         </span>
                                     </div>

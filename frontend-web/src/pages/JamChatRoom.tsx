@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaCopy, FaCheck } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaCopy, FaCheck, FaUnlink } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
@@ -46,19 +46,19 @@ const JamChatRoom: React.FC = () => {
 
         return (
             <div className="min-w-[200px]">
-                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
-                    <FaDollarSign className="text-[#00BDF8]" size={14} />
-                    <span className="font-bold text-[#003C48] text-sm">정산 요청</span>
+                <div className={`flex items-center gap-2 mb-2 pb-2 border-b ${msg.isMyMessage ? 'border-white/30' : 'border-gray-200'}`}>
+                    <FaDollarSign className={msg.isMyMessage ? 'text-white' : 'text-[#00BDF8]'} size={14} />
+                    <span className={`font-bold text-sm ${msg.isMyMessage ? 'text-white' : 'text-[#003C48]'}`}>정산 요청</span>
                 </div>
                 {lines.map((line, i) => {
                     if (line.startsWith('계좌번호:')) {
                         const copied = copiedMap[msg.cnMsgNo];
                         return (
-                            <div key={i} className="flex items-center gap-2 my-1 bg-blue-50 rounded-lg px-2 py-1.5">
-                                <span className="text-sm text-[#003C48] font-medium flex-1">{line}</span>
+                            <div key={i} className={`flex items-center gap-2 my-1 rounded-lg px-2 py-1.5 ${msg.isMyMessage ? 'bg-white/20' : 'bg-blue-50'}`}>
+                                <span className={`text-sm font-medium flex-1 ${msg.isMyMessage ? 'text-white' : 'text-[#003C48]'}`}>{line}</span>
                                 <button
                                     onClick={handleCopy}
-                                    className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full transition-all shrink-0 ${copied ? 'bg-green-500 text-white' : 'bg-[#00BDF8] text-white hover:bg-[#009bc9]'}`}
+                                    className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full transition-all shrink-0 ${copied ? 'bg-green-500 text-white' : msg.isMyMessage ? 'bg-white text-[#00BDF8] hover:bg-gray-100' : 'bg-[#00BDF8] text-white hover:bg-[#009bc9]'}`}
                                 >
                                     {copied ? <FaCheck size={9} /> : <FaCopy size={9} />}
                                     {copied ? '복사됨' : '복사'}
@@ -67,7 +67,7 @@ const JamChatRoom: React.FC = () => {
                         );
                     }
                     if (line === '[정산 요청]' || line === '') return null;
-                    return <div key={i} className="text-sm text-[#003C48] py-0.5 whitespace-pre-wrap">{line}</div>;
+                    return <div key={i} className={`text-sm py-0.5 whitespace-pre-wrap ${msg.isMyMessage ? 'text-white/90' : 'text-[#003C48]'}`}>{line}</div>;
                 })}
             </div>
         );
@@ -372,11 +372,14 @@ const JamChatRoom: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="mr-3 text-[#052c42]">
                         <FaChevronLeft size={22} />
                     </button>
-                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-indigo-500">
+                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-gray-100">
                         {currentRoomProfile ? (
                             <img src={currentRoomProfile} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-white font-bold text-xs">{currentRoomName.substring(0, 1)}</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                <FaUnlink size={12} />
+                                <span className="text-[7px] mt-0.5">미연결</span>
+                            </div>
                         )}
                     </div>
                     <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>
@@ -451,16 +454,16 @@ const JamChatRoom: React.FC = () => {
                                                 </div>
                                             ) : msg.msgTypeCd === 'VOTE' && msg.attachNo ? (
                                                 <div className="flex flex-col items-start min-w-[180px]">
-                                                    <div className="flex items-center gap-2 mb-2 border-b border-white/30 pb-2 w-full">
-                                                        <FaPoll className="text-white" size={18} />
-                                                        <span className="font-bold text-white">투표</span>
+                                                    <div className={`flex items-center gap-2 mb-2 border-b pb-2 w-full ${msg.isMyMessage ? 'border-white/30' : 'border-gray-200'}`}>
+                                                        <FaPoll className={msg.isMyMessage ? 'text-white' : 'text-[#00BDF8]'} size={18} />
+                                                        <span className={`font-bold ${msg.isMyMessage ? 'text-white' : 'text-[#003C48]'}`}>투표</span>
                                                     </div>
-                                                    <div className="text-sm text-white/90 mb-3 font-medium px-1">
+                                                    <div className={`text-sm mb-3 font-medium px-1 ${msg.isMyMessage ? 'text-white/90' : 'text-[#003C48]'}`}>
                                                         {msg.msg.replace("투표가 생성되었습니다: ", "")}
                                                     </div>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); navigate(`/main/jam/vote/${msg.attachNo}`); }}
-                                                        className="w-full py-2 bg-white text-[#00BDF8] text-[14px] font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-sm"
+                                                        className={`w-full py-2 text-[14px] font-bold rounded-lg transition-colors shadow-sm ${msg.isMyMessage ? 'bg-white text-[#00BDF8] hover:bg-gray-100' : 'bg-[#00BDF8] text-white hover:bg-[#009bc9]'}`}
                                                     >
                                                         투표하러 가기
                                                     </button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaUnlink } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 interface ClanData {
@@ -152,11 +152,14 @@ const Clan: React.FC = () => {
                         onClick={() => handleClanClick(clan.id)}
                         className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors">
                         {/* Logo / Profile Image */}
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'}`}>
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 bg-gray-100">
                             {clan.attachFilePath ? (
                                 <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                             ) : (
-                                <span className="text-white text-2xl font-bold">{clan.logoText}</span>
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                    <FaUnlink size={20} />
+                                    <span className="text-[10px] mt-1">미연결</span>
+                                </div>
                             )}
                         </div>
 

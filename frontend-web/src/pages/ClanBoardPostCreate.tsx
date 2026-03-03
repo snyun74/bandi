@@ -121,7 +121,7 @@ const ClanBoardPostCreate: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-4 pb-20">
                 {/* Title */}
                 <div className="mb-4">
-                    <SectionTitle as="h2" className="!mt-0 !mb-2">제목</SectionTitle>
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">제목 <span className="text-red-500">*</span></SectionTitle>
                     <input
                         type="text"
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8]"
@@ -132,7 +132,7 @@ const ClanBoardPostCreate: React.FC = () => {
 
                 {/* Content */}
                 <div className="mb-4 flex-1">
-                    <SectionTitle as="h2" className="!mt-0 !mb-2">내용</SectionTitle>
+                    <SectionTitle as="h2" className="!mt-0 !mb-2">내용 <span className="text-red-500">*</span></SectionTitle>
                     <textarea
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8] min-h-[300px] resize-none"
                         value={content}

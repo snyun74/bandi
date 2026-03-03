@@ -79,7 +79,7 @@ const MyScrapList: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">내 스크랩</h1>
+                <h1 className="text-[14px] text-[#003C48] font-bold">내 스크랩</h1>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
@@ -100,7 +100,7 @@ const MyScrapList: React.FC = () => {
                                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] mr-2 mb-1 ${getLabelColor(scrap.scrapTableNm)}`}>
                                             {getLabelName(scrap.scrapTableNm)}
                                         </span>
-                                        <span className="text-[#003C48] font-bold text-sm leading-tight break-all">
+                                        <span className="text-[#003C48] font-bold text-[12px] leading-tight break-all">
                                             {scrap.title}
                                         </span>
                                     </div>

@@ -343,13 +343,19 @@ export default function HomePage() {
                             </div>
 
                             {/* Info */}
-                            <div className="flex-1 pr-12 overflow-hidden">
-                                <SectionTitle as="h4" className="!mt-0 mb-1 truncate">
-                                    <span className={`mr-1 text-sm ${myJams[currentJamIndex].bnType === 'CLAN' ? 'text-[#00BDF8]' : 'text-gray-500'}`}>
-                                        [{myJams[currentJamIndex].bnType === 'CLAN' ? '클랜' : '자유'}]
-                                    </span>
-                                    {myJams[currentJamIndex].bnNm}
-                                </SectionTitle>
+                            <div className="flex-1 overflow-hidden">
+                                <div className="flex items-center justify-between mb-1">
+                                    <SectionTitle as="h4" className="!mt-0 !mb-0 truncate flex-1 min-w-0">
+                                        <span className={`mr-1 text-sm ${myJams[currentJamIndex].bnType === 'CLAN' ? 'text-[#00BDF8]' : 'text-gray-500'}`}>
+                                            [{myJams[currentJamIndex].bnType === 'CLAN' ? '클랜' : '자유'}]
+                                        </span>
+                                        {myJams[currentJamIndex].bnNm}
+                                    </SectionTitle>
+                                    <span
+                                        onClick={(e) => { e.stopPropagation(); navigate('/main/jam/my'); }}
+                                        className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8] ml-2 flex-shrink-0"
+                                    >더보기</span>
+                                </div>
                                 <p className="text-gray-600 text-[13px] mb-1 truncate">
                                     {myJams[currentJamIndex].bnSongNm} : {myJams[currentJamIndex].bnSingerNm}
                                 </p>
@@ -358,20 +364,12 @@ export default function HomePage() {
                                 </p>
                             </div>
 
-                            {/* More Link / Count */}
-                            <div className="absolute bottom-3 right-4 flex flex-col items-end">
-                                <span className="text-xs text-gray-400 mb-1">{currentJamIndex + 1} / {myJams.length}</span>
-                                <span
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate('/main/jam/my');
-                                    }}
-                                    className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
-                                    style={{ fontFamily: '"Pretendard", sans-serif' }}
-                                >
-                                    더보기
-                                </span>
-                            </div>
+                            {/* Slide Count */}
+                            {myJams.length > 1 && (
+                                <div className="absolute bottom-3 right-4">
+                                    <span className="text-xs text-gray-400">{currentJamIndex + 1} / {myJams.length}</span>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
@@ -394,37 +392,30 @@ export default function HomePage() {
                             onClick={() => navigate(`/main/clan/detail/${myClan.cnNo}`)}
                             className="bg-white border border-[#00BDF8] rounded-xl p-4 flex items-center shadow-sm relative cursor-pointer hover:bg-gray-50 transition-colors">
                             {/* Logo */}
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 mr-4 ${!myClan.attachFilePath ? 'bg-black' : 'bg-white'}`}>
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 mr-4 bg-gray-100">
                                 {myClan.attachFilePath ? (
                                     <img src={myClan.attachFilePath} alt={myClan.cnNm} className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-white font-bold">
-                                        {myClan.cnNm ? myClan.cnNm.substring(0, 1) : "C"}
-                                    </span>
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                        <FaUnlink size={20} />
+                                        <span className="text-[10px] mt-1">미연결</span>
+                                    </div>
                                 )}
                             </div>
 
                             {/* Info */}
-                            <div className="flex-1 pr-12 overflow-hidden">
-                                <SectionTitle as="h4" className="!mt-0 mb-1">
-                                    {myClan.cnNm}
-                                </SectionTitle>
+                            <div className="flex-1 overflow-hidden">
+                                <div className="flex items-center justify-between mb-1">
+                                    <SectionTitle as="h4" className="!mt-0 !mb-0 truncate flex-1 min-w-0">
+                                        {myClan.cnNm}
+                                    </SectionTitle>
+                                    <span
+                                        onClick={(e) => { e.stopPropagation(); navigate('/main/clan/my'); }}
+                                        className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8] ml-2 flex-shrink-0"
+                                    >더보기</span>
+                                </div>
                                 <p className="text-gray-600 text-[13px] mb-1 truncate">{myClan.cnDesc ? (myClan.cnDesc.length > 20 ? myClan.cnDesc.substring(0, 20) + '...' : myClan.cnDesc) : ''}</p>
                                 <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClan.userCnt}명</p>
-                            </div>
-
-                            {/* More Link */}
-                            <div className="absolute bottom-3 right-4">
-                                <span
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate('/main/clan/my');
-                                    }}
-                                    className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
-                                    style={{ fontFamily: '"Pretendard", sans-serif' }}
-                                >
-                                    더보기
-                                </span>
                             </div>
                         </div>
                     ) : (

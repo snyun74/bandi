@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaInbox, FaDollarSign, FaFileAlt } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaInbox, FaDollarSign, FaFileAlt, FaUnlink } from 'react-icons/fa';
 import VoteCreationModal from '../components/VoteCreationModal';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
@@ -329,11 +329,14 @@ const ChatRoom: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="mr-3 text-[#052c42]">
                         <FaChevronLeft size={22} />
                     </button>
-                    <div className={`w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 ${!currentRoomProfile ? (currentRoomType === 'CLAN' ? 'bg-black' : 'bg-indigo-500') : 'bg-gray-100'}`}>
+                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-gray-100">
                         {currentRoomProfile ? (
                             <img src={currentRoomProfile} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-white font-bold text-xs">{currentRoomName.substring(0, 1)}</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                <FaUnlink size={12} />
+                                <span className="text-[7px] mt-0.5">미연결</span>
+                            </div>
                         )}
                     </div>
                     <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>

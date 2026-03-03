@@ -15,6 +15,7 @@ import java.util.List;
 public class AdminClanController {
 
     private final AdminService adminService;
+    private final com.bandi.backend.service.QaService qaService;
 
     @GetMapping
     public ResponseEntity<List<AdminClanApprovalDto>> getAdminClans() {
@@ -33,5 +34,15 @@ public class AdminClanController {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error updating clan status: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/dashboard/counts")
+    public ResponseEntity<?> getDashboardCounts() {
+        long pendingClans = adminService.getPendingClanCount();
+        long unansweredQas = qaService.countUnansweredQas();
+
+        return ResponseEntity.ok(java.util.Map.of(
+                "pendingClans", pendingClans,
+                "unansweredQas", unansweredQas));
     }
 }

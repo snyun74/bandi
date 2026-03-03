@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -78,7 +77,48 @@ public class QaService {
         query.setParameter("userId", userId);
         query.setParameter("oneMonthAgo", oneMonthAgo);
 
-        List<Object[]> results = query.getResultList();
+        return mapToDtos(query.getResultList());
+    }
+
+    public List<QaResponseDto> getAllAdminQasPaged(int page, int size, String filter) {
+        StringBuilder sql = new StringBuilder("""
+                    SELECT
+                        Q.QA_NO,
+                        Q.USER_ID,
+                        U.USER_NICK_NM,
+                        Q.CRD_DATE,
+                        Q.TITLE,
+                        Q.CONTENT,
+                        Q.PARENT_QA_NO,
+                        Q.QA_STAT_CD,
+                        Q.INS_DTIME,
+                        (SELECT COUNT(1) FROM MM_QA A WHERE A.PARENT_QA_NO = Q.QA_NO) AS ANSWER_CNT
+                    FROM MM_QA Q
+                    LEFT JOIN MM_USER U ON U.USER_ID = Q.USER_ID
+                    WHERE Q.PARENT_QA_NO IS NULL
+                """);
+
+        if ("WAITING".equals(filter)) {
+            sql.append(" AND (SELECT COUNT(1) FROM MM_QA A WHERE A.PARENT_QA_NO = Q.QA_NO) = 0 ");
+        } else if ("COMPLETED".equals(filter)) {
+            sql.append(" AND (SELECT COUNT(1) FROM MM_QA A WHERE A.PARENT_QA_NO = Q.QA_NO) > 0 ");
+        }
+
+        sql.append(" ORDER BY Q.CRD_DATE DESC, Q.INS_DTIME DESC ");
+        sql.append(" LIMIT :limit OFFSET :offset ");
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        query.setParameter("limit", size);
+        query.setParameter("offset", page * size);
+
+        return mapToDtos(query.getResultList());
+    }
+
+    public List<QaResponseDto> getAllAdminQas() {
+        return getAllAdminQasPaged(0, 1000, "ALL");
+    }
+
+    private List<QaResponseDto> mapToDtos(List<Object[]> results) {
         List<QaResponseDto> dtos = new ArrayList<>();
 
         for (Object[] row : results) {
@@ -96,7 +136,7 @@ public class QaService {
                     .qaStatCd((String) row[7])
                     .insDtime((String) row[8])
                     .hasAnswer(answerCnt > 0)
-                    .likeCount(0) // Mocking as it's QA, no likes usually
+                    .likeCount(0)
                     .commentCount(answerCnt)
                     .comments(new ArrayList<>())
                     .build();
@@ -152,5 +192,9 @@ public class QaService {
         }
 
         return dtos;
+    }
+
+    public long countUnansweredQas() {
+        return qaRepository.countUnansweredQas();
     }
 }

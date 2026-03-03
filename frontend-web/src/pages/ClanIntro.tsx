@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaUserPlus } from 'react-icons/fa';
+import { FaChevronLeft, FaUserPlus, FaUnlink } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 
 interface ClanIntroData {
@@ -263,11 +263,14 @@ const ClanIntro: React.FC = () => {
             <div className="px-4">
                 {/* Clan Info Header */}
                 <div className="flex items-start gap-4 mb-6">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'}`}>
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 bg-gray-100">
                         {clan.attachFilePath ? (
                             <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-white text-2xl font-bold">{clan.logoText}</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                <FaUnlink size={20} />
+                                <span className="text-[10px] mt-1">미연결</span>
+                            </div>
                         )}
                     </div>
                     <div className="flex-1">

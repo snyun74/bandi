@@ -34,4 +34,19 @@ public class QaController {
         List<QaResponseDto> answers = qaService.getQaAnswers(qaNo);
         return ResponseEntity.ok(answers);
     }
+
+    @GetMapping("/admin/all")
+    public ResponseEntity<List<QaResponseDto>> getAllAdminQas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "ALL") String filter) {
+        return ResponseEntity.ok(qaService.getAllAdminQasPaged(page, size, filter));
+    }
+
+    @PostMapping("/admin/answer")
+    public ResponseEntity<?> createAnswer(@RequestBody QaRequestDto requestDto) {
+        // requestDto should have parentQaNo
+        Long qaNo = qaService.createQa(requestDto);
+        return ResponseEntity.ok(Map.of("qaNo", qaNo, "message", "답변이 등록되었습니다."));
+    }
 }

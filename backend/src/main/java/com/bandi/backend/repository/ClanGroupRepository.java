@@ -18,6 +18,9 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "ORDER BY g.cnNo DESC")
         List<com.bandi.backend.dto.AdminClanApprovalDto> findAllAdminClans();
 
+        @Query("SELECT COUNT(g) FROM ClanGroup g WHERE g.cnApprStatCd = 'RQ'")
+        long countPendingClans();
+
         @Query(value = "SELECT new com.bandi.backend.dto.ClanListDto(" +
                         "g.cnNo, g.cnNm, g.cnDesc, g.cnUrl, " +
                         "(SELECT count(u) FROM ClanUser u WHERE u.cnNo = g.cnNo AND u.cnUserStatCd = 'A' AND u.cnUserApprStatCd = 'CN'), "

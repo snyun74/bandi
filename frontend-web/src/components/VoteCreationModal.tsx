@@ -84,7 +84,7 @@ const VoteCreationModal: React.FC<VoteCreationModalProps> = ({ onClose, onSubmit
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="투표 제목 입력"
-                        className="w-full bg-gray-100 rounded-xl px-4 py-3 text-[#003C48] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BDF8]/20"
+                        className="w-full bg-gray-100 rounded-xl px-3 py-2 text-[13px] text-[#003C48] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BDF8]/20"
                     />
 
                     {/* Options */}
@@ -97,7 +97,7 @@ const VoteCreationModal: React.FC<VoteCreationModalProps> = ({ onClose, onSubmit
                                         value={opt}
                                         onChange={(e) => handleOptionChange(index, e.target.value)}
                                         placeholder={`${index + 1}. 투표 항목 입력`}
-                                        className="w-full bg-gray-100 rounded-xl px-4 py-3 text-[#003C48] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BDF8]/20 pr-10"
+                                        className="w-full bg-gray-100 rounded-xl px-3 py-2 text-[13px] text-[#003C48] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BDF8]/20 pr-10"
                                     />
                                     {options.length > 2 && (
                                         <button
@@ -116,7 +116,7 @@ const VoteCreationModal: React.FC<VoteCreationModalProps> = ({ onClose, onSubmit
                     <div className="flex justify-end">
                         <button
                             onClick={addOption}
-                            className="bg-[#00BDF8] text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-sm hover:bg-[#009bc9] transition-colors"
+                            className="bg-[#00BDF8] text-white px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm hover:bg-[#009bc9] transition-colors"
                         >
                             항목 추가
                         </button>
@@ -127,26 +127,26 @@ const VoteCreationModal: React.FC<VoteCreationModalProps> = ({ onClose, onSubmit
                         <div className="space-y-3">
                             <label className="flex items-center space-x-2 cursor-pointer select-none" onClick={() => setAllowMultiple(!allowMultiple)}>
                                 {allowMultiple ? (
-                                    <FaCheckSquare className="text-[#003C48] text-lg" />
+                                    <FaCheckSquare className="text-[#003C48] text-[14px]" />
                                 ) : (
-                                    <FaSquare className="text-gray-300 text-lg" />
+                                    <FaSquare className="text-gray-300 text-[14px]" />
                                 )}
-                                <span className="text-[#003C48] font-medium">복수 선택 허용</span>
+                                <span className="text-[#003C48] text-[12px] font-medium">복수 선택 허용</span>
                             </label>
 
                             <label className="flex items-center space-x-2 cursor-pointer select-none" onClick={() => setIsAnonymous(!isAnonymous)}>
                                 {isAnonymous ? (
-                                    <FaCheckSquare className="text-[#003C48] text-lg" />
+                                    <FaCheckSquare className="text-[#003C48] text-[14px]" />
                                 ) : (
-                                    <FaSquare className="text-gray-300 text-lg" />
+                                    <FaSquare className="text-gray-300 text-[14px]" />
                                 )}
-                                <span className="text-[#003C48] font-medium">익명</span>
+                                <span className="text-[#003C48] text-[12px] font-medium">익명</span>
                             </label>
                         </div>
 
                         {/* Date Picker */}
                         <div className="flex flex-col items-end">
-                            <span className="text-[#003C48] font-medium mb-1.5">투표 종료 시간</span>
+                            <span className="text-[#003C48] text-[13px] font-medium mb-1.5">투표 종료 시간</span>
                             <div className="relative">
                                 <input
                                     type="datetime-local"
@@ -164,7 +164,7 @@ const VoteCreationModal: React.FC<VoteCreationModalProps> = ({ onClose, onSubmit
                 <div className="p-5 pt-0 mt-auto">
                     <button
                         onClick={handleSubmit}
-                        className="w-full bg-[#00BDF8] text-white py-3.5 rounded-[15px] text-lg font-bold shadow-md hover:bg-[#009bc9] transition-transform active:scale-[0.98]"
+                        className="w-full bg-[#00BDF8] text-white py-3 rounded-[15px] text-[14px] font-bold shadow-md hover:bg-[#009bc9] transition-transform active:scale-[0.98]"
                     >
                         투표 올리기
                     </button>

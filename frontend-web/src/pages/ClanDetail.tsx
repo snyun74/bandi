@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegEdit, FaCommentDots, FaUserFriends, FaMusic } from 'react-icons/fa';
+import { FaChevronLeft, FaRegEdit, FaCommentDots, FaUserFriends, FaMusic, FaUnlink } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import GatheringCreateModal from '../components/GatheringCreateModal';
@@ -297,13 +297,16 @@ const ClanDetail: React.FC = () => {
                 {/* Clan Info Card */}
                 <div className="flex items-center gap-4 mb-6">
                     <div
-                        className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 ${!clan.attachFilePath ? clan.logoColor : 'bg-white'} ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:opacity-80' : ''} relative shadow-sm`}
+                        className={`w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 bg-gray-100 ${(myRole === '01' || myRole === '02') ? 'cursor-pointer hover:opacity-80' : ''} relative shadow-sm`}
                         onClick={handleEditClick}
                     >
                         {clan.attachFilePath ? (
                             <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-white text-2xl font-bold">{clan.logoText}</span>
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                <FaUnlink size={20} />
+                                <span className="text-[10px] mt-1">미연결</span>
+                            </div>
                         )}
                         {(myRole === '01' || myRole === '02') && (
                             <div className="absolute bottom-0 right-0 bg-gray-800 bg-opacity-50 text-white p-1 rounded-full border border-white/20">
@@ -549,7 +552,10 @@ const ClanDetail: React.FC = () => {
                                 {editForm.previewUrl ? (
                                     <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
-                                    <span className="text-[#003C48] text-3xl font-bold">{clan?.logoText}</span>
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                        <FaUnlink size={28} />
+                                        <span className="text-[11px] mt-1">미연결</span>
+                                    </div>
                                 )}
                                 <div className="absolute bottom-0 right-0 bg-[#003C48] text-white p-1.5 rounded-full">
                                     <FaRegEdit size={12} />

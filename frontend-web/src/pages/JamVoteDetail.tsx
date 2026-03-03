@@ -284,9 +284,9 @@ const JamVoteDetail: React.FC = () => {
                         </div>
 
                         <div className="border-t border-gray-200 pt-6">
-                            <div className="flex items-center justify-between text-[#003C48] font-bold mb-2">
+                            <div className="flex items-center justify-between text-[#003C48] font-bold mb-2 text-[12px]">
                                 <span>투표 종료까지 남은 시간</span>
-                                <div className="flex items-center text-[#003C48]">
+                                <div className="flex items-center text-[#003C48] text-[12px]">
                                     <FaClock className="mr-1.5" />
                                     <span>{calculateTimeRemaining(voteDetail.endTime)}</span>
                                 </div>

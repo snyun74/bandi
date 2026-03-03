@@ -49,6 +49,7 @@ import CustomerCenterPage from './pages/CustomerCenterPage';
 import AdminPage from './pages/AdminPage';
 import AdminBannerPage from './pages/AdminBannerPage';
 import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
+import AdminQaPage from './pages/AdminQaPage';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
 import './App.css';
@@ -71,6 +72,7 @@ function App() {
           <Route path="admin" element={<AdminPage />} />
           <Route path="admin/banners" element={<AdminBannerPage />} />
           <Route path="admin/clans" element={<AdminClanApprovalPage />} />
+          <Route path="admin/qa" element={<AdminQaPage />} />
           <Route path="profile/scraps" element={<MyScrapList />} />
           <Route path="profile/posts" element={<MyPostList />} />
           <Route path="customer-center" element={<CustomerCenterPage />} />

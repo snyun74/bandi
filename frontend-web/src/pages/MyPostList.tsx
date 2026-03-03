@@ -45,7 +45,7 @@ const PostCard: React.FC<{ post: MyPostDto; onClick: () => void }> = ({ post, on
                 <span className={`inline-block px-2 py-0.5 rounded text-[11px] mr-1 mb-1 ${getLabelStyle(post.postType)}`}>
                     {getLabelName(post.postType)}
                 </span>
-                <span className="text-[#003C48] font-bold text-sm leading-tight break-all">{post.title}</span>
+                <span className="text-[#003C48] font-bold text-[12px] leading-tight break-all">{post.title}</span>
             </div>
             <span className="text-[11px] text-gray-400 whitespace-nowrap mt-1">{formatDate(post.regDate)}</span>
         </div>
@@ -137,7 +137,7 @@ const MyPostList: React.FC = () => {
         { items, loading, hasMore, bottomRef }: ReturnType<typeof useInfiniteList>
     ) => (
         <div>
-            <h2 className="text-[#003C48] font-bold text-base mb-2 pl-1">{label}</h2>
+            <h2 className="text-[#003C48] font-bold text-[14px] mb-2 pl-1">{label}</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 {items.length === 0 && !loading ? (
                     <p className="text-center text-gray-400 text-sm py-6">
@@ -163,7 +163,7 @@ const MyPostList: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">내가 쓴 글</h1>
+                <h1 className="text-[14px] text-[#003C48] font-bold">내가 쓴 글</h1>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
