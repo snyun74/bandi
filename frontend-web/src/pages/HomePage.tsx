@@ -17,16 +17,11 @@ export default function HomePage() {
         checkProfileComplete();
         fetchMainBanner();
 
-        // Enable Scroll Snap on Home Page
+        // Ensure smooth scroll but remove snap-start which might cause issues on mobile
         const html = document.documentElement;
-        html.style.scrollSnapType = 'y proximity';
-        html.style.scrollPaddingTop = '50px';
         html.style.scrollBehavior = 'smooth';
 
         return () => {
-            // Disable Scroll Snap when leaving Home Page
-            html.style.scrollSnapType = '';
-            html.style.scrollPaddingTop = '';
             html.style.scrollBehavior = '';
         };
     }, []);
@@ -53,13 +48,9 @@ export default function HomePage() {
         if (!userId) return;
 
         try {
-            // const userRole = JSON.parse(userRoleString); // Incorrect
-            // const userId = userRole.userId; // Incorrect
-
             const response = await fetch(`/api/bands/evaluation/pending?userId=${userId}`);
             if (response.ok) {
                 if (response.status === 204) {
-                    // No content
                     setPendingEvaluation(null);
                 } else {
                     const data = await response.json();
@@ -87,7 +78,6 @@ export default function HomePage() {
                     !data.genderCd || String(data.genderCd).trim() === '' || String(data.genderCd) === 'null' ||
                     !data.mbti || String(data.mbti).trim() === '' || String(data.mbti) === 'null' ||
                     !data.skillsConfigured;
-                console.log("Profile Data:", data, "isIncomplete:", isIncomplete);
                 if (isIncomplete) {
                     setProfileIncomplete(true);
                 }
@@ -96,6 +86,7 @@ export default function HomePage() {
             console.error("Failed to check profile", e);
         }
     };
+
     const [expandedDayId, setExpandedDayId] = useState<number | null>(null);
 
     // Helper: Get formatted date string MM/DD
@@ -125,19 +116,18 @@ export default function HomePage() {
             const isToday = current.toDateString() === today.toDateString();
             const dateStr = formatDate(current);
             const dayName = getDayName(current);
-            const id = i; // Use 0-6 as IDs for simplicity
+            const id = i;
 
             let item: any = {
                 id,
                 date: dateStr,
                 day: dayName,
                 active: isToday,
-                sub: '', // Removed "Today" text
+                sub: '',
                 type: '',
                 events: []
             };
 
-            // Add Mock Events for Monday (for demo)
             if (dayName === '월') {
                 item.sub = '2개 일정';
                 item.events = [
@@ -159,7 +149,6 @@ export default function HomePage() {
     React.useEffect(() => {
         const userId = localStorage.getItem('userId');
         if (userId) {
-            // Fetch My Clan
             fetch(`/api/clans/my?userId=${userId}`)
                 .then(res => {
                     if (res.ok) return res.json();
@@ -170,7 +159,6 @@ export default function HomePage() {
                     setMyClan(null);
                 });
 
-            // Fetch My Jams
             fetch(`/api/bands/my?userId=${userId}`)
                 .then(res => {
                     if (res.ok) return res.json();
@@ -194,9 +182,9 @@ export default function HomePage() {
 
 
     return (
-        <div className="flex flex-col pb-4">
-            {/* Banner Section - Sticky Background Effect (Fixed 16:9 Ratio + Snap Start) */}
-            <section className="sticky top-[50px] z-0 w-full aspect-[16/9] bg-[#003C48] overflow-hidden flex items-center justify-center snap-start">
+        <div className="flex flex-col pb-4 relative">
+            {/* Banner Section - Sticky Background Effect (Fixed 16:9 Ratio) */}
+            <section className="sticky top-[60px] z-0 w-full aspect-[16/9] bg-[#003C48] overflow-hidden flex items-center justify-center">
                 {isBannerLoading ? (
                     <div className="w-full h-40 bg-gray-200 animate-pulse"></div>
                 ) : mainBanner ? (
@@ -222,8 +210,8 @@ export default function HomePage() {
                 )}
             </section>
 
-            {/* Content Wrapper - Scrolls over the sticky banner (Snap Start) */}
-            <div className="relative z-10 bg-white pt-6 space-y-6 snap-start shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+            {/* Content Wrapper - Scrolls over the sticky banner */}
+            <div className="relative z-10 bg-white pt-6 space-y-6 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
                 {/* Schedule Section */}
                 <section className="px-4">
                     <SectionTitle className="mb-[12px]">다가오는 합주 일정</SectionTitle>
