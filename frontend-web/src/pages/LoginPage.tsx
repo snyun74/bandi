@@ -141,17 +141,15 @@ const LoginPage: React.FC = () => {
                                 </button>
                             </form>
 
-                            {/* 카카오 로그인 (준비 중 - 검수 완료 후 활성화)
                             <div className="mt-5 mb-1">
                                 <p className="text-sm text-gray-500 mb-2 ml-1">다른 로그인</p>
                                 <button
-                                    onClick={() => handleSocialLogin('kakao')}
-                                    className="w-full py-2.5 bg-[#FEE500] text-[#391B1B] rounded-xl font-bold text-base hover:bg-[#EED000] transition-colors"
+                                    disabled
+                                    className="w-full py-2.5 bg-gray-200 text-gray-400 rounded-xl font-bold text-base cursor-not-allowed"
                                 >
-                                    Kakao 로그인
+                                    Kakao 로그인 (준비 중)
                                 </button>
                             </div>
-                            */}
                         </div>
                     </div>
 
