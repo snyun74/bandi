@@ -41,6 +41,8 @@ jobs:
       # 5. React 프론트엔드 빌드 (Vite)
       - name: Build Frontend (React + Vite)
         working-directory: ./frontend-web
+        env:
+          VITE_KAKAO_API_KEY: ${{ secrets.VITE_KAKAO_API_KEY }}
         run: |
           npm ci
           npm run build
