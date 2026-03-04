@@ -35,6 +35,10 @@ public class ClanGatherService {
     private final ClanGatherSessionRepository clanGatherSessionRepository;
     private final ClanMatchRoomRepository clanMatchRoomRepository;
     private final ClanMatchResultRepository clanMatchResultRepository;
+    private final BnGroupRepository bnGroupRepository;
+    private final BnUserRepository bnUserRepository;
+    private final BnSessionRepository bnSessionRepository;
+    private final BandChatRoomRepository bandChatRoomRepository;
 
     @Transactional
     public Long createGathering(ClanGatherCreateDto dto) {
@@ -869,5 +873,171 @@ public class ClanGatherService {
         room.setUpdId(userId);
         room.setUpdDtime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
         clanMatchRoomRepository.save(room);
+    }
+
+    @Transactional(readOnly = true)
+    public String getGatheringRoomCrdYn(Long gatherNo) {
+        return clanGatherRepository.findById(gatherNo)
+                .map(ClanGather::getBnRoomCrdYn)
+                .orElse("N");
+    }
+
+    @Transactional
+    public void createJamRoomsFromMatch(Long gatherNo, String userId) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String todayDate = currentDateTime.substring(0, 8);
+
+        ClanGather gather = clanGatherRepository.findById(gatherNo)
+                .orElseThrow(() -> new RuntimeException("합주 모집 공고를 찾을 수 없습니다."));
+
+        if ("Y".equals(gather.getBnRoomCrdYn())) {
+            throw new RuntimeException("이미 합주방 생성이 완료된 공고입니다.");
+        }
+
+        // 권한 체크
+        String role = clanUserRepository.findById(new ClanUserId(gather.getCnNo(), userId))
+                .map(ClanUser::getCnUserRoleCd)
+                .orElse("NONE");
+        if (!"01".equals(role) && !"02".equals(role)) {
+            throw new RuntimeException("클랜 관리자 또는 운영진만 합주방을 일괄 생성할 수 있습니다.");
+        }
+
+        List<ClanMatchRoom> matchRooms = clanMatchRoomRepository.findByGatherNo(gatherNo);
+        if (matchRooms.isEmpty()) {
+            throw new RuntimeException("생성할 매핑 결과(합주방)가 존재하지 않습니다.");
+        }
+
+        List<ClanGatherSession> gatheredSessions = clanGatherSessionRepository.findByGatherNo(gatherNo);
+        log.info("[JamRoomBatch] Starting for gatherNo: {}, userId: {}", gatherNo, userId);
+        int roomCnt = (gather.getRoomCnt() == null || gather.getRoomCnt() == 0) ? 1 : gather.getRoomCnt();
+        log.info("[JamRoomBatch] roomCnt: {}", roomCnt);
+
+        // 방당 필요한 세션 목록 계산 (전체 세션 / 방 개수)
+        Map<String, Long> totalSessionCounts = gatheredSessions.stream()
+                .collect(Collectors.groupingBy(ClanGatherSession::getSessionTypeCd, Collectors.counting()));
+
+        List<String> perRoomRequiredCds = new ArrayList<>();
+        totalSessionCounts.forEach((cd, count) -> {
+            long perRoomGoal = (long) Math.ceil((double) count / (double) roomCnt);
+            log.info("[JamRoomBatch] SessionTemplate - cd: {}, total: {}, goalPerRoom: {}", cd, count, perRoomGoal);
+            for (int i = 0; i < perRoomGoal; i++) {
+                perRoomRequiredCds.add(cd);
+            }
+        });
+
+        for (ClanMatchRoom matchRoom : matchRooms) {
+            List<ClanMatchResult> results = clanMatchResultRepository.findByRoomNo(matchRoom.getRoomNo());
+            if (results.isEmpty())
+                continue; // 매칭된 인원이 없으면 방을 만들지 않음 (Reverted)
+
+            // 리더(방장) 선출: 가장 권한이 높은 클랜 유저
+            String leaderUserId = results.get(0).getUserId(); // Default
+            int highestPriority = 999;
+
+            if (!results.isEmpty()) {
+                for (ClanMatchResult res : results) {
+                    int rolePriority = clanUserRepository.findById(new ClanUserId(gather.getCnNo(), res.getUserId()))
+                            .map(u -> {
+                                try {
+                                    return Integer.parseInt(u.getCnUserRoleCd());
+                                } catch (Exception e) {
+                                    return 99;
+                                }
+                            })
+                            .orElse(99);
+
+                    if (rolePriority < highestPriority) {
+                        highestPriority = rolePriority;
+                        leaderUserId = res.getUserId();
+                    }
+                }
+            }
+
+            // 1. BN_GROUP 생성
+            com.bandi.backend.entity.band.BnGroup bnGroup = new com.bandi.backend.entity.band.BnGroup();
+            bnGroup.setBnType("CLAN");
+            bnGroup.setCnNo(gather.getCnNo());
+            bnGroup.setBnNm(matchRoom.getRoomNm());
+            bnGroup.setBnSongNm("미정");
+            bnGroup.setBnSingerNm("미정");
+            bnGroup.setBnPasswdFg("N");
+            bnGroup.setBnDesc(gather.getTitle() + " 매핑으로 생성된 합주방입니다.");
+            bnGroup.setBnLeaderId(leaderUserId); // 선출된 리더
+            bnGroup.setBnConfFg("N");
+            bnGroup.setBnStatCd("A");
+            bnGroup.setInsDtime(currentDateTime);
+            bnGroup.setInsId(userId);
+            bnGroup.setUpdDtime(currentDateTime);
+            bnGroup.setUpdId(userId);
+
+            com.bandi.backend.entity.band.BnGroup savedGroup = bnGroupRepository.save(bnGroup);
+            Long bnNo = savedGroup.getBnNo();
+
+            // 2. CN_BN_MATCH_ROOM 업데이트 (외래키 연결)
+            matchRoom.setBnNo(bnNo);
+            matchRoom.setUpdDtime(currentDateTime);
+            matchRoom.setUpdId(userId);
+            clanMatchRoomRepository.save(matchRoom);
+
+            // 3. 채팅방 생성
+            com.bandi.backend.entity.band.BandChatRoom chatRoom = new com.bandi.backend.entity.band.BandChatRoom();
+            chatRoom.setBnNo(bnNo);
+            chatRoom.setBnRoomNm(bnGroup.getBnNm());
+            chatRoom.setInsDtime(currentDateTime);
+            chatRoom.setInsId(userId);
+            chatRoom.setUpdDtime(currentDateTime);
+            chatRoom.setUpdId(userId);
+            bandChatRoomRepository.save(chatRoom);
+
+            // 4. BN_USER / BN_SESSION 생성
+            List<String> remainingSessions = new ArrayList<>(perRoomRequiredCds);
+
+            for (ClanMatchResult res : results) {
+                // BN_USER
+                com.bandi.backend.entity.band.BnUser bnUser = new com.bandi.backend.entity.band.BnUser();
+                bnUser.setBnNo(bnNo);
+                bnUser.setBnUserId(res.getUserId());
+                bnUser.setBnRoleCd(res.getUserId().equals(leaderUserId) ? "LEAD" : "NORL");
+                bnUser.setBnJoinDate(todayDate);
+                bnUser.setBnUserStatCd("A");
+                bnUser.setInsDtime(currentDateTime);
+                bnUser.setInsId(userId);
+                bnUser.setUpdDtime(currentDateTime);
+                bnUser.setUpdId(userId);
+                bnUserRepository.save(bnUser);
+
+                // BN_SESSION
+                com.bandi.backend.entity.band.BnSession bnSession = new com.bandi.backend.entity.band.BnSession();
+                bnSession.setBnNo(bnNo);
+                bnSession.setBnSessionTypeCd(res.getSessionTypeCd());
+                bnSession.setBnSessionJoinUserId(res.getUserId());
+                bnSession.setInsDtime(currentDateTime);
+                bnSession.setInsId(userId);
+                bnSession.setUpdDtime(currentDateTime);
+                bnSession.setUpdId(userId);
+                bnSessionRepository.save(bnSession);
+
+                remainingSessions.remove(res.getSessionTypeCd());
+            }
+
+            // 5. 빈 세션 (모집이 덜 된 파트) 생성
+            for (String emptyCd : remainingSessions) {
+                com.bandi.backend.entity.band.BnSession emptySession = new com.bandi.backend.entity.band.BnSession();
+                emptySession.setBnNo(bnNo);
+                emptySession.setBnSessionTypeCd(emptyCd);
+                emptySession.setInsDtime(currentDateTime);
+                emptySession.setInsId(userId);
+                emptySession.setUpdDtime(currentDateTime);
+                emptySession.setUpdId(userId);
+                bnSessionRepository.save(emptySession);
+            }
+        }
+
+        // 최종 상태 플래그 업데이트
+        gather.setBnRoomCrdYn("Y");
+        gather.setUpdDtime(currentDateTime);
+        gather.setUpdId(userId);
+        clanGatherRepository.save(gather);
+        log.info("[JamRoomBatch] Successfully finished for gatherNo: {}", gatherNo);
     }
 }

@@ -715,4 +715,48 @@ public class ClanService {
             cmScrapRepository.save(scrap);
         }
     }
+
+    @Transactional
+    public void deleteBoardPost(Long boardNo, Long clanId, String userId) {
+        System.out.println("DEBUG: deleteBoardPost boardNo=" + boardNo + " clanId=" + clanId + " userId=" + userId);
+
+        com.bandi.backend.entity.clan.ClanBoard board = clanBoardRepository.findById(boardNo)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다. (ID: " + boardNo + ")"));
+
+        // 클랜 일치 확인
+        if (clanId != null && !clanId.equals(board.getCnNo())) {
+            throw new RuntimeException("해당 클랜의 게시글이 아닙니다.");
+        }
+
+        System.out.println("DEBUG: found board writerUserId=" + board.getWriterUserId() + " boardStatCd="
+                + board.getBoardStatCd());
+
+        if ("D".equals(board.getBoardStatCd())) {
+            throw new RuntimeException("이미 삭제된 게시글입니다.");
+        }
+
+        // 권한 확인: 작성자, 클랜장(01), 간부(02)만 삭제 가능
+        boolean isAuthor = userId.equals(board.getWriterUserId());
+        boolean hasPrivilege = false;
+
+        if (!isAuthor && clanId != null) {
+            String role = clanUserRepository
+                    .findById(new com.bandi.backend.entity.clan.ClanUserId(clanId, userId))
+                    .map(ClanUser::getCnUserRoleCd)
+                    .orElse("NONE");
+            System.out.println("DEBUG: userId=" + userId + " clanRole=" + role);
+            hasPrivilege = "01".equals(role) || "02".equals(role);
+        }
+
+        if (!isAuthor && !hasPrivilege) {
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        board.setBoardStatCd("D");
+        board.setUpdDtime(currentDateTime);
+        board.setUpdId(userId);
+        clanBoardRepository.save(board);
+        System.out.println("DEBUG: board soft-deleted successfully boardNo=" + boardNo);
+    }
 }

@@ -357,6 +357,20 @@ public class ClanController {
         }
     }
 
+    @PutMapping("/{clanId}/boards/posts/{boardNo}/delete")
+    public ResponseEntity<?> deleteBoardPost(@PathVariable Long clanId, @PathVariable Long boardNo,
+            @RequestBody Map<String, String> body) {
+        try {
+            String userId = body.get("userId");
+            clanService.deleteBoardPost(boardNo, clanId, userId);
+            return ResponseEntity.ok(Map.of("message", "게시글이 삭제되었습니다."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "게시글 삭제에 실패했습니다.", "error", e.getMessage()));
+        }
+    }
+
     @PutMapping(value = "/{clanId}", consumes = { "multipart/form-data" })
     public ResponseEntity<?> updateClan(
             @PathVariable Long clanId,

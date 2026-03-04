@@ -314,8 +314,10 @@ const ClanDetail: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="flex-1 min-w-0 pr-2">
-                        <SectionTitle as="h2" className="!mt-0 mb-0.5 !text-lg">{clan.name}</SectionTitle>
+                    <div className="flex-1 min-w-0 pr-2 overflow-hidden">
+                        <SectionTitle as="h2" className="!mt-0 mb-0.5 !text-[14px] w-full truncate block whitespace-nowrap overflow-hidden text-ellipsis">
+                            {clan.name}
+                        </SectionTitle>
                         <p className="text-[#003C48] text-[12px] font-medium opacity-60">멤버 : {clan.memberCount}명</p>
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0 pt-0.5">

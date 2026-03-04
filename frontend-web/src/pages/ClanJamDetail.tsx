@@ -394,13 +394,13 @@ const ClanJamDetail: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
-                <div className="flex items-center gap-2 flex-1">
-                    <button onClick={() => navigate(-1)} className="text-[#052c42]">
+            <div className="bg-white px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-10 w-full">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42] shrink-0">
                         <FaChevronLeft size={24} />
                     </button>
                     {/* Profile Image */}
-                    <div className="relative">
+                    <div className="relative shrink-0">
                         <div
                             className={`w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0 flex items-center justify-center bg-gray-100 ${bandDetail.canManage ? 'cursor-pointer' : ''}`}
                             onClick={bandDetail.canManage ? handleEditClick : undefined}
@@ -420,20 +420,16 @@ const ClanJamDetail: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <SectionTitle as="h1" className="top-room-detail-title">{bandDetail.title}</SectionTitle>
-                        <p className="top-room-detail-subtitle">{bandDetail.songTitle} : {bandDetail.artist}</p>
+                    <div className="flex-1 min-w-0 pr-2 overflow-hidden">
+                        <SectionTitle as="h1" className="top-room-detail-title w-full truncate block whitespace-nowrap overflow-hidden text-ellipsis">
+                            {bandDetail.title}
+                        </SectionTitle>
+                        <p className="top-room-detail-subtitle w-full truncate block whitespace-nowrap overflow-hidden text-ellipsis mt-0.5">
+                            {bandDetail.songTitle} : {bandDetail.artist}
+                        </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {bandDetail.canManage && (
-                        <button
-                            onClick={bandDetail.status === 'E' ? undefined : handleConfirmToggle}
-                            className={`top-btn-status ${bandDetail.status === 'E' ? 'bg-gray-600 text-white cursor-default' : bandDetail.isConfirmed ? 'bg-[#00BDF8] text-white' : 'bg-gray-200 text-gray-600'}`}
-                        >
-                            {bandDetail.status === 'E' ? "종료됨" : bandDetail.isConfirmed ? "확정" : "미확정"}
-                        </button>
-                    )}
+                <div className="flex flex-col items-end gap-1 ml-2 shrink-0">
                     <button
                         onClick={() => navigate(`/main/jam/chat/${jamId}`, {
                             state: {
@@ -446,6 +442,14 @@ const ClanJamDetail: React.FC = () => {
                     >
                         단체 채팅
                     </button>
+                    {bandDetail.canManage && (
+                        <button
+                            onClick={bandDetail.status === 'E' ? undefined : handleConfirmToggle}
+                            className={`top-btn-status ${bandDetail.status === 'E' ? 'bg-gray-600 text-white cursor-default' : bandDetail.isConfirmed ? 'bg-[#00BDF8] text-white' : 'bg-gray-200 text-gray-600'}`}
+                        >
+                            {bandDetail.status === 'E' ? "종료됨" : bandDetail.isConfirmed ? "확정" : "미확정"}
+                        </button>
+                    )}
                 </div>
             </div>
 

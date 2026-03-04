@@ -63,9 +63,14 @@ const ClanBoardPostDetail: React.FC = () => {
     const [commentInput, setCommentInput] = useState("");
     const userId = localStorage.getItem('userId');
 
-    // Scrap Modal State
+    // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
+    const [onModalConfirm, setOnModalConfirm] = useState<(() => void) | null>(null);
+
+    // Delete confirm modal
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [clanRole, setClanRole] = useState<string>('NONE'); // 현재 유저의 클랜 역할
 
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -75,7 +80,19 @@ const ClanBoardPostDetail: React.FC = () => {
             fetchPostDetail();
             fetchComments();
         }
-    }, [boardNo]);
+        if (clanId && userId) {
+            fetch(`/api/clans/${clanId}/members/${userId}/role`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data && typeof data === 'string') {
+                        setClanRole(data);
+                    } else if (data && data.role) {
+                        setClanRole(data.role);
+                    }
+                })
+                .catch(() => setClanRole('NONE'));
+        }
+    }, [boardNo, clanId, userId]);
 
     // Auto-resize comment textarea
     useEffect(() => {
@@ -248,6 +265,47 @@ const ClanBoardPostDetail: React.FC = () => {
         }
     };
 
+    // 삭제 권한: 작성자이거나 클랜장(01) / 간부(02)
+    const canDelete = post &&
+        userId &&
+        (post.writerUserId === userId || clanRole === '01' || clanRole === '02');
+
+    const handleDeletePost = async () => {
+        if (!userId || !boardNo || !clanId) {
+            setModalMessage('필수 정보가 누락되었습니다. (Login/Board/Clan)');
+            setOnModalConfirm(null);
+            setIsModalOpen(true);
+            return;
+        }
+        try {
+            const res = await fetch(`/api/clans/${clanId}/boards/posts/${boardNo}/delete`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setIsDeleteConfirmOpen(false);
+                setModalMessage(data.message || '게시글이 삭제되었습니다.');
+                setOnModalConfirm(() => () => {
+                    navigate(`/main/clan/board/${clanId}/${boardTypeNo}`);
+                });
+                setIsModalOpen(true);
+            } else {
+                setModalMessage(data.message || '삭제에 실패했습니다.');
+                setOnModalConfirm(null);
+                setIsModalOpen(true);
+            }
+        } catch (e) {
+            console.error('Failed to delete post', e);
+            setModalMessage('오류가 발생했습니다.');
+            setOnModalConfirm(null);
+            setIsModalOpen(true);
+        }
+    };
+
     const getEmbedUrl = (url: string) => {
         let videoId = "";
         if (url.includes("youtube.com/watch?v=")) {
@@ -304,14 +362,24 @@ const ClanBoardPostDetail: React.FC = () => {
                 <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100">
                     <SectionTitle className="!mt-0 mb-4">{post.title}</SectionTitle>
 
-                    <div className="flex items-center mb-4 pb-4 border-b border-gray-200">
-                        <div className="mr-2 flex-shrink-0">
-                            <UserAvatar userId={post.writerUserId} size="w-8 h-8" />
+                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+                        <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0">
+                                <UserAvatar userId={post.writerUserId} size="w-8 h-8" />
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold text-gray-800">{post.userNickNm}</div>
+                                <div className="text-xs text-gray-500">{formatDate(post.regDate)}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div className="text-sm font-bold text-gray-800">{post.userNickNm}</div>
-                            <div className="text-xs text-gray-500">{formatDate(post.regDate)}</div>
-                        </div>
+                        {canDelete && (
+                            <button
+                                onClick={() => setIsDeleteConfirmOpen(true)}
+                                className="flex items-center gap-1 text-xs text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors font-medium"
+                            >
+                                삭제
+                            </button>
+                        )}
                     </div>
 
                     <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-line mb-6 min-h-[100px]">
@@ -454,7 +522,21 @@ const ClanBoardPostDetail: React.FC = () => {
                 isOpen={isModalOpen}
                 type="alert"
                 message={modalMessage}
-                onConfirm={() => setIsModalOpen(false)}
+                onConfirm={() => {
+                    setIsModalOpen(false);
+                    if (onModalConfirm) {
+                        onModalConfirm();
+                        setOnModalConfirm(null);
+                    }
+                }}
+            />
+
+            <CommonModal
+                isOpen={isDeleteConfirmOpen}
+                type="confirm"
+                message="게시글을 삭제하시겠습니까?"
+                onConfirm={handleDeletePost}
+                onCancel={() => setIsDeleteConfirmOpen(false)}
             />
         </div>
     );

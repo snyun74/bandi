@@ -243,8 +243,8 @@ const ChatList: React.FC = () => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${chat.roomType === 'CLAN' ? 'bg-violet-100 text-violet-600' : 'bg-orange-100 text-orange-500'}`}>
-                                                        {chat.roomType === 'CLAN' ? '🏰 클랜' : '🎸 합주'}
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-gray-100 text-gray-500">
+                                                        {chat.roomType === 'CLAN' ? '클랜' : '합주'}
                                                     </span>
                                                     <h3 className="body-board-post-title !m-0 leading-tight">{chat.roomNm}</h3>
                                                 </div>

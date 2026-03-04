@@ -47,4 +47,4 @@ server:
   port: 8084 # 서버(운영)에서는 8084 사용
 kakao:
   client-id: b7b74bba84f701122fa1bacf9697f578
-  redirect-uri: https://bandicon.duckdns.org/api/auth/kakao/callback
+  redirect-uri: https://bandicon.kr/api/auth/kakao/callback

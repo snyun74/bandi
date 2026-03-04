@@ -25,6 +25,9 @@ public class ClanMatchRoom {
     @Column(name = "SKILL_SCORE_TOT", nullable = false)
     private Integer skillScoreTot;
 
+    @Column(name = "BN_NO")
+    private Long bnNo;
+
     @Column(name = "MEMBER_CNT", nullable = false)
     private Integer memberCnt;
 

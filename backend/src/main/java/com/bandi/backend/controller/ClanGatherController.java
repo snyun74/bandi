@@ -168,4 +168,30 @@ public class ClanGatherController {
                     .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "완전 종료 처리 중 오류가 발생했습니다."));
         }
     }
+
+    @GetMapping("/{gatherNo}/status")
+    public ResponseEntity<?> getGatheringStatus(@PathVariable Long gatherNo) {
+        try {
+            String status = clanGatherService.getGatheringRoomCrdYn(gatherNo);
+            return ResponseEntity.ok(Map.of("bnRoomCrdYn", status != null ? status : "N"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to fetch gathering status", "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{gatherNo}/create-jam-rooms")
+    public ResponseEntity<?> createJamRoomsFromMatch(@PathVariable Long gatherNo,
+            @RequestBody Map<String, String> body) {
+        try {
+            String userId = body.get("userId");
+            clanGatherService.createJamRoomsFromMatch(gatherNo, userId);
+            return ResponseEntity.ok(Map.of("message", "합주방이 일괄 생성되었습니다."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "합주방 생성 중 오류가 발생했습니다."));
+        }
+    }
 }

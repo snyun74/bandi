@@ -40,7 +40,7 @@ export default defineConfig({
   server: {
     host: true, // Listen on all addresses
     hmr: {
-      host: 'bandicon.duckdns.org', // Force HMR to use this IP
+      host: 'bandicon.kr', // Force HMR to use this domain
       port: 5173,
     },
     proxy: {

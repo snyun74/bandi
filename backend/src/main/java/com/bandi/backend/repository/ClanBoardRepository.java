@@ -90,6 +90,7 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         +
                         "FROM CN_BOARD B " +
                         "LEFT JOIN CN_BOARD_TYPE T ON B.CN_BOARD_TYPE_NO = T.CN_BOARD_TYPE_NO " +
-                        "WHERE B.CN_BOARD_NO = :boardNo", nativeQuery = true)
+                        "WHERE B.CN_BOARD_NO = :boardNo " +
+                        "  AND B.BOARD_STAT_CD = 'A'", nativeQuery = true)
         java.util.Map<String, Object> findBoardDetailMap(@Param("boardNo") Long boardNo);
 }

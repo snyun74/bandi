@@ -27,11 +27,11 @@
   }
 
   .top-btn-status {
-    @apply text-[13px] px-3 py-1.5 rounded-full font-bold transition-colors;
+    @apply text-[12px] px-2 py-1 rounded-full font-bold transition-colors w-[72px] text-center;
   }
 
   .top-btn-chat {
-    @apply bg-[#00BDF8] text-white text-[13px] px-3 py-1.5 rounded-full font-bold;
+    @apply bg-[#00BDF8] text-white text-[12px] px-2 py-1 rounded-full font-bold w-[72px] text-center;
   }
 
   /* ==========================================

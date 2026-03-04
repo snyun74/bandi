@@ -36,6 +36,9 @@ public class ClanGather {
     @Column(name = "GATHER_PROC_FG", length = 1, nullable = false)
     private String gatherProcFg;
 
+    @Column(name = "BN_ROOM_CRD_YN", length = 1)
+    private String bnRoomCrdYn;
+
     @Column(name = "INS_DTIME", length = 14, nullable = false)
     private String insDtime;
 

@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "BN_CHAT_MESSAGE_READ")
-@jakarta.persistence.IdClass(BandChatMessageReadId.class)
+@IdClass(BandChatMessageReadId.class)
 @Getter
 @Setter
 public class BandChatMessageRead {

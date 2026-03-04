@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaMusic, FaUserAlt, FaMicrophone, FaGuitar, FaDrum } from 'react-icons/fa';
 import { GiGrandPiano } from "react-icons/gi";
+import CommonModal from '../components/common/CommonModal';
 
 interface Member {
     resultNo: number;
@@ -107,6 +108,10 @@ const GatheringMatchResult: React.FC = () => {
         userNickNm: string;
     } | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [roomCrdYn, setRoomCrdYn] = useState<string>('N');
 
     const fetchResults = async () => {
         try {
@@ -116,6 +121,12 @@ const GatheringMatchResult: React.FC = () => {
                 setRooms(data);
             } else {
                 console.error("Failed to fetch match results");
+            }
+
+            const statusRes = await fetch(`/api/clans/gatherings/${gatherNo}/status`);
+            if (statusRes.ok) {
+                const statusData = await statusRes.json();
+                setRoomCrdYn(statusData.bnRoomCrdYn);
             }
         } catch (error) {
             console.error("Error fetching match results", error);
@@ -169,11 +180,44 @@ const GatheringMatchResult: React.FC = () => {
                 setIsModalOpen(false);
                 fetchResults();
             } else {
-                alert("교체에 실패했습니다.");
+                setAlertMessage("교체에 실패했습니다.");
+                setIsAlertModalOpen(true);
             }
         } catch (error) {
             console.error("Swap error", error);
-            alert("오류가 발생했습니다.");
+            setAlertMessage("오류가 발생했습니다.");
+            setIsAlertModalOpen(true);
+        }
+    };
+
+    const handleCreateJamRooms = async () => {
+        if (roomCrdYn === 'Y') return;
+        setIsCreateModalOpen(true);
+    };
+
+    const executeCreateJamRooms = async () => {
+        setIsCreateModalOpen(false);
+        try {
+            const response = await fetch(`/api/clans/gatherings/${gatherNo}/create-jam-rooms`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: "snyun" }) // Assuming 'snyun' is the logged-in user or fetched from context
+            });
+
+            if (response.ok) {
+                setAlertMessage('합주방이 성공적으로 생성되었습니다.');
+                setIsAlertModalOpen(true);
+                setRoomCrdYn('Y');
+                fetchResults();
+            } else {
+                const err = await response.json();
+                setAlertMessage(`생성 실패: ${err.message || '오류가 발생했습니다.'}`);
+                setIsAlertModalOpen(true);
+            }
+        } catch (error) {
+            console.error("Create jam rooms error", error);
+            setAlertMessage("서버 연결에 실패했습니다.");
+            setIsAlertModalOpen(true);
         }
     };
 
@@ -195,7 +239,18 @@ const GatheringMatchResult: React.FC = () => {
                     <FaChevronLeft size={20} />
                 </button>
                 <h2 className="flex-1 text-center font-bold text-xl text-[#003C48]">합주 매핑 결과</h2>
-                <div className="w-10"></div>
+                <div className="flex items-center justify-end pr-2">
+                    <button
+                        onClick={handleCreateJamRooms}
+                        disabled={roomCrdYn === 'Y'}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-sm ${roomCrdYn === 'Y'
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-[#00BDF8] text-white hover:bg-[#00BDF8]/90 active:scale-95'
+                            }`}
+                    >
+                        합주방 생성
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 p-5 pb-20 mt-4 max-w-lg mx-auto w-full">
@@ -354,6 +409,21 @@ const GatheringMatchResult: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            <CommonModal
+                isOpen={isCreateModalOpen}
+                type="confirm"
+                message="합주방을 일괄 생성하시겠습니까? 한번 생성하면 다시 생성할 수 없습니다."
+                onConfirm={executeCreateJamRooms}
+                onCancel={() => setIsCreateModalOpen(false)}
+            />
+
+            <CommonModal
+                isOpen={isAlertModalOpen}
+                type="alert"
+                message={alertMessage}
+                onConfirm={() => setIsAlertModalOpen(false)}
+            />
 
             {/* Swap Confirmation Modal */}
             <SwapConfirmModal
