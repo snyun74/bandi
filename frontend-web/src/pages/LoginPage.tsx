@@ -141,6 +141,7 @@ const LoginPage: React.FC = () => {
                                 </button>
                             </form>
 
+                            {/* 카카오 로그인 (준비 중 - 검수 완료 후 활성화)
                             <div className="mt-5 mb-1">
                                 <p className="text-sm text-gray-500 mb-2 ml-1">다른 로그인</p>
                                 <button
@@ -150,6 +151,7 @@ const LoginPage: React.FC = () => {
                                     Kakao 로그인
                                 </button>
                             </div>
+                            */}
                         </div>
                     </div>
 
