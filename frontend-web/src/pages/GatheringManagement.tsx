@@ -192,7 +192,7 @@ const GatheringManagement: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-[#003C48] transition-colors p-2">
                     <FaChevronLeft size={20} />
                 </button>
-                <h2 className="flex-1 text-center font-bold text-xl text-[#003C48]">합주 모집 관리</h2>
+                <h2 className="flex-1 text-center font-bold text-[14px] text-[#003C48]">합주 모집 관리</h2>
                 <div className="w-10"></div>
             </div>
 
@@ -209,18 +209,22 @@ const GatheringManagement: React.FC = () => {
                     </div>
                 ) : (
                     gatherings.map((g) => (
-                        <div key={g.gatherNo} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow space-y-4">
-                            <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${getStatusColor(g.gatherProcFg)}`}>
-                                            {getStatusText(g.gatherProcFg)}
-                                        </span>
-                                        <span className="text-gray-400 text-[10px]">등록일: {g.regDate && `${g.regDate.substring(0, 4)}.${g.regDate.substring(4, 6)}.${g.regDate.substring(6, 8)}`}</span>
-                                    </div>
-                                    <h3 className="text-[#003C48] font-bold text-lg leading-tight mb-1">{g.title}</h3>
-                                    <p className="text-gray-500 text-xs">전체 : {g.applicantCnt || 0}명, 남자 : {g.maleCnt || 0}명, 여자 : {g.femaleCnt || 0}명</p>
-                                </div>
+                        <div key={g.gatherNo} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow space-y-3">
+                            <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${getStatusColor(g.gatherProcFg)}`}>
+                                    {getStatusText(g.gatherProcFg)}
+                                </span>
+                                <h3 className="text-[#003C48] font-bold text-[14px] leading-tight truncate">{g.title}</h3>
+                            </div>
+                            <div className="flex justify-between items-center text-xs">
+                                <p className="text-gray-500">
+                                    <span className="font-semibold">전체:</span> {g.applicantCnt || 0}명 <span className="text-gray-300 mx-1">|</span>
+                                    <span className="font-semibold text-blue-500">남자:</span> {g.maleCnt || 0}명 <span className="text-gray-300 mx-1">|</span>
+                                    <span className="font-semibold text-pink-500">여자:</span> {g.femaleCnt || 0}명
+                                </p>
+                                <span className="text-gray-400 text-[10px] shrink-0">
+                                    {g.regDate && `${g.regDate.substring(0, 4)}.${g.regDate.substring(4, 6)}.${g.regDate.substring(6, 8)}`}
+                                </span>
                             </div>
 
                             <div className="grid grid-cols-5 gap-2 pt-2">
@@ -298,15 +302,15 @@ const GatheringManagement: React.FC = () => {
 
             {/* Applicants Details Sub-view (Overlay or Animation) */}
             {isApplicantsOpen && (
-                <div className="fixed inset-0 z-50 bg-white flex flex-col p-4 animate-in slide-in-from-right duration-300">
-                    <div className="flex items-center mb-6 pt-2">
-                        <button onClick={() => setIsApplicantsOpen(false)} className="text-gray-400 p-2 hover:text-[#003C48] transition-colors">
-                            <FaChevronLeft size={24} />
+                <div className="fixed top-[60px] bottom-0 left-0 right-0 z-40 bg-white flex flex-col pt-0 animate-in slide-in-from-right duration-300">
+                    <div className="flex items-center px-4 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+                        <button onClick={() => setIsApplicantsOpen(false)} className="text-gray-500 hover:text-[#003C48] transition-colors p-2">
+                            <FaChevronLeft size={20} />
                         </button>
-                        <div className="ml-2">
-                            <h3 className="font-bold text-xl text-[#003C48]">신청 인원 상세</h3>
-                            <p className="text-xs text-gray-400 mt-0.5">{selectedGather?.title}</p>
+                        <div className="flex-1 text-center">
+                            <h3 className="font-bold text-[14px] text-[#003C48]">신청 인원 상세</h3>
                         </div>
+                        <div className="w-10"></div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto space-y-4 pb-10">
@@ -320,7 +324,7 @@ const GatheringManagement: React.FC = () => {
                                 <div key={idx} className="bg-gray-50 rounded-2xl p-4 border border-gray-100 shadow-sm">
                                     <div className="flex justify-between items-center mb-3">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-bold text-base text-[#003C48]">{a.userNickNm}</span>
+                                            <span className="font-bold text-[14px] text-[#003C48]">{a.userNickNm}</span>
                                             <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 font-bold">{a.mbti}</span>
                                         </div>
                                         <span className={`text-[11px] px-2 py-0.5 rounded-md font-bold ${a.gender === 'M' ? 'text-blue-500 bg-blue-50' : 'text-pink-500 bg-pink-50'}`}>
@@ -331,7 +335,7 @@ const GatheringManagement: React.FC = () => {
                                         <div className="bg-white p-3 rounded-xl border border-blue-50">
                                             <div className="text-[10px] text-gray-400 mb-1">1지망 세션</div>
                                             <div className="flex justify-between items-center">
-                                                <span className="text-blue-500 font-bold text-sm">{a.sessionTypeNm1st}</span>
+                                                <span className="text-blue-500 font-bold text-[13px]">{a.sessionTypeNm1st}</span>
                                                 <span className="text-gray-400 text-xs font-bold">LV.{a.session1stScore}</span>
                                             </div>
                                         </div>
@@ -339,7 +343,7 @@ const GatheringManagement: React.FC = () => {
                                             <div className="bg-white p-3 rounded-xl border border-green-50">
                                                 <div className="text-[10px] text-gray-400 mb-1">2지망 세션</div>
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-green-500 font-bold text-sm">{a.sessionTypeNm2nd}</span>
+                                                    <span className="text-green-500 font-bold text-[13px]">{a.sessionTypeNm2nd}</span>
                                                     <span className="text-gray-400 text-xs font-bold">LV.{a.session2ndScore}</span>
                                                 </div>
                                             </div>

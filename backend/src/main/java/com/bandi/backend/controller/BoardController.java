@@ -78,4 +78,15 @@ public class BoardController {
         boardService.toggleScrap(boardNo, dto.getUserId());
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/posts/{boardNo}")
+    public ResponseEntity<?> deleteBoard(@PathVariable Long boardNo,
+            @RequestParam String userId) {
+        try {
+            boardService.deleteBoard(boardNo, userId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
 }

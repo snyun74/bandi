@@ -242,11 +242,11 @@ const ChatList: React.FC = () => {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                                                <div className="flex items-center gap-2 mb-0.5 min-w-0">
                                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-gray-100 text-gray-500">
                                                         {chat.roomType === 'CLAN' ? '클랜' : '합주'}
                                                     </span>
-                                                    <h3 className="body-board-post-title !m-0 leading-tight">{chat.roomNm}</h3>
+                                                    <h3 className="body-board-post-title !m-0 leading-tight truncate min-w-0">{chat.roomNm}</h3>
                                                 </div>
                                                 <p className="text-xs truncate text-gray-400">
                                                     {chat.newMsg || "대화 내용이 없습니다."}

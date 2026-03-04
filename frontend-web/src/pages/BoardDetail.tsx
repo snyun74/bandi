@@ -68,6 +68,19 @@ const BoardDetail: React.FC = () => {
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+    // Delete Modal State
+    const [deleteModal, setDeleteModal] = useState<{
+        isOpen: boolean;
+        type: 'confirm' | 'alert';
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        type: 'confirm',
+        message: '',
+        onConfirm: () => { },
+    });
+
     useEffect(() => {
         if (boardNo) {
             fetchPostDetail();
@@ -227,6 +240,47 @@ const BoardDetail: React.FC = () => {
         }
     };
 
+    const handleDelete = () => {
+        setDeleteModal({
+            isOpen: true,
+            type: 'confirm',
+            message: '게시글을 삭제하시겠습니까?',
+            onConfirm: async () => {
+                setDeleteModal(prev => ({ ...prev, isOpen: false }));
+                try {
+                    const res = await fetch(`/api/boards/posts/${boardNo}?userId=${userId}`, {
+                        method: 'DELETE',
+                    });
+                    if (res.ok) {
+                        setDeleteModal({
+                            isOpen: true,
+                            type: 'alert',
+                            message: '게시글이 삭제되었습니다.',
+                            onConfirm: () => {
+                                setDeleteModal(prev => ({ ...prev, isOpen: false }));
+                                navigate('/main/board');
+                            },
+                        });
+                    } else {
+                        setDeleteModal({
+                            isOpen: true,
+                            type: 'alert',
+                            message: '삭제에 실패했습니다.',
+                            onConfirm: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
+                        });
+                    }
+                } catch (e) {
+                    setDeleteModal({
+                        isOpen: true,
+                        type: 'alert',
+                        message: '오류가 발생했습니다.',
+                        onConfirm: () => setDeleteModal(prev => ({ ...prev, isOpen: false })),
+                    });
+                }
+            },
+        });
+    };
+
     const formatDate = (dateStr: string) => {
         if (!dateStr || typeof dateStr !== 'string' || dateStr.length < 12) return dateStr;
         // Format: YYYY.MM.DD AM/PM HH:MM:SS
@@ -284,7 +338,17 @@ const BoardDetail: React.FC = () => {
             <div className="flex-1 pb-[130px]">
                 {/* Post Content */}
                 <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100">
-                    <SectionTitle className="!mt-0 mb-4">{post.title}</SectionTitle>
+                    <SectionTitle className="!mt-0 mb-4 flex items-center justify-between">
+                        <span className="flex-1 min-w-0 truncate">{post.title}</span>
+                        {userId === post.writerUserId && (
+                            <button
+                                onClick={handleDelete}
+                                className="ml-3 shrink-0 text-xs text-red-400 hover:text-red-600 border border-red-300 hover:border-red-500 px-2 py-1 rounded-lg transition-colors"
+                            >
+                                삭제
+                            </button>
+                        )}
+                    </SectionTitle>
 
                     <div className="flex items-center mb-4 pb-4 border-b border-gray-200">
                         <div className="mr-2 flex-shrink-0">
@@ -453,6 +517,13 @@ const BoardDetail: React.FC = () => {
                 type="alert"
                 message={modalMessage}
                 onConfirm={() => setIsModalOpen(false)}
+            />
+            <CommonModal
+                isOpen={deleteModal.isOpen}
+                type={deleteModal.type}
+                message={deleteModal.message}
+                onConfirm={deleteModal.onConfirm}
+                onCancel={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
             />
         </div>
     );

@@ -53,7 +53,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({ isOpen, onClose, on
                     <div className="flex flex-col gap-3 mb-8">
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100">
                             <span className="text-[11px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">{from.sessionNm}</span>
-                            <span className="text-[13px] font-bold text-[#003C48]">{from.userNickNm || '미참여'}</span>
+                            <span className="text-[14px] font-bold text-[#003C48]">{from.userNickNm || '미참여'}</span>
                         </div>
                         <div className="flex justify-center -my-2 z-10">
                             <div className="bg-white p-1 rounded-full shadow-sm border border-gray-100 text-[#00BDF8]">
@@ -64,7 +64,7 @@ const SwapConfirmModal: React.FC<SwapConfirmModalProps> = ({ isOpen, onClose, on
                         </div>
                         <div className="flex items-center justify-between bg-gray-50 p-3 rounded-2xl border border-gray-100">
                             <span className="text-[11px] font-bold text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">{to.sessionNm}</span>
-                            <span className="text-[13px] font-bold text-[#003C48]">{to.userNickNm || '미참여'}</span>
+                            <span className="text-[14px] font-bold text-[#003C48]">{to.userNickNm || '미참여'}</span>
                         </div>
                     </div>
 
@@ -238,12 +238,12 @@ const GatheringMatchResult: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-[#003C48] transition-colors p-2">
                     <FaChevronLeft size={20} />
                 </button>
-                <h2 className="flex-1 text-center font-bold text-xl text-[#003C48]">합주 매핑 결과</h2>
+                <h2 className="flex-1 text-center font-bold text-[14px] text-[#003C48]">합주 매핑 결과</h2>
                 <div className="flex items-center justify-end pr-2">
                     <button
                         onClick={handleCreateJamRooms}
                         disabled={roomCrdYn === 'Y'}
-                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-sm ${roomCrdYn === 'Y'
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-[13px] font-bold transition-colors shadow-sm ${roomCrdYn === 'Y'
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                             : 'bg-[#00BDF8] text-white hover:bg-[#00BDF8]/90 active:scale-95'
                             }`}
@@ -310,7 +310,7 @@ const GatheringMatchResult: React.FC = () => {
                                         <div className="absolute top-0 left-0 w-1 h-full bg-[#003C48]"></div>
 
                                         <div className="flex justify-between items-center mb-3 border-b pb-2">
-                                            <h3 className="text-lg font-bold text-[#003C48] flex items-center gap-2">
+                                            <h3 className="text-[14px] font-bold text-[#003C48] flex items-center gap-2">
                                                 {room.roomNm}
                                             </h3>
                                             <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -379,7 +379,7 @@ const GatheringMatchResult: React.FC = () => {
                                                                             </div>
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="text-[13px] font-bold text-gray-300 italic">미참여</span>
+                                                                        <span className="text-[14px] font-bold text-gray-300 italic">미참여</span>
                                                                     )}
                                                                 </div>
 

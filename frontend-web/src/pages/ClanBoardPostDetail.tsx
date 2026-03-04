@@ -290,7 +290,7 @@ const ClanBoardPostDetail: React.FC = () => {
                 setIsDeleteConfirmOpen(false);
                 setModalMessage(data.message || '게시글이 삭제되었습니다.');
                 setOnModalConfirm(() => () => {
-                    navigate(`/main/clan/board/${clanId}/${boardTypeNo}`);
+                    navigate(`/main/clan/board/${clanId}`);
                 });
                 setIsModalOpen(true);
             } else {

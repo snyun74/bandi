@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaMinusCircle } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
+import CommonModal from '../components/common/CommonModal';
 
 interface NoticeItem {
     cnNoticeNo: number;
@@ -44,6 +45,49 @@ const ClanNoticeList: React.FC = () => {
         }
     }, [clanId, userId]);
 
+    // Modal state
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [noticeToDelete, setNoticeToDelete] = useState<number | null>(null);
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+
+    const handleDeleteClick = (noticeId: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setNoticeToDelete(noticeId);
+        setIsConfirmOpen(true);
+    };
+
+    const executeDelete = async () => {
+        if (!noticeToDelete || !userId || !clanId) return;
+        setIsConfirmOpen(false);
+
+        try {
+            const res = await fetch(`/api/clans/${clanId}/notices/${noticeToDelete}/delete`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            if (res.ok) {
+                setAlertMessage("공지가 삭제되었습니다.");
+                setIsAlertOpen(true);
+                // Refresh list
+                fetch(`/api/clans/${clanId}/notices`)
+                    .then(res => res.json())
+                    .then(data => setNotices(data))
+                    .catch(err => console.error(err));
+            } else {
+                const data = await res.json();
+                setAlertMessage(data.message || "삭제에 실패했습니다.");
+                setIsAlertOpen(true);
+            }
+        } catch (error) {
+            console.error(error);
+            setAlertMessage("오류가 발생했습니다.");
+            setIsAlertOpen(true);
+        }
+    };
+
     // Role check helper
     const canCreateNotice = ['01', '02'].includes(userRole);
 
@@ -59,7 +103,7 @@ const ClanNoticeList: React.FC = () => {
                 </div>
                 {canCreateNotice && (
                     <button
-                        className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-[14px] font-bold"
+                        className="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-[13px] font-bold"
                         onClick={() => navigate(`/main/clan/notice/${clanId}/create`)}
                     >
                         공지 생성
@@ -87,13 +131,16 @@ const ClanNoticeList: React.FC = () => {
                                         <span className={`mr-2 ${notice.pinYn === 'Y' ? 'font-bold' : ''}`}>•</span>
                                         <SectionTitle
                                             as="h3"
-                                            className={`!mt-0 !mb-0 text-base group-hover:underline ${notice.pinYn === 'Y' ? 'font-bold' : 'font-medium'} text-[#003C48]`}
+                                            className={`!mt-0 !mb-0 text-[13px] group-hover:underline ${notice.pinYn === 'Y' ? 'font-bold' : 'font-medium'} text-[#003C48]`}
                                         >
                                             {notice.title}
                                         </SectionTitle>
                                     </div>
                                     {canCreateNotice && (
-                                        <button className="text-[#FF8A80] hover:text-[#ff5252]">
+                                        <button
+                                            onClick={(e) => handleDeleteClick(notice.cnNoticeNo, e)}
+                                            className="text-[#FF8A80] hover:text-[#ff5252]"
+                                        >
                                             <FaMinusCircle size={20} />
                                         </button>
                                     )}
@@ -105,6 +152,25 @@ const ClanNoticeList: React.FC = () => {
                     </div>
                 </div>
             </div>
+            {/* Delete Confirmation Modal */}
+            <CommonModal
+                isOpen={isConfirmOpen}
+                type="confirm"
+                message="해당 공지를 삭제하시겠습니까?"
+                onConfirm={executeDelete}
+                onCancel={() => setIsConfirmOpen(false)}
+            />
+
+            {/* Alert Modal */}
+            <CommonModal
+                isOpen={isAlertOpen}
+                type="alert"
+                message={alertMessage}
+                onConfirm={() => {
+                    setIsAlertOpen(false);
+                    setNoticeToDelete(null);
+                }}
+            />
         </div>
     );
 };

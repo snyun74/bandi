@@ -276,4 +276,43 @@ public class ClanNoticeController {
                                         java.util.Map.of("message", "Failed to toggle scrap", "error", e.getMessage()));
                 }
         }
+
+        @PutMapping("/{clanId}/notices/{noticeId}/delete")
+        public ResponseEntity<?> deleteNotice(@PathVariable Long clanId, @PathVariable Long noticeId,
+                        @RequestBody java.util.Map<String, String> body) {
+                String userId = body.get("userId");
+                if (userId == null || userId.isEmpty()) {
+                        return ResponseEntity.badRequest().body(java.util.Map.of("message", "User ID is required"));
+                }
+
+                return clanNoticeRepository.findById(noticeId)
+                                .map(notice -> {
+                                        try {
+                                                String stdDate = notice.getStdDate();
+                                                if (stdDate != null && stdDate.length() == 8) {
+                                                        LocalDate stdLocalDate = LocalDate.parse(stdDate,
+                                                                        DateTimeFormatter.ofPattern("yyyyMMdd"));
+                                                        String newEndDate = stdLocalDate.minusDays(1).format(
+                                                                        DateTimeFormatter.ofPattern("yyyyMMdd"));
+                                                        notice.setEndDate(newEndDate);
+                                                } else {
+                                                        notice.setEndDate(LocalDate.now().minusDays(1).format(
+                                                                        DateTimeFormatter.ofPattern("yyyyMMdd")));
+                                                }
+
+                                                String currentDateTime = java.time.LocalDateTime.now()
+                                                                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+                                                notice.setUpdDtime(currentDateTime);
+                                                notice.setUpdId(userId);
+
+                                                clanNoticeRepository.save(notice);
+                                                return ResponseEntity.ok(
+                                                                java.util.Map.of("message", "공지사항이 정상적으로 삭제되었습니다."));
+                                        } catch (Exception e) {
+                                                return ResponseEntity.badRequest().body(java.util.Map.of("message",
+                                                                "삭제에 실패했습니다.", "error", e.getMessage()));
+                                        }
+                                })
+                                .orElse(ResponseEntity.notFound().build());
+        }
 }

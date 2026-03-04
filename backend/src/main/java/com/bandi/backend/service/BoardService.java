@@ -302,4 +302,20 @@ public class BoardService {
             cmScrapRepository.save(scrap);
         }
     }
+
+    @Transactional
+    public void deleteBoard(Long boardNo, String userId) {
+        Board board = boardRepository.findById(boardNo)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
+
+        if (!board.getWriterUserId().equals(userId)) {
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        board.setBoardStatCd("D");
+        board.setUpdDtime(currentDateTime);
+        board.setUpdId(userId);
+        boardRepository.save(board);
+    }
 }
