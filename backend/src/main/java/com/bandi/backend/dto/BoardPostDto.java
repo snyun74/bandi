@@ -12,4 +12,6 @@ public interface BoardPostDto {
     Long getBoardLikeCnt();
 
     Long getBoardReplyCnt();
+
+    String getWriterUserId();
 }

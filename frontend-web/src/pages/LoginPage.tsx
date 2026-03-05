@@ -102,7 +102,7 @@ const LoginPage: React.FC = () => {
                 <div className="w-full max-w-md px-6 mt-1">
                     {/* Logo Section */}
                     <div className="flex flex-col items-center mb-0">
-                        <img src="/images/main_title.png" alt="Bandicon" className="w-56 mb-1" />
+                        <img src="/images/main_title.png" alt="Bandicon" className="w-[300px] mb-6" />
                     </div>
 
                     {/* Login Card */}

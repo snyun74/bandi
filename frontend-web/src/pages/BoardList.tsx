@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPen, FaSearch, FaRegThumbsUp, FaRegCommentDots } from 'react-icons/fa';
+import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
 
 interface BoardPost {
@@ -9,6 +10,7 @@ interface BoardPost {
     title: string;
     regDate: string;
     userNickNm: string;
+    writerUserId?: string;
     likeCnt: number;
     commentCnt: number;
     isLiked: boolean;
@@ -23,6 +25,14 @@ const BoardList: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [keyword, setKeyword] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    const userId = localStorage.getItem("userId");
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
+    const [onModalConfirm, setOnModalConfirm] = useState<(() => void) | null>(null);
+
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
     const observer = useRef<IntersectionObserver | null>(null);
     const lastPostRef = useRef<HTMLDivElement | null>(null);
@@ -112,6 +122,53 @@ const BoardList: React.FC = () => {
         setSearchQuery(keyword);
     };
 
+    const confirmDeletePost = (e: React.MouseEvent, boardNo: number) => {
+        e.stopPropagation();
+        setPostToDelete(boardNo);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const handleDeletePost = async () => {
+        if (!userId || !postToDelete) {
+            setModalMessage('필수 정보가 누락되었습니다.');
+            setOnModalConfirm(null);
+            setIsModalOpen(true);
+            return;
+        }
+        try {
+            const res = await fetch(`/api/boards/posts/${postToDelete}?userId=${userId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                setIsDeleteConfirmOpen(false);
+                setPostToDelete(null);
+                setModalMessage('게시글이 삭제되었습니다.');
+                setOnModalConfirm(() => () => {
+                    // Reset and fetch first page again
+                    setPosts([]);
+                    setPage(0);
+                    setHasMore(true);
+                    fetchPosts(0, true);
+                });
+                setIsModalOpen(true);
+            } else {
+                setIsDeleteConfirmOpen(false);
+                setPostToDelete(null);
+                setModalMessage('삭제에 실패했습니다.');
+                setOnModalConfirm(null);
+                setIsModalOpen(true);
+            }
+        } catch (e) {
+            console.error('Failed to delete post', e);
+            setIsDeleteConfirmOpen(false);
+            setPostToDelete(null);
+            setModalMessage('오류가 발생했습니다.');
+            setOnModalConfirm(null);
+            setIsModalOpen(true);
+        }
+    };
+
     const formatDate = (dateStr: string) => {
         if (!dateStr || dateStr.length < 8) return dateStr;
         return `${dateStr.substring(0, 4)}.${dateStr.substring(4, 6)}.${dateStr.substring(6, 8)}`;
@@ -170,10 +227,12 @@ const BoardList: React.FC = () => {
                                     <h3 className="body-board-post-title flex-1 pr-2">{post.title}</h3>
                                     <span className="text-gray-400 text-xs whitespace-nowrap">{formatDate(post.regDate)}</span>
                                 </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs text-gray-500">
-                                        <span className="text-xs">👤</span>
-                                        <span>{post.userNickNm || "익명"}</span>
+                                <div className="flex items-center gap-3 mt-1 justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs text-gray-500">
+                                            <span className="text-xs">👤</span>
+                                            <span>{post.userNickNm || "익명"}</span>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {post.commentCnt > 0 && (
@@ -186,6 +245,14 @@ const BoardList: React.FC = () => {
                                             <FaRegThumbsUp size={12} />
                                             <span>({post.likeCnt})</span>
                                         </div>
+                                        {post.writerUserId === userId && (
+                                            <button
+                                                onClick={(e) => confirmDeletePost(e, post.boardNo)}
+                                                className="text-xs text-red-500 hover:text-red-600 font-medium px-2 py-0.5"
+                                            >
+                                                삭제
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -206,6 +273,30 @@ const BoardList: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <CommonModal
+                isOpen={isModalOpen}
+                type="alert"
+                message={modalMessage}
+                onConfirm={() => {
+                    setIsModalOpen(false);
+                    if (onModalConfirm) {
+                        onModalConfirm();
+                        setOnModalConfirm(null);
+                    }
+                }}
+            />
+
+            <CommonModal
+                isOpen={isDeleteConfirmOpen}
+                type="confirm"
+                message="게시글을 삭제하시겠습니까?"
+                onConfirm={handleDeletePost}
+                onCancel={() => {
+                    setIsDeleteConfirmOpen(false);
+                    setPostToDelete(null);
+                }}
+            />
         </div>
     );
 };

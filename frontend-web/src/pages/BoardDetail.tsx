@@ -340,14 +340,6 @@ const BoardDetail: React.FC = () => {
                 <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100">
                     <SectionTitle className="!mt-0 mb-4 flex items-center justify-between">
                         <span className="flex-1 min-w-0 truncate">{post.title}</span>
-                        {userId === post.writerUserId && (
-                            <button
-                                onClick={handleDelete}
-                                className="ml-3 shrink-0 text-xs text-red-400 hover:text-red-600 border border-red-300 hover:border-red-500 px-2 py-1 rounded-lg transition-colors"
-                            >
-                                삭제
-                            </button>
-                        )}
                     </SectionTitle>
 
                     <div className="flex items-center mb-4 pb-4 border-b border-gray-200">

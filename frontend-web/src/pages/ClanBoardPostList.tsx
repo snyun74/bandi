@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPen, FaSearch, FaRegThumbsUp, FaRegCommentDots } from 'react-icons/fa';
+import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
 
 interface BoardPost {
@@ -8,6 +9,7 @@ interface BoardPost {
     title: string;
     regDate: string;
     userNickNm: string;
+    writerUserId?: string;
     boardLikeCnt: number;
     boardReplyCnt: number;
 }
@@ -19,6 +21,15 @@ const ClanBoardPostList: React.FC = () => {
     const [keyword, setKeyword] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [boardName, setBoardName] = useState("");
+    const userId = localStorage.getItem('userId');
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
+    const [onModalConfirm, setOnModalConfirm] = useState<(() => void) | null>(null);
+
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<number | null>(null);
+    const [clanRole, setClanRole] = useState<string>('NONE'); // '01': Leader, '02': Executive
 
     const fetchPosts = async () => {
         if (!boardTypeNo) return;
@@ -35,11 +46,6 @@ const ClanBoardPostList: React.FC = () => {
     };
 
     const fetchBoardName = async () => {
-        // Optional: Fetch board name if not passed via state. 
-        // For now, we can try to find it from the list of types if cached, or fetch again.
-        // Or simply display generic "게시판" if not critical, or fetch the single type detail.
-        // Assuming we might have passed state, but for deep links, we should ideally fetch.
-        // Let's implement a simple fetch or use a placeholder.
         if (!boardTypeNo || !clanId) return;
         try {
             const response = await fetch(`/api/clans/${clanId}/boards/types`);
@@ -53,14 +59,80 @@ const ClanBoardPostList: React.FC = () => {
         } catch (e) { /* ignore */ }
     };
 
+    const fetchClanRole = async () => {
+        if (!clanId || !userId) return;
+        try {
+            const response = await fetch(`/api/clans/${clanId}/members/${userId}/role`);
+            if (response.ok) {
+                const text = await response.text();
+                try {
+                    const data = JSON.parse(text);
+                    setClanRole(data.role || text);
+                } catch {
+                    setClanRole(text); // If it's just raw string
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch clan role", error);
+        }
+    };
+
     useEffect(() => {
         fetchPosts();
         fetchBoardName();
-    }, [boardTypeNo, searchQuery]);
+        fetchClanRole();
+    }, [boardTypeNo, searchQuery, clanId, userId]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setSearchQuery(keyword);
+    };
+
+    const confirmDeletePost = (e: React.MouseEvent, boardNo: number) => {
+        e.stopPropagation();
+        setPostToDelete(boardNo);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const handleDeletePost = async () => {
+        if (!userId || !postToDelete || !clanId) {
+            setModalMessage('필수 정보가 누락되었습니다.');
+            setOnModalConfirm(null);
+            setIsModalOpen(true);
+            return;
+        }
+        try {
+            const res = await fetch(`/api/clans/${clanId}/boards/posts/${postToDelete}/delete`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setIsDeleteConfirmOpen(false);
+                setPostToDelete(null);
+                setModalMessage(data.message || '게시글이 삭제되었습니다.');
+                setOnModalConfirm(() => () => {
+                    fetchPosts(); // Reload the list
+                });
+                setIsModalOpen(true);
+            } else {
+                setIsDeleteConfirmOpen(false);
+                setPostToDelete(null);
+                setModalMessage(data.message || '삭제에 실패했습니다.');
+                setOnModalConfirm(null);
+                setIsModalOpen(true);
+            }
+        } catch (e) {
+            console.error('Failed to delete post', e);
+            setIsDeleteConfirmOpen(false);
+            setPostToDelete(null);
+            setModalMessage('오류가 발생했습니다.');
+            setOnModalConfirm(null);
+            setIsModalOpen(true);
+        }
     };
 
     const formatDate = (dateStr: string) => {
@@ -112,10 +184,12 @@ const ClanBoardPostList: React.FC = () => {
                                     <h3 className="text-[#003C48] text-[15px] font-medium truncate flex-1 pr-2">{post.title}</h3>
                                     <span className="text-gray-400 text-xs whitespace-nowrap">{formatDate(post.regDate)}</span>
                                 </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                    <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs text-gray-500">
-                                        <span className="text-xs">👤</span>
-                                        <span>{post.userNickNm}</span>
+                                <div className="flex items-center gap-3 mt-1 justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs text-gray-500">
+                                            <span className="text-xs">👤</span>
+                                            <span>{post.userNickNm}</span>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {post.boardReplyCnt > 0 && (
@@ -128,6 +202,14 @@ const ClanBoardPostList: React.FC = () => {
                                             <FaRegThumbsUp size={12} />
                                             <span>({post.boardLikeCnt})</span>
                                         </div>
+                                        {(post.writerUserId === userId || clanRole === '01' || clanRole === '02') && (
+                                            <button
+                                                onClick={(e) => confirmDeletePost(e, post.cnBoardNo)}
+                                                className="text-xs text-red-500 hover:text-red-600 font-medium px-2 py-0.5"
+                                            >
+                                                삭제
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -139,6 +221,30 @@ const ClanBoardPostList: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <CommonModal
+                isOpen={isModalOpen}
+                type="alert"
+                message={modalMessage}
+                onConfirm={() => {
+                    setIsModalOpen(false);
+                    if (onModalConfirm) {
+                        onModalConfirm();
+                        setOnModalConfirm(null);
+                    }
+                }}
+            />
+
+            <CommonModal
+                isOpen={isDeleteConfirmOpen}
+                type="confirm"
+                message="게시글을 삭제하시겠습니까?"
+                onConfirm={handleDeletePost}
+                onCancel={() => {
+                    setIsDeleteConfirmOpen(false);
+                    setPostToDelete(null);
+                }}
+            />
         </div>
     );
 };

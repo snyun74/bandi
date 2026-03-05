@@ -372,14 +372,6 @@ const ClanBoardPostDetail: React.FC = () => {
                                 <div className="text-xs text-gray-500">{formatDate(post.regDate)}</div>
                             </div>
                         </div>
-                        {canDelete && (
-                            <button
-                                onClick={() => setIsDeleteConfirmOpen(true)}
-                                className="flex items-center gap-1 text-xs text-white bg-red-400 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-colors font-medium"
-                            >
-                                삭제
-                            </button>
-                        )}
                     </div>
 
                     <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-line mb-6 min-h-[100px]">

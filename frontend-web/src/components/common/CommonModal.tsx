@@ -38,14 +38,14 @@ const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, message, onConf
                     <div className={`grid ${type === 'confirm' ? 'grid-cols-2 gap-3' : 'grid-cols-1'}`}>
                         {type === 'confirm' && (
                             <button
-                                onClick={onCancel}
+                                onClick={(e) => { e.stopPropagation(); if (onCancel) onCancel(); }}
                                 className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
                             >
                                 취소
                             </button>
                         )}
                         <button
-                            onClick={onConfirm}
+                            onClick={(e) => { e.stopPropagation(); onConfirm(); }}
                             className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors duration-200 shadow-lg shadow-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         >
                             확인

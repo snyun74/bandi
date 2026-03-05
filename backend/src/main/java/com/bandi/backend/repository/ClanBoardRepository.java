@@ -57,6 +57,7 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
         @Query(value = "SELECT " +
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +
                         "    B.TITLE AS \"title\", " +
+                        "    B.WRITER_USER_ID AS \"writerUserId\", " +
                         "    B.INS_DTIME AS \"regDate\", " +
                         "    (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) AS \"userNickNm\", "
                         +

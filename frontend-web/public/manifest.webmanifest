@@ -1,6 +1,6 @@
 {
-  "name": "Bandicon",
-  "short_name": "Bandicon",
+  "name": "밴디콘",
+  "short_name": "밴디콘",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

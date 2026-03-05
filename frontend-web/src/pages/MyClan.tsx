@@ -85,8 +85,8 @@ const MyClan: React.FC = () => {
                             </div>
 
                             {/* Info */}
-                            <div className="flex-1">
-                                <SectionTitle as="h3" className="!mt-0 mb-0.5">
+                            <div className="flex-1 min-w-0">
+                                <SectionTitle as="h3" className="!mt-0 mb-0.5 truncate">
                                     {clan.name}
                                 </SectionTitle>
                                 <p className="text-[#003C48] text-[13px] mb-1">
