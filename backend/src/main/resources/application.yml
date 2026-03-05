@@ -43,6 +43,10 @@ spring:
   config:
     activate:
       on-profile: prod
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 server:
   port: 8084 # 서버(운영)에서는 8084 사용
 kakao:
