@@ -17,6 +17,7 @@ interface JamRole {
     offImgUrl?: string;
     onImgUrl1?: string;
     onImgUrl2?: string;
+    reservedCount?: number;
 }
 
 interface BandDetail {
@@ -58,6 +59,16 @@ const ClanJamDetail: React.FC = () => {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+    // 예약 팝업 상태 (특정 세션 내역 조회용 추가)
+    const [rsvModal, setRsvModal] = useState<{
+        isOpen: boolean;
+        reservations: { rsvNo: number; userId: string; userNickNm: string; sessionName: string }[];
+        currentSessionTypeCd?: string;
+    }>({ isOpen: false, reservations: [] });
+
+
+
+
     const handleDelete = () => {
         showConfirm("정말 합주방을 삭제하시겠습니까?", async () => {
             try {
@@ -83,6 +94,78 @@ const ClanJamDetail: React.FC = () => {
 
     const showAlert = (message: string) => {
         setModalConfig({ isOpen: true, type: 'alert', message, onConfirm: closeModal });
+    };
+
+    // 예약 기능
+    const handleReserve = async (role: JamRole) => {
+        if (!userId || !bandDetail) return;
+        try {
+            const response = await fetch('/api/bands/reserve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bnNo: String(bandDetail.id),
+                    sessionTypeCd: role.sessionTypeCd,
+                    userId
+                }),
+            });
+            if (response.ok) {
+                showAlert('예약이 완료되었습니다.');
+                const res = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+                if (res.ok) setBandDetail(await res.json());
+            } else {
+                const err = await response.text();
+                showAlert(`예약 실패: ${err}`);
+            }
+        } catch (e) {
+            showAlert('오류가 발생했습니다.');
+        }
+    };
+
+    const fetchReservations = async (sessionTypeCd?: string) => {
+        if (!jamId) return;
+        try {
+            const url = sessionTypeCd
+                ? `/api/bands/${jamId}/reservations?sessionTypeCd=${sessionTypeCd}`
+                : `/api/bands/${jamId}/reservations`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                setRsvModal({
+                    isOpen: true,
+                    reservations: data.reservations || [],
+                    currentSessionTypeCd: sessionTypeCd,
+                });
+            }
+        } catch (e) {
+            showAlert('예약 목록을 불러오지 못했습니다.');
+        }
+    };
+
+    const handleCancelReservation = async (rsvNo: number) => {
+        if (!userId) return;
+        try {
+            const res = await fetch(`/api/bands/reserve/${rsvNo}?userId=${userId}`, { method: 'DELETE' });
+            if (res.ok) {
+                // 삭제 후 재조회
+                const url = rsvModal.currentSessionTypeCd
+                    ? `/api/bands/${jamId}/reservations?sessionTypeCd=${rsvModal.currentSessionTypeCd}`
+                    : `/api/bands/${jamId}/reservations`;
+                const updated = await fetch(url);
+                if (updated.ok) {
+                    const data = await updated.json();
+                    setRsvModal(prev => ({ ...prev, reservations: data.reservations || [] }));
+                }
+                // 정보 새로고침
+                const bandRes = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+                if (bandRes.ok) setBandDetail(await bandRes.json());
+            } else {
+                const err = await res.text();
+                showAlert(`삭제 실패: ${err}`);
+            }
+        } catch (e) {
+            showAlert('오류가 발생했습니다.');
+        }
     };
 
     useEffect(() => {
@@ -481,6 +564,9 @@ const ClanJamDetail: React.FC = () => {
                                                 handleJoin(role);
                                             } else if (role.isCurrentUser) {
                                                 handleCancelSession(role);
+                                            } else {
+                                                // 타인 참여 중일 때 클릭하면 예약 로직 작동
+                                                handleReserve(role);
                                             }
                                         }}
                                     >
@@ -514,11 +600,25 @@ const ClanJamDetail: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Bottom Info Bar - No Background for 100% Visibility */}
+                                        {/* Bottom Info Bar */}
                                         <div className="absolute bottom-1.5 left-0 right-2 z-20 flex flex-col items-end pointer-events-none">
-                                            <span className="font-bold text-[11px] text-[#052c42] truncate w-full text-right drop-shadow-sm">
-                                                {role.part}
-                                            </span>
+                                            {/* 세션별 예약 텍스트 (세션명 바로 위에 오른쪽 배치) */}
+                                            {(role.reservedCount || 0) > 0 && (
+                                                <div
+                                                    className="text-[#FFB74D] text-[10px] font-bold mb-0.5 pointer-events-auto cursor-pointer drop-shadow-sm hover:opacity-80 transition-opacity"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        fetchReservations(role.sessionTypeCd);
+                                                    }}
+                                                >
+                                                    예약
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-1 justify-end w-full">
+                                                <span className="font-bold text-[11px] text-[#052c42] truncate text-right drop-shadow-sm">
+                                                    {role.part}
+                                                </span>
+                                            </div>
                                             {isOccupied ? (
                                                 <span className="text-[9px] truncate max-w-[80px] font-bold text-gray-500 drop-shadow-sm">
                                                     {role.user}
@@ -529,6 +629,8 @@ const ClanJamDetail: React.FC = () => {
                                                 </span>
                                             )}
                                         </div>
+
+
                                     </div>
                                 );
                             });
@@ -620,6 +722,59 @@ const ClanJamDetail: React.FC = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={closeModal}
             />
+
+            {/* 개별 세션 예약자 목록 팝업 */}
+            {rsvModal.isOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-lg">
+                        <h2 className="text-base font-bold text-[#003C48] mb-3 text-center">
+                            예약 현황 {rsvModal.reservations[0] && `(${rsvModal.reservations[0].sessionName})`}
+                        </h2>
+
+                        {rsvModal.reservations.length === 0 ? (
+                            <p className="text-center text-gray-400 text-sm py-4">예약자가 없습니다.</p>
+                        ) : (
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                                <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-gray-400 border-b pb-1">
+                                    <span>순번</span>
+                                    <span>닉네임</span>
+                                    <span>세션</span>
+                                    <span className="text-right">삭제</span>
+                                </div>
+                                {rsvModal.reservations.map((rsv, idx) => (
+                                    <div key={rsv.rsvNo} className="grid grid-cols-4 gap-1 text-xs items-center">
+                                        <span className="text-[#00BDF8] font-bold">{idx + 1}</span>
+                                        <span className="truncate">{rsv.userNickNm}</span>
+                                        <span className="text-gray-500 truncate">{rsv.sessionName}</span>
+                                        {(bandDetail?.canManage || rsv.userId === userId) ? (
+                                            <button
+                                                onClick={() => handleCancelReservation(rsv.rsvNo)}
+                                                className="text-right text-[#FF8A80] font-bold text-[11px]"
+                                            >
+                                                삭제
+                                            </button>
+                                        ) : (
+                                            <span />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => setRsvModal(prev => ({ ...prev, isOpen: false }))}
+                            className="mt-4 w-full bg-gray-100 text-gray-600 font-bold py-2 rounded-xl text-sm"
+                        >
+                            닫기
+                        </button>
+                    </div>
+                </div>
+            )}
+
+
+
+
+
 
             {/* Edit Modal */}
             {isEditModalOpen && (

@@ -100,6 +100,14 @@ const ClanJamList: React.FC = () => {
         password: '',
     });
 
+    const [rsvModal, setRsvModal] = useState<{
+        isOpen: boolean;
+        bnNo: number;
+        sessionTypeCd: string;
+        sessionName: string;
+        reservations: { rsvNo: number; userId: string; userNickNm: string; sessionName: string }[];
+    }>({ isOpen: false, bnNo: 0, sessionTypeCd: '', sessionName: '', reservations: [] });
+
     const [descModal, setDescModal] = useState({
         isOpen: false,
         title: '',
@@ -274,6 +282,72 @@ const ClanJamList: React.FC = () => {
                 showAlert("취소 중 오류가 발생했습니다.");
             }
         });
+    };
+
+    const handleReserve = async (room: JamRoom, role: JamRole) => {
+        if (!userId) {
+            showAlert("로그인이 필요합니다.");
+            return;
+        }
+        try {
+            const response = await fetch('/api/bands/reserve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bnNo: String(room.id),
+                    sessionTypeCd: role.sessionTypeCd,
+                    userId
+                }),
+            });
+            if (response.ok) {
+                showAlert('예약이 완료되었습니다.');
+                fetchJamRooms(searchTerm);
+            } else {
+                const err = await response.text();
+                showAlert(`예약 실패: ${err}`);
+            }
+        } catch (e) {
+            showAlert('오류가 발생했습니다.');
+        }
+    };
+
+    const fetchReservations = async (bnNo: number, sessionTypeCd: string, sessionName: string) => {
+        try {
+            const res = await fetch(`/api/bands/${bnNo}/reservations?sessionTypeCd=${sessionTypeCd}`);
+            if (res.ok) {
+                const data = await res.json();
+                setRsvModal({
+                    isOpen: true,
+                    bnNo,
+                    sessionTypeCd,
+                    sessionName,
+                    reservations: data.reservations || [],
+                });
+            }
+        } catch (e) {
+            showAlert('예약 목록을 불러오지 못했습니다.');
+        }
+    };
+
+    const handleCancelReservation = async (rsvNo: number) => {
+        if (!userId) return;
+        try {
+            const res = await fetch(`/api/bands/reserve/${rsvNo}?userId=${userId}`, { method: 'DELETE' });
+            if (res.ok) {
+                // 삭제 후 재조회
+                const updated = await fetch(`/api/bands/${rsvModal.bnNo}/reservations?sessionTypeCd=${rsvModal.sessionTypeCd}`);
+                if (updated.ok) {
+                    const data = await updated.json();
+                    setRsvModal(prev => ({ ...prev, reservations: data.reservations || [] }));
+                }
+                fetchJamRooms(searchTerm);
+            } else {
+                const err = await res.text();
+                showAlert(`삭제 실패: ${err}`);
+            }
+        } catch (e) {
+            showAlert('오류가 발생했습니다.');
+        }
     };
 
 
@@ -457,11 +531,23 @@ const ClanJamList: React.FC = () => {
                                                 <span className="text-[#003C48] font-bold text-xs mb-1">{role.part}</span>
 
                                                 {/* Member Status */}
-                                                <div className="mb-2">
+                                                <div className="mb-2 flex items-center justify-between w-full">
                                                     {role.status === 'occupied' ? (
-                                                        <span className="text-[#FF8A80] text-sm font-medium">{role.user}</span>
+                                                        <span className="text-[#003C48] text-[13px] font-medium">{role.user}</span>
                                                     ) : (
                                                         <span className="text-gray-400 text-sm">공석</span>
+                                                    )}
+                                                    {/* 예약 배지 */}
+                                                    {role.status === 'occupied' && (role.reservedCount || 0) > 0 && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                fetchReservations(room.id, role.sessionTypeCd || '', role.part);
+                                                            }}
+                                                            className="bg-red-400 text-white text-[9px] px-1 rounded-full font-bold"
+                                                        >
+                                                            예약 {role.reservedCount}
+                                                        </button>
                                                     )}
                                                 </div>
 
@@ -497,10 +583,10 @@ const ClanJamList: React.FC = () => {
                                                         </button>
                                                     ) : (
                                                         <button
-                                                            disabled
-                                                            className="w-full bg-[#00BDF8] text-white text-xs font-bold py-1.5 rounded-lg shadow-sm opacity-50 cursor-default"
+                                                            onClick={() => handleReserve(room, role)}
+                                                            className="w-full bg-[#FFB74D] text-white text-xs font-bold py-1.5 rounded-lg shadow-sm hover:opacity-90 transition-opacity"
                                                         >
-                                                            참여완료
+                                                            예약
                                                         </button>
                                                     )}
                                                 </div>
@@ -577,6 +663,54 @@ const ClanJamList: React.FC = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={closeModal}
             />
+
+            {/* 예약자 목록 팔업 */}
+            {rsvModal.isOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-lg">
+                        <h2 className="text-base font-bold text-[#003C48] mb-3 text-center">
+                            {rsvModal.sessionName} 예약 목록
+                        </h2>
+
+                        {rsvModal.reservations.length === 0 ? (
+                            <p className="text-center text-gray-400 text-sm py-4">예약자가 없습니다.</p>
+                        ) : (
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                                <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-gray-400 border-b pb-1">
+                                    <span>순번</span>
+                                    <span>닉네임</span>
+                                    <span>세션</span>
+                                    <span className="text-right">삭제</span>
+                                </div>
+                                {rsvModal.reservations.map((rsv, idx) => (
+                                    <div key={rsv.rsvNo} className="grid grid-cols-4 gap-1 text-xs items-center">
+                                        <span className="text-[#00BDF8] font-bold">{idx + 1}</span>
+                                        <span className="truncate">{rsv.userNickNm}</span>
+                                        <span className="text-gray-500 truncate">{rsv.sessionName}</span>
+                                        {(userRole === '01' || userRole === '02' || rsv.userId === userId) ? (
+                                            <button
+                                                onClick={() => handleCancelReservation(rsv.rsvNo)}
+                                                className="text-right text-[#FF8A80] font-bold text-[11px]"
+                                            >
+                                                삭제
+                                            </button>
+                                        ) : (
+                                            <span />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => setRsvModal(prev => ({ ...prev, isOpen: false }))}
+                            className="mt-4 w-full bg-gray-100 text-gray-600 font-bold py-2 rounded-xl text-sm"
+                        >
+                            닫기
+                        </button>
+                    </div>
+                </div>
+            )}
         </div >
     );
 };

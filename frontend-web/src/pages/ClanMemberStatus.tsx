@@ -345,20 +345,20 @@ const ClanMemberStatus: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-4">
                 {/* Search Bar */}
-                <div className="flex gap-2">
-                    <div className="flex-1 flex items-center border border-[#00BDF8] rounded-xl px-3 py-2 bg-white">
-                        <FaSearch className="text-[#00BDF8] mr-2" />
+                <div className="flex gap-2 items-center">
+                    <div className="flex items-center border border-[#00BDF8] rounded-xl px-3 py-2 bg-white flex-1 min-w-0 max-w-[60%]">
+                        <FaSearch className="text-[#00BDF8] mr-2 flex-shrink-0" size={13} />
                         <input
                             type="text"
-                            placeholder="닉네임, 곡명, 아티스트로 검색"
-                            className="flex-1 outline-none text-sm placeholder-gray-400"
+                            placeholder="닉네임·곡명 검색"
+                            className="min-w-0 w-full outline-none text-sm placeholder-gray-400"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="whitespace-nowrap bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-[14px] font-bold transition-all hover:bg-[#00a0d2]"
+                        className="whitespace-nowrap ml-auto bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-[14px] font-bold transition-all hover:bg-[#00a0d2]"
                     >
                         {isExpanded ? '접어두기' : '펼치기'}
                     </button>

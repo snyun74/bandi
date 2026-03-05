@@ -271,4 +271,44 @@ public class BandController {
             return ResponseEntity.badRequest().body("Test failed: " + e.getMessage());
         }
     }
+
+    // =========================================================
+    // 예약 API
+    // =========================================================
+
+    @PostMapping("/reserve")
+    public ResponseEntity<?> reserveSession(@RequestBody java.util.Map<String, String> body) {
+        try {
+            Long bnNo = Long.valueOf(body.get("bnNo"));
+            String sessionTypeCd = body.get("sessionTypeCd");
+            String userId = body.get("userId");
+            bandService.reserveSession(bnNo, sessionTypeCd, userId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{bnNo}/reservations")
+    public ResponseEntity<?> getReservations(
+            @PathVariable Long bnNo,
+            @RequestParam(required = false) String sessionTypeCd) {
+        try {
+            return ResponseEntity.ok(bandService.getReservations(bnNo, sessionTypeCd));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/reserve/{rsvNo}")
+    public ResponseEntity<?> cancelReservation(
+            @PathVariable Long rsvNo,
+            @RequestParam String userId) {
+        try {
+            bandService.cancelReservation(rsvNo, userId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

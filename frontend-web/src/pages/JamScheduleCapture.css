@@ -9,14 +9,14 @@
 
 .react-calendar__navigation {
     display: flex;
-    margin-bottom: 0.5rem;
-    height: 44px;
+    margin-bottom: 0.25rem;
+    height: 34px;
 }
 
 .react-calendar__navigation button {
-    min-width: 44px;
+    min-width: 34px;
     background: none;
-    font-size: 16px;
+    font-size: 14px;
     font-family: 'Pretendard', sans-serif;
     color: #333;
 }
@@ -24,10 +24,10 @@
 .react-calendar__month-view__weekdays {
     text-transform: uppercase;
     font-weight: bold;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     color: #003C48;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     text-decoration: none !important;
 }
 
@@ -39,9 +39,8 @@
     font-family: 'Pretendard', sans-serif;
     color: #666;
     padding: 0 !important;
-    /* Remove padding to let flex center work better with fixed aspect ratio */
-    font-size: 14px;
-    aspect-ratio: 1 / 1;
+    font-size: 12px;
+    height: 34px !important;
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -49,8 +48,8 @@
 
 
 .react-calendar__tile abbr {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;

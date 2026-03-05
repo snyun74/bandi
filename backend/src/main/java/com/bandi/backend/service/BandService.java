@@ -23,6 +23,7 @@ public class BandService {
     private final BnGroupRepository bnGroupRepository;
     private final BnUserRepository bnUserRepository;
     private final BnSessionRepository bnSessionRepository;
+    private final com.bandi.backend.repository.BnRsvSessionRepository bnRsvSessionRepository;
     private final com.bandi.backend.repository.ClanUserRepository clanUserRepository;
     private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
     private final com.bandi.backend.repository.BandChatRoomRepository bandChatRoomRepository;
@@ -176,6 +177,9 @@ public class BandService {
                     isFull = false;
                 }
 
+                int reservedCount = (int) bnRsvSessionRepository.countByBnNoAndBnSessionTypeCd(
+                        group.getBnNo(), session.getBnSessionTypeCd());
+
                 roleDtos.add(com.bandi.backend.dto.ClanJamListDto.JamRoleDto.builder()
                         .sessionNo(session.getBnSessionNo())
                         .sessionTypeCd(session.getBnSessionTypeCd())
@@ -183,7 +187,7 @@ public class BandService {
                         .user(userNick)
                         .status(status)
                         .isCurrentUser(isCurrentUser)
-                        .reservedCount(0)
+                        .reservedCount(reservedCount)
                         .offImgUrl(offImg)
                         .onImgUrl1(onImg1)
                         .onImgUrl2(onImg2)
@@ -330,6 +334,42 @@ public class BandService {
                 session.setUpdDtime(currentDateTime);
                 session.setUpdId(dto.getUserId());
                 bnSessionRepository.save(session);
+
+                // 예약자 자동 승격: 가장 낮은 순번(BN_RSV_SESSION_NO ASC) 예약자를 자동 참여
+                java.util.List<com.bandi.backend.entity.band.BnRsvSession> reservations = bnRsvSessionRepository
+                        .findByBnNoAndBnSessionTypeCdOrderByBnRsvSessionNoAsc(
+                                dto.getBnNo(), session.getBnSessionTypeCd());
+
+                if (!reservations.isEmpty()) {
+                    com.bandi.backend.entity.band.BnRsvSession firstRsv = reservations.get(0);
+                    String rsvUserId = firstRsv.getBnSessionRsvUserId();
+
+                    // 세션에 예약자 참여 처리
+                    session.setBnSessionJoinUserId(rsvUserId);
+                    session.setUpdDtime(currentDateTime);
+                    session.setUpdId(rsvUserId);
+                    bnSessionRepository.save(session);
+
+                    // BN_USER에 없으면 등록
+                    com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(
+                            dto.getBnNo(), rsvUserId);
+                    if (!bnUserRepository.existsById(bnUserId)) {
+                        BnUser newUser = new BnUser();
+                        newUser.setBnNo(dto.getBnNo());
+                        newUser.setBnUserId(rsvUserId);
+                        newUser.setBnRoleCd("NORL");
+                        newUser.setBnJoinDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+                        newUser.setBnUserStatCd("A");
+                        newUser.setInsDtime(currentDateTime);
+                        newUser.setInsId(rsvUserId);
+                        newUser.setUpdDtime(currentDateTime);
+                        newUser.setUpdId(rsvUserId);
+                        bnUserRepository.save(newUser);
+                    }
+
+                    // 예약 레코드 삭제
+                    bnRsvSessionRepository.delete(firstRsv);
+                }
             }
         }
 
@@ -463,6 +503,9 @@ public class BandService {
                 }
             }
 
+            int reservedCount = (int) bnRsvSessionRepository.countByBnNoAndBnSessionTypeCd(
+                    bnNo, session.getBnSessionTypeCd());
+
             roleDtos.add(com.bandi.backend.dto.ClanJamListDto.JamRoleDto.builder()
                     .sessionNo(session.getBnSessionNo())
                     .sessionTypeCd(session.getBnSessionTypeCd())
@@ -472,7 +515,7 @@ public class BandService {
                     .isCurrentUser(isCurrentUser)
                     .isCurrentUser(isCurrentUser)
                     .isBandLeader(isRoleBandLeader)
-                    .reservedCount(0)
+                    .reservedCount(reservedCount)
                     .userId(session.getBnSessionJoinUserId())
                     .offImgUrl(offImg)
                     .onImgUrl1(onImg1)
@@ -1037,5 +1080,114 @@ public class BandService {
                             .build();
                 })
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    // =========================================================
+    // 예약 기능 메서드
+    // =========================================================
+
+    /**
+     * 세션 예약 등록
+     */
+    @Transactional
+    public void reserveSession(Long bnNo, String sessionTypeCd, String userId) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        BnGroup group = bnGroupRepository.findById(bnNo)
+                .orElseThrow(() -> new RuntimeException("Band not found"));
+
+        if ("Y".equals(group.getBnConfFg())) {
+            throw new RuntimeException("확정된 합주는 예약할 수 없습니다.");
+        }
+
+        // 중복 예약 방지
+        bnRsvSessionRepository.findByBnNoAndBnSessionTypeCdAndBnSessionRsvUserId(bnNo, sessionTypeCd, userId)
+                .ifPresent(r -> {
+                    throw new RuntimeException("이미 예약하셨습니다.");
+                });
+
+        // 이미 세션에 참여 중인 경우 예약 불가
+        boolean alreadyInSession = bnSessionRepository.findAll().stream()
+                .anyMatch(s -> s.getBnNo().equals(bnNo)
+                        && s.getBnSessionTypeCd().equals(sessionTypeCd)
+                        && userId.equals(s.getBnSessionJoinUserId()));
+        if (alreadyInSession) {
+            throw new RuntimeException("이미 참여 중인 세션입니다.");
+        }
+
+        com.bandi.backend.entity.band.BnRsvSession rsv = new com.bandi.backend.entity.band.BnRsvSession();
+        rsv.setBnNo(bnNo);
+        rsv.setBnSessionTypeCd(sessionTypeCd);
+        rsv.setBnSessionRsvUserId(userId);
+        rsv.setInsDtime(currentDateTime);
+        rsv.setInsId(userId);
+        rsv.setUpdDtime(currentDateTime);
+        rsv.setUpdId(userId);
+
+        bnRsvSessionRepository.save(rsv);
+    }
+
+    /**
+     * 세션별 예약자 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public com.bandi.backend.dto.BnRsvSessionDto getReservations(Long bnNo, String sessionTypeCd) {
+        java.util.List<com.bandi.backend.entity.band.BnRsvSession> list;
+        if (sessionTypeCd == null || sessionTypeCd.isEmpty()) {
+            list = bnRsvSessionRepository.findByBnNoOrderByBnRsvSessionNoAsc(bnNo);
+        } else {
+            list = bnRsvSessionRepository.findByBnNoAndBnSessionTypeCdOrderByBnRsvSessionNoAsc(bnNo, sessionTypeCd);
+        }
+
+        String displaySessionName = (sessionTypeCd == null || sessionTypeCd.isEmpty()) ? "전체"
+                : getSessionInfo(sessionTypeCd)[0];
+
+        java.util.List<com.bandi.backend.dto.BnRsvSessionDto.ReservationItem> items = list.stream()
+                .map(r -> com.bandi.backend.dto.BnRsvSessionDto.ReservationItem.builder()
+                        .rsvNo(r.getBnRsvSessionNo())
+                        .userId(r.getBnSessionRsvUserId())
+                        .userNickNm(getUserNickname(r.getBnSessionRsvUserId()))
+                        .sessionName(getSessionInfo(r.getBnSessionTypeCd())[0])
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+
+        return com.bandi.backend.dto.BnRsvSessionDto.builder()
+                .bnNo(bnNo)
+                .sessionTypeCd(sessionTypeCd)
+                .sessionName(displaySessionName)
+                .reservations(items)
+                .build();
+    }
+
+    /**
+     * 예약 삭제 (관리자)
+     */
+    @Transactional
+    public void cancelReservation(Long rsvNo, String requesterId) {
+        com.bandi.backend.entity.band.BnRsvSession rsv = bnRsvSessionRepository.findById(rsvNo)
+                .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
+
+        BnGroup group = bnGroupRepository.findById(rsv.getBnNo())
+                .orElseThrow(() -> new RuntimeException("Band not found"));
+
+        // 관리자(방장/클랜장/간부) 또는 본인만 삭제 가능
+        boolean hasPermission = group.getBnLeaderId().equals(requesterId)
+                || rsv.getBnSessionRsvUserId().equals(requesterId);
+
+        if (!hasPermission && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
+            com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(
+                    group.getCnNo(), requesterId);
+            com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId).orElse(null);
+            if (clanUser != null
+                    && ("01".equals(clanUser.getCnUserRoleCd()) || "02".equals(clanUser.getCnUserRoleCd()))) {
+                hasPermission = true;
+            }
+        }
+
+        if (!hasPermission) {
+            throw new RuntimeException("예약 삭제 권한이 없습니다.");
+        }
+
+        bnRsvSessionRepository.delete(rsv);
     }
 }

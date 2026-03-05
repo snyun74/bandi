@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaPen } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaPen, FaUnlink } from 'react-icons/fa';
 import { GiGrandPiano } from "react-icons/gi";
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -416,7 +416,7 @@ const JamScheduleCapture: React.FC = () => {
             return (
                 <div
                     key={hour}
-                    className="flex items-center h-8 mb-1"
+                    className="flex items-center h-8 mb-px"
                 >
                     {/* Time Label */}
                     <span className="w-9 text-gray-400 text-[10px] font-bold mr-1 text-right select-none pointer-events-none">
@@ -471,18 +471,19 @@ const JamScheduleCapture: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600">
                     <FaChevronLeft size={24} />
                 </button>
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
                     {bandInfo.imgUrl ? (
                         <img src={bandInfo.imgUrl} alt={bandInfo.title} className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-200">
-                            <span className="text-xs">img</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                            <FaUnlink size={14} />
+                            <span className="text-[8px] mt-0.5">미연결</span>
                         </div>
                     )}
                 </div>
-                <div>
-                    <h1 className="text-lg text-[#003C48] font-bold leading-tight">{bandInfo.title}</h1>
-                    <p className="text-xs text-gray-500">: {bandInfo.artist}</p>
+                <div className="flex-1 min-w-0">
+                    <h1 className="text-sm text-[#003C48] font-bold leading-tight truncate">{bandInfo.title}</h1>
+                    <p className="text-xs text-gray-500 truncate">: {bandInfo.artist}</p>
                 </div>
             </div>
 
