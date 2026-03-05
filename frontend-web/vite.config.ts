@@ -12,9 +12,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'Bandi - Ensemble Matching',
-        short_name: 'Bandi',
-        description: 'Bandi Project for Ensemble Matching',
+        name: '밴디콘 - 앙상블 매칭',
+        short_name: '밴디콘',
+        description: '밴디콘 앙상블 매칭 서비스',
         theme_color: '#00BDF8',
         icons: [
           {
