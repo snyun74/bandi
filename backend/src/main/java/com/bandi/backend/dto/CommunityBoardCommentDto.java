@@ -17,4 +17,5 @@ public class CommunityBoardCommentDto {
     private Long likeCnt;
     private Boolean isLiked;
     private Long parentReplyNo;
+    private String maskingYn;
 }

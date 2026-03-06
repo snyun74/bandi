@@ -313,7 +313,7 @@ public class ClanController {
             if (body.get("parentReplyNo") != null) {
                 parentReplyNo = ((Number) body.get("parentReplyNo")).longValue();
             }
-            clanService.createComment(boardNo, userId, content, parentReplyNo);
+            clanService.createComment(boardNo, userId, content, parentReplyNo, (String) body.get("maskingYn"));
             return ResponseEntity.ok(Map.of("message", "Comment created successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

@@ -45,4 +45,7 @@ public class ClanBoardDetail {
 
     @Column(name = "upd_id", length = 20)
     private String updId;
+
+    @Column(name = "masking_yn", length = 1)
+    private String maskingYn;
 }

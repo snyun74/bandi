@@ -4,9 +4,13 @@ import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookma
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
 
-const UserAvatar: React.FC<{ userId: string; size?: string }> = ({ userId, size = 'w-8 h-8' }) => {
+const UserAvatar: React.FC<{ userId: string; size?: string; isAnonymous?: boolean }> = ({ userId, size = 'w-8 h-8', isAnonymous = false }) => {
     const [img, setImg] = React.useState<string | null | undefined>(undefined);
     React.useEffect(() => {
+        if (isAnonymous) {
+            setImg(null);
+            return;
+        }
         fetch(`/api/user/profile/${userId}`)
             .then(r => r.ok ? r.json() : null)
             .then(d => setImg(d?.profileImageUrl || null))
@@ -33,6 +37,7 @@ interface Comment {
     parentReplyNo?: number | null;
     depth?: number;
     childReplyCount?: number;
+    maskingYn?: string;
 }
 
 interface PostDetail {
@@ -59,6 +64,8 @@ const BoardDetail: React.FC = () => {
     const [replyingTo, setReplyingTo] = useState<number | null>(null);
     const [replyInput, setReplyInput] = useState("");
     const [commentInput, setCommentInput] = useState("");
+    const [isAnonymous, setIsAnonymous] = useState(false);
+    const [isReplyAnonymous, setIsReplyAnonymous] = useState(false);
 
     // Scrap Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,12 +150,13 @@ const BoardDetail: React.FC = () => {
             const res = await fetch(`/api/boards/posts/${boardNo}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, content: replyInput, parentReplyNo })
+                body: JSON.stringify({ userId, content: replyInput, parentReplyNo, maskingYn: isReplyAnonymous ? 'Y' : 'N' })
             });
 
             if (res.ok) {
                 setReplyingTo(null);
                 setReplyInput("");
+                setIsReplyAnonymous(false);
                 fetchComments();
                 // fetchPostDetail(); 
             }
@@ -164,11 +172,12 @@ const BoardDetail: React.FC = () => {
             const res = await fetch(`/api/boards/posts/${boardNo}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, content: commentInput })
+                body: JSON.stringify({ userId, content: commentInput, maskingYn: isAnonymous ? 'Y' : 'N' })
             });
 
             if (res.ok) {
                 setCommentInput("");
+                setIsAnonymous(false);
                 fetchComments();
                 // fetchPostDetail(); 
             }
@@ -422,13 +431,13 @@ const BoardDetail: React.FC = () => {
                                         <div className="flex gap-2 w-full">
                                             {/* Comment User Icon */}
                                             <div className="flex-shrink-0">
-                                                <UserAvatar userId={comment.replyUserId} size="w-8 h-8" />
+                                                <UserAvatar userId={comment.replyUserId} size="w-8 h-8" isAnonymous={comment.maskingYn === 'Y'} />
                                             </div>
                                             <div className="w-full">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-bold text-sm ${comment.replyUserId === post.writerUserId ? 'text-[#00BDF8]' : 'text-gray-800'}`}>
                                                         {comment.userNickNm || "익명"}
-                                                        {comment.replyUserId === post.writerUserId && " (작성자)"}
+                                                        {comment.replyUserId === post.writerUserId && comment.maskingYn !== 'Y' && " (작성자)"}
                                                     </span>
                                                 </div>
                                                 <div className="text-xs text-gray-400">{formatDate(comment.regDate)}</div>
@@ -436,23 +445,31 @@ const BoardDetail: React.FC = () => {
 
                                                 {/* Reply Input Form */}
                                                 {replyingTo === comment.replyNo && (
-                                                    <div className="mt-3 flex items-end gap-2">
-                                                        <textarea
-                                                            ref={replyTextareaRef}
-                                                            className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8] resize-none overflow-hidden"
-                                                            placeholder="답글을 입력하세요..."
-                                                            value={replyInput}
-                                                            onChange={(e) => setReplyInput(e.target.value)}
-                                                            autoFocus
-                                                            rows={1}
-                                                            style={{ minHeight: '38px', maxHeight: '100px' }}
-                                                        />
-                                                        <button
-                                                            onClick={() => handleSubmitReply(comment.replyNo)}
-                                                            className="bg-[#00BDF8] text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap mb-0.5"
-                                                        >
-                                                            등록
-                                                        </button>
+                                                    <div className="mt-3 flex flex-col gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex flex-col items-center flex-shrink-0 cursor-pointer select-none" onClick={() => setIsReplyAnonymous(!isReplyAnonymous)}>
+                                                                <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${isReplyAnonymous ? 'bg-[#00BDF8] border-[#00BDF8]' : 'bg-white border-gray-300'}`}>
+                                                                    {isReplyAnonymous && <div className="w-1 h-1 bg-white rounded-full"></div>}
+                                                                </div>
+                                                                <span className="text-[9px] text-gray-500 mt-0.5 font-medium">익명</span>
+                                                            </div>
+                                                            <textarea
+                                                                ref={replyTextareaRef}
+                                                                className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8] resize-none overflow-hidden"
+                                                                placeholder="답글을 입력하세요..."
+                                                                value={replyInput}
+                                                                onChange={(e) => setReplyInput(e.target.value)}
+                                                                autoFocus
+                                                                rows={1}
+                                                                style={{ minHeight: '38px', maxHeight: '100px' }}
+                                                            />
+                                                            <button
+                                                                onClick={() => handleSubmitReply(comment.replyNo)}
+                                                                className="bg-[#00BDF8] text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap mb-0.5"
+                                                            >
+                                                                등록
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -485,7 +502,13 @@ const BoardDetail: React.FC = () => {
 
             {/* Main Input Footer */}
             <div className="fixed bottom-[60px] left-0 right-0 bg-white border-t border-gray-200 p-3 z-[60]">
-                <div className="relative bg-[#F3F4F6] rounded-xl flex items-end p-2 gap-2">
+                <div className="relative bg-[#F3F4F6] rounded-xl flex items-center p-2 gap-2">
+                    <div className="flex flex-col items-center ml-1 flex-shrink-0 cursor-pointer select-none" onClick={() => setIsAnonymous(!isAnonymous)}>
+                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${isAnonymous ? 'bg-[#00BDF8] border-[#00BDF8]' : 'bg-white border-gray-300'}`}>
+                            {isAnonymous && <div className="w-1 h-1 bg-white rounded-full"></div>}
+                        </div>
+                        <span className="text-[9px] text-gray-500 mt-0.5 font-medium leading-none">익명</span>
+                    </div>
                     <textarea
                         ref={commentTextareaRef}
                         className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-1 py-1 text-gray-700 placeholder-gray-400 resize-none overflow-hidden"

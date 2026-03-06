@@ -15,4 +15,5 @@ public class ClanBoardCommentDto {
     private Long likeCount;
     private Long parentReplyNo;
     private Integer depth;
+    private String maskingYn;
 }

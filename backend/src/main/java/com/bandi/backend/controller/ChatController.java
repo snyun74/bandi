@@ -97,4 +97,10 @@ public class ChatController {
         com.bandi.backend.dto.ChatMessageDto savedMessage = chatService.savePrivateMessage(dto);
         return ResponseEntity.ok(savedMessage);
     }
+
+    @GetMapping("/unread/total")
+    public ResponseEntity<Long> getTotalUnreadCount(@RequestParam String userId) {
+        long totalUnread = chatService.getTotalUnreadCount(userId);
+        return ResponseEntity.ok(totalUnread);
+    }
 }

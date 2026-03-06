@@ -55,15 +55,15 @@ const PrivateChatRoom: React.FC = () => {
     const latestMsgNoRef = useRef<number>(0);
     const isInitialLoadDone = useRef<boolean>(false);
 
-    const [friendName, setFriendName] = useState("Friend");
-    const [myProfile, setMyProfile] = useState<UserProfileDto | null>(null);
+    const [friendNickname, setFriendNickname] = useState("Friend");
+    const [friendProfileUrl, setFriendProfileUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        const state = location.state as { friendName: string; } | undefined;
+        const state = location.state as { friendNickname: string; friendProfileUrl?: string } | undefined;
         if (state) {
-            setFriendName(state.friendName);
+            setFriendNickname(state.friendNickname);
+            if (state.friendProfileUrl) setFriendProfileUrl(state.friendProfileUrl);
         }
-        // If no state, we might need to fetch room info/friend info, but for now relies on state
     }, [location.state]);
 
     const showAlert = (message: string) => {
@@ -175,20 +175,7 @@ const PrivateChatRoom: React.FC = () => {
         return () => clearInterval(interval);
     }, [roomNo]);
 
-    useEffect(() => {
-        const userId = localStorage.getItem('userId');
-        if (userId) {
-            fetch(`/api/user/profile/${userId}`)
-                .then(res => {
-                    if (res.ok) return res.json();
-                    return null;
-                })
-                .then(data => {
-                    if (data) setMyProfile(data);
-                })
-                .catch(err => console.error(err));
-        }
-    }, []);
+    // Removing myProfile fetch as it's no longer used in header
 
     useEffect(() => {
         if (!isFetchingOld && messagesContainerRef.current && prevScrollHeightRef.current > 0) {
@@ -323,15 +310,15 @@ const PrivateChatRoom: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="mr-3 text-[#003C48]">
                         <FaChevronLeft size={22} />
                     </button>
-                    {/* My Profile */}
+                    {/* Friend Profile */}
                     <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-gray-100">
-                        {myProfile?.profileImageUrl ? (
-                            <img src={myProfile.profileImageUrl} alt="My Profile" className="w-full h-full object-cover" />
+                        {friendProfileUrl ? (
+                            <img src={friendProfileUrl} alt={friendNickname} className="w-full h-full object-cover" />
                         ) : (
                             <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
                         )}
                     </div>
-                    <h1 className="text-xl font-bold text-[#003C48]">{friendName}</h1>
+                    <h1 className="text-[14px] font-bold text-[#003C48]">{friendNickname}</h1>
                 </div>
             </div>
 

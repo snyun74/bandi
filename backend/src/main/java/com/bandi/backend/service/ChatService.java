@@ -27,6 +27,9 @@ public class ChatService {
 
   private final com.bandi.backend.repository.BandChatMessageRepository bandChatMessageRepository;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private com.bandi.backend.service.PushService pushService;
+
   public List<ChatRoomListDto> getGroupChatList(String userId) {
     String sql = """
             SELECT
@@ -372,7 +375,6 @@ public class ChatService {
       message.setSndDtime(currentDateTime);
       message.setChatStatCd("A");
       message.setInsDtime(currentDateTime);
-      message.setInsDtime(currentDateTime);
       message.setUpdDtime(currentDateTime);
       message.setParentMsgNo(dto.getParentMsgNo());
 
@@ -449,7 +451,7 @@ public class ChatService {
         }
       }
 
-      return com.bandi.backend.dto.ChatMessageDto.builder()
+      ChatMessageDto resultDto = com.bandi.backend.dto.ChatMessageDto.builder()
           .cnMsgNo(savedMessage.getBnMsgNo())
           .cnNo(savedMessage.getBnNo())
           .sndUserId(savedMessage.getSndUserId())
@@ -467,125 +469,160 @@ public class ChatService {
           .attachFilePath(attachFilePath)
           .attachFileName(attachFileName)
           .build();
-    }
 
-    com.bandi.backend.entity.clan.ClanChatMessage message = new com.bandi.backend.entity.clan.ClanChatMessage();
-    message.setCnNo(dto.getCnNo());
-    message.setSndUserId(dto.getSndUserId());
-    message.setMsg(dto.getMsg());
-    message.setMsgTypeCd(dto.getMsgTypeCd() != null ? dto.getMsgTypeCd() : "TEXT");
-    message.setAttachNo(dto.getAttachNo());
-    message.setSndDtime(currentDateTime);
-    message.setChatStatCd("A");
-    message.setInsDtime(currentDateTime);
-    message.setUpdDtime(currentDateTime);
-    message.setUpdDtime(currentDateTime);
-    message.setParentMsgNo(dto.getParentMsgNo());
-    message.setVoteNo(dto.getVoteNo());
-
-    com.bandi.backend.entity.clan.ClanChatMessage savedMessage = clanChatMessageRepository.save(message);
-    System.out.println(
-        "DEBUG: savedMessage ID: " + savedMessage.getCnMsgNo() + ", parentMsgNo: " + savedMessage.getParentMsgNo());
-
-    // Mark sender as read immediately
-    try {
-      entityManager.createNativeQuery(
-          "INSERT INTO CN_CHAT_MESSAGE_READ (CN_MSG_NO, READ_USER_ID, READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (CN_MSG_NO, READ_USER_ID) DO NOTHING")
-          .setParameter("msgNo", savedMessage.getCnMsgNo())
-          .setParameter("userId", dto.getSndUserId())
-          .setParameter("readDtime", currentDateTime)
-          .executeUpdate();
-    } catch (Exception e) {
-      // Ignore
-    }
-
-    String userNickNm = "Unknown";
-    String userProfileUrl = null;
-
-    try {
-      Query query = entityManager.createNativeQuery(
-          "SELECT USER_NICK_NM FROM MM_USER WHERE USER_ID = :userId");
-      query.setParameter("userId", dto.getSndUserId());
-      Object result = query.getSingleResult();
-      if (result != null) {
-        userNickNm = (String) result;
-      }
-    } catch (Exception e) {
-      // Ignore
-    }
-
-    int unreadCount = 0;
-    try {
-      Query countQuery = entityManager.createNativeQuery(
-          "SELECT COUNT(1) FROM CN_USER WHERE CN_NO = :roomNo AND CN_USER_STAT_CD = 'A' AND CN_USER_APPR_STAT_CD = 'CN'");
-      countQuery.setParameter("roomNo", dto.getCnNo());
-      unreadCount = ((Number) countQuery.getSingleResult()).intValue();
-      unreadCount = Math.max(0, unreadCount - 1);
-    } catch (Exception e) {
-    }
-
-    String parentMsgContent = null;
-    String parentMsgUserNickNm = null;
-
-    if (savedMessage.getParentMsgNo() != null) {
-      System.out.println("DEBUG: Attempting to fetch parent message info for ID: " + savedMessage.getParentMsgNo());
+      // Send Push Notification to all active members except sender
       try {
-        Query parentQuery = entityManager.createNativeQuery(
-            "SELECT M.MSG, U.USER_NICK_NM " +
-                "FROM CN_CHAT_MESSAGE M " +
-                "LEFT JOIN MM_USER U ON U.USER_ID = M.SND_USER_ID " +
-                "WHERE M.CN_MSG_NO = :parentMsgNo");
-        parentQuery.setParameter("parentMsgNo", savedMessage.getParentMsgNo());
-        Object result = parentQuery.getSingleResult(); // Generic object first
+        String pushSql = "SELECT BN_USER_ID FROM BN_USER WHERE BN_NO = :roomNo AND BN_USER_STAT_CD = 'A' AND BN_USER_ID <> :senderId";
+        @SuppressWarnings("unchecked")
+        java.util.List<String> recipients = entityManager.createNativeQuery(pushSql)
+            .setParameter("roomNo", dto.getCnNo())
+            .setParameter("senderId", dto.getSndUserId())
+            .getResultList();
 
-        if (result instanceof Object[]) {
-          Object[] parentResult = (Object[]) result;
-          parentMsgContent = (String) parentResult[0];
-          parentMsgUserNickNm = (String) parentResult[1];
-          System.out
-              .println("DEBUG: Found parent msg via Object[]: " + parentMsgContent + ", nick: " + parentMsgUserNickNm);
-        } else {
-          System.out.println("DEBUG: Validate parent result type: " + result.getClass().getName());
+        for (String recipientId : recipients) {
+          pushService.sendPush(recipientId, "합주 " + userNickNm, dto.getMsg(),
+              "/main/chat/room/" + dto.getCnNo() + "?type=BAND", "BN");
         }
-
       } catch (Exception e) {
-        System.out.println("DEBUG: Error fetching parent message: " + e.getMessage());
         e.printStackTrace();
       }
-    } else {
-      System.out.println("DEBUG: ParentMsgNo is null, skipping fetch.");
-    }
 
-    String attachFilePath = null;
-    String attachFileName = null;
-    if (savedMessage.getAttachNo() != null) {
-      com.bandi.backend.entity.common.CmAttachment attachment = cmAttachmentRepository
-          .findById(savedMessage.getAttachNo()).orElse(null);
-      if (attachment != null) {
-        attachFilePath = attachment.getFilePath();
-        attachFileName = attachment.getFileName();
+      return resultDto;
+    } else { // CLAN section
+      com.bandi.backend.entity.clan.ClanChatMessage message = new com.bandi.backend.entity.clan.ClanChatMessage();
+      message.setCnNo(dto.getCnNo());
+      message.setSndUserId(dto.getSndUserId());
+      message.setMsg(dto.getMsg());
+      message.setMsgTypeCd(dto.getMsgTypeCd() != null ? dto.getMsgTypeCd() : "TEXT");
+      message.setAttachNo(dto.getAttachNo());
+      message.setSndDtime(currentDateTime);
+      message.setChatStatCd("A");
+      message.setInsDtime(currentDateTime);
+      message.setUpdDtime(currentDateTime);
+      message.setParentMsgNo(dto.getParentMsgNo());
+      message.setVoteNo(dto.getVoteNo());
+
+      com.bandi.backend.entity.clan.ClanChatMessage savedMessage = clanChatMessageRepository.save(message);
+
+      // Mark sender as read
+      try {
+        entityManager.createNativeQuery(
+            "INSERT INTO CN_CHAT_MESSAGE_READ (CN_MSG_NO, READ_USER_ID, READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (CN_MSG_NO, READ_USER_ID) DO NOTHING")
+            .setParameter("msgNo", savedMessage.getCnMsgNo())
+            .setParameter("userId", dto.getSndUserId())
+            .setParameter("readDtime", currentDateTime)
+            .executeUpdate();
+      } catch (Exception e) {
+        // Ignore
       }
-    }
 
-    ChatMessageDto returnDto = ChatMessageDto.builder()
-        .cnMsgNo(savedMessage.getCnMsgNo())
-        .cnNo(savedMessage.getCnNo())
-        .sndUserId(savedMessage.getSndUserId())
-        .userNickNm(userNickNm)
-        .msg(savedMessage.getMsg())
-        .msgTypeCd(savedMessage.getMsgTypeCd())
-        .sndDtime(savedMessage.getSndDtime())
-        .userProfileUrl(userProfileUrl)
-        .isMyMessage(true)
-        .unreadCount(unreadCount)
-        .parentMsgNo(savedMessage.getParentMsgNo())
-        .parentMsgContent(parentMsgContent)
-        .parentMsgUserNickNm(parentMsgUserNickNm)
-        .attachNo(savedMessage.getAttachNo())
-        .attachFilePath(attachFilePath)
-        .attachFileName(attachFileName)
-        .build();
-    return returnDto;
+      String userNickNm = "Unknown";
+      String userProfileUrl = null;
+
+      try {
+        Query query = entityManager.createNativeQuery(
+            "SELECT USER_NICK_NM FROM MM_USER WHERE USER_ID = :userId");
+        query.setParameter("userId", dto.getSndUserId());
+        Object result = query.getSingleResult();
+        if (result != null) {
+          userNickNm = (String) result;
+        }
+      } catch (Exception e) {
+        // Ignore
+      }
+
+      int unreadCount = 0;
+      try {
+        Query countQuery = entityManager.createNativeQuery(
+            "SELECT COUNT(1) FROM CN_USER WHERE CN_NO = :roomNo AND CN_USER_STAT_CD = 'A' AND CN_USER_APPR_STAT_CD = 'CN'");
+        countQuery.setParameter("roomNo", dto.getCnNo());
+        unreadCount = ((Number) countQuery.getSingleResult()).intValue();
+        unreadCount = Math.max(0, unreadCount - 1);
+      } catch (Exception e) {
+      }
+
+      String parentMsgContent = null;
+      String parentMsgUserNickNm = null;
+
+      if (savedMessage.getParentMsgNo() != null) {
+        System.out.println("DEBUG: Attempting to fetch parent message info for ID: " + savedMessage.getParentMsgNo());
+        try {
+          Query parentQuery = entityManager.createNativeQuery(
+              "SELECT M.MSG, U.USER_NICK_NM " +
+                  "FROM CN_CHAT_MESSAGE M " +
+                  "LEFT JOIN MM_USER U ON U.USER_ID = M.SND_USER_ID " +
+                  "WHERE M.CN_MSG_NO = :parentMsgNo");
+          parentQuery.setParameter("parentMsgNo", savedMessage.getParentMsgNo());
+          Object result = parentQuery.getSingleResult(); // Generic object first
+
+          if (result instanceof Object[]) {
+            Object[] parentResult = (Object[]) result;
+            parentMsgContent = (String) parentResult[0];
+            parentMsgUserNickNm = (String) parentResult[1];
+            System.out
+                .println(
+                    "DEBUG: Found parent msg via Object[]: " + parentMsgContent + ", nick: " + parentMsgUserNickNm);
+          } else {
+            System.out.println("DEBUG: Validate parent result type: " + result.getClass().getName());
+          }
+
+        } catch (Exception e) {
+          System.out.println("DEBUG: Error fetching parent message: " + e.getMessage());
+          e.printStackTrace();
+        }
+      } else {
+        System.out.println("DEBUG: ParentMsgNo is null, skipping fetch.");
+      }
+
+      String attachFilePath = null;
+      String attachFileName = null;
+      if (savedMessage.getAttachNo() != null) {
+        com.bandi.backend.entity.common.CmAttachment attachment = cmAttachmentRepository
+            .findById(savedMessage.getAttachNo()).orElse(null);
+        if (attachment != null) {
+          attachFilePath = attachment.getFilePath();
+          attachFileName = attachment.getFileName();
+        }
+      }
+
+      ChatMessageDto returnDto = ChatMessageDto.builder()
+          .cnMsgNo(savedMessage.getCnMsgNo())
+          .cnNo(savedMessage.getCnNo())
+          .sndUserId(savedMessage.getSndUserId())
+          .userNickNm(userNickNm)
+          .msg(savedMessage.getMsg())
+          .msgTypeCd(savedMessage.getMsgTypeCd())
+          .sndDtime(savedMessage.getSndDtime())
+          .userProfileUrl(userProfileUrl)
+          .isMyMessage(true)
+          .unreadCount(unreadCount)
+          .parentMsgNo(savedMessage.getParentMsgNo())
+          .parentMsgContent(parentMsgContent)
+          .parentMsgUserNickNm(parentMsgUserNickNm)
+          .attachNo(savedMessage.getAttachNo())
+          .attachFilePath(attachFilePath)
+          .attachFileName(attachFileName)
+          .build();
+
+      // Send Push Notification
+      try {
+        String pushSql = "SELECT CN_USER_ID FROM CN_USER WHERE CN_NO = :roomNo AND CN_USER_STAT_CD = 'A' AND CN_USER_APPR_STAT_CD = 'CN' AND CN_USER_ID <> :senderId";
+        @SuppressWarnings("unchecked")
+        java.util.List<String> recipients = entityManager.createNativeQuery(pushSql)
+            .setParameter("roomNo", dto.getCnNo())
+            .setParameter("senderId", dto.getSndUserId())
+            .getResultList();
+
+        for (String recipientId : recipients) {
+          pushService.sendPush(recipientId, "클랜 " + userNickNm, dto.getMsg(),
+              "/main/chat/room/" + dto.getCnNo() + "?type=CLAN", "CN");
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+
+      return returnDto;
+    }
   }
 
   @Transactional
@@ -660,7 +697,6 @@ public class ChatService {
                       )
                       -
                       (SELECT COUNT(1) FROM MM_CHAT_MESSAGE_READ WHERE MM_MSG_NO = MSG.MM_MSG_NO)
-                      - 1 -- 자기 자신은 읽은 것으로 간주 (발송 시 Read 테이블에도 insert 하므로)
                     ) AS UNREAD_CNT,
                     MSG.ATTACH_NO,
                     CMA.FILE_PATH AS ATTACH_FILE_PATH,
@@ -819,8 +855,14 @@ public class ChatService {
       // Ignore
     }
 
-    // Unread count logic
     int unreadCount = 1; // Default 1 for private chat until read by other
+
+    // Send Push Notification to receiver
+    try {
+      pushService.sendPush(rcvUserId, userNickNm, dto.getMsg(), "/main/chat/private/" + dto.getCnNo(), "SN");
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
     String parentMsgContent = null;
     String parentMsgUserNickNm = null;
@@ -903,6 +945,75 @@ public class ChatService {
     Query query = entityManager.createNativeQuery(sql);
     query.setParameter("userId", userId);
     query.setParameter("roomId", roomId);
+
+    return ((Number) query.getSingleResult()).longValue();
+  }
+
+  public long getTotalUnreadCount(String userId) {
+    String sql = """
+        SELECT (
+          -- Clan Chat Unread
+          SELECT COUNT(1)
+          FROM CN_CHAT_MESSAGE MSG
+          INNER JOIN CN_USER CNU ON CNU.CN_NO = MSG.CN_NO
+          INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNU.CN_NO
+          WHERE CNU.CN_USER_ID = :userId
+            AND CNU.CN_USER_STAT_CD = 'A'
+            AND CNU.CN_USER_APPR_STAT_CD = 'CN'
+            AND CNG.CN_STAT_CD = 'A'
+            AND CNG.CN_APPR_STAT_CD = 'CN'
+            AND MSG.SND_USER_ID <> :userId
+            AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                          AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+            AND MSG.CHAT_STAT_CD = 'A'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM CN_CHAT_MESSAGE_READ MSR
+                WHERE MSR.CN_MSG_NO = MSG.CN_MSG_NO
+                  AND MSR.READ_USER_ID = :userId
+            )
+        ) + (
+          -- Band Chat Unread
+          SELECT COUNT(1)
+          FROM BN_CHAT_MESSAGE MSG
+          INNER JOIN BN_USER BNU ON BNU.BN_NO = MSG.BN_NO
+          INNER JOIN BN_GROUP BNG ON BNG.BN_NO = BNU.BN_NO
+          WHERE BNU.BN_USER_ID = :userId
+            AND BNU.BN_USER_STAT_CD = 'A'
+            AND BNG.BN_STAT_CD = 'A'
+            AND MSG.BN_CHAT_SND_USER_ID <> :userId
+            AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                          AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+            AND MSG.BN_CHAT_STAT_CD = 'A'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM BN_CHAT_MESSAGE_READ MSR
+                WHERE MSR.BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO
+                  AND MSR.BN_CHAT_READ_USER_ID = :userId
+            )
+        ) + (
+          -- Private Chat Unread
+          SELECT COUNT(1)
+          FROM MM_CHAT_MESSAGE MSG
+          WHERE MSG.MM_ROOM_NO IN (
+              SELECT MM_ROOM_NO FROM MM_CHAT_ROOM
+              WHERE USER_ID = :userId OR FRIEND_USER_ID = :userId
+          )
+            AND MSG.SND_USER_ID <> :userId
+            AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                          AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+            AND MSG.CHAT_STAT_CD = 'A'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM MM_CHAT_MESSAGE_READ MSR
+                WHERE MSR.MM_MSG_NO = MSG.MM_MSG_NO
+                  AND MSR.READ_USER_ID = :userId
+            )
+        ) AS TOTAL_COUNT
+        """;
+
+    Query query = entityManager.createNativeQuery(sql);
+    query.setParameter("userId", userId);
 
     return ((Number) query.getSingleResult()).longValue();
   }

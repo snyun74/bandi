@@ -204,6 +204,9 @@ public class BoardService {
                     && boardDetailLikeRepository.existsByReplyNoAndUserId(c.getReplyNo(), userId);
 
             String nickNm = userNickNmMap.getOrDefault(c.getReplyUserId(), c.getReplyUserId());
+            if ("Y".equals(c.getMaskingYn())) {
+                nickNm = "익명";
+            }
 
             return CommunityBoardCommentDto.builder()
                     .replyNo(c.getReplyNo())
@@ -215,12 +218,13 @@ public class BoardService {
                     .likeCnt(likeCnt)
                     .isLiked(isLiked)
                     .parentReplyNo(c.getParentReplyNo())
+                    .maskingYn(c.getMaskingYn())
                     .build();
         }).collect(Collectors.toList());
     }
 
     @Transactional
-    public void createComment(Long boardNo, String userId, String content, Long parentReplyNo) {
+    public void createComment(Long boardNo, String userId, String content, Long parentReplyNo, String maskingYn) {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         BoardDetail comment = new BoardDetail();
@@ -228,6 +232,7 @@ public class BoardService {
         comment.setReplyUserId(userId);
         comment.setContent(content);
         comment.setReplyStatCd("A");
+        comment.setMaskingYn(maskingYn != null ? maskingYn : "N");
         comment.setInsDtime(currentDateTime);
         comment.setInsId(userId);
         comment.setUpdDtime(currentDateTime);

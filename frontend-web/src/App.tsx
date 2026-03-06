@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import FindIdPage from './pages/FindIdPage';
@@ -52,80 +53,124 @@ import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
 import AdminQaPage from './pages/AdminQaPage';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
+import { requestPermission, onMessageListener } from './utils/pushNotification';
 import './App.css';
+import PushToast from './components/common/PushToast';
 
 function App() {
+  const [pushNotification, setPushNotification] = useState<{ title: string; body: string; link?: string; logNo?: string } | null>(null);
+
+  useEffect(() => {
+    // Request permission and save token to server
+    requestPermission();
+
+    // Listen for foreground messages
+    const unsubscribe = onMessageListener((payload: any) => {
+      console.log('Foreground message received:', payload);
+      if (payload.notification) {
+        setPushNotification({
+          title: payload.notification.title,
+          body: payload.notification.body,
+          link: payload.data?.click_action || payload.data?.link,
+          logNo: payload.data?.logNo
+        });
+      }
+    });
+
+    return () => {
+      if (unsubscribe) {
+        // onMessage returns an unsubscribe function
+        // but if it was wrapped in a promise before, we need to be careful.
+        // The current implementation of onMessageListener (callback) returns the unsubscribe function.
+        if (typeof unsubscribe === 'function') unsubscribe();
+      }
+    };
+  }, []);
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/find-id" element={<FindIdPage />} />
-        <Route path="/find-password" element={<FindPasswordPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/find-id" element={<FindIdPage />} />
+          <Route path="/find-password" element={<FindPasswordPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
 
-        {/* Main Layout Routes */}
-        <Route path="/main" element={<MainLayout />}>
-          <Route index element={<HomePage />} /> {/* Default to Home */}
-          <Route path="home" element={<HomePage />} />
-          <Route path="profile" element={<MyProfile />} />
-          <Route path="admin" element={<AdminPage />} />
-          <Route path="admin/banners" element={<AdminBannerPage />} />
-          <Route path="admin/clans" element={<AdminClanApprovalPage />} />
-          <Route path="admin/qa" element={<AdminQaPage />} />
-          <Route path="profile/scraps" element={<MyScrapList />} />
-          <Route path="profile/posts" element={<MyPostList />} />
-          <Route path="customer-center" element={<CustomerCenterPage />} />
-          <Route path="freejam" element={<FreeJam />} />
-          <Route path="board" element={<Board />} />
-          <Route path="clan" element={<Clan />} />
-          <Route path="clan/create" element={<ClanCreatePage />} />
-          <Route path="clan/my" element={<MyClan />} />
-          <Route path="clan/detail/:id" element={<ClanDetail />} />
-          <Route path="clan/members/:clanId" element={<ClanMemberStatus />} />
-          <Route path="clan/intro/:id" element={<ClanIntro />} />
-          <Route path="clan/notice/:clanId" element={<ClanNoticeList />} />
-          <Route path="clan/gathering/management/:clanId" element={<GatheringManagement />} />
-          <Route path="clan/gathering/match-results/:gatherNo" element={<GatheringMatchResult />} />
-          <Route path="chat/list" element={<ChatList />} />
-          <Route path="chat/room/:roomNo" element={<ChatRoom />} />
-          <Route path="jam/chat/:roomNo" element={<JamChatRoom />} />
-          <Route path="chat/private/:roomNo" element={<PrivateChatRoom />} />
-          <Route path="chat/friend/add" element={<FriendAdd />} />
-          <Route path="clan/notice/:clanId/create" element={<ClanNoticeCreate />} />
-          <Route path="clan/notice/:clanId/detail/:noticeId" element={<ClanNoticeDetail />} />
-          <Route path="clan/calendar/:clanId" element={<ClanCalendar />} />
-          <Route path="clan/board/:clanId" element={<ClanBoardList />} />
-          <Route path="clan/board/:clanId" element={<ClanBoardList />} />
-          <Route path="clan/jam/:clanId" element={<ClanJamList />} />
-          <Route path="jam" element={<ClanJamList />} />
-          <Route path="jam/create" element={<ClanJamCreate />} />
-          <Route path="clan/jam/room/:jamId" element={<ClanJamDetail />} />
-          <Route path="jam/room/:jamId" element={<ClanJamDetail />} />
-          <Route path="jam/my" element={<MyJamList />} />
-          <Route path="clan/jam/:clanId/create" element={<ClanJamCreate />} />
-          <Route path="clan/board/:clanId/:boardTypeNo" element={<ClanBoardPostList />} />
-          <Route path="clan/board/:clanId/:boardTypeNo/create" element={<ClanBoardPostCreate />} />
-          <Route path="clan/board/:clanId/:boardTypeNo/post/:boardNo" element={<ClanBoardPostDetail />} />
-          <Route path="vote/status/:voteId" element={<VoteStatus />} />
-          <Route path="vote/list/:roomNo" element={<VoteList />} />
-          <Route path="vote/:voteId" element={<VoteDetail />} />
-          <Route path="jam/vote/status/:voteId" element={<JamVoteStatus />} />
-          <Route path="jam/vote/list/:roomNo" element={<JamVoteList />} />
-          <Route path="jam/vote/:voteId" element={<JamVoteDetail />} />
-          <Route path="jam/vote/status/:voteId" element={<JamVoteStatus />} />
-          <Route path="jam/vote/list/:roomNo" element={<JamVoteList />} />
-          <Route path="jam/vote/:voteId" element={<JamVoteDetail />} />
-          <Route path="membersador" element={<Membersador />} />
+          {/* Main Layout Routes */}
+          <Route path="/main" element={<MainLayout />}>
+            <Route index element={<HomePage />} /> {/* Default to Home */}
+            <Route path="home" element={<HomePage />} />
+            <Route path="profile" element={<MyProfile />} />
+            <Route path="admin" element={<AdminPage />} />
+            <Route path="admin/banners" element={<AdminBannerPage />} />
+            <Route path="admin/clans" element={<AdminClanApprovalPage />} />
+            <Route path="admin/qa" element={<AdminQaPage />} />
+            <Route path="profile/scraps" element={<MyScrapList />} />
+            <Route path="profile/posts" element={<MyPostList />} />
+            <Route path="customer-center" element={<CustomerCenterPage />} />
+            <Route path="freejam" element={<FreeJam />} />
+            <Route path="board" element={<Board />} />
+            <Route path="clan" element={<Clan />} />
+            <Route path="clan/create" element={<ClanCreatePage />} />
+            <Route path="clan/my" element={<MyClan />} />
+            <Route path="clan/detail/:id" element={<ClanDetail />} />
+            <Route path="clan/members/:clanId" element={<ClanMemberStatus />} />
+            <Route path="clan/intro/:id" element={<ClanIntro />} />
+            <Route path="clan/notice/:clanId" element={<ClanNoticeList />} />
+            <Route path="clan/gathering/management/:clanId" element={<GatheringManagement />} />
+            <Route path="clan/gathering/match-results/:gatherNo" element={<GatheringMatchResult />} />
+            <Route path="chat/list" element={<ChatList />} />
+            <Route path="chat/room/:roomNo" element={<ChatRoom />} />
+            <Route path="jam/chat/:roomNo" element={<JamChatRoom />} />
+            <Route path="chat/private/:roomNo" element={<PrivateChatRoom />} />
+            <Route path="chat/friend/add" element={<FriendAdd />} />
+            <Route path="clan/notice/:clanId/create" element={<ClanNoticeCreate />} />
+            <Route path="clan/notice/:clanId/detail/:noticeId" element={<ClanNoticeDetail />} />
+            <Route path="clan/calendar/:clanId" element={<ClanCalendar />} />
+            <Route path="clan/board/:clanId" element={<ClanBoardList />} />
+            <Route path="clan/board/:clanId" element={<ClanBoardList />} />
+            <Route path="clan/jam/:clanId" element={<ClanJamList />} />
+            <Route path="jam" element={<ClanJamList />} />
+            <Route path="jam/create" element={<ClanJamCreate />} />
+            <Route path="clan/jam/room/:jamId" element={<ClanJamDetail />} />
+            <Route path="jam/room/:jamId" element={<ClanJamDetail />} />
+            <Route path="jam/my" element={<MyJamList />} />
+            <Route path="clan/jam/:clanId/create" element={<ClanJamCreate />} />
+            <Route path="clan/board/:clanId/:boardTypeNo" element={<ClanBoardPostList />} />
+            <Route path="clan/board/:clanId/:boardTypeNo/create" element={<ClanBoardPostCreate />} />
+            <Route path="clan/board/:clanId/:boardTypeNo/post/:boardNo" element={<ClanBoardPostDetail />} />
+            <Route path="vote/status/:voteId" element={<VoteStatus />} />
+            <Route path="vote/list/:roomNo" element={<VoteList />} />
+            <Route path="vote/:voteId" element={<VoteDetail />} />
+            <Route path="jam/vote/status/:voteId" element={<JamVoteStatus />} />
+            <Route path="jam/vote/list/:roomNo" element={<JamVoteList />} />
+            <Route path="jam/vote/:voteId" element={<JamVoteDetail />} />
+            <Route path="jam/vote/status/:voteId" element={<JamVoteStatus />} />
+            <Route path="jam/vote/list/:roomNo" element={<JamVoteList />} />
+            <Route path="jam/vote/:voteId" element={<JamVoteDetail />} />
+            <Route path="membersador" element={<Membersador />} />
 
-          <Route path="board/list/:boardTypeFg" element={<BoardList />} />
-          <Route path="board/write/:boardTypeFg" element={<BoardWrite />} />
-          <Route path="board/detail/:boardNo" element={<BoardDetail />} />
-          <Route path="jam/schedule/:jamId" element={<JamScheduleCapture />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  )
+            <Route path="board/list/:boardTypeFg" element={<BoardList />} />
+            <Route path="board/write/:boardTypeFg" element={<BoardWrite />} />
+            <Route path="board/detail/:boardNo" element={<BoardDetail />} />
+            <Route path="jam/schedule/:jamId" element={<JamScheduleCapture />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+
+      {/* Push Notification Toast */}
+      {pushNotification && (
+        <PushToast
+          title={pushNotification.title}
+          body={pushNotification.body}
+          link={pushNotification.link}
+          logNo={pushNotification.logNo}
+          onClose={() => setPushNotification(null)}
+        />
+      )}
+    </>
+  );
 }
 
-export default App
+export default App;

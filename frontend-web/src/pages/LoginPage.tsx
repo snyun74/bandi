@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CommonModal from '../components/common/CommonModal';
+import { requestPermission } from "../utils/pushNotification";
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -58,6 +59,9 @@ const LoginPage: React.FC = () => {
                 if (data.token) {
                     localStorage.setItem('userId', id); // Store User ID
                     localStorage.setItem('accessToken', data.token); // Store Access Token
+
+                    // Request notification permission after login
+                    requestPermission();
                 }
                 navigate('/main');
             } else {

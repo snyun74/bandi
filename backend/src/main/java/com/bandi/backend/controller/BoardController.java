@@ -54,7 +54,8 @@ public class BoardController {
     @PostMapping("/posts/{boardNo}/comments")
     public ResponseEntity<?> createComment(@PathVariable Long boardNo,
             @RequestBody com.bandi.backend.dto.CommunityBoardCommentCreateDto dto) {
-        boardService.createComment(boardNo, dto.getUserId(), dto.getContent(), dto.getParentReplyNo());
+        boardService.createComment(boardNo, dto.getUserId(), dto.getContent(), dto.getParentReplyNo(),
+                dto.getMaskingYn());
         return ResponseEntity.ok().build();
     }
 

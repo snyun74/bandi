@@ -540,11 +540,14 @@ public class ClanService {
             dto.setRegDate(c.getInsDtime());
 
             // Use User relation for nickname
-            if (c.getUser() != null) {
+            if ("Y".equals(c.getMaskingYn())) {
+                dto.setUserNickNm("익명");
+            } else if (c.getUser() != null) {
                 dto.setUserNickNm(c.getUser().getUserNickNm());
             } else {
                 dto.setUserNickNm(c.getReplyUserId()); // Fallback
             }
+            dto.setMaskingYn(c.getMaskingYn());
 
             dto.setParentReplyNo(c.getParentReplyNo());
 
@@ -557,7 +560,7 @@ public class ClanService {
     }
 
     @Transactional
-    public void createComment(Long boardNo, String userId, String content, Long parentReplyNo) {
+    public void createComment(Long boardNo, String userId, String content, Long parentReplyNo, String maskingYn) {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         com.bandi.backend.entity.clan.ClanBoardDetail comment = new com.bandi.backend.entity.clan.ClanBoardDetail();
@@ -565,6 +568,7 @@ public class ClanService {
         comment.setReplyUserId(userId);
         comment.setContent(content);
         comment.setReplyStatCd("A");
+        comment.setMaskingYn(maskingYn != null ? maskingYn : "N");
         comment.setInsDtime(currentDateTime);
         comment.setInsId(userId);
         comment.setUpdDtime(currentDateTime);

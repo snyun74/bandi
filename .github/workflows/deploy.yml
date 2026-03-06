@@ -32,6 +32,10 @@ jobs:
           node-version: '20'
 
       # 4. Spring Boot 백엔드 빌드 (테스트 생략)
+      - name: Create Firebase Config File
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > ./backend/src/main/resources/firebase-service-account.json
+
       - name: Build Backend (Spring Boot)
         working-directory: ./backend
         run: |

@@ -30,6 +30,9 @@ dist/
 .env.test.local
 .env.production.local
 
+# Secrets
+firebase-service-account.json
+
 # React Native
 android/app/build/
 ios/build/

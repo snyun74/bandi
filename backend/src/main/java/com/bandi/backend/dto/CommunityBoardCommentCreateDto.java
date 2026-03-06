@@ -9,4 +9,5 @@ public class CommunityBoardCommentCreateDto {
     private String userId;
     private String content;
     private Long parentReplyNo;
+    private String maskingYn;
 }
