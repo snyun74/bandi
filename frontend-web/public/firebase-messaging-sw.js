@@ -15,14 +15,17 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
+    // 참고: 백엔드에서 'notification' 페이로드를 포함해 보내면 브라우저가 자동으로 알림을 띄웁니다.
+    // 여기서 showNotification을 또 호출하면 중복된 알림이 발생하므로 주석 처리하거나 로깅용으로만 사용합니다.
+    /*
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         icon: '/images/bandicon.png',
         data: payload.data
     };
-
     self.registration.showNotification(notificationTitle, notificationOptions);
+    */
 });
 
 self.addEventListener('notificationclick', (event) => {
