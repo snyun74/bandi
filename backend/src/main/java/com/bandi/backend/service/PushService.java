@@ -55,12 +55,14 @@ public class PushService {
                 .setParameter("userId", userId)
                 .getResultList();
 
-        for (String token : tokens) {
-            // 알림 발송 전 로그 먼저 생성 (PUSH_LOG_NO 획득)
-            Long logNo = savePushLog(userId, title, body, link, "00"); // 00:발송시도
-            if (logNo == null)
-                continue;
+        // 3. 알림 발송 전 로그 먼저 생성 (사용자당 1건만 생성)
+        Long logNo = savePushLog(userId, title, body, link, "00"); // 00:발송시도
+        if (logNo == null)
+            return;
 
+        boolean isAnySuccess = false;
+
+        for (String token : tokens) {
             try {
                 Message message = Message.builder()
                         .setNotification(Notification.builder()
@@ -69,20 +71,23 @@ public class PushService {
                                 .build())
                         .setToken(token)
                         .putData("click_action", link)
-                        .putData("logNo", String.valueOf(logNo)) // 필드명 간결하게 변경
+                        .putData("logNo", String.valueOf(logNo))
                         .build();
 
                 FirebaseMessaging.getInstance().send(message);
-
-                // 로그 상태 업데이트 (01:성공)
-                updatePushLogStat(logNo, "01");
+                isAnySuccess = true;
             } catch (Exception e) {
                 System.err.println("ERROR: FCM send failed for token: " + token);
                 System.err.println("Cause: " + e.getMessage());
-                e.printStackTrace();
-                // 로그 상태 업데이트 (02:실패)
-                updatePushLogStat(logNo, "02");
+                // 개별 토큰 실패는 로그에만 남기고 계속 진행
             }
+        }
+
+        // 4. 결과 업데이트 (하나라도 성공했다면 01, 모두 실패했다면 02)
+        if (isAnySuccess) {
+            updatePushLogStat(logNo, "01");
+        } else {
+            updatePushLogStat(logNo, "02");
         }
     }
 
