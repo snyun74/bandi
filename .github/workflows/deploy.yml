@@ -33,8 +33,14 @@ jobs:
 
       # 4. Spring Boot 백엔드 빌드 (테스트 생략)
       - name: Create Firebase Config File
+        shell: bash
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > ./backend/src/main/resources/firebase-service-account.json
+          mkdir -p ./backend/src/main/resources
+          cat <<EOF > ./backend/src/main/resources/firebase-service-account.json
+          ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EOF
+          # 파일 생성 확인 (내용은 보안상 출력하지 않음)
+          ls -l ./backend/src/main/resources/firebase-service-account.json
 
       - name: Build Backend (Spring Boot)
         working-directory: ./backend

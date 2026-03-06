@@ -14,6 +14,7 @@ public class FirebaseConfig {
 
     @PostConstruct
     public void initialize() {
+        System.out.println("DEBUG: Initializing Firebase...");
         try {
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials
@@ -22,8 +23,16 @@ public class FirebaseConfig {
 
             if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
+                System.out.println("SUCCESS: FirebaseApp has been initialized successfully.");
+            } else {
+                System.out.println("INFO: FirebaseApp already initialized.");
             }
         } catch (IOException e) {
+            System.err.println("CRITICAL ERROR: Failed to load firebase-service-account.json. Firebase will not work!");
+            System.err.println("Error Message: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("CRITICAL ERROR: Unexpected error during Firebase initialization.");
             e.printStackTrace();
         }
     }

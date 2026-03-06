@@ -77,6 +77,8 @@ public class PushService {
                 // 로그 상태 업데이트 (01:성공)
                 updatePushLogStat(logNo, "01");
             } catch (Exception e) {
+                System.err.println("ERROR: FCM send failed for token: " + token);
+                System.err.println("Cause: " + e.getMessage());
                 e.printStackTrace();
                 // 로그 상태 업데이트 (02:실패)
                 updatePushLogStat(logNo, "02");
