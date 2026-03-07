@@ -280,7 +280,7 @@ const SignupPage: React.FC = () => {
             />
 
             <div className="min-h-screen bg-white flex flex-col font-['Pretendard']">
-                <div className="flex-1 w-full max-w-sm mx-auto px-6 py-8 flex flex-col">
+                <div className="flex-1 w-full max-w-sm mx-auto px-4 py-8 flex flex-col">
                     <div className="text-center mb-10">
                         <h1 className="text-3xl text-[#003C48] font-bold tracking-wide">
                             회원가입
@@ -301,13 +301,13 @@ const SignupPage: React.FC = () => {
                                     name="userId"
                                     value={formData.userId}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48]"
+                                    className="flex-1 min-w-0 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48]"
                                     placeholder="아이디 입력"
                                 />
                                 <button
                                     type="button"
                                     onClick={checkIdDuplicate}
-                                    className={`px-3 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-colors border ${isNickChecked ? 'bg-[#00BDF8] text-white border-[#00BDF8]' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
+                                    className={`px-3 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-colors border ${isIdChecked ? 'bg-[#00BDF8] text-white border-[#00BDF8]' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
                                 >
                                     중복확인
                                 </button>
@@ -323,6 +323,7 @@ const SignupPage: React.FC = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
+                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
                                 placeholder="비밀번호"
                             />
                         </div>
@@ -333,7 +334,7 @@ const SignupPage: React.FC = () => {
                                 name="passwordConfirm"
                                 value={formData.passwordConfirm}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
+                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
                                 placeholder="비밀번호 확인"
                             />
                         </div>
@@ -347,25 +348,25 @@ const SignupPage: React.FC = () => {
                                     name="userNm"
                                     value={formData.userNm}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
                                     placeholder="실명"
                                 />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[#003C48] font-bold text-sm">닉네임 <span className="text-red-500">*</span></label>
-                                <div className="flex gap-2">
+                                <div className="flex gap-1.5">
                                     <input
                                         type="text"
                                         name="userNickNm"
                                         value={formData.userNickNm}
                                         onChange={handleChange}
-                                        className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400 min-w-0"
+                                        className="flex-1 min-w-0 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
                                         placeholder="별명"
                                     />
                                     <button
                                         type="button"
                                         onClick={checkNickDuplicate}
-                                        className={`px-3 py-3 text-sm font-bold rounded-xl whitespace-nowrap transition-colors border ${isNickChecked ? 'bg-[#00BDF8] text-white border-[#00BDF8]' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
+                                        className={`px-2.5 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-colors border ${isNickChecked ? 'bg-[#00BDF8] text-white border-[#00BDF8]' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
                                     >
                                         확인
                                     </button>
@@ -377,7 +378,7 @@ const SignupPage: React.FC = () => {
                         {/* Phone */}
                         <div className="space-y-1">
                             <label className="text-[#003C48] font-bold text-sm">휴대폰 <span className="text-red-500">*</span></label>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1.5">
                                 <input
                                     type="text"
                                     name="phoneNo"
@@ -387,7 +388,7 @@ const SignupPage: React.FC = () => {
                                         handleChange(e);
                                     }}
                                     readOnly={isPhoneVerified}
-                                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
+                                    className={`flex-1 min-w-0 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400 ${isPhoneVerified ? 'bg-gray-100' : ''}`}
                                     placeholder="01012345678"
                                     inputMode="tel"
                                 />
@@ -395,7 +396,7 @@ const SignupPage: React.FC = () => {
                                     type="button"
                                     onClick={handleSendSms}
                                     disabled={isPhoneVerified}
-                                    className={`px-4 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-colors border ${isPhoneVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
+                                    className={`px-3 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isPhoneVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
                                 >
                                     {isPhoneVerified ? '인증완료' : isSmsSent ? '재발송' : '인증요청'}
                                 </button>
@@ -406,19 +407,19 @@ const SignupPage: React.FC = () => {
                         {isSmsSent && !isPhoneVerified && (
                             <div className="space-y-1">
                                 <label className="text-[#003C48] font-bold text-sm">인증번호 <span className="text-red-500">*</span></label>
-                                <div className="flex gap-2">
-                                    <div className="flex-1 relative">
+                                <div className="flex gap-1.5">
+                                    <div className="flex-1 min-w-0 relative">
                                         <input
                                             type="text"
                                             value={verificationCode}
                                             onChange={(e) => setVerificationCode(e.target.value)}
-                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
-                                            placeholder="인증번호 6자리"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
+                                            placeholder="인증번호"
                                             inputMode="numeric"
                                             maxLength={6}
                                         />
                                         {timer > 0 && (
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-red-500">
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-red-500">
                                                 {formatTime(timer)}
                                             </span>
                                         )}
@@ -426,7 +427,7 @@ const SignupPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={handleVerifySms}
-                                        className="px-4 py-2.5 text-sm font-bold rounded-xl whitespace-nowrap transition-colors bg-[#00BDF8] text-white border border-[#00BDF8] hover:bg-[#00ACD8]"
+                                        className="px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors bg-[#00BDF8] text-white border border-[#00BDF8] hover:bg-[#00ACD8]"
                                     >
                                         확인
                                     </button>
@@ -444,7 +445,7 @@ const SignupPage: React.FC = () => {
                                     value={formData.birthDt}
                                     onChange={handleChange}
                                     maxLength={8}
-                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
                                     placeholder="YYYYMMDD"
                                     inputMode="numeric"
                                 />
@@ -470,20 +471,20 @@ const SignupPage: React.FC = () => {
                         {/* Email - Moved to bottom */}
                         <div className="space-y-1">
                             <label className="text-[#003C48] font-bold text-sm">이메일</label>
-                            <div className="flex gap-2 items-start">
+                            <div className="flex gap-1.5 items-start">
                                 <input
                                     type="text"
                                     name="emailId"
                                     value={formData.emailId}
                                     onChange={handleChange}
-                                    className="w-[45%] px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
-                                    placeholder="이메일 ID"
+                                    className="w-[42%] px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
+                                    placeholder="ID"
                                 />
                                 <span className="text-gray-400 font-bold self-center">@</span>
-                                <div className="flex-1 flex flex-col gap-2">
+                                <div className="flex-1 flex flex-col gap-2 min-w-0">
                                     <select
                                         onChange={handleEmailDomainChange}
-                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48]"
+                                        className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[15px] text-[#003C48]"
                                     >
                                         <option value="">선택</option>
                                         {emailDomains.map(code => (
@@ -491,7 +492,7 @@ const SignupPage: React.FC = () => {
                                                 {code.commDtlNm}
                                             </option>
                                         ))}
-                                        <option value="direct">직접입력</option>
+                                        <option value="direct">직접</option>
                                     </select>
                                     {isCustomEmail && (
                                         <input
@@ -499,8 +500,8 @@ const SignupPage: React.FC = () => {
                                             name="emailDomain"
                                             value={formData.emailDomain}
                                             onChange={handleChange}
-                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
-                                            placeholder="도메인 직접 입력"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
+                                            placeholder="도메인"
                                         />
                                     )}
                                 </div>

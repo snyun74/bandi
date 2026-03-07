@@ -111,21 +111,21 @@ const FindIdPage: React.FC = () => {
                 <button onClick={() => navigate('/signup')} className="hover:text-[#00BDF8]">회원가입</button>
             </div>
 
-            <div className="w-full max-w-sm px-6 mt-4 flex flex-col items-center">
+            <div className="w-full max-w-sm px-4 mt-4 flex flex-col items-center">
                 {/* Logo Section */}
                 <div className="flex flex-col items-center mb-8">
                     <img src="/images/main_title.png" alt="Bandicon" className="w-64 mb-2" />
                 </div>
 
                 {/* Find ID Card */}
-                <div className="w-full bg-white rounded-[2rem] p-8 shadow-[0_0_20px_rgba(0,0,0,0.03)] border border-gray-100">
+                <div className="w-full bg-white rounded-[2rem] p-6 shadow-[0_0_20px_rgba(0,0,0,0.03)] border border-gray-100">
                     <h2 className="text-[15px] font-bold text-[#003C48] mb-8">아이디 찾기</h2>
 
                     <div className="space-y-6">
                         {/* Phone Number */}
                         <div className="space-y-1">
                             <label className="block text-sm font-bold text-[#003C48]">전화번호</label>
-                            <div className="flex gap-2">
+                            <div className="flex gap-1.5">
                                 <input
                                     type="text"
                                     value={phoneNumber}
@@ -134,13 +134,13 @@ const FindIdPage: React.FC = () => {
                                         setPhoneNumber(value);
                                     }}
                                     readOnly={isVerified}
-                                    className={`flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#00BDF8] text-[#003C48] ${isVerified ? 'bg-gray-100' : ''}`}
+                                    className={`flex-1 min-w-0 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[16px] focus:outline-none focus:border-[#00BDF8] text-[#003C48] ${isVerified ? 'bg-gray-100' : ''}`}
                                     placeholder="01012345678"
                                 />
                                 <button
                                     onClick={handleGetAuthCode}
                                     disabled={isVerified}
-                                    className={`px-4 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
+                                    className={`px-3 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
                                 >
                                     {isVerified ? '인증완료' : isSmsSent ? '재발송' : '인증요청'}
                                 </button>
@@ -151,18 +151,18 @@ const FindIdPage: React.FC = () => {
                         {isSmsSent && !isVerified && (
                             <div className="space-y-1">
                                 <label className="block text-sm font-bold text-[#003C48]">인증번호</label>
-                                <div className="flex gap-2 relative">
-                                    <div className="flex-1 relative">
+                                <div className="flex gap-1.5 relative">
+                                    <div className="flex-1 min-w-0 relative">
                                         <input
                                             type="text"
                                             value={authCode}
                                             onChange={(e) => setAuthCode(e.target.value.replace(/[^0-9]/g, ''))}
                                             maxLength={6}
-                                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#00BDF8] text-[#003C48]"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[16px] focus:outline-none focus:border-[#00BDF8] text-[#003C48]"
                                             placeholder="6자리 숫자"
                                         />
                                         {timer > 0 && (
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-red-500">
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-red-500">
                                                 {formatTime(timer)}
                                             </span>
                                         )}
