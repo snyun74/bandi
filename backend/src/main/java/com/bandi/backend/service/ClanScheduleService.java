@@ -18,11 +18,22 @@ import java.util.stream.Collectors;
 public class ClanScheduleService {
 
     private final ClanScheduleRepository clanScheduleRepository;
+    private final com.bandi.backend.repository.ClanUserRepository clanUserRepository;
 
     public List<ClanScheduleDto> getSchedules(Long clanId, String year, String month) {
         String yearMonth = year + String.format("%02d", Integer.parseInt(month));
         List<ClanSchedule> schedules = clanScheduleRepository.findAllByCnNoAndMonth(clanId, yearMonth);
 
+        return schedules.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    public List<ClanScheduleDto> getMySchedules(String userId, String startDate, String endDate) {
+        List<Long> clanIds = clanUserRepository.findCnNosByUserId(userId);
+        if (clanIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<ClanSchedule> schedules = clanScheduleRepository.findAllByCnNosAndDateRange(clanIds, startDate, endDate);
         return schedules.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 

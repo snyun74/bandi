@@ -11,7 +11,7 @@ const BottomNav: React.FC = () => {
         { id: 'board', label: '게시판', icon: ClipboardList, path: '/main/board' },
         { id: 'home', label: '홈', icon: Home, path: '/main/home' },
         { id: 'clan', label: '클랜', icon: Users, path: '/main/clan' },
-        { id: 'membersador', label: '멤버서더', icon: Medal, path: '/main/membersador' },
+        { id: 'membersador', label: '엠버서더', icon: Medal, path: '/main/membersador' },
     ];
 
     return (

@@ -102,7 +102,7 @@ export default function HomePage() {
         return days[date.getDay()];
     };
 
-    // Generate Current Week Data
+    // Generate Current Week Data Empty
     const generateCurrentWeek = () => {
         const today = new Date();
         const day = today.getDay(); // 0 (Sun) - 6 (Sat)
@@ -118,37 +118,74 @@ export default function HomePage() {
             const dayName = getDayName(current);
             const id = i;
 
-            let item: any = {
+            weekData.push({
                 id,
                 date: dateStr,
+                fullDate: current.getFullYear() + formatDate(current).replace('/', ''), // YYYYMMDD
                 day: dayName,
                 active: isToday,
                 sub: '',
                 type: '',
                 events: []
-            };
-
-            if (dayName === '월') {
-                item.sub = '2개 일정';
-                item.events = [
-                    { type: '클랜', time: '14:00', title: '정기모임합주일정' },
-                    { type: '합주', time: '16:00', title: '회원모임-원하는 사람만 참석' }
-                ];
-            }
-
-            weekData.push(item);
+            });
         }
         return weekData;
     };
 
-    const schedules = React.useMemo(() => generateCurrentWeek(), []);
+    const [schedules, setSchedules] = useState<any[]>(generateCurrentWeek());
     const [myClan, setMyClan] = useState<any>(null);
     const [myJams, setMyJams] = useState<any[]>([]);
     const [currentJamIndex, setCurrentJamIndex] = useState(0);
 
+    // Fetch Schedules
+    const fetchSchedules = async () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) return;
+
+        // Get this week range
+        const today = new Date();
+        const first = today.getDate() - today.getDay();
+        const last = first + 6;
+
+        const firstDay = new Date(today.setDate(first));
+        const lastDay = new Date(new Date().setDate(last));
+
+        const formatDateToYYYYMMDD = (date: Date) => {
+            return date.getFullYear() +
+                String(date.getMonth() + 1).padStart(2, '0') +
+                String(date.getDate()).padStart(2, '0');
+        };
+
+        const start = formatDateToYYYYMMDD(firstDay);
+        const end = formatDateToYYYYMMDD(lastDay);
+
+        try {
+            const res = await fetch(`/api/clan/schedule/my?userId=${userId}&startDate=${start}&endDate=${end}`);
+            if (res.ok) {
+                const data = await res.json();
+
+                setSchedules(prev => prev.map(day => {
+                    const dayEvents = data.filter((s: any) => s.sttDate === day.fullDate);
+                    return {
+                        ...day,
+                        events: dayEvents.map((e: any) => ({
+                            type: '클랜',
+                            time: e.sttTiem ? `${e.sttTiem.substring(0, 2)}:${e.sttTiem.substring(2, 4)}` : '00:00',
+                            title: e.title
+                        })),
+                        sub: dayEvents.length > 0 ? `${dayEvents.length}개 일정` : ''
+                    };
+                }));
+            }
+        } catch (error) {
+            console.error("Failed to fetch schedules", error);
+        }
+    };
+
     React.useEffect(() => {
         const userId = localStorage.getItem('userId');
         if (userId) {
+            fetchSchedules();
             fetch(`/api/clans/my?userId=${userId}`)
                 .then(res => {
                     if (res.ok) return res.json();
@@ -242,7 +279,7 @@ export default function HomePage() {
                                                     <div key={idx} className="flex items-center gap-1 py-1.5 border-b border-dotted border-blue-300 last:border-none">
                                                         {/* Date & Time Prefix */}
                                                         <span className="text-[#00BDF8] text-[13px] whitespace-nowrap" style={{ fontFamily: '"Pretendard", sans-serif' }}>
-                                                            {evt.type}) {selectedItem.date}({selectedItem.day}) {evt.time} ~
+                                                            {evt.type}) {selectedItem.date}({selectedItem.day}) -
                                                         </span>
                                                         {/* Title - Truncated */}
                                                         <span className="text-[#00BDF8] text-[13px] font-bold truncate flex-1" style={{ fontFamily: '"Pretendard", sans-serif' }}>

@@ -16,7 +16,7 @@ export default defineConfig({
         clientsClaim: true,
       },
       manifest: {
-        name: '밴디콘 - 앙상블 매칭',
+        name: '밴디콘 - 세상에서 가장 쉬운 밴드',
         short_name: '밴디콘',
         description: '밴디콘 앙상블 매칭 서비스',
         theme_color: '#00BDF8',

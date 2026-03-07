@@ -26,6 +26,15 @@ public class ClanScheduleController {
         return ResponseEntity.ok(schedules);
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<List<ClanScheduleDto>> getMySchedules(
+            @RequestParam String userId,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+        List<ClanScheduleDto> schedules = clanScheduleService.getMySchedules(userId, startDate, endDate);
+        return ResponseEntity.ok(schedules);
+    }
+
     @PostMapping
     public ResponseEntity<ClanScheduleDto> createSchedule(@RequestBody ClanScheduleDto dto) {
         ClanScheduleDto savedSchedule = clanScheduleService.createSchedule(dto);
