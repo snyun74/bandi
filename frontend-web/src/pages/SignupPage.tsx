@@ -322,7 +322,6 @@ const SignupPage: React.FC = () => {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-sm text-[#003C48] placeholder-gray-400"
                                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400"
                                 placeholder="비밀번호"
                             />
@@ -388,7 +387,7 @@ const SignupPage: React.FC = () => {
                                         handleChange(e);
                                     }}
                                     readOnly={isPhoneVerified}
-                                    className={`flex-1 min-w-0 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400 ${isPhoneVerified ? 'bg-gray-100' : ''}`}
+                                    className={`w-[160px] flex-none px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-[#00BDF8] text-[16px] text-[#003C48] placeholder-gray-400 ${isPhoneVerified ? 'bg-gray-100' : ''}`}
                                     placeholder="01012345678"
                                     inputMode="tel"
                                 />
@@ -396,7 +395,7 @@ const SignupPage: React.FC = () => {
                                     type="button"
                                     onClick={handleSendSms}
                                     disabled={isPhoneVerified}
-                                    className={`px-3 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isPhoneVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
+                                    className={`flex-1 px-3 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isPhoneVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
                                 >
                                     {isPhoneVerified ? '인증완료' : isSmsSent ? '재발송' : '인증요청'}
                                 </button>

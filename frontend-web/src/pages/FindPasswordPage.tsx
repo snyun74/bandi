@@ -214,13 +214,13 @@ const FindPasswordPage: React.FC = () => {
                                         setPhoneNumber(value);
                                     }}
                                     readOnly={isVerified}
-                                    className={`flex-1 min-w-0 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[16px] focus:outline-none focus:border-[#00BDF8] text-[#003C48] ${isVerified ? 'bg-gray-100' : ''}`}
+                                    className={`w-[160px] flex-none px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-[16px] focus:outline-none focus:border-[#00BDF8] text-[#003C48] ${isVerified ? 'bg-gray-100' : ''}`}
                                     placeholder="01012345678"
                                 />
                                 <button
                                     onClick={handleGetAuthCode}
                                     disabled={isVerified}
-                                    className={`px-3 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
+                                    className={`flex-1 px-3 py-2.5 text-xs font-bold rounded-xl whitespace-nowrap transition-colors border ${isVerified ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-white text-[#003C48] border-gray-200 hover:bg-gray-50'}`}
                                 >
                                     {isVerified ? '인증완료' : isSmsSent ? '재발송' : '인증요청'}
                                 </button>
