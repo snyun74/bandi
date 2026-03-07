@@ -49,6 +49,42 @@ public class AuthController {
         return ResponseEntity.ok().body(java.util.Collections.singletonMap("name", name));
     }
 
+    @GetMapping("/find-id")
+    public ResponseEntity<?> findId(@RequestParam String phoneNumber) {
+        try {
+            String userId = authService.findIdByPhone(phoneNumber);
+            return ResponseEntity.ok().body(java.util.Collections.singletonMap("userId", userId));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(java.util.Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/check-user")
+    public ResponseEntity<?> checkUser(@RequestBody java.util.Map<String, String> request) {
+        try {
+            String userId = request.get("userId");
+            String phoneNumber = request.get("phoneNumber");
+            authService.validateUserForReset(userId, phoneNumber);
+            return ResponseEntity.ok().body(java.util.Collections.singletonMap("message", "User Validated"));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(java.util.Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            String userId = request.get("userId");
+            String phoneNumber = request.get("phoneNumber");
+            String newPassword = request.get("newPassword");
+
+            authService.resetPassword(userId, phoneNumber, newPassword);
+            return ResponseEntity.ok().body(java.util.Collections.singletonMap("message", "Password Reset Success"));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(java.util.Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/kakao")
     public ResponseEntity<?> kakaoLogin(@RequestBody KakaoLoginRequest request) {
         try {

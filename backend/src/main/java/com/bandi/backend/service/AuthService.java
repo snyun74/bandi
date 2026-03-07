@@ -26,6 +26,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserAccountRepository userAccountRepository;
     private final CommDetailRepository commDetailRepository;
+    private final SmsService smsService;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Transactional(readOnly = true)
@@ -46,6 +47,12 @@ public class AuthService {
 
     @Transactional
     public void registerUser(SignupRequestDto dto) {
+        // 0. SMS 인증 여부 확인
+        String cleanPhoneNo = dto.getPhoneNo().replace("-", "");
+        if (!smsService.isVerified(cleanPhoneNo)) {
+            throw new RuntimeException("휴대폰 번호 인증이 완료되지 않았습니다.");
+        }
+
         String nowDtime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
@@ -87,7 +94,73 @@ public class AuthService {
 
         userAccountRepository.save(account);
 
+        // 3. 인증 정보 삭제
+        smsService.clearVerification(cleanPhoneNo);
+
         log.info("User registered successfully: {}", dto.getUserId());
+    }
+
+    @Transactional(readOnly = true)
+    public String findIdByPhone(String phoneNo) {
+        String cleanPhoneNo = phoneNo.replace("-", "");
+
+        // 1. SMS 인증 여부 확인
+        if (!smsService.isVerified(cleanPhoneNo)) {
+            throw new RuntimeException("휴대폰 번호 인증이 완료되지 않았습니다.");
+        }
+
+        // 2. 사용자 조회
+        java.util.List<User> users = userRepository.findByPhoneNo(phoneNo);
+        if (users.isEmpty()) {
+            throw new RuntimeException("해당 휴대폰 번호로 등록된 아이디가 없습니다.");
+        }
+
+        // 여러 개의 아이디가 있을 경우 콤마로 구분하여 반환
+        return users.stream()
+                .map(User::getUserId)
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
+
+    @Transactional(readOnly = true)
+    public void validateUserForReset(String userId, String phoneNo) {
+        String cleanPhoneNo = phoneNo.replace("-", "");
+
+        // 1. 사용자 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 아이디입니다."));
+
+        // 2. 전화번호 일치 확인
+        if (!user.getPhoneNo().replace("-", "").equals(cleanPhoneNo)) {
+            throw new RuntimeException("아이디와 등록된 휴대폰 번호가 일치하지 않습니다.");
+        }
+    }
+
+    @Transactional
+    public void resetPassword(String userId, String phoneNo, String newPassword) {
+        String cleanPhoneNo = phoneNo.replace("-", "");
+
+        // 1. SMS 인증 여부 확인
+        if (!smsService.isVerified(cleanPhoneNo)) {
+            throw new RuntimeException("휴대폰 번호 인증이 완료되지 않았습니다.");
+        }
+
+        // 2. 사용자 조회 (ID와 전화번호 일치 여부)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 아이디입니다."));
+
+        if (!user.getPhoneNo().replace("-", "").equals(cleanPhoneNo)) {
+            throw new RuntimeException("아이디와 등록된 휴대폰 번호가 일치하지 않습니다.");
+        }
+
+        // 3. 비밀번호 업데이트 (MM_USER_ACCOUNT)
+        UserAccount account = userAccountRepository.findByUserIdAndLoginTypeCd(userId, "NORL")
+                .orElseThrow(() -> new RuntimeException("계정 정보를 찾을 수 없습니다."));
+
+        account.setPasswd(passwordEncoder.encode(newPassword));
+        account.setUpdDtime(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
+        account.setUpdId("SYSTEM");
+
+        userAccountRepository.save(account);
     }
 
     @Transactional

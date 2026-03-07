@@ -20,6 +20,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+coolsms:
+  api-key: NCSSQ8OSRU1VMMFM
+  api-secret: DL3QZAWRWNNBWTLA5HWGI6SB9J2BM7VN
+  from-number: 01091855724
 
 logging:
   level:
