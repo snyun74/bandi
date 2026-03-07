@@ -236,20 +236,20 @@ const ClanCalendar: React.FC = () => {
 
             {/* Bottom Input - Only for Managers */}
             {canManage && (
-                <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center gap-2 fixed bottom-[60px] left-0 right-0 z-50">
+                <div className="p-3 bg-gray-50 border-t border-gray-100 flex items-center gap-1.5 fixed bottom-[60px] left-0 right-0 z-50">
                     <input
                         type="text"
                         value={newScheduleTitle}
                         onChange={(e) => setNewScheduleTitle(e.target.value)}
-                        placeholder="추가할 일정을 입력하세요."
-                        className="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:border-[#00BDF8]"
+                        placeholder="일정을 입력하세요."
+                        className="flex-1 min-w-0 bg-white border border-gray-200 rounded-full px-3 py-2.5 text-[16px] focus:outline-none focus:border-[#00BDF8]"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') handleAddSchedule(); // Optional: Allow Enter to add
                         }}
                     />
                     <button
                         onClick={handleAddSchedule}
-                        className="bg-[#00BDF8] text-white px-5 py-2.5 rounded-full text-[14px] font-bold shadow-sm whitespace-nowrap"
+                        className="flex-none bg-[#00BDF8] text-white px-4 py-2.5 rounded-full text-[14px] font-bold shadow-sm whitespace-nowrap"
                     >
                         추가
                     </button>
