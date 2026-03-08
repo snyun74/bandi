@@ -39,12 +39,22 @@ self.addEventListener('notificationclick', (event) => {
         logNo ? fetch(`/api/push/read/${logNo}`, { method: 'POST' }).catch(err => console.error('Read API fail:', err)) : Promise.resolve(),
         // 창 열기/포커스
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // 1. 이미 타겟 URL이 열려있는 창이 있는지 확인
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
                 if (client.url === urlToOpen && 'focus' in client) {
                     return client.focus();
                 }
             }
+            // 2. 타겟 URL은 아니지만 우리 앱의 창이 하나라도 열려있는지 확인
+            if (windowClients.length > 0) {
+                const client = windowClients[0];
+                if ('navigate' in client && 'focus' in client) {
+                    client.navigate(urlToOpen);
+                    return client.focus();
+                }
+            }
+            // 3. 열려있는 창이 전혀 없으면 새 창 열기
             if (clients.openWindow) {
                 return clients.openWindow(urlToOpen);
             }
