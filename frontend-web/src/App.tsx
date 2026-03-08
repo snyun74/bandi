@@ -56,6 +56,7 @@ import GatheringMatchResult from './pages/GatheringMatchResult';
 import { requestPermission, onMessageListener } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
+import PageTracker from './components/common/PageTracker';
 
 function App() {
   const [pushNotification, setPushNotification] = useState<{ title: string; body: string; link?: string; logNo?: string } | null>(null);
@@ -90,6 +91,7 @@ function App() {
   return (
     <>
       <BrowserRouter>
+        <PageTracker />
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/find-id" element={<FindIdPage />} />

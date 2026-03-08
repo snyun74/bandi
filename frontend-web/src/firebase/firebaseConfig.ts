@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDndAWjrrYG_d1d7JP9Z-_gG_SJ0IARt_c",
@@ -12,5 +13,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+export const analytics = getAnalytics(app);
 export const messaging = getMessaging(app);
 export const VAPID_KEY = "BGjs4N5Qy2XYZAjwG01pcn4WuGReb3zehV9nknD7r3AaOR9WzoeTl7yepSjqHHmsPy21jbjVgpJwbzc3aoyStp0";
