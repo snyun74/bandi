@@ -13,54 +13,45 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// 설치 즉시 활성화되도록 설정
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+});
+
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // 참고: 백엔드에서 'notification' 페이로드를 포함해 보내면 브라우저가 자동으로 알림을 띄웁니다.
-    // 여기서 showNotification을 또 호출하면 중복된 알림이 발생하므로 주석 처리하거나 로깅용으로만 사용합니다.
-    /*
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/images/bandicon.png',
-        data: payload.data
-    };
-    self.registration.showNotification(notificationTitle, notificationOptions);
-    */
+    // 배경에서 알림이 명시적으로 오지 않을 경우 여기서 직접 띄울 수 있지만, 
+    // 보통 백엔드에서 notification 객체로 보낼 경우 브라우저가 자동으로 띄웁니다.
 });
 
 self.addEventListener('notificationclick', (event) => {
-    console.log('[firebase-messaging-sw.js] Notification clicked', event.notification);
+    console.log('[firebase-messaging-sw.js] Notification clicked');
     event.notification.close();
 
     const data = event.notification.data || {};
-    // 상대 경로를 절대 경로로 변환 (self.location.origin 활용)
-    const urlToOpen = new URL(data.click_action || '/', self.location.origin).href;
+    // URL이 없으면 기본적으로 메인('/')으로 이동하도록 함
+    const clickAction = data.click_action || '/';
+    const urlToOpen = new URL(clickAction, self.location.origin).href;
     const logNo = data.logNo;
 
-    console.log('[firebase-messaging-sw.js] Attempting to open/focus URL:', urlToOpen);
-
     const promiseChain = Promise.all([
-        // 읽음 처리 API 호출 (절대 경로 활용)
-        logNo ? fetch(new URL(`/api/push/read/${logNo}`, self.location.origin).href, { method: 'POST' }).catch(err => console.error('Read API fail:', err)) : Promise.resolve(),
+        // 읽음 처리 알림 (비동기)
+        logNo ? fetch(new URL(`/api/push/read/${logNo}`, self.location.origin).href, { method: 'POST' }).catch(() => { }) : Promise.resolve(),
 
-        // 창 열기/포커스 로직
+        // 창 열기 로직
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // 1. 이미 동일한 URL이 열려있는 창이 있으면 포커스
-            for (let i = 0; i < windowClients.length; i++) {
-                const client = windowClients[i];
-                if (client.url === urlToOpen && 'focus' in client) {
-                    return client.focus();
-                }
-            }
-            // 2. 관리 중인 창이 하나라도 있으면 첫 번째 창을 타겟 URL로 이동 후 포커스
-            if (windowClients.length > 0) {
-                const client = windowClients[0];
-                if ('navigate' in client && 'focus' in client) {
+            // 1. 이미 열려 있는 탭이 있다면 그 탭을 찾아서 이동 및 포커스
+            for (const client of windowClients) {
+                if ('focus' in client && 'navigate' in client) {
                     client.navigate(urlToOpen);
                     return client.focus();
                 }
             }
-            // 3. 열려있는 창이 없으면 새 창 열기
+            // 2. 열려 있는 탭이 없으면 새로 열기
             if (clients.openWindow) {
                 return clients.openWindow(urlToOpen);
             }
