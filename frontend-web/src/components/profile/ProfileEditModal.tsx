@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaCamera } from 'react-icons/fa';
 import { BsPersonCircle } from 'react-icons/bs';
 import CommonModal from '../common/CommonModal';
+import { validateFileSize } from '../../utils/fileUtils';
 
 interface UserSkillDto {
     sessionTypeCd: string;
@@ -84,6 +85,15 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+
+            // 파일 사이즈 체크
+            const validation = validateFileSize(file);
+            if (!validation.isValid) {
+                showAlert(validation.message);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return;
+            }
+
             setSelectedFile(file);
             const reader = new FileReader();
             reader.onloadend = () => setPreviewImage(reader.result as string);

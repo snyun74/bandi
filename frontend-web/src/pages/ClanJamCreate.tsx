@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaCheckSquare, FaRegSquare, FaTimes, FaCamera } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import { validateFileSize } from '../utils/fileUtils';
 
 interface CommDetail {
     commCd: string;
@@ -103,6 +104,15 @@ const ClanJamCreate: React.FC = () => {
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
+
+            // 파일 사이즈 체크
+            const validation = validateFileSize(file);
+            if (!validation.isValid) {
+                showModal(validation.message);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return;
+            }
+
             setSelectedImage(file);
             const reader = new FileReader();
             reader.onloadend = () => {

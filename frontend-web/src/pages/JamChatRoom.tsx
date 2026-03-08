@@ -5,6 +5,7 @@ import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
 import SettlementCreationModal from '../components/SettlementCreationModal';
+import { validateFileSize } from '../utils/fileUtils';
 
 interface ChatMessage {
     cnMsgNo: number;
@@ -272,6 +273,14 @@ const JamChatRoom: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // 파일 사이즈 체크
+        const validation = validateFileSize(file);
+        if (!validation.isValid) {
+            showAlert(validation.message);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
 
         const userId = localStorage.getItem('userId');
         if (!userId) return;

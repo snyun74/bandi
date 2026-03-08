@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { FaChevronLeft, FaPlayCircle, FaImage, FaUpload } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import CommonModal from '../components/common/CommonModal';
+import { validateFileSize } from '../utils/fileUtils';
 
 interface AdBannerDto {
     adBannerCd: string;
@@ -124,6 +125,14 @@ const AdminBannerPage: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, bannerCd: string) => {
         if (!e.target.files || e.target.files.length === 0) return;
         const file = e.target.files[0];
+
+        // 파일 사이즈 체크
+        const validation = validateFileSize(file);
+        if (!validation.isValid) {
+            showAlert(validation.message);
+            if (e.target) e.target.value = '';
+            return;
+        }
 
         setSelectedFiles(prev => ({ ...prev, [bannerCd]: file }));
     };

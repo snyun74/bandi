@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaFileAlt } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import { validateFileSize } from '../utils/fileUtils';
 
 interface ChatMessage {
     cnMsgNo: number;
@@ -215,6 +216,14 @@ const PrivateChatRoom: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // 파일 사이즈 체크
+        const validation = validateFileSize(file);
+        if (!validation.isValid) {
+            showAlert(validation.message);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
 
         const userId = localStorage.getItem('userId');
         if (!userId) return;

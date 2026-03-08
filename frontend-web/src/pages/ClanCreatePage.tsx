@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaCamera } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import { validateFileSize } from '../utils/fileUtils';
 
 const ClanCreatePage: React.FC = () => {
     const navigate = useNavigate();
@@ -41,6 +42,14 @@ const ClanCreatePage: React.FC = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // 파일 사이즈 체크
+            const validation = validateFileSize(file);
+            if (!validation.isValid) {
+                showAlert(validation.message);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return;
+            }
+
             setImageFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {

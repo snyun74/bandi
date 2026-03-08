@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPaperclip } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import { validateFileSize } from '../utils/fileUtils';
 
 const ClanNoticeCreate: React.FC = () => {
     const navigate = useNavigate();
@@ -38,7 +39,22 @@ const ClanNoticeCreate: React.FC = () => {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setFile(e.target.files[0]);
+            const selectedFile = e.target.files[0];
+
+            // 파일 사이즈 체크
+            const validation = validateFileSize(selectedFile);
+            if (!validation.isValid) {
+                setModalConfig({
+                    isOpen: true,
+                    type: 'alert',
+                    message: validation.message,
+                    onConfirm: closeModal
+                });
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return;
+            }
+
+            setFile(selectedFile);
         }
     };
 
