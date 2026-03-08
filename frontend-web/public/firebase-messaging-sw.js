@@ -29,24 +29,30 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
+    console.log('[firebase-messaging-sw.js] Notification clicked', event.notification);
     event.notification.close();
-    const data = event.notification.data;
-    const urlToOpen = data?.click_action || '/';
-    const logNo = data?.logNo;
+
+    const data = event.notification.data || {};
+    // 상대 경로를 절대 경로로 변환 (self.location.origin 활용)
+    const urlToOpen = new URL(data.click_action || '/', self.location.origin).href;
+    const logNo = data.logNo;
+
+    console.log('[firebase-messaging-sw.js] Attempting to open/focus URL:', urlToOpen);
 
     const promiseChain = Promise.all([
-        // 읽음 처리 API 호출
-        logNo ? fetch(`/api/push/read/${logNo}`, { method: 'POST' }).catch(err => console.error('Read API fail:', err)) : Promise.resolve(),
-        // 창 열기/포커스
+        // 읽음 처리 API 호출 (절대 경로 활용)
+        logNo ? fetch(new URL(`/api/push/read/${logNo}`, self.location.origin).href, { method: 'POST' }).catch(err => console.error('Read API fail:', err)) : Promise.resolve(),
+
+        // 창 열기/포커스 로직
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // 1. 이미 타겟 URL이 열려있는 창이 있는지 확인
+            // 1. 이미 동일한 URL이 열려있는 창이 있으면 포커스
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
                 if (client.url === urlToOpen && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // 2. 타겟 URL은 아니지만 우리 앱의 창이 하나라도 열려있는지 확인
+            // 2. 관리 중인 창이 하나라도 있으면 첫 번째 창을 타겟 URL로 이동 후 포커스
             if (windowClients.length > 0) {
                 const client = windowClients[0];
                 if ('navigate' in client && 'focus' in client) {
@@ -54,7 +60,7 @@ self.addEventListener('notificationclick', (event) => {
                     return client.focus();
                 }
             }
-            // 3. 열려있는 창이 전혀 없으면 새 창 열기
+            // 3. 열려있는 창이 없으면 새 창 열기
             if (clients.openWindow) {
                 return clients.openWindow(urlToOpen);
             }
