@@ -3,6 +3,8 @@ package com.bandi.backend.service;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
+import com.google.firebase.messaging.WebpushConfig;
+import com.google.firebase.messaging.WebpushFcmOptions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -72,6 +74,9 @@ public class PushService {
                         .setToken(token)
                         .putData("click_action", link)
                         .putData("logNo", String.valueOf(logNo))
+                        .setWebpushConfig(WebpushConfig.builder()
+                                .setFcmOptions(WebpushFcmOptions.withLink(link))
+                                .build())
                         .build();
 
                 FirebaseMessaging.getInstance().send(message);

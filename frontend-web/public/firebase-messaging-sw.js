@@ -33,30 +33,30 @@ self.addEventListener('notificationclick', (event) => {
     event.notification.close();
 
     const data = event.notification.data || {};
-    // URL이 없으면 기본적으로 메인('/')으로 이동하도록 함
-    const clickAction = data.click_action || '/';
-    const urlToOpen = new URL(clickAction, self.location.origin).href;
     const logNo = data.logNo;
 
-    const promiseChain = Promise.all([
-        // 읽음 처리 알림 (비동기)
-        logNo ? fetch(new URL(`/api/push/read/${logNo}`, self.location.origin).href, { method: 'POST' }).catch(() => { }) : Promise.resolve(),
+    // 1. 읽음 처리 (백그라운드 비동기 실행)
+    if (logNo) {
+        const readUrl = new URL(`/api/push/read/${logNo}`, self.location.origin).href;
+        event.waitUntil(fetch(readUrl, { method: 'POST' }).catch(() => { }));
+    }
 
-        // 창 열기 로직
+    // 2. 페이지 이동 로직
+    // 백엔드에서 WebpushConfig.fcm_options.link 를 설정했으므로 브라우저가 기본적으로 처리함.
+    // 만약 브라우저가 자동 처리를 하지 않는 환경을 대비해 보조 로직 유지.
+    const clickAction = data.click_action || '/';
+    const urlToOpen = new URL(clickAction, self.location.origin).href;
+
+    event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            // 1. 이미 열려 있는 탭이 있다면 그 탭을 찾아서 이동 및 포커스
             for (const client of windowClients) {
-                if ('focus' in client && 'navigate' in client) {
-                    client.navigate(urlToOpen);
+                if (client.url === urlToOpen && 'focus' in client) {
                     return client.focus();
                 }
             }
-            // 2. 열려 있는 탭이 없으면 새로 열기
             if (clients.openWindow) {
                 return clients.openWindow(urlToOpen);
             }
         })
-    ]);
-
-    event.waitUntil(promiseChain);
+    );
 });
