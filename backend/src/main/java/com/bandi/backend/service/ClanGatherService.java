@@ -49,8 +49,8 @@ public class ClanGatherService {
         String role = clanUserRepository.findById(new ClanUserId(dto.getCnNo(), dto.getUserId()))
                 .map(ClanUser::getCnUserRoleCd)
                 .orElse("NONE");
-        if (!"01".equals(role)) {
-            throw new RuntimeException("Only clan leaders can create gathering notices.");
+        if (!"01".equals(role) && !"02".equals(role)) {
+            throw new RuntimeException("Only clan leaders or executives can create gathering notices.");
         }
 
         // 2. Create Gather notice
@@ -203,6 +203,9 @@ public class ClanGatherService {
             int maleCnt = (int) applicants.stream().filter(a -> "M".equals(a.getUserGenderCd())).count();
             int femaleCnt = (int) applicants.stream().filter(a -> "F".equals(a.getUserGenderCd())).count();
 
+            List<String> sessionTypeCds = clanGatherSessionRepository.findByGatherNo(g.getGatherNo())
+                    .stream().map(ClanGatherSession::getSessionTypeCd).collect(Collectors.toList());
+
             return ClanGatherResponseDto.builder()
                     .gatherNo(g.getGatherNo())
                     .cnNo(g.getCnNo())
@@ -217,6 +220,7 @@ public class ClanGatherService {
                     .applicantCnt(applicantCnt)
                     .maleCnt(maleCnt)
                     .femaleCnt(femaleCnt)
+                    .sessionTypeCds(sessionTypeCds)
                     .build();
         }).collect(Collectors.toList());
     }
@@ -722,13 +726,24 @@ public class ClanGatherService {
         ClanGather gather = clanGatherRepository.findById(gatherNo)
                 .orElseThrow(() -> new IllegalArgumentException("Gathering space notice not found"));
 
-        if (!gather.getInsId().equals(userId)) {
+        // Check Authority (Clan Leader '01' or Executive '02' or Creator or Admin)
+        String role = clanUserRepository.findById(new ClanUserId(gather.getCnNo(), userId))
+                .map(ClanUser::getCnUserRoleCd)
+                .orElse("NONE");
+
+        boolean isStaff = "01".equals(role) || "02".equals(role);
+        boolean isCreator = gather.getInsId().equals(userId);
+        boolean isAdmin = false;
+
+        if (!isStaff && !isCreator) {
             // Admin check
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
-            if (!"Y".equals(user.getAdminYn())) {
-                throw new IllegalArgumentException("Only the creator or an admin can complete the gathering");
-            }
+            isAdmin = "Y".equals(user.getAdminYn());
+        }
+
+        if (!isStaff && !isCreator && !isAdmin) {
+            throw new IllegalArgumentException("Only the clan staff, creator or an admin can complete the gathering");
         }
 
         gather.setGatherProcFg("E");

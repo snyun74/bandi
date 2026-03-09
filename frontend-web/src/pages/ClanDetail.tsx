@@ -331,7 +331,7 @@ const ClanDetail: React.FC = () => {
                             <FaUserFriends size={11} className="text-[#003C48]" /> 멤버 현황
                             <span className="bg-[#003C48] text-white text-[9px] rounded-full min-w-[15px] h-3.5 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
                         </button>
-                        {myRole === '01' && (
+                        {(myRole === '01' || myRole === '02') && (
                             <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-all active:scale-95">
                                 <FaMusic size={11} /> 합주 모집
                             </button>

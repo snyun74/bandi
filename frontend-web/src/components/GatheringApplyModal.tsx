@@ -115,9 +115,11 @@ const GatheringApplyModal: React.FC<GatheringApplyModalProps> = ({ gathering, us
                             className="w-full bg-gray-100 rounded-xl px-4 py-3 text-[#003C48] focus:outline-none"
                         >
                             <option value="">세션 선택</option>
-                            {sessionTypes.map(st => (
-                                <option key={st.commDtlCd} value={st.commDtlCd}>{st.commDtlNm}</option>
-                            ))}
+                            {sessionTypes
+                                .filter(st => !gathering.sessionTypeCds || gathering.sessionTypeCds.includes(st.commDtlCd))
+                                .map(st => (
+                                    <option key={st.commDtlCd} value={st.commDtlCd}>{st.commDtlNm}</option>
+                                ))}
                         </select>
                     </div>
 
@@ -130,9 +132,11 @@ const GatheringApplyModal: React.FC<GatheringApplyModalProps> = ({ gathering, us
                             className="w-full bg-gray-100 rounded-xl px-4 py-3 text-[#003C48] focus:outline-none"
                         >
                             <option value="">세션 선택 (없음)</option>
-                            {sessionTypes.filter(st => st.commDtlCd !== session1st).map(st => (
-                                <option key={st.commDtlCd} value={st.commDtlCd}>{st.commDtlNm}</option>
-                            ))}
+                            {sessionTypes
+                                .filter(st => st.commDtlCd !== session1st && (!gathering.sessionTypeCds || gathering.sessionTypeCds.includes(st.commDtlCd)))
+                                .map(st => (
+                                    <option key={st.commDtlCd} value={st.commDtlCd}>{st.commDtlNm}</option>
+                                ))}
                         </select>
                     </div>
                 </div>

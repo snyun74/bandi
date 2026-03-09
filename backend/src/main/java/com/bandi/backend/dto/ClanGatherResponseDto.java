@@ -22,4 +22,5 @@ public class ClanGatherResponseDto {
     private Integer applicantCnt;
     private Integer maleCnt;
     private Integer femaleCnt;
+    private List<String> sessionTypeCds; // Sessions selected for this gathering
 }
