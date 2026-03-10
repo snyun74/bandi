@@ -356,7 +356,7 @@ const ClanJamDetail: React.FC = () => {
     };
 
     const handleEndJam = () => {
-        showConfirm("합주를 종료하시겠습니까?", async () => {
+        showConfirm("합주를 종료하시겠습니까?\n(종료시 합주방은 보이지 않습니다.)", async () => {
             if (!bandDetail?.id || !userId) return;
             try {
                 const response = await fetch(`/api/bands/${bandDetail.id}/status`, {

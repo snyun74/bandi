@@ -261,11 +261,23 @@ public class ClanService {
     }
 
     @Transactional
-    public void updateMemberStatus(Long clanId, String userId, String status) {
+    public void updateMemberStatus(Long clanId, String userId, String status, String updId) {
         com.bandi.backend.entity.clan.ClanUser user = clanUserRepository
                 .findById(new com.bandi.backend.entity.clan.ClanUserId(clanId, userId))
                 .orElseThrow(() -> new RuntimeException("Member not found"));
-        user.setCnUserApprStatCd(status);
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        if ("RJ".equals(status)) {
+            user.setCnUserStatCd("D"); // Deleted/Kicked
+            user.setCnUserApprStatCd("RJ"); // Rejected/Kicked
+        } else {
+            user.setCnUserApprStatCd(status);
+        }
+
+        user.setUpdDtime(currentDateTime);
+        user.setUpdId(updId);
+
         clanUserRepository.save(user);
     }
 

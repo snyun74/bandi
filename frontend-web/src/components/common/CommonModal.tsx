@@ -31,7 +31,7 @@ const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, message, onConf
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
                         {type === 'alert' ? '알림' : '확인'}
                     </h3>
-                    <p className="text-gray-500 mb-8 leading-relaxed break-keep">
+                    <p className="text-gray-500 mb-8 leading-relaxed break-keep whitespace-pre-line">
                         {message}
                     </p>
 

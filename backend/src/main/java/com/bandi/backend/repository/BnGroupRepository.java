@@ -28,7 +28,19 @@ public interface BnGroupRepository extends JpaRepository<BnGroup, Long> {
             "WHERE   U.BN_USER_ID = :userId " +
             "    AND U.BN_USER_STAT_CD = 'A' " +
             "    AND G.BN_STAT_CD = 'A' " +
-            "    AND G.BN_CONF_FG IN ('N','Y', 'E') " +
+            "    AND G.BN_CONF_FG IN ('N','Y') " +
+            "    AND ( " +
+            "        G.BN_TYPE <> 'CLAN' OR EXISTS ( " +
+            "            SELECT 1 FROM CN_GROUP CG " +
+            "            JOIN CN_USER CU ON CU.CN_NO = CG.CN_NO " +
+            "            WHERE CG.CN_NO = G.CN_NO " +
+            "              AND CG.CN_STAT_CD = 'A' " +
+            "              AND CG.CN_APPR_STAT_CD = 'CN' " +
+            "              AND CU.CN_USER_ID = :userId " +
+            "              AND CU.CN_USER_STAT_CD = 'A' " +
+            "              AND CU.CN_USER_APPR_STAT_CD = 'CN' " +
+            "        ) " +
+            "    ) " +
             "GROUP BY U.BN_NO, U.BN_ROLE_CD, G.BN_TYPE, G.CN_NO, G.BN_NM, G.BN_SONG_NM, G.BN_SINGER_NM, G.BN_CONF_FG, G.BN_PASSWD_FG", nativeQuery = true)
     List<MyJamProjection> findMyJams(@Param("userId") String userId);
 }

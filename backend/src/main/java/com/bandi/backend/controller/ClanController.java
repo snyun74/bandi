@@ -195,7 +195,8 @@ public class ClanController {
         try {
             String userId = body.get("userId");
             String status = body.get("status");
-            clanService.updateMemberStatus(clanId, userId, status);
+            String updId = body.get("updId");
+            clanService.updateMemberStatus(clanId, userId, status, updId);
             return ResponseEntity.ok(Map.of("message", "Member status updated successfully"));
         } catch (Exception e) {
             e.printStackTrace();

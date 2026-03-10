@@ -113,6 +113,20 @@ public class ChatService {
                 BNU.BN_USER_ID = :userId
                 AND BNU.BN_USER_STAT_CD = 'A'
                 AND BNG.BN_STAT_CD = 'A'
+                AND BNG.BN_CONF_FG IN ('N', 'Y')
+                AND (
+                    BNG.CN_NO IS NULL
+                    OR EXISTS (
+                        SELECT 1 FROM CN_USER CU
+                        INNER JOIN CN_GROUP CG ON CG.CN_NO = CU.CN_NO
+                        WHERE CU.CN_NO = BNG.CN_NO
+                          AND CU.CN_USER_ID = :userId
+                          AND CU.CN_USER_STAT_CD = 'A'
+                          AND CU.CN_USER_APPR_STAT_CD = 'CN'
+                          AND CG.CN_STAT_CD = 'A'
+                          AND CG.CN_APPR_STAT_CD = 'CN'
+                    )
+                )
         """;
 
     Query query = entityManager.createNativeQuery(sql);
@@ -981,6 +995,20 @@ public class ChatService {
           WHERE BNU.BN_USER_ID = :userId
             AND BNU.BN_USER_STAT_CD = 'A'
             AND BNG.BN_STAT_CD = 'A'
+            AND BNG.BN_CONF_FG IN ('N', 'Y')
+            AND (
+                BNG.CN_NO IS NULL
+                OR EXISTS (
+                    SELECT 1 FROM CN_USER CU
+                    INNER JOIN CN_GROUP CG ON CG.CN_NO = CU.CN_NO
+                    WHERE CU.CN_NO = BNG.CN_NO
+                      AND CU.CN_USER_ID = :userId
+                      AND CU.CN_USER_STAT_CD = 'A'
+                      AND CU.CN_USER_APPR_STAT_CD = 'CN'
+                      AND CG.CN_STAT_CD = 'A'
+                      AND CG.CN_APPR_STAT_CD = 'CN'
+                )
+            )
             AND MSG.BN_CHAT_SND_USER_ID <> :userId
             AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                                           AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'

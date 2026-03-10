@@ -140,7 +140,7 @@ const ClanMemberStatus: React.FC = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userId, status: action }),
+                body: JSON.stringify({ userId, status: action, updId: currentUserId }),
             });
 
             if (response.ok) {
@@ -167,7 +167,7 @@ const ClanMemberStatus: React.FC = () => {
                     await fetch(`/api/clans/${clanId}/members/status`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: req.cnUserId, status: 'CN' }),
+                        body: JSON.stringify({ userId: req.cnUserId, status: 'CN', updId: currentUserId }),
                     });
                 } catch (e) {
                     hasError = true;
@@ -400,13 +400,33 @@ const ClanMemberStatus: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {getRoleBadge(member.cnUserRoleCd)}
+                                    {/* Role Change Button */}
                                     {currentUserRole === '01' && member.cnUserRoleCd !== '01' && (
                                         <button
                                             onClick={() => openRoleChangeModal(member.cnUserId, member.cnUserRoleCd)}
                                             className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-lg font-bold hover:bg-gray-200"
                                         >
-                                            변경
+                                            권한부여
                                         </button>
+                                    )}
+                                    {/* Kick Button: Only for Leader(01) or Executive(02) */}
+                                    {canManageRequests && member.cnUserId !== currentUserId && (
+                                        (() => {
+                                            // Leader can kick anyone except self.
+                                            // Executive can only kick normal members.
+                                            let canKick = false;
+                                            if (currentUserRole === '01') canKick = true;
+                                            else if (currentUserRole === '02' && member.cnUserRoleCd === '03') canKick = true;
+
+                                            return canKick ? (
+                                                <button
+                                                    onClick={() => showConfirm(`${member.userNickNm}님을 클랜에서 강퇴하시겠습니까?`, () => handleAction(member.cnUserId, 'RJ'))}
+                                                    className="bg-[#FF8A80] text-white text-xs px-2 py-1 rounded-lg font-bold hover:bg-red-500"
+                                                >
+                                                    강퇴
+                                                </button>
+                                            ) : null;
+                                        })()
                                     )}
                                 </div>
                             </div>
