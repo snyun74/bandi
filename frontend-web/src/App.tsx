@@ -23,6 +23,7 @@ import ChatList from './pages/ChatList';
 import ChatRoom from './pages/ChatRoom';
 import JamChatRoom from './pages/JamChatRoom';
 import PrivateChatRoom from './pages/PrivateChatRoom';
+import GroupChatRoom from './pages/GroupChatRoom';
 import FriendAdd from './pages/FriendAdd';
 import ClanNoticeList from './pages/ClanNoticeList';
 import ClanNoticeCreate from './pages/ClanNoticeCreate';
@@ -51,6 +52,8 @@ import AdminPage from './pages/AdminPage';
 import AdminBannerPage from './pages/AdminBannerPage';
 import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
 import AdminQaPage from './pages/AdminQaPage';
+import AdminUserManagement from './pages/AdminUserManagement';
+import AdminNoticeManagement from './pages/AdminNoticeManagement';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
 import { requestPermission, onMessageListener } from './utils/pushNotification';
@@ -108,6 +111,8 @@ function App() {
             <Route path="admin/banners" element={<AdminBannerPage />} />
             <Route path="admin/clans" element={<AdminClanApprovalPage />} />
             <Route path="admin/qa" element={<AdminQaPage />} />
+            <Route path="admin/users" element={<AdminUserManagement />} />
+            <Route path="admin/notices" element={<AdminNoticeManagement />} />
             <Route path="profile/scraps" element={<MyScrapList />} />
             <Route path="profile/posts" element={<MyPostList />} />
             <Route path="customer-center" element={<CustomerCenterPage />} />
@@ -126,6 +131,7 @@ function App() {
             <Route path="chat/room/:roomNo" element={<ChatRoom />} />
             <Route path="jam/chat/:roomNo" element={<JamChatRoom />} />
             <Route path="chat/private/:roomNo" element={<PrivateChatRoom />} />
+            <Route path="chat/group/:roomNo" element={<GroupChatRoom />} />
             <Route path="chat/friend/add" element={<FriendAdd />} />
             <Route path="clan/notice/:clanId/create" element={<ClanNoticeCreate />} />
             <Route path="clan/notice/:clanId/detail/:noticeId" element={<ClanNoticeDetail />} />

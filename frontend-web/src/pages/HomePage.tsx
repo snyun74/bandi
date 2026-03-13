@@ -4,6 +4,7 @@ import { FaUnlink } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
 import JamEvaluationModal from "../components/common/JamEvaluationModal";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
+import NoticePopup from "../components/notice/NoticePopup";
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -11,11 +12,13 @@ export default function HomePage() {
     const [profileIncomplete, setProfileIncomplete] = useState(false);
     const [mainBanner, setMainBanner] = useState<{ url: string; isVideo: boolean; linkUrl: string | null } | null>(null);
     const [isBannerLoading, setIsBannerLoading] = useState(true);
+    const [activeNotices, setActiveNotices] = useState<any[]>([]);
 
     useEffect(() => {
         checkPendingEvaluation();
         checkProfileComplete();
         fetchMainBanner();
+        fetchActiveNotices();
 
         // Ensure smooth scroll but remove snap-start which might cause issues on mobile
         const html = document.documentElement;
@@ -84,6 +87,18 @@ export default function HomePage() {
             }
         } catch (e) {
             console.error("Failed to check profile", e);
+        }
+    };
+
+    const fetchActiveNotices = async () => {
+        try {
+            const res = await fetch('/api/admin/notices/active');
+            if (res.ok) {
+                const data = await res.json();
+                setActiveNotices(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch active notices", error);
         }
     };
 
@@ -478,6 +493,14 @@ export default function HomePage() {
                     <JamEvaluationModal
                         evaluation={pendingEvaluation}
                         onComplete={handleEvaluationComplete}
+                    />
+                )}
+
+                {/* Notice Popup */}
+                {activeNotices.length > 0 && (
+                    <NoticePopup 
+                        notices={activeNotices} 
+                        onClose={() => setActiveNotices([])} 
                     />
                 )}
             </div>

@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaAd, FaUserShield, FaHeadset } from 'react-icons/fa';
+import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell } from 'react-icons/fa';
 
 const AdminPage: React.FC = () => {
     const navigate = useNavigate();
     const [counts, setCounts] = useState<{ pendingClans: number; unansweredQas: number }>({
         pendingClans: 0,
         unansweredQas: 0
+    });
+    const [userStats, setUserStats] = useState<{ total: number; male: number; female: number; other: number }>({
+        total: 0,
+        male: 0,
+        female: 0,
+        other: 0
     });
 
     useEffect(() => {
@@ -16,6 +22,13 @@ const AdminPage: React.FC = () => {
                 if (res.ok) {
                     const data = await res.json();
                     setCounts(data);
+                }
+
+                // Fetch User Stats
+                const userRes = await fetch('/api/admin/users/stats');
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    setUserStats(userData);
                 }
             } catch (error) {
                 console.error("Failed to fetch admin dashboard counts", error);
@@ -28,6 +41,8 @@ const AdminPage: React.FC = () => {
         { id: 'banner', label: '배너광고관리', icon: <FaAd size={24} />, path: '/main/admin/banners' },
         { id: 'clan-approve', label: '클랜승인관리', icon: <FaUserShield size={24} />, path: '/main/admin/clans', count: counts.pendingClans },
         { id: 'qa', label: '고객센터관리', icon: <FaHeadset size={24} />, path: '/main/admin/qa', count: counts.unansweredQas },
+        { id: 'user', label: `회원관리(${userStats.total}명)`, icon: <FaUserCog size={24} />, path: '/main/admin/users' },
+        { id: 'notice', label: '공지사항관리', icon: <FaBell size={24} />, path: '/main/admin/notices' },
     ];
 
     return (

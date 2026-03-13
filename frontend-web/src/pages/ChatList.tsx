@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaSearch, FaUserPlus, FaUnlink } from 'react-icons/fa';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 interface ChatRoom {
     roomNo: number;
     roomNm: string;
     newMsg: string;
     newMsgReadCnt: number;
-    roomType: 'CLAN' | 'BAND';
+    roomType: 'GROUP' | 'CLAN' | 'BAND';
     attachFilePath?: string | null;
     logoText?: string;
     logoColor?: string;
@@ -18,7 +19,7 @@ interface ChatRoom {
 const ChatList: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [activeTab, setActiveTab] = useState<'chat' | 'friend'>('chat');
+    const [activeTab, setActiveTab] = useState<'chat' | 'friend' | 'group_chat'>('chat');
 
     useEffect(() => {
         const state = location.state as { tab: 'chat' | 'friend' } | undefined;
@@ -29,6 +30,14 @@ const ChatList: React.FC = () => {
     const [chatList, setChatList] = useState<ChatRoom[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchText, setSearchText] = useState('');
+    const [eligibleMembers, setEligibleMembers] = useState<any[]>([]);
+    const [selectedMembers, setSelectedMembers] = useState<any[]>([]);
+    const [groupSearchText, setGroupSearchText] = useState('');
+    const [groupRoomNm, setGroupRoomNm] = useState('');
+    const [myProfileUrl, setMyProfileUrl] = useState<string | undefined>(undefined);
+
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const [newFriends, setNewFriends] = useState<any[]>([]);
 
@@ -91,11 +100,45 @@ const ChatList: React.FC = () => {
             }
         };
 
+        const fetchEligibleMembers = async () => {
+            const userId = localStorage.getItem('userId');
+            if (!userId) return;
+            try {
+                const res = await fetch(`/api/group-chat/members?userId=${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setEligibleMembers(data);
+                }
+            } catch (error) {
+                console.error("Error fetching eligible members", error);
+            }
+        };
+
+        const fetchMyProfile = async () => {
+            const userId = localStorage.getItem('userId');
+            if (!userId) return;
+            try {
+                const res = await fetch(`/api/user/profile/${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.profileImageUrl) {
+                        setMyProfileUrl(data.profileImageUrl);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching my profile", error);
+            }
+        };
+
         if (activeTab === 'chat') {
             fetchChatList();
             fetchFriendList(); // Fetch friends for Personal Chat section
-        } else {
+            fetchMyProfile();
+        } else if (activeTab === 'friend') {
             fetchFriendList();
+            setLoading(false);
+        } else if (activeTab === 'group_chat') {
+            fetchEligibleMembers();
             setLoading(false);
         }
     }, [activeTab]);
@@ -171,7 +214,7 @@ const ChatList: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="flex flex-col h-[calc(100vh-130.5px)] bg-white font-['Pretendard'] overflow-hidden" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header Tabs */}
             <div className="flex border-b border-gray-200 relative">
                 <button onClick={() => navigate(-1)} className="absolute left-4 top-4 text-[#003C48] z-10">
@@ -179,14 +222,26 @@ const ChatList: React.FC = () => {
                 </button>
                 <div className="flex w-full justify-center">
                     <button
-                        className={`px-8 py-4 text-xl font-bold text-center relative ${activeTab === 'chat' ? 'text-[#003C48]' : 'text-gray-400'}`}
+                        className={`px-6 py-4 text-base font-bold text-center relative ${activeTab === 'chat' ? 'text-[#003C48]' : 'text-gray-400'}`}
                         onClick={() => setActiveTab('chat')}
                     >
                         채팅
                         {activeTab === 'chat' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#003C48]"></div>}
                     </button>
                     <button
-                        className={`px-8 py-4 text-xl font-bold text-center relative ${activeTab === 'friend' ? 'text-[#003C48]' : 'text-gray-400'}`}
+                        className={`px-6 py-4 text-base font-bold text-center relative ${activeTab === 'group_chat' ? 'text-[#003C48]' : 'text-gray-400'}`}
+                        onClick={() => {
+                            setActiveTab('group_chat');
+                            setSelectedMembers([]);
+                            setGroupRoomNm('');
+                            setGroupSearchText('');
+                        }}
+                    >
+                        그룹채팅
+                        {activeTab === 'group_chat' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#003C48]"></div>}
+                    </button>
+                    <button
+                        className={`px-6 py-4 text-base font-bold text-center relative ${activeTab === 'friend' ? 'text-[#003C48]' : 'text-gray-400'}`}
                         onClick={() => setActiveTab('friend')}
                     >
                         친구
@@ -200,9 +255,9 @@ const ChatList: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[#FAFAFA] pb-20">
+            <div className="flex-1 flex flex-col bg-[#FAFAFA] overflow-hidden">
                 {activeTab === 'chat' && (
-                    <div className="p-4 space-y-6">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
                         {/* Group Chat Section - Both CLAN and BAND */}
                         <section>
                             <h2 className="body-section-title mb-3">단체 채팅</h2>
@@ -216,35 +271,61 @@ const ChatList: React.FC = () => {
                                             onClick={() => {
                                                 if (chat.roomType === 'BAND') {
                                                     navigate(`/main/jam/chat/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
+                                                } else if (chat.roomType === 'GROUP') {
+                                                    navigate(`/main/chat/group/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType } });
                                                 } else {
                                                     navigate(`/main/chat/room/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
                                                 }
                                             }}
                                             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                         >
-                                            <div className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 bg-gray-100">
-                                                {chat.attachFilePath ? (
+                                            <div 
+                                                className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 bg-gray-100 hover:scale-105 transition-transform"
+                                                onClick={(e) => {
+                                                    if (chat.roomType === 'GROUP') {
+                                                        e.stopPropagation();
+                                                        const userId = localStorage.getItem('userId');
+                                                        if (userId) {
+                                                            setSelectedUserId(userId);
+                                                            setIsProfileModalOpen(true);
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {chat.roomType === 'GROUP' ? (
+                                                    myProfileUrl ? (
+                                                        <img src={myProfileUrl} alt="My Profile" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                                                    )
+                                                ) : chat.attachFilePath ? (
                                                     <img
                                                         src={chat.attachFilePath}
                                                         alt={chat.roomNm}
                                                         className="w-full h-full object-cover"
                                                         onError={(e) => {
                                                             e.currentTarget.style.display = 'none';
-                                                            const parent = e.currentTarget.parentElement!;
-                                                            parent.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400"><svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" height="20" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M304.083 405.907c-52.416 52.407-137.029 52.407-189.433 0-52.396-52.406-52.396-137.019 0-189.426l-47.06-47.06c-79.024 79.024-79.024 207.054 0 286.079 79.025 79.024 207.055 79.024 286.078 0l-47.06-47.06.008-.008-.008.007-.008.008zM405.884 304.105l47.06 47.06c79.024-79.025 79.024-207.055 0-286.079-79.025-79.024-207.055-79.024-286.079 0l47.06 47.06c52.406-52.406 137.019-52.406 189.426 0 52.406 52.406 52.406 137.018-.008 189.424l.008.008-.008-.008-.008-.008.008.008-.008-.008.008-.008.008.008-.007.007-.001.001.008.008-.008.007-.007.001.007-.008zM364.273 275.094l-91.9 91.9-30.354-30.353 91.9-91.9-30.354-30.354-91.9 91.9-30.354-30.353 91.9-91.9-30.354-30.354-91.9 91.9L120.603 215.226l91.9-91.9-47.06-47.06-91.9 91.9a136.888 136.888 0 0 0 0 193.505 136.888 136.888 0 0 0 193.505 0l91.9-91.9-30.354-30.354.008-.008-.329.585z"></path></svg><span style="font-size:7px;margin-top:2px">미연결</span></div>`;
+                                                            const fallback = e.currentTarget.parentElement?.querySelector('.unlinked-fallback');
+                                                            if (fallback) (fallback as HTMLElement).style.display = 'flex';
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                                        <FaUnlink size={20} />
-                                                        <span className="text-[10px] mt-1">미연결</span>
+                                                    <div className="unlinked-fallback w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
+                                                        <FaUnlink size={16} />
+                                                        <span className="text-[8px] mt-0.5">미연결</span>
+                                                    </div>
+                                                )}
+                                                {chat.attachFilePath && (
+                                                    <div className="unlinked-fallback w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400" style={{ display: 'none' }}>
+                                                        <FaUnlink size={16} />
+                                                        <span className="text-[8px] mt-0.5">미연결</span>
                                                     </div>
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-0.5 min-w-0">
                                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-gray-100 text-gray-500">
-                                                        {chat.roomType === 'CLAN' ? '클랜' : '합주'}
+                                                        {chat.roomType === 'GROUP' ? '그룹' : chat.roomType === 'CLAN' ? '클랜' : '합주'}
                                                     </span>
                                                     <h3 className="body-board-post-title !m-0 leading-tight truncate min-w-0">{chat.roomNm}</h3>
                                                 </div>
@@ -273,7 +354,14 @@ const ChatList: React.FC = () => {
                                     {friends.length > 0 ? (
                                         friends.map((friend, index) => (
                                             <div key={friend.userId} onClick={() => handleFriendClick(friend.userId, friend.userNickNm, friend.profileUrl)} className={`flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors ${index !== friends.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                <div className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white">
+                                                <div
+                                                    className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white hover:scale-105 transition-transform"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedUserId(friend.userId);
+                                                        setIsProfileModalOpen(true);
+                                                    }}
+                                                >
                                                     {friend.profileUrl ? (
                                                         <img src={friend.profileUrl} alt={friend.userNickNm} className="w-full h-full object-cover" />
                                                     ) : (
@@ -298,7 +386,7 @@ const ChatList: React.FC = () => {
                 )}
 
                 {activeTab === 'friend' && (
-                    <div className="p-4 space-y-6">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
                         {/* Search Bar */}
                         <div className="flex items-center gap-2">
                             <div className="flex-1 relative">
@@ -362,10 +450,19 @@ const ChatList: React.FC = () => {
                         <section className="relative">
                             <h2 className="text-gray-500 text-sm font-medium mb-2">친구 목록</h2>
                             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                                {friends.length > 0 ? (
-                                    friends.map((friend, index) => (
-                                        <div key={friend.userId} onClick={() => handleFriendClick(friend.userId, friend.userNickNm, friend.profileUrl)} className={`flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors ${index !== friends.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                            <div className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white">
+                                {friends.filter(f => (f.userNickNm || '').toLowerCase().includes(searchText.toLowerCase())).length > 0 ? (
+                                    friends
+                                        .filter(f => (f.userNickNm || '').toLowerCase().includes(searchText.toLowerCase()))
+                                        .map((friend, index, arr) => (
+                                        <div key={friend.userId} onClick={() => handleFriendClick(friend.userId, friend.userNickNm, friend.profileUrl)} className={`flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors ${index !== arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                            <div
+                                                className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white hover:scale-105 transition-transform"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedUserId(friend.userId);
+                                                    setIsProfileModalOpen(true);
+                                                }}
+                                            >
                                                 {friend.profileUrl ? (
                                                     <img src={friend.profileUrl} alt={friend.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
@@ -403,7 +500,169 @@ const ChatList: React.FC = () => {
                         </section>
                     </div>
                 )}
+
+                {activeTab === 'group_chat' && (
+                    <div className="flex-1 flex flex-col min-h-0 bg-[#FAFAFA]">
+                        {/* 상단 1: 선택된 회원, 채팅방 이름, 생성 버튼 (고정) */}
+                        <div className="bg-white border-b border-gray-200 p-4 shrink-0 shadow-sm z-10">
+                            <h2 className="text-xs font-bold text-gray-500 mb-2">선택된 회원 ({selectedMembers.length})</h2>
+                            <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide">
+                                {selectedMembers.map(member => (
+                                    <div key={member.userId} className="relative shrink-0 flex flex-col items-center w-12">
+                                        <div 
+                                            className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-gray-50 mb-1 hover:scale-105 transition-transform cursor-pointer"
+                                            onClick={() => {
+                                                setSelectedUserId(member.userId);
+                                                setIsProfileModalOpen(true);
+                                            }}
+                                        >
+                                            {member.profileUrl ? (
+                                                <img src={member.profileUrl} alt={member.userNickNm} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <FaUserPlus className="text-gray-300" />
+                                            )}
+                                        </div>
+                                        <span className="text-[10px] text-gray-600 truncate w-full text-center">{member.userNickNm}</span>
+                                        <button
+                                            onClick={() => setSelectedMembers(prev => prev.filter(m => m.userId !== member.userId))}
+                                            className="absolute -top-1 right-0 w-4 h-4 bg-red-400 rounded-full flex items-center justify-center text-white shadow-sm"
+                                        >
+                                            <span className="text-[10px] font-bold leading-none -mt-0.5">×</span>
+                                        </button>
+                                    </div>
+                                ))}
+                                {selectedMembers.length === 0 && (
+                                    <div className="text-[10px] text-gray-400 italic py-3 w-full text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                        아래 목록에서 채팅하실 회원을 추가해주세요.
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="그룹 채팅방 이름 입력 (필수)"
+                                    value={groupRoomNm}
+                                    onChange={(e) => setGroupRoomNm(e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-[#00BDF8] text-sm bg-gray-50 focus:bg-white transition-colors"
+                                />
+
+                                <button
+                                    onClick={async () => {
+                                        if (!groupRoomNm.trim()) return alert("그룹 채팅방 이름을 입력해주세요.");
+                                        if (selectedMembers.length === 0) return alert("추가된 회원이 없습니다.");
+                                        const userId = localStorage.getItem('userId');
+                                        if (!userId) return;
+
+                                        try {
+                                            const res = await fetch(`/api/group-chat/room?userId=${userId}`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    roomNm: groupRoomNm,
+                                                    userIds: selectedMembers.map(m => m.userId)
+                                                })
+                                            });
+                                            if (res.ok) {
+                                                // const roomNo = await res.json();
+                                                setActiveTab('chat');
+                                                setSelectedMembers([]);
+                                                setGroupRoomNm('');
+                                            } else {
+                                                alert("채팅방 생성에 실패했습니다.");
+                                            }
+                                        } catch (e) {
+                                            console.error(e);
+                                            alert("오류가 발생했습니다.");
+                                        }
+                                    }}
+                                    className={`w-full py-3.5 rounded-xl font-bold text-white transition-all duration-200 shadow-sm ${groupRoomNm.trim() && selectedMembers.length > 0 ? 'bg-[#00BDF8] hover:bg-[#009bc9] hover:shadow-md active:scale-[0.98]' : 'bg-gray-300 cursor-not-allowed'}`}
+                                    disabled={!groupRoomNm.trim() || selectedMembers.length === 0}
+                                >
+                                    그룹 채팅방 만들기
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 상단 2: 회원 선택 타이틀 및 검색바 (고정) */}
+                        <div className="p-4 pb-2 bg-[#FAFAFA] shrink-0 z-10">
+                            <h2 className="body-section-title mb-3">회원 선택</h2>
+                            <div className="relative shrink-0">
+                                <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00BDF8]" />
+                                <input
+                                    type="text"
+                                    placeholder="친구, 클랜원, 합주원 검색"
+                                    value={groupSearchText}
+                                    onChange={(e) => setGroupSearchText(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8] text-sm bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        {/* 하단: 회원 리스트 (스크롤) */}
+                        <div className="flex-1 overflow-y-auto min-h-0">
+                            <div className="px-4 pb-24">
+                                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                    {eligibleMembers.filter(m => (m.userNickNm || '').toLowerCase().includes((groupSearchText || '').toLowerCase()) && !selectedMembers.find(s => s.userId === m.userId)).length > 0 ? (
+                                        eligibleMembers
+                                            .filter(m => (m.userNickNm || '').toLowerCase().includes((groupSearchText || '').toLowerCase()) && !selectedMembers.find(s => s.userId === m.userId))
+                                            .map((member, index, arr) => (
+                                                <div key={member.userId} className={`flex items-center justify-between p-3 ${index !== arr.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div 
+                                                            className="w-10 h-10 rounded-full border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center hover:scale-105 transition-transform cursor-pointer"
+                                                            onClick={() => {
+                                                                setSelectedUserId(member.userId);
+                                                                setIsProfileModalOpen(true);
+                                                            }}
+                                                        >
+                                                            {member.profileUrl ? (
+                                                                <img src={member.profileUrl} alt={member.userNickNm} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <FaUserPlus className="text-gray-300" />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[#003C48] font-bold text-sm">{member.userNickNm}</span>
+                                                            <span className="text-[10px] text-gray-500">{member.memberType === 'FRIEND' ? '친구' : member.memberType === 'CLAN' ? '클랜원' : '합주원'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => setSelectedMembers(prev => [...prev, member])}
+                                                        className="bg-[#00BDF8]/10 text-[#00BDF8] font-bold text-xs px-4 py-1.5 rounded-full hover:bg-[#00BDF8]/20 transition-colors"
+                                                    >
+                                                        추가
+                                                    </button>
+                                                </div>
+                                            ))
+                                    ) : (
+                                        <div className="p-10 text-center text-gray-400 text-sm flex flex-col items-center justify-center">
+                                            <div className="mb-2">검색 결과가 없거나</div>
+                                            <div>모든 회원을 선택하셨습니다.</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+            {/* Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {
+                        // Refresh friend list if bio/nickname changed (though read-only for others)
+                        // This will mostly be used if the user looks at their own profile in some context
+                    }}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

@@ -26,6 +26,7 @@ public class ChatService {
   private final com.bandi.backend.repository.ChatRoomRepository chatRoomRepository;
 
   private final com.bandi.backend.repository.BandChatMessageRepository bandChatMessageRepository;
+  private final com.bandi.backend.repository.CmGrpChatMessageRepository cmGrpChatMessageRepository;
 
   @org.springframework.beans.factory.annotation.Autowired
   private com.bandi.backend.service.PushService pushService;
@@ -127,6 +128,42 @@ public class ChatService {
                           AND CG.CN_APPR_STAT_CD = 'CN'
                     )
                 )
+            UNION ALL
+            SELECT
+                CNR.GRP_CHAT_NO AS ROOM_NO,
+                CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
+                (
+                  SELECT MSG.GRP_CHAT_MSG
+                  FROM CM_GRP_CHAT_MESSAGE MSG
+                  WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                    AND MSG.GRP_CHAT_SND_USER_ID <> :userId
+                    AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                    AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                  ORDER BY MSG.GRP_CHAT_SND_DTIME DESC
+                  LIMIT 1
+                ) AS NEW_MSG,
+                (
+                  SELECT COUNT(1)
+                  FROM CM_GRP_CHAT_MESSAGE MSG
+                  WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                    AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                    AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM CM_GRP_CHAT_MESSAGE_READ MSR
+                        WHERE MSR.GRP_CHAT_MSG_NO = MSG.GRP_CHAT_MSG_NO
+                          AND MSR.GRP_CHAT_READ_USER_ID = :userId
+                    )
+                ) AS NEW_MSG_READ_CNT,
+                'GROUP' AS ROOM_TYPE,
+                MY_CMA.FILE_PATH AS ATTACH_FILE_PATH
+            FROM
+                CM_GRP_CHAT_USER CGU
+            INNER JOIN CM_GRP_CHAT_ROOM CNR ON CNR.GRP_CHAT_NO = CGU.GRP_CHAT_NO
+            LEFT JOIN MM_USER MY_USR ON MY_USR.USER_ID = :userId
+            LEFT JOIN CM_ATTACHMENT MY_CMA ON MY_CMA.ATTACH_NO = MY_USR.ATTACH_NO
+            WHERE
+                CGU.USER_ID = :userId
         """;
 
     Query query = entityManager.createNativeQuery(sql);
@@ -179,6 +216,16 @@ public class ChatService {
         LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
         WHERE
             CNR.BN_NO = :roomNo
+        UNION ALL
+        SELECT
+            CNR.GRP_CHAT_NO AS ROOM_NO,
+            CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
+            'GROUP' AS ROOM_TYPE,
+            NULL AS ATTACH_FILE_PATH
+        FROM
+            CM_GRP_CHAT_ROOM CNR
+        WHERE
+            CNR.GRP_CHAT_NO = :roomNo
         """;
 
     Query query = entityManager.createNativeQuery(sql);
@@ -235,6 +282,37 @@ public class ChatService {
               WHERE MSG.BN_NO = :roomNo
               AND MSG.BN_CHAT_STAT_CD = 'A'
           """);
+    } else if ("GROUP".equals(roomType)) {
+      sql.append("""
+              SELECT
+                  MSG.GRP_CHAT_MSG_NO,
+                  MSG.GRP_CHAT_NO,
+                  MSG.GRP_CHAT_SND_USER_ID,
+                  USR.USER_NICK_NM,
+                  MSG.GRP_CHAT_MSG,
+                  MSG.GRP_CHAT_MSG_TYPE_CD,
+                  MSG.GRP_CHAT_SND_DTIME,
+                  (SELECT CMA2.FILE_PATH FROM CM_ATTACHMENT CMA2 WHERE CMA2.ATTACH_NO = USR.ATTACH_NO) AS PROFILE_URL,
+                  (
+                    (SELECT COUNT(1) FROM CM_GRP_CHAT_USER WHERE GRP_CHAT_NO = MSG.GRP_CHAT_NO)
+                    -
+                    (SELECT COUNT(1) FROM CM_GRP_CHAT_MESSAGE_READ WHERE GRP_CHAT_MSG_NO = MSG.GRP_CHAT_MSG_NO)
+                  ) AS UNREAD_CNT,
+                  MSG.ATTACH_NO,
+                  CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                  CMA.FILE_NAME AS ATTACH_FILE_NM,
+                  NULL AS VOTE_NO,
+                  MSG.PARENT_MSG_NO,
+                  P_MSG.GRP_CHAT_MSG AS PARENT_MSG_CONTENT,
+                  P_USR.USER_NICK_NM AS PARENT_MSG_NICK
+              FROM CM_GRP_CHAT_MESSAGE MSG
+              LEFT JOIN MM_USER USR ON USR.USER_ID = MSG.GRP_CHAT_SND_USER_ID
+              LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = MSG.ATTACH_NO
+              LEFT JOIN CM_GRP_CHAT_MESSAGE P_MSG ON P_MSG.GRP_CHAT_MSG_NO = MSG.PARENT_MSG_NO
+              LEFT JOIN MM_USER P_USR ON P_USR.USER_ID = P_MSG.GRP_CHAT_SND_USER_ID
+              WHERE MSG.GRP_CHAT_NO = :roomNo
+              AND MSG.GRP_CHAT_STAT_CD = 'A'
+          """);
     } else {
       sql.append(
           """
@@ -272,6 +350,8 @@ public class ChatService {
     if (lastMsgNo != null) {
       if ("BAND".equals(roomType)) {
         sql.append(" AND MSG.BN_CHAT_MSG_NO < :lastMsgNo ");
+      } else if ("GROUP".equals(roomType)) {
+        sql.append(" AND MSG.GRP_CHAT_MSG_NO < :lastMsgNo ");
       } else {
         sql.append(" AND MSG.CN_MSG_NO < :lastMsgNo ");
       }
@@ -280,6 +360,8 @@ public class ChatService {
     if (afterMsgNo != null) {
       if ("BAND".equals(roomType)) {
         sql.append(" AND MSG.BN_CHAT_MSG_NO > :afterMsgNo ");
+      } else if ("GROUP".equals(roomType)) {
+        sql.append(" AND MSG.GRP_CHAT_MSG_NO > :afterMsgNo ");
       } else {
         sql.append(" AND MSG.CN_MSG_NO > :afterMsgNo ");
       }
@@ -287,6 +369,8 @@ public class ChatService {
 
     if ("BAND".equals(roomType)) {
       sql.append(" ORDER BY MSG.BN_CHAT_MSG_NO DESC LIMIT 30 ");
+    } else if ("GROUP".equals(roomType)) {
+      sql.append(" ORDER BY MSG.GRP_CHAT_MSG_NO DESC LIMIT 30 ");
     } else {
       sql.append(" ORDER BY MSG.CN_MSG_NO DESC LIMIT 30 ");
     }
@@ -344,26 +428,39 @@ public class ChatService {
 
       // Mark as read if not my message
       if (!senderId.equals(userId)) {
-        try {
-          entityManager.createNativeQuery(
-              "INSERT INTO CN_CHAT_MESSAGE_READ (CN_MSG_NO, READ_USER_ID, READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (CN_MSG_NO, READ_USER_ID) DO NOTHING")
-              .setParameter("msgNo", msgNo)
-              .setParameter("userId", userId)
-              .setParameter("readDtime", currentDateTime)
-              .executeUpdate();
-        } catch (Exception e) {
-          // Ignore unique constraint violation or multiple reads
-        }
-      } else if (!senderId.equals(userId) && "BAND".equals(roomType)) {
-        try {
-          entityManager.createNativeQuery(
-              "INSERT INTO BN_CHAT_MESSAGE_READ (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID, BN_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID) DO NOTHING")
-              .setParameter("msgNo", msgNo)
-              .setParameter("userId", userId)
-              .setParameter("readDtime", currentDateTime)
-              .executeUpdate();
-        } catch (Exception e) {
-          // Ignore unique constraint violation or multiple reads
+        if ("BAND".equals(roomType)) {
+          try {
+            entityManager.createNativeQuery(
+                "INSERT INTO BN_CHAT_MESSAGE_READ (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID, BN_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID) DO NOTHING")
+                .setParameter("msgNo", msgNo)
+                .setParameter("userId", userId)
+                .setParameter("readDtime", currentDateTime)
+                .executeUpdate();
+          } catch (Exception e) {
+            // Ignore unique constraint violation or multiple reads
+          }
+        } else if ("GROUP".equals(roomType)) {
+          try {
+            entityManager.createNativeQuery(
+                "INSERT INTO CM_GRP_CHAT_MESSAGE_READ (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID, GRP_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID) DO NOTHING")
+                .setParameter("msgNo", msgNo)
+                .setParameter("userId", userId)
+                .setParameter("readDtime", currentDateTime)
+                .executeUpdate();
+          } catch (Exception e) {
+            // Ignore unique constraint violation or multiple reads
+          }
+        } else {
+          try {
+            entityManager.createNativeQuery(
+                "INSERT INTO CN_CHAT_MESSAGE_READ (CN_MSG_NO, READ_USER_ID, READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (CN_MSG_NO, READ_USER_ID) DO NOTHING")
+                .setParameter("msgNo", msgNo)
+                .setParameter("userId", userId)
+                .setParameter("readDtime", currentDateTime)
+                .executeUpdate();
+          } catch (Exception e) {
+            // Ignore unique constraint violation or multiple reads
+          }
         }
       }
     }
@@ -499,6 +596,125 @@ public class ChatService {
         }
       } catch (Exception e) {
         e.printStackTrace();
+      }
+
+      return resultDto;
+    } else if ("GROUP".equals(roomType)) { // GROUP section
+      com.bandi.backend.entity.cm.CmGrpChatMessage message = new com.bandi.backend.entity.cm.CmGrpChatMessage();
+      message.setGrpChatNo(dto.getCnNo());
+      message.setGrpChatSndUserId(dto.getSndUserId());
+      message.setGrpChatMsg(dto.getMsg());
+      message.setGrpChatMsgTypeCd(dto.getMsgTypeCd() != null ? dto.getMsgTypeCd() : "TEXT");
+      message.setAttachNo(dto.getAttachNo());
+      message.setGrpChatSndDtime(currentDateTime);
+      message.setGrpChatStatCd("A");
+      message.setInsDtime(currentDateTime);
+      message.setUpdDtime(currentDateTime);
+      message.setParentMsgNo(dto.getParentMsgNo());
+
+      com.bandi.backend.entity.cm.CmGrpChatMessage savedMessage = cmGrpChatMessageRepository.save(message);
+
+      // Mark sender as read
+      try {
+        entityManager.createNativeQuery(
+            "INSERT INTO CM_GRP_CHAT_MESSAGE_READ (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID, GRP_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID) DO NOTHING")
+            .setParameter("msgNo", savedMessage.getGrpChatMsgNo())
+            .setParameter("userId", dto.getSndUserId())
+            .setParameter("readDtime", currentDateTime)
+            .executeUpdate();
+      } catch (Exception e) {
+      }
+
+      String userNickNm = "Unknown";
+      String userProfileUrl = null;
+
+      try {
+        Query query = entityManager.createNativeQuery(
+            "SELECT USER_NICK_NM FROM MM_USER WHERE USER_ID = :userId");
+        query.setParameter("userId", dto.getSndUserId());
+        Object result = query.getSingleResult();
+        if (result != null) {
+          userNickNm = (String) result;
+        }
+      } catch (Exception e) {
+      }
+
+      int unreadCount = 0;
+      try {
+        Query countQuery = entityManager.createNativeQuery(
+            "SELECT COUNT(1) FROM CM_GRP_CHAT_USER WHERE GRP_CHAT_NO = :roomNo");
+        countQuery.setParameter("roomNo", dto.getCnNo());
+        unreadCount = ((Number) countQuery.getSingleResult()).intValue();
+        unreadCount = Math.max(0, unreadCount - 1);
+      } catch (Exception e) {
+      }
+
+      String parentMsgContent = null;
+      String parentMsgUserNickNm = null;
+
+      if (savedMessage.getParentMsgNo() != null) {
+        try {
+          Query parentQuery = entityManager.createNativeQuery(
+              "SELECT M.GRP_CHAT_MSG, U.USER_NICK_NM " +
+                  "FROM CM_GRP_CHAT_MESSAGE M " +
+                  "LEFT JOIN MM_USER U ON U.USER_ID = M.GRP_CHAT_SND_USER_ID " +
+                  "WHERE M.GRP_CHAT_MSG_NO = :parentMsgNo");
+          parentQuery.setParameter("parentMsgNo", savedMessage.getParentMsgNo());
+          Object result = parentQuery.getSingleResult();
+
+          if (result instanceof Object[]) {
+            Object[] parentResult = (Object[]) result;
+            parentMsgContent = (String) parentResult[0];
+            parentMsgUserNickNm = (String) parentResult[1];
+          }
+        } catch (Exception e) {
+        }
+      }
+
+      String attachFilePath = null;
+      String attachFileName = null;
+      if (savedMessage.getAttachNo() != null) {
+        com.bandi.backend.entity.common.CmAttachment attachment = cmAttachmentRepository
+            .findById(savedMessage.getAttachNo()).orElse(null);
+        if (attachment != null) {
+          attachFilePath = attachment.getFilePath();
+          attachFileName = attachment.getFileName();
+        }
+      }
+
+      com.bandi.backend.dto.ChatMessageDto resultDto = com.bandi.backend.dto.ChatMessageDto.builder()
+          .cnMsgNo(savedMessage.getGrpChatMsgNo())
+          .cnNo(savedMessage.getGrpChatNo())
+          .sndUserId(savedMessage.getGrpChatSndUserId())
+          .userNickNm(userNickNm)
+          .msg(savedMessage.getGrpChatMsg())
+          .msgTypeCd(savedMessage.getGrpChatMsgTypeCd())
+          .sndDtime(savedMessage.getGrpChatSndDtime())
+          .userProfileUrl(userProfileUrl)
+          .isMyMessage(true)
+          .unreadCount(unreadCount)
+          .parentMsgNo(savedMessage.getParentMsgNo())
+          .parentMsgContent(parentMsgContent)
+          .parentMsgUserNickNm(parentMsgUserNickNm)
+          .attachNo(savedMessage.getAttachNo())
+          .attachFilePath(attachFilePath)
+          .attachFileName(attachFileName)
+          .build();
+
+      // Send Push Notification
+      try {
+        String pushSql = "SELECT USER_ID FROM CM_GRP_CHAT_USER WHERE GRP_CHAT_NO = :roomNo AND USER_ID <> :senderId";
+        @SuppressWarnings("unchecked")
+        java.util.List<String> recipients = entityManager.createNativeQuery(pushSql)
+            .setParameter("roomNo", dto.getCnNo())
+            .setParameter("senderId", dto.getSndUserId())
+            .getResultList();
+
+        for (String recipientId : recipients) {
+          pushService.sendPush(recipientId, "그룹 " + userNickNm, dto.getMsg(),
+              "/main/chat/room/" + dto.getCnNo() + "?type=GROUP", "GP");
+        }
+      } catch (Exception e) {
       }
 
       return resultDto;
@@ -1036,6 +1252,22 @@ public class ChatService {
                 FROM MM_CHAT_MESSAGE_READ MSR
                 WHERE MSR.MM_MSG_NO = MSG.MM_MSG_NO
                   AND MSR.READ_USER_ID = :userId
+            )
+        ) + (
+          -- Group Chat Unread
+          SELECT COUNT(1)
+          FROM CM_GRP_CHAT_MESSAGE MSG
+          INNER JOIN CM_GRP_CHAT_USER CGU ON CGU.GRP_CHAT_NO = MSG.GRP_CHAT_NO
+          WHERE CGU.USER_ID = :userId
+            AND MSG.GRP_CHAT_SND_USER_ID <> :userId
+            AND MSG.GRP_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                          AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+            AND MSG.GRP_CHAT_STAT_CD = 'A'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM CM_GRP_CHAT_MESSAGE_READ MSR
+                WHERE MSR.GRP_CHAT_MSG_NO = MSG.GRP_CHAT_MSG_NO
+                  AND MSR.GRP_CHAT_READ_USER_ID = :userId
             )
         ) AS TOTAL_COUNT
         """;

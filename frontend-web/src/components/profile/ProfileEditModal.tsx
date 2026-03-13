@@ -26,6 +26,7 @@ interface ProfileEditModalProps {
     onClose: () => void;
     userId: string;
     onProfileUpdate: () => void;
+    isReadOnly?: boolean;
 }
 
 const MBTI_LIST = [
@@ -35,7 +36,7 @@ const MBTI_LIST = [
     'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ',
 ];
 
-const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, userId, onProfileUpdate }) => {
+const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, userId, onProfileUpdate, isReadOnly = false }) => {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [nickname, setNickname] = useState('');
@@ -164,7 +165,7 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[65vh] overflow-y-auto relative">
                 {/* Header */}
                 <div className="flex items-center justify-between p-3 border-b border-gray-100 bg-white sticky top-0 z-10">
-                    <h2 className="text-[14px] font-bold text-[#003C48]">프로필 편집</h2>
+                    <h2 className="text-[14px] font-bold text-[#003C48]">{isReadOnly ? '프로필 정보' : '프로필 편집'}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -175,18 +176,22 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                 <div className="p-4">
                     {/* Profile Image */}
                     <div className="flex justify-center mb-4">
-                        <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
-                            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-gray-50 flex items-center justify-center shadow-inner group-hover:border-indigo-50 transition-colors">
+                        <div className={`relative ${isReadOnly ? '' : 'cursor-pointer group'}`} onClick={() => !isReadOnly && fileInputRef.current?.click()}>
+                            <div className={`w-20 h-20 rounded-full overflow-hidden border-4 border-gray-50 flex items-center justify-center shadow-inner ${isReadOnly ? '' : 'group-hover:border-indigo-50'} transition-colors`}>
                                 {previewImage ? (
                                     <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
                                 )}
                             </div>
-                            <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 group-hover:scale-110 transition-transform">
-                                <FaCamera className="text-[#00BDF8] text-sm" />
-                            </div>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                            {!isReadOnly && (
+                                <>
+                                    <div className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-lg border border-gray-100 group-hover:scale-110 transition-transform">
+                                        <FaCamera className="text-[#00BDF8] text-sm" />
+                                    </div>
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -201,7 +206,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                 type="text"
                                 value={nickname}
                                 onChange={(e) => setNickname(e.target.value)}
-                                className="w-full bg-gray-50 rounded-xl px-4 py-2 text-[13px] text-gray-700 outline-none focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white transition-all border border-transparent focus:border-[#00BDF8]"
+                                disabled={isReadOnly}
+                                className={`w-full bg-gray-50 rounded-xl px-4 py-2 text-[13px] text-gray-700 outline-none transition-all border border-transparent ${isReadOnly ? 'cursor-default' : 'focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white focus:border-[#00BDF8]'}`}
                                 placeholder="닉네임을 입력하세요"
                             />
                         </div>
@@ -213,7 +219,8 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-gray-50 rounded-xl px-4 py-2 text-[13px] text-gray-700 outline-none focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white transition-all border border-transparent focus:border-[#00BDF8]"
+                                disabled={isReadOnly}
+                                className={`w-full bg-gray-50 rounded-xl px-4 py-2 text-[13px] text-gray-700 outline-none transition-all border border-transparent ${isReadOnly ? 'cursor-default' : 'focus:ring-2 focus:ring-[#00BDF8]/50 focus:bg-white focus:border-[#00BDF8]'}`}
                                 placeholder="이메일을 입력하세요"
                             />
                         </div>
@@ -228,10 +235,10 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                     <button
                                         key={cd}
                                         type="button"
-                                        onClick={() => setGenderCd(cd)}
+                                        onClick={() => !isReadOnly && setGenderCd(cd)}
                                         className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all ${genderCd === cd
                                             ? 'bg-[#00BDF8] text-white border-[#00BDF8] shadow-md'
-                                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#00BDF8]'
+                                            : `bg-gray-50 text-gray-500 border-gray-200 ${isReadOnly ? '' : 'hover:border-[#00BDF8]'}`
                                             }`}
                                     >
                                         {label}
@@ -250,10 +257,10 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                     <button
                                         key={type}
                                         type="button"
-                                        onClick={() => setMbti(type)}
+                                        onClick={() => !isReadOnly && setMbti(type)}
                                         className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${mbti === type
                                             ? 'bg-[#003C48] text-white border-[#003C48] shadow-md'
-                                            : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-[#003C48]'
+                                            : `bg-gray-50 text-gray-500 border-gray-200 ${isReadOnly ? '' : 'hover:border-[#003C48]'}`
                                             }`}
                                     >
                                         {type}
@@ -278,8 +285,9 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                                             min="1"
                                             max="5"
                                             value={skill.score}
-                                            onChange={(e) => handleSkillChange(skill.sessionTypeCd, parseInt(e.target.value))}
-                                            className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00BDF8]"
+                                            onChange={(e) => !isReadOnly && handleSkillChange(skill.sessionTypeCd, parseInt(e.target.value))}
+                                            disabled={isReadOnly}
+                                            className={`flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00BDF8] ${isReadOnly ? 'cursor-default' : ''}`}
                                         />
                                         <span className="text-[#00BDF8] font-bold w-4 text-center">{skill.score}</span>
                                     </div>
@@ -290,15 +298,17 @@ const ProfileEditModal: React.FC<ProfileEditModalProps> = ({ isOpen, onClose, us
                 </div>
 
                 {/* Footer */}
-                <div className="p-3 border-t border-gray-100 bg-gray-50/50 rounded-b-3xl">
-                    <button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="w-full bg-[#00BDF8] text-white font-bold py-3.5 rounded-xl text-[14px] shadow-lg shadow-[#00BDF8]/30 hover:bg-[#009bc9] hover:shadow-[#009bc9]/30 hover:-translate-y-0.5 transition-all disabled:bg-gray-300 disabled:shadow-none disabled:translate-y-0"
-                    >
-                        {loading ? '저장 중...' : '저장하기'}
-                    </button>
-                </div>
+                {!isReadOnly && (
+                    <div className="p-3 border-t border-gray-100 bg-gray-50/50 rounded-b-3xl">
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="w-full bg-[#00BDF8] text-white font-bold py-3.5 rounded-xl text-[14px] shadow-lg shadow-[#00BDF8]/30 hover:bg-[#009bc9] hover:shadow-[#009bc9]/30 hover:-translate-y-0.5 transition-all disabled:bg-gray-300 disabled:shadow-none disabled:translate-y-0"
+                        >
+                            {loading ? '저장 중...' : '저장하기'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             <CommonModal

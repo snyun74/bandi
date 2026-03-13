@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaSearch, FaChevronLeft } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 // 프로필 사진 컴포넌트 (파일 최상단 선언 - 리렌더링 안정성)
 const UserAvatar: React.FC<{ userId: string; size?: number }> = ({ userId, size = 22 }) => {
@@ -55,6 +56,9 @@ const ClanMemberStatus: React.FC = () => {
         message: '',
         onConfirm: () => { },
     });
+
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const closeModal = () => {
         setModal(prev => ({ ...prev, isOpen: false }));
@@ -394,7 +398,13 @@ const ClanMemberStatus: React.FC = () => {
                     {filteredMembers.map((member, index) => (
                         <div key={member.cnUserId} className={`flex flex-col p-3 ${index !== filteredMembers.length - 1 ? 'border-b border-gray-100' : ''}`}>
                             <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2 text-[#003C48]">
+                                <div
+                                    className="flex items-center gap-2 text-[#003C48] cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => {
+                                        setSelectedUserId(member.cnUserId);
+                                        setIsProfileModalOpen(true);
+                                    }}
+                                >
                                     <UserAvatar userId={member.cnUserId} size={22} />
                                     <span className="text-sm font-bold">{member.userNickNm}</span>
                                 </div>
@@ -451,6 +461,20 @@ const ClanMemberStatus: React.FC = () => {
                     ))}
                 </div>
             </div>
+
+            {/* Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={fetchMembers}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };
