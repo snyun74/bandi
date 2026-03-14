@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaPlus, FaSave, FaEdit, FaTrash, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import { linkifyText } from '../utils/textUtils';
 
 interface Notice {
     noticeNo: number | null;
@@ -276,7 +277,7 @@ const AdminNoticeManagement: React.FC = () => {
                                         </div>
                                         <span className="text-[10px] text-gray-400">{formatDate(notice.insDtime || '')}</span>
                                     </div>
-                                    <p className="text-[11px] text-gray-500 line-clamp-2 mb-2">{notice.content}</p>
+                                    <p className="text-[11px] text-gray-500 line-clamp-2 mb-2">{linkifyText(notice.content)}</p>
                                     <div className="flex items-center justify-between">
                                         <div className="text-[10px] text-gray-400">
                                             기간: {formatDate(notice.stdDate)} ~ {formatDate(notice.endDate)}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaCheckSquare, FaSquare } from 'react-icons/fa';
+import { linkifyText } from '../../utils/textUtils';
 
 interface Notice {
     noticeNo: number;
@@ -63,7 +64,7 @@ const NoticePopup: React.FC<NoticePopupProps> = ({ notices, onClose }) => {
                 <div className="flex-1 p-6 overflow-y-auto max-h-[400px]">
                     <h3 className="text-[#00BDF8] text-[16px] font-bold mb-4 break-keep">{currentNotice.title}</h3>
                     <div className="text-gray-600 text-[13px] leading-relaxed whitespace-pre-wrap break-keep">
-                        {currentNotice.content}
+                        {linkifyText(currentNotice.content)}
                     </div>
                 </div>
 
