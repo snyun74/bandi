@@ -32,7 +32,7 @@ const AdminNoticeManagement: React.FC = () => {
         isOpen: false,
         type: 'alert' as 'alert' | 'confirm',
         message: '',
-        onConfirm: () => {}
+        onConfirm: () => { }
     });
 
     useEffect(() => {
@@ -80,7 +80,12 @@ const AdminNoticeManagement: React.FC = () => {
     };
 
     const handleEdit = (notice: Notice) => {
-        const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+        // 로컬(한국시간) 기준으로 날짜를 YYYYMMDD 포맷으로 변환하도록 수정
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const today = `${year}${month}${day}`;
         if (today < notice.stdDate || today > notice.endDate) {
             setModal({
                 isOpen: true,
@@ -248,7 +253,7 @@ const AdminNoticeManagement: React.FC = () => {
                 {/* List Section */}
                 <div className="flex flex-col">
                     <h2 className="text-[13px] font-bold text-[#003C48] mb-4">공지사항 목록</h2>
-                    
+
                     {loading ? (
                         <div className="py-10 text-center text-[12px] text-gray-400">불러오는 중...</div>
                     ) : notices.length === 0 ? (
@@ -256,12 +261,11 @@ const AdminNoticeManagement: React.FC = () => {
                     ) : (
                         <div className="space-y-3 pb-10">
                             {notices.map((notice) => (
-                                <div 
+                                <div
                                     key={notice.noticeNo}
                                     onClick={() => handleEdit(notice)}
-                                    className={`p-4 border rounded-2xl transition-all cursor-pointer ${
-                                        notice.pinYn === 'Y' ? 'bg-[#00BDF8]/5 border-[#00BDF8]/20' : 'bg-white border-gray-100 hover:border-gray-200 shadow-sm'
-                                    }`}
+                                    className={`p-4 border rounded-2xl transition-all cursor-pointer ${notice.pinYn === 'Y' ? 'bg-[#00BDF8]/5 border-[#00BDF8]/20' : 'bg-white border-gray-100 hover:border-gray-200 shadow-sm'
+                                        }`}
                                 >
                                     <div className="flex items-start justify-between mb-1">
                                         <div className="flex items-center gap-2">
