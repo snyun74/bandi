@@ -14,4 +14,6 @@ public interface BoardPostDto {
     Long getBoardReplyCnt();
 
     String getWriterUserId();
+
+    String getMaskingYn();
 }

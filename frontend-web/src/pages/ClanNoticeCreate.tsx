@@ -190,12 +190,12 @@ const ClanNoticeCreate: React.FC = () => {
                 </div>
 
                 {/* Attachments (UI Only) */}
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-2">
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 bg-[#ecf0f1] px-4 py-3 rounded-xl text-[#003C48] font-bold text-[14px] min-w-fit"
+                        className="flex items-center justify-center gap-2 bg-[#ecf0f1] px-4 py-3 rounded-xl text-[#003C48] font-bold text-[14px] w-full sm:w-auto min-w-[120px] whitespace-nowrap"
                     >
-                        <FaPaperclip /> {file ? file.name : "파일 업로드"}
+                        <FaPaperclip /> {file ? '파일 변경' : '파일 업로드'}
                     </button>
                     <input
                         type="file"
@@ -208,9 +208,14 @@ const ClanNoticeCreate: React.FC = () => {
                         placeholder="Youtube 링크를 입력하세요"
                         value={youtubeLink}
                         onChange={(e) => setYoutubeLink(e.target.value)}
-                        className="flex-1 bg-[#ecf0f1] rounded-xl px-4 py-3 outline-none text-[#003C48] text-sm"
+                        className="flex-1 bg-[#ecf0f1] rounded-xl px-4 py-3 outline-none text-[#003C48] text-sm w-full"
                     />
                 </div>
+                {file && (
+                    <div className="text-[12px] text-gray-500 px-1 truncate -mt-4">
+                        선택된 파일: {file.name}
+                    </div>
+                )}
 
                 {/* Submit Button */}
                 <div className="pt-2">

@@ -22,5 +22,6 @@ public class CommunityBoardDetailDto {
     private Boolean isScrapped;
     private String youtubeUrl;
     private String attachFilePath;
+    private String maskingYn;
     private List<CommunityBoardCommentDto> comments;
 }

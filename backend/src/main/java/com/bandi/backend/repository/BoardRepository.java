@@ -20,10 +20,11 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "b.title, " +
                         "b.insDtime, " +
                         "b.writerUserId, " +
-                        "u.userNickNm, " +
+                        "(CASE WHEN b.maskingYn = 'Y' THEN '익명' ELSE u.userNickNm END), " +
                         "(SELECT COUNT(bl) FROM BoardLike bl WHERE bl.boardNo = b.boardNo), " +
                         "(SELECT COUNT(bd) FROM BoardDetail bd WHERE bd.boardNo = b.boardNo), " +
-                        "(CASE WHEN (SELECT COUNT(bl2) FROM BoardLike bl2 WHERE bl2.boardNo = b.boardNo AND bl2.userId = :userId) > 0 THEN true ELSE false END)) "
+                        "(CASE WHEN (SELECT COUNT(bl2) FROM BoardLike bl2 WHERE bl2.boardNo = b.boardNo AND bl2.userId = :userId) > 0 THEN true ELSE false END), " +
+                        "b.maskingYn) "
                         +
                         "FROM Board b " +
                         "LEFT JOIN com.bandi.backend.entity.member.User u ON b.writerUserId = u.userId " +
@@ -39,10 +40,11 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "b.title, " +
                         "b.insDtime, " +
                         "b.writerUserId, " +
-                        "u.userNickNm, " +
+                        "(CASE WHEN b.maskingYn = 'Y' THEN '익명' ELSE u.userNickNm END), " +
                         "(SELECT COUNT(bl) FROM BoardLike bl WHERE bl.boardNo = b.boardNo), " +
                         "(SELECT COUNT(bd) FROM BoardDetail bd WHERE bd.boardNo = b.boardNo), " +
-                        "(CASE WHEN (SELECT COUNT(bl2) FROM BoardLike bl2 WHERE bl2.boardNo = b.boardNo AND bl2.userId = :userId) > 0 THEN true ELSE false END)) "
+                        "(CASE WHEN (SELECT COUNT(bl2) FROM BoardLike bl2 WHERE bl2.boardNo = b.boardNo AND bl2.userId = :userId) > 0 THEN true ELSE false END), " +
+                        "b.maskingYn) "
                         +
                         "FROM Board b " +
                         "LEFT JOIN com.bandi.backend.entity.member.User u ON b.writerUserId = u.userId " +

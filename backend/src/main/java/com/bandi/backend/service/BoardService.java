@@ -110,6 +110,7 @@ public class BoardService {
         board.setYoutubeUrl(dto.getYoutubeUrl());
         board.setBoardStatCd("A");
         board.setPinYn("N");
+        board.setMaskingYn(dto.getMaskingYn() != null ? dto.getMaskingYn() : "N");
         board.setInsDtime(currentDateTime);
         board.setInsId(dto.getUserId());
         board.setUpdDtime(currentDateTime);
@@ -158,9 +159,13 @@ public class BoardService {
 
         // Fetch user nickname
         String userNickNm = board.getWriterUserId();
-        com.bandi.backend.entity.member.User user = userRepository.findById(board.getWriterUserId()).orElse(null);
-        if (user != null && user.getUserNickNm() != null) {
-            userNickNm = user.getUserNickNm();
+        if ("Y".equals(board.getMaskingYn())) {
+            userNickNm = "익명";
+        } else {
+            com.bandi.backend.entity.member.User user = userRepository.findById(board.getWriterUserId()).orElse(null);
+            if (user != null && user.getUserNickNm() != null) {
+                userNickNm = user.getUserNickNm();
+            }
         }
 
         return CommunityBoardDetailDto.builder()
@@ -177,6 +182,7 @@ public class BoardService {
                 .isScrapped(isScrapped)
                 .youtubeUrl(board.getYoutubeUrl())
                 .attachFilePath(attachFilePath)
+                .maskingYn(board.getMaskingYn())
                 .build();
     }
 

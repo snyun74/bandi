@@ -23,7 +23,7 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "    (SELECT COUNT(1) FROM CM_BOARD_DETAIL D WHERE D.BOARD_NO = B.BOARD_NO AND D.REPLY_STAT_CD = 'A') AS reply_cnt, "
                         +
                         "    B.INS_DTIME AS reg_date " +
-                        "  FROM CM_BOARD B WHERE B.WRITER_USER_ID = :userId " +
+                        "  FROM CM_BOARD B WHERE B.WRITER_USER_ID = :userId AND B.BOARD_STAT_CD = 'A' " +
                         "  UNION ALL " +
                         "  SELECT 'CN_NOTICE' AS post_type, N.CN_NOTICE_NO AS pk_no, CAST(N.CN_NO AS VARCHAR) AS param1, CAST(NULL AS VARCHAR) AS param2, N.TITLE AS title, "
                         +
@@ -31,7 +31,7 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "    (SELECT COUNT(1) FROM CN_NOTICE_DETAIL D WHERE D.CN_NOTICE_NO = N.CN_NOTICE_NO AND D.COMMENT_STAT_CD = 'A') AS reply_cnt, "
                         +
                         "    N.INS_DTIME AS reg_date " +
-                        "  FROM CN_NOTICE N WHERE N.WRITER_USER_ID = :userId " +
+                        "  FROM CN_NOTICE N WHERE N.WRITER_USER_ID = :userId AND N.END_DATE >= N.STD_DATE " +
                         "  UNION ALL " +
                         "  SELECT 'CN_BOARD' AS post_type, B2.CN_BOARD_NO AS pk_no, CAST((SELECT T.CN_NO FROM CN_BOARD_TYPE T WHERE T.CN_BOARD_TYPE_NO = B2.CN_BOARD_TYPE_NO) AS VARCHAR) AS param1, CAST(B2.CN_BOARD_TYPE_NO AS VARCHAR) AS param2, B2.TITLE AS title, "
                         +
@@ -40,7 +40,7 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B2.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS reply_cnt, "
                         +
                         "    B2.INS_DTIME AS reg_date " +
-                        "  FROM CN_BOARD B2 WHERE B2.WRITER_USER_ID = :userId " +
+                        "  FROM CN_BOARD B2 WHERE B2.WRITER_USER_ID = :userId AND B2.BOARD_STAT_CD = 'A' " +
                         ") T ORDER BY T.reg_date DESC LIMIT :size OFFSET :offset", nativeQuery = true)
         List<Map<String, Object>> findMyPosts(@Param("userId") String userId,
                         @Param("size") int size,
@@ -54,7 +54,7 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "    (SELECT COUNT(1) FROM CM_BOARD_DETAIL D2 WHERE D2.BOARD_NO = B.BOARD_NO AND D2.REPLY_STAT_CD = 'A') AS reply_cnt, "
                         +
                         "    B.INS_DTIME AS reg_date " +
-                        "  FROM CM_BOARD_DETAIL D JOIN CM_BOARD B ON D.BOARD_NO = B.BOARD_NO WHERE D.REPLY_USER_ID = :userId AND D.REPLY_STAT_CD = 'A' AND B.WRITER_USER_ID != :userId "
+                        "  FROM CM_BOARD_DETAIL D JOIN CM_BOARD B ON D.BOARD_NO = B.BOARD_NO WHERE D.REPLY_USER_ID = :userId AND D.REPLY_STAT_CD = 'A' AND B.WRITER_USER_ID != :userId AND B.BOARD_STAT_CD = 'A' "
                         +
                         "  UNION ALL " +
                         "  SELECT DISTINCT 'CN_NOTICE' AS post_type, N.CN_NOTICE_NO AS pk_no, CAST(N.CN_NO AS VARCHAR) AS param1, CAST(NULL AS VARCHAR) AS param2, N.TITLE AS title, "
@@ -63,7 +63,7 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "    (SELECT COUNT(1) FROM CN_NOTICE_DETAIL D2 WHERE D2.CN_NOTICE_NO = N.CN_NOTICE_NO AND D2.COMMENT_STAT_CD = 'A') AS reply_cnt, "
                         +
                         "    N.INS_DTIME AS reg_date " +
-                        "  FROM CN_NOTICE_DETAIL D JOIN CN_NOTICE N ON D.CN_NOTICE_NO = N.CN_NOTICE_NO WHERE D.COMMENT_USER_ID = :userId AND D.COMMENT_STAT_CD = 'A' AND N.WRITER_USER_ID != :userId "
+                        "  FROM CN_NOTICE_DETAIL D JOIN CN_NOTICE N ON D.CN_NOTICE_NO = N.CN_NOTICE_NO WHERE D.COMMENT_USER_ID = :userId AND D.COMMENT_STAT_CD = 'A' AND N.WRITER_USER_ID != :userId AND N.END_DATE >= N.STD_DATE "
                         +
                         "  UNION ALL " +
                         "  SELECT DISTINCT 'CN_BOARD' AS post_type, B2.CN_BOARD_NO AS pk_no, CAST((SELECT T.CN_NO FROM CN_BOARD_TYPE T WHERE T.CN_BOARD_TYPE_NO = B2.CN_BOARD_TYPE_NO) AS VARCHAR) AS param1, CAST(B2.CN_BOARD_TYPE_NO AS VARCHAR) AS param2, B2.TITLE AS title, "
@@ -73,7 +73,7 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D2 WHERE D2.CN_BOARD_NO = B2.CN_BOARD_NO AND D2.REPLY_STAT_CD = 'A') AS reply_cnt, "
                         +
                         "    B2.INS_DTIME AS reg_date " +
-                        "  FROM CN_BOARD_DETAIL D JOIN CN_BOARD B2 ON D.CN_BOARD_NO = B2.CN_BOARD_NO WHERE D.REPLY_USER_ID = :userId AND D.REPLY_STAT_CD = 'A' AND B2.WRITER_USER_ID != :userId "
+                        "  FROM CN_BOARD_DETAIL D JOIN CN_BOARD B2 ON D.CN_BOARD_NO = B2.CN_BOARD_NO WHERE D.REPLY_USER_ID = :userId AND D.REPLY_STAT_CD = 'A' AND B2.WRITER_USER_ID != :userId AND B2.BOARD_STAT_CD = 'A' "
                         +
                         ") T ORDER BY T.reg_date DESC LIMIT :size OFFSET :offset", nativeQuery = true)
         List<Map<String, Object>> findMyCommentedPosts(@Param("userId") String userId,
@@ -136,6 +136,11 @@ public interface CmScrapRepository extends JpaRepository<CmScrap, Long> {
                         "LEFT JOIN CN_BOARD B2 ON S.SCRAP_TABLE_NM = 'CN_BOARD' AND S.SCRAP_TABLE_PK_NO = B2.CN_BOARD_NO "
                         +
                         "WHERE S.USER_ID = :userId " +
+                        "AND ( " +
+                        "  (S.SCRAP_TABLE_NM = 'CM_BOARD' AND B1.BOARD_STAT_CD = 'A') OR " +
+                        "  (S.SCRAP_TABLE_NM = 'CN_NOTICE' AND N.END_DATE >= N.STD_DATE) OR " +
+                        "  (S.SCRAP_TABLE_NM = 'CN_BOARD' AND B2.BOARD_STAT_CD = 'A') " +
+                        ") " +
                         "ORDER BY S.SCRAP_NO DESC", nativeQuery = true)
         List<Map<String, Object>> findMyScraps(@Param("userId") String userId);
 }

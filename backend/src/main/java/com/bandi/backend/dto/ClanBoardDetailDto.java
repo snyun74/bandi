@@ -19,4 +19,5 @@ public class ClanBoardDetailDto {
     private Long scrapCnt;
     private Boolean isScrapped;
     private String attachFilePath;
+    private String maskingYn;
 }

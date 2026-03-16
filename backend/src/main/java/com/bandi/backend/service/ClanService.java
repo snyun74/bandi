@@ -11,6 +11,7 @@ import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.repository.CmAttachmentRepository;
 import com.bandi.backend.repository.CmScrapRepository;
 import com.bandi.backend.repository.UserRepository;
+import com.bandi.backend.service.PushService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,14 +32,13 @@ public class ClanService {
 
     private final ClanGroupRepository clanGroupRepository;
     private final ClanUserRepository clanUserRepository;
+    private final PushService pushService;
     private final CmAttachmentRepository cmAttachmentRepository;
     private final ClanBoardTypeRepository clanBoardTypeRepository;
     private final com.bandi.backend.repository.ClanBoardRepository clanBoardRepository;
     private final com.bandi.backend.repository.ClanChatRoomRepository clanChatRoomRepository;
 
-    // private final ClanNoticeRepository clanNoticeRepository;
-    // private final ClanNoticeDetailRepository clanNoticeDetailRepository;
-    // private final UserRepository userRepository;
+    private final UserRepository userRepository;
     // private final UserAccountRepository userAccountRepository;
     private final com.bandi.backend.repository.ClanBoardAttachmentRepository clanBoardAttachmentRepository;
     private final com.bandi.backend.repository.ClanBoardDetailRepository clanBoardDetailRepository;
@@ -195,6 +195,29 @@ public class ClanService {
         clanMember.setUpdId(dto.getUserId());
 
         clanUserRepository.save(clanMember);
+
+        // Send push notification to Leader(01) and Executive(02)
+        try {
+            // Get Applicant's Nickname
+            String applicantNickname = userRepository.findById(dto.getUserId())
+                    .map(u -> (u.getUserNickNm() != null && !u.getUserNickNm().isEmpty()) ? u.getUserNickNm() : u.getUserNm())
+                    .orElse("새로운 회원");
+
+            java.util.List<com.bandi.backend.entity.clan.ClanUser> admins = clanUserRepository.findAllByCnNoAndCnUserRoleCdIn(
+                    dto.getCnNo(), java.util.Arrays.asList("01", "02"));
+            for (com.bandi.backend.entity.clan.ClanUser admin : admins) {
+                pushService.sendPush(
+                        admin.getCnUserId(),
+                        "클랜 신청 알림",
+                        applicantNickname + "님이 클랜 신규 회원 가입을 요청을 했습니다.",
+                        "", // No link as requested
+                        "CLAN_JOIN"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send clan join push notification: " + e.getMessage());
+            // Don't throw exception to avoid rolling back the join request itself
+        }
     }
 
     @Transactional(readOnly = true)
@@ -420,6 +443,7 @@ public class ClanService {
         board.setRegDate(todayDate);
         board.setBoardStatCd("A");
         board.setPinYn("N");
+        board.setMaskingYn(dto.getMaskingYn() != null ? dto.getMaskingYn() : "N");
         board.setInsDtime(currentDateTime);
         board.setInsId(dto.getUserId());
         board.setUpdDtime(currentDateTime);
@@ -470,16 +494,15 @@ public class ClanService {
         if (bTypeNo != null)
             dto.setCnBoardTypeNo(bTypeNo.longValue());
 
-        String bTypeNm = (String) result.get("boardTypeNm");
-        dto.setBoardTypeNm(bTypeNm != null ? bTypeNm : "클랜 게시판");
+        Object bTypeNmObj = result.get("boardTypeNm");
+        dto.setBoardTypeNm(bTypeNmObj != null ? String.valueOf(bTypeNmObj) : "클랜 게시판");
 
-        dto.setTitle((String) result.get("title"));
-        dto.setContent((String) result.get("content")); // Clob handling might be needed but driver usually handles
-                                                        // string
-        dto.setWriterUserId((String) result.get("writerUserId"));
-        dto.setUserNickNm((String) result.get("userNickNm"));
-        dto.setRegDate((String) result.get("regDate"));
-        dto.setYoutubeUrl((String) result.get("youtubeUrl"));
+        dto.setTitle(result.get("title") != null ? String.valueOf(result.get("title")) : "");
+        dto.setContent(result.get("content") != null ? String.valueOf(result.get("content")) : "");
+        dto.setWriterUserId(result.get("writerUserId") != null ? String.valueOf(result.get("writerUserId")) : "");
+        dto.setUserNickNm(result.get("userNickNm") != null ? String.valueOf(result.get("userNickNm")) : "");
+        dto.setRegDate(result.get("regDate") != null ? String.valueOf(result.get("regDate")) : "");
+        dto.setYoutubeUrl(result.get("youtubeUrl") != null ? String.valueOf(result.get("youtubeUrl")) : "");
         dto.setViewCnt(0L); // No view cnt
         dto.setLikeCnt(((Number) result.get("boardLikeCnt")).longValue());
         dto.setReplyCnt(((Number) result.get("boardReplyCnt")).longValue());
@@ -510,6 +533,7 @@ public class ClanService {
             }
         }
         dto.setAttachFilePath(attachFilePath);
+        dto.setMaskingYn(result.get("maskingYn") != null ? String.valueOf(result.get("maskingYn")) : "N");
 
         return dto;
     }
@@ -774,5 +798,9 @@ public class ClanService {
         board.setUpdId(userId);
         clanBoardRepository.save(board);
         System.out.println("DEBUG: board soft-deleted successfully boardNo=" + boardNo);
+    }
+
+    public java.util.Map<String, Object> getDebugMap(Long boardNo) {
+        return clanBoardRepository.findBoardDetailMap(boardNo);
     }
 }

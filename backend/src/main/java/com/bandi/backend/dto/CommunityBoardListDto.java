@@ -19,4 +19,5 @@ public class CommunityBoardListDto {
     private Long likeCnt;
     private Long commentCnt;
     private Boolean isLiked;
+    private String maskingYn;
 }

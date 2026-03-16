@@ -13,6 +13,7 @@ const BoardWrite: React.FC = () => {
     const [content, setContent] = useState("");
     const [youtubeUrl, setYoutubeUrl] = useState("");
     const [file, setFile] = useState<File | null>(null);
+    const [maskingYn, setMaskingYn] = useState("N");
 
     // Modal state
     const [modal, setModal] = useState({
@@ -70,7 +71,8 @@ const BoardWrite: React.FC = () => {
             title: title,
             content: content,
             userId: userId,
-            youtubeUrl: youtubeUrl
+            youtubeUrl: youtubeUrl,
+            maskingYn: maskingYn
         };
 
         // Append JSON data as a Blob with application/json type
@@ -148,14 +150,14 @@ const BoardWrite: React.FC = () => {
                 </div>
 
                 {/* Attachment & Link Area */}
-                <div className="flex gap-2 items-center mb-10">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center mb-10">
                     {/* File Upload Button */}
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1 bg-gray-100 border border-gray-200 text-gray-600 px-3 py-3 rounded-xl text-sm min-w-[100px]"
+                        className="flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 px-4 py-3 rounded-xl text-sm transition-colors hover:bg-gray-100"
                     >
-                        <FaPaperclip />
-                        <span className="truncate max-w-[80px]">{file ? file.name : "파일 업로드"}</span>
+                        <FaPaperclip className="text-gray-400" />
+                        <span className="truncate max-w-[150px] font-medium">{file ? file.name : "파일 업로드"}</span>
                     </button>
                     <input
                         type="file"
@@ -165,13 +167,38 @@ const BoardWrite: React.FC = () => {
                     />
 
                     {/* YouTube Link Input */}
-                    <input
-                        type="text"
-                        placeholder="Youtube 링크를 입력하세요"
-                        className="flex-1 bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8]"
-                        value={youtubeUrl}
-                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                    />
+                    <div className="flex-1 relative">
+                        <input
+                            type="text"
+                            placeholder="Youtube 링크를 입력하세요"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8] transition-all"
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                {/* Anonymous Option */}
+                <div className="mb-6 flex items-center gap-2 px-1">
+                    <label className="flex items-center cursor-pointer group">
+                        <div className="relative">
+                            <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={maskingYn === "Y"}
+                                onChange={(e) => setMaskingYn(e.target.checked ? "Y" : "N")}
+                            />
+                            <div className={`w-5 h-5 border-2 rounded-md transition-all duration-200 flex items-center justify-center
+                                ${maskingYn === "Y" ? 'bg-[#00BDF8] border-[#00BDF8]' : 'bg-white border-gray-300 group-hover:border-[#00BDF8]'}`}>
+                                {maskingYn === "Y" && (
+                                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                )}
+                            </div>
+                        </div>
+                        <span className="ml-2 text-sm text-gray-600 font-medium select-none">익명으로 작성</span>
+                    </label>
                 </div>
 
                 {/* Submit Button */}

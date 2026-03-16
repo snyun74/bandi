@@ -16,4 +16,6 @@ public interface HotBoardPostDto {
     Long getBoardLikeCnt();
 
     Long getBoardReplyCnt();
+
+    String getMaskingYn();
 }

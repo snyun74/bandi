@@ -12,4 +12,5 @@ public class CommunityBoardCreateDto {
     private String content;
     private String userId;
     private String youtubeUrl;
+    private String maskingYn;
 }

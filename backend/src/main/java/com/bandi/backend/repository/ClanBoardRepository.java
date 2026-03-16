@@ -16,12 +16,13 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +
                         "    B.TITLE AS \"title\", " +
                         "    B.INS_DTIME AS \"regDate\", " +
-                        "    (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) AS \"userNickNm\", "
+                        "    (CASE WHEN B.MASKING_YN = 'Y' THEN '익명' ELSE (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) END) AS \"userNickNm\", "
                         +
                         "    (SELECT COUNT(1) FROM CN_BOARD_LIKE L WHERE L.CN_BOARD_NO = B.CN_BOARD_NO) AS \"boardLikeCnt\", "
                         +
-                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\" "
+                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\", "
                         +
+                        "    B.MASKING_YN AS \"maskingYn\" " +
                         "FROM CN_BOARD_TYPE K " +
                         "INNER JOIN CN_BOARD B ON B.CN_BOARD_TYPE_NO = K.CN_BOARD_TYPE_NO " +
                         "WHERE K.CN_NO = :clanId " +
@@ -38,12 +39,13 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +
                         "    B.TITLE AS \"title\", " +
                         "    B.INS_DTIME AS \"regDate\", " +
-                        "    (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) AS \"userNickNm\", "
+                        "    (CASE WHEN B.MASKING_YN = 'Y' THEN '익명' ELSE (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) END) AS \"userNickNm\", "
                         +
                         "    (SELECT COUNT(1) FROM CN_BOARD_LIKE L WHERE L.CN_BOARD_NO = B.CN_BOARD_NO) AS \"boardLikeCnt\", "
                         +
-                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\" "
+                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\", "
                         +
+                        "    B.MASKING_YN AS \"maskingYn\" " +
                         "FROM CN_BOARD_TYPE K " +
                         "INNER JOIN CN_BOARD B ON B.CN_BOARD_TYPE_NO = K.CN_BOARD_TYPE_NO " +
                         "WHERE K.CN_NO = :clanId " +
@@ -59,12 +61,13 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "    B.TITLE AS \"title\", " +
                         "    B.WRITER_USER_ID AS \"writerUserId\", " +
                         "    B.INS_DTIME AS \"regDate\", " +
-                        "    (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) AS \"userNickNm\", "
+                        "    (CASE WHEN B.MASKING_YN = 'Y' THEN '익명' ELSE (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) END) AS \"userNickNm\", "
                         +
                         "    (SELECT COUNT(1) FROM CN_BOARD_LIKE L WHERE L.CN_BOARD_NO = B.CN_BOARD_NO) AS \"boardLikeCnt\", "
                         +
-                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\" "
+                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\", "
                         +
+                        "    B.MASKING_YN AS \"maskingYn\" " +
                         "FROM CN_BOARD B " +
                         "WHERE B.CN_BOARD_TYPE_NO = :boardTypeNo " +
                         "  AND B.BOARD_STAT_CD = 'A' " +
@@ -83,12 +86,13 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "    B.INS_DTIME AS \"regDate\", " +
                         "    B.YOUTUBE_URL AS \"youtubeUrl\", " +
                         "    0 AS \"viewCnt\", " +
-                        "    COALESCE((SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID), B.WRITER_USER_ID) AS \"userNickNm\", "
+                        "    (CASE WHEN B.MASKING_YN = 'Y' THEN '익명' ELSE COALESCE((SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID), B.WRITER_USER_ID) END) AS \"userNickNm\", "
                         +
                         "    (SELECT COUNT(1) FROM CN_BOARD_LIKE L WHERE L.CN_BOARD_NO = B.CN_BOARD_NO) AS \"boardLikeCnt\", "
                         +
-                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\" "
+                        "    (SELECT COUNT(1) FROM CN_BOARD_DETAIL D WHERE D.CN_BOARD_NO = B.CN_BOARD_NO AND D.REPLY_STAT_CD = 'A') AS \"boardReplyCnt\", "
                         +
+                        "    B.MASKING_YN AS \"maskingYn\" " +
                         "FROM CN_BOARD B " +
                         "LEFT JOIN CN_BOARD_TYPE T ON B.CN_BOARD_TYPE_NO = T.CN_BOARD_TYPE_NO " +
                         "WHERE B.CN_BOARD_NO = :boardNo " +

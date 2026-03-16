@@ -55,6 +55,7 @@ interface PostDetail {
     scrapCnt: number;
     isScrapped: boolean;
     attachFilePath?: string;
+    maskingYn?: string;
 }
 
 const ClanBoardPostDetail: React.FC = () => {
@@ -374,7 +375,7 @@ const ClanBoardPostDetail: React.FC = () => {
                     <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-2">
                             <div className="flex-shrink-0">
-                                <UserAvatar userId={post.writerUserId} size="w-8 h-8" />
+                                <UserAvatar userId={post.writerUserId} size="w-8 h-8" isAnonymous={post.maskingYn === 'Y'} />
                             </div>
                             <div>
                                 <div className="text-sm font-bold text-gray-800">{post.userNickNm}</div>

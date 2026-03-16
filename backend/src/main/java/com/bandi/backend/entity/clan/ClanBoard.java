@@ -53,4 +53,7 @@ public class ClanBoard {
 
     @Column(name = "reg_date", length = 8)
     private String regDate;
+
+    @Column(name = "masking_yn", length = 1)
+    private String maskingYn;
 }

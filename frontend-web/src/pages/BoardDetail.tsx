@@ -15,7 +15,7 @@ const UserAvatar: React.FC<{ userId: string; size?: string; isAnonymous?: boolea
             .then(r => r.ok ? r.json() : null)
             .then(d => setImg(d?.profileImageUrl || null))
             .catch(() => setImg(null));
-    }, [userId]);
+    }, [userId, isAnonymous]);
     if (img === undefined) return <div className={`${size} bg-gray-200 rounded-full flex-shrink-0`} />;
     if (img) return <img src={img} alt="" className={`${size} rounded-full flex-shrink-0 object-cover`} />;
     return (
@@ -54,6 +54,7 @@ interface PostDetail {
     isScrapped: boolean;
     youtubeUrl?: string; // Optional
     attachFilePath?: string; // Optional
+    maskingYn?: string;
 }
 
 const BoardDetail: React.FC = () => {
@@ -353,7 +354,7 @@ const BoardDetail: React.FC = () => {
 
                     <div className="flex items-center mb-4 pb-4 border-b border-gray-200">
                         <div className="mr-2 flex-shrink-0">
-                            <UserAvatar userId={post.writerUserId} size="w-8 h-8" />
+                            <UserAvatar userId={post.writerUserId} size="w-8 h-8" isAnonymous={post.maskingYn === 'Y'} />
                         </div>
                         <div>
                             <div className="text-sm font-bold text-gray-800">{post.userNickNm || "익명"}</div>
