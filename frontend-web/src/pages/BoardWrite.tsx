@@ -13,7 +13,7 @@ const BoardWrite: React.FC = () => {
     const [content, setContent] = useState("");
     const [youtubeUrl, setYoutubeUrl] = useState("");
     const [file, setFile] = useState<File | null>(null);
-    const [maskingYn, setMaskingYn] = useState("N");
+    const [maskingYn, setMaskingYn] = useState("Y");
 
     // Modal state
     const [modal, setModal] = useState({
