@@ -382,7 +382,7 @@ const ClanJamList: React.FC = () => {
                     </div>
                     <input
                         type="text"
-                        placeholder="방 제목으로 검색"
+                        placeholder="방 제목, 곡명, 아티스트 검색"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onKeyDown={handleSearch}

@@ -12,5 +12,6 @@ import lombok.Builder;
 public class BandUpdateDto {
     private String userId;
     private String description;
+    private String title;
     private Long attachNo;
 }

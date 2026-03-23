@@ -30,8 +30,9 @@ public class ChatController {
 
     @GetMapping("/{roomNo}")
     public ResponseEntity<ChatRoomListDto> getChatRoomInfo(
-            @org.springframework.web.bind.annotation.PathVariable Long roomNo) {
-        ChatRoomListDto roomInfo = chatService.getChatRoomInfo(roomNo);
+            @org.springframework.web.bind.annotation.PathVariable Long roomNo,
+            @RequestParam(required = false) String roomType) {
+        ChatRoomListDto roomInfo = chatService.getChatRoomInfo(roomNo, roomType);
         if (roomInfo != null) {
             return ResponseEntity.ok(roomInfo);
         } else {

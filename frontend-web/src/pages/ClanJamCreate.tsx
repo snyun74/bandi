@@ -82,6 +82,14 @@ const ClanJamCreate: React.FC = () => {
         }
     };
 
+    const toggleAllSessions = () => {
+        if (selectedSessions.length === availableSessions.length) {
+            setSelectedSessions([]);
+        } else {
+            setSelectedSessions(availableSessions.map(s => s.commDtlNm));
+        }
+    };
+
     const handleAddCustomSession = () => {
         if (selectedCustomSession) {
             // Allow duplicates in "Additional" list as per typical jam logic (e.g. 2 Guitars)
@@ -294,9 +302,22 @@ const ClanJamCreate: React.FC = () => {
 
                 {/* Basic Session Config */}
                 <div>
-                    <SectionTitle as="h2" className="!mt-0 !mb-2">
-                        기본 세션 구성 <span className="text-red-500">*</span>
-                    </SectionTitle>
+                    <div className="flex items-center justify-between mb-2">
+                        <SectionTitle as="h2" className="!mt-0 !mb-0">
+                            기본 세션 구성 <span className="text-red-500">*</span>
+                        </SectionTitle>
+                        <div
+                            className="flex items-center gap-1.5 cursor-pointer text-gray-500 hover:text-[#003C48] transition-colors"
+                            onClick={toggleAllSessions}
+                        >
+                            {selectedSessions.length === availableSessions.length ? (
+                                <FaCheckSquare className="text-[#003C48]" size={16} />
+                            ) : (
+                                <FaRegSquare size={16} />
+                            )}
+                            <span className="text-xs font-bold">전체 항목 선택</span>
+                        </div>
+                    </div>
                     <div className="bg-[#F0F4F8] rounded-xl p-4 grid grid-cols-2 gap-y-3 gap-x-4 max-h-40 overflow-y-auto">
                         {availableSessions.map((session) => (
                             <div

@@ -55,7 +55,7 @@ const ClanJamDetail: React.FC = () => {
     });
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [editForm, setEditForm] = useState({ desc: '', previewUrl: '' });
+    const [editForm, setEditForm] = useState({ title: '', desc: '', previewUrl: '' });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -395,6 +395,7 @@ const ClanJamDetail: React.FC = () => {
     const handleEditClick = () => {
         if (!bandDetail) return;
         setEditForm({
+            title: bandDetail.title || '',
             desc: bandDetail.description || '',
             previewUrl: bandDetail.imgUrl || ''
         });
@@ -419,6 +420,7 @@ const ClanJamDetail: React.FC = () => {
         const formData = new FormData();
         const updateData = {
             userId: userId,
+            title: editForm.title,
             description: editForm.desc
         };
 
@@ -809,6 +811,16 @@ const ClanJamDetail: React.FC = () => {
                         </div>
 
                         <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-[#003C48] mb-1">방 제목</label>
+                                <input
+                                    type="text"
+                                    value={editForm.title}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8]"
+                                    placeholder="방 제목을 입력하세요"
+                                />
+                            </div>
                             <div>
                                 <label className="block text-sm font-bold text-[#003C48] mb-1">합주방 소개</label>
                                 <textarea

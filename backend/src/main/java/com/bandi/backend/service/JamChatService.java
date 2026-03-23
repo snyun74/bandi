@@ -41,18 +41,18 @@ public class JamChatService {
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter("roomNo", roomNo);
 
-        try {
-            Object result = query.getSingleResult();
-            Object[] row = (Object[]) result;
-            return ChatRoomListDto.builder()
-                    .roomNo(((Number) row[0]).longValue())
-                    .roomNm((String) row[1])
-                    .roomType((String) row[2])
-                    .attachFilePath((String) row[3])
-                    .build();
-        } catch (jakarta.persistence.NoResultException e) {
+        List<?> results = query.getResultList();
+        if (results.isEmpty()) {
             return null;
         }
+
+        Object[] row = (Object[]) results.get(0);
+        return ChatRoomListDto.builder()
+                .roomNo(((Number) row[0]).longValue())
+                .roomNm((String) row[1])
+                .roomType((String) row[2])
+                .attachFilePath((String) row[3])
+                .build();
     }
 
     @Transactional

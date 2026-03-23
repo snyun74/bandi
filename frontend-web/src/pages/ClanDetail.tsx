@@ -321,7 +321,7 @@ const ClanDetail: React.FC = () => {
                         <p className="text-[#003C48] text-[12px] font-medium opacity-60">멤버 : {clan.memberCount}명</p>
                     </div>
                     <div className="flex flex-col gap-1.5 shrink-0 pt-0.5">
-                        <button onClick={() => navigate(`/main/chat/room/${id}`)} className="bg-white border border-gray-200 rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-gray-600 shadow-sm whitespace-nowrap active:scale-95 transition-transform">
+                        <button onClick={() => navigate(`/main/chat/room/${id}`, { state: { roomNm: clan.name, roomType: 'CLAN', attachFilePath: clan.attachFilePath } })} className="bg-white border border-gray-200 rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-gray-600 shadow-sm whitespace-nowrap active:scale-95 transition-transform">
                             <FaCommentDots size={11} className="text-[#003C48]" /> 단체 채팅
                             {clan.unreadChatCount !== undefined && clan.unreadChatCount > 0 && (
                                 <span className="bg-[#FF8A80] text-white text-[9px] rounded-full px-1.5 h-3.5 flex items-center justify-center -mr-1 min-w-[15px]">{clan.unreadChatCount}</span>

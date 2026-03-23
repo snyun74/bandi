@@ -125,7 +125,11 @@ public class BandService {
                     }
 
                     if (keyword != null && !keyword.isEmpty()) {
-                        if (g.getBnNm() == null || !g.getBnNm().contains(keyword)) {
+                        boolean matchTitle = g.getBnNm() != null && g.getBnNm().contains(keyword);
+                        boolean matchSong = g.getBnSongNm() != null && g.getBnSongNm().contains(keyword);
+                        boolean matchArtist = g.getBnSingerNm() != null && g.getBnSingerNm().contains(keyword);
+
+                        if (!matchTitle && !matchSong && !matchArtist) {
                             return false;
                         }
                     }
@@ -817,6 +821,10 @@ public class BandService {
         }
 
         // Update fields
+        if (dto.getTitle() != null) {
+            group.setBnNm(dto.getTitle());
+        }
+
         if (dto.getDescription() != null) {
             group.setBnDesc(dto.getDescription());
         }

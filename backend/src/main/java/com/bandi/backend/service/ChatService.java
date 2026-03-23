@@ -191,58 +191,103 @@ public class ChatService {
     return chatRooms;
   }
 
-  public ChatRoomListDto getChatRoomInfo(Long roomNo) {
-    String sql = """
-        SELECT
-            CNR.CN_NO        AS ROOM_NO,
-            COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM,
-            'CLAN'           AS ROOM_TYPE,
-            CMA.FILE_PATH    AS ATTACH_FILE_PATH
-        FROM
-            CN_CHAT_ROOM CNR
-        INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNR.CN_NO
-        LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = CNG.ATTACH_NO
-        WHERE
-            CNR.CN_NO = :roomNo
-        UNION ALL
-        SELECT
-            CNR.BN_NO        AS ROOM_NO,
-            COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM,
-            'BAND'           AS ROOM_TYPE,
-            CMA.FILE_PATH    AS ATTACH_FILE_PATH
-        FROM
-            BN_CHAT_ROOM CNR
-        INNER JOIN BN_GROUP BNG ON BNG.BN_NO = CNR.BN_NO
-        LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
-        WHERE
-            CNR.BN_NO = :roomNo
-        UNION ALL
-        SELECT
-            CNR.GRP_CHAT_NO AS ROOM_NO,
-            CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
-            'GROUP' AS ROOM_TYPE,
-            NULL AS ATTACH_FILE_PATH
-        FROM
-            CM_GRP_CHAT_ROOM CNR
-        WHERE
-            CNR.GRP_CHAT_NO = :roomNo
-        """;
+  public ChatRoomListDto getChatRoomInfo(Long roomNo, String roomType) {
+    StringBuilder sqlBuilder = new StringBuilder();
 
-    Query query = entityManager.createNativeQuery(sql);
+    if ("CLAN".equals(roomType)) {
+      sqlBuilder.append("""
+          SELECT
+              CNR.CN_NO        AS ROOM_NO,
+              COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM,
+              'CLAN'           AS ROOM_TYPE,
+              CMA.FILE_PATH    AS ATTACH_FILE_PATH
+          FROM
+              CN_CHAT_ROOM CNR
+          INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNR.CN_NO
+          LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = CNG.ATTACH_NO
+          WHERE
+              CNR.CN_NO = :roomNo
+          """);
+    } else if ("BAND".equals(roomType)) {
+      sqlBuilder.append("""
+          SELECT
+              CNR.BN_NO        AS ROOM_NO,
+              COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM,
+              'BAND'           AS ROOM_TYPE,
+              CMA.FILE_PATH    AS ATTACH_FILE_PATH
+          FROM
+              BN_CHAT_ROOM CNR
+          INNER JOIN BN_GROUP BNG ON BNG.BN_NO = CNR.BN_NO
+          LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
+          WHERE
+              CNR.BN_NO = :roomNo
+          """);
+    } else if ("GROUP".equals(roomType)) {
+      sqlBuilder.append("""
+          SELECT
+              CNR.GRP_CHAT_NO AS ROOM_NO,
+              CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
+              'GROUP' AS ROOM_TYPE,
+              NULL AS ATTACH_FILE_PATH
+          FROM
+              CM_GRP_CHAT_ROOM CNR
+          WHERE
+              CNR.GRP_CHAT_NO = :roomNo
+          """);
+    } else {
+      // Default UNION ALL when roomType is missing
+      sqlBuilder.append("""
+          SELECT
+              CNR.CN_NO        AS ROOM_NO,
+              COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM,
+              'CLAN'           AS ROOM_TYPE,
+              CMA.FILE_PATH    AS ATTACH_FILE_PATH
+          FROM
+              CN_CHAT_ROOM CNR
+          INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNR.CN_NO
+          LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = CNG.ATTACH_NO
+          WHERE
+              CNR.CN_NO = :roomNo
+          UNION ALL
+          SELECT
+              CNR.BN_NO        AS ROOM_NO,
+              COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM,
+              'BAND'           AS ROOM_TYPE,
+              CMA.FILE_PATH    AS ATTACH_FILE_PATH
+          FROM
+              BN_CHAT_ROOM CNR
+          INNER JOIN BN_GROUP BNG ON BNG.BN_NO = CNR.BN_NO
+          LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
+          WHERE
+              CNR.BN_NO = :roomNo
+          UNION ALL
+          SELECT
+              CNR.GRP_CHAT_NO AS ROOM_NO,
+              CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
+              'GROUP' AS ROOM_TYPE,
+              NULL AS ATTACH_FILE_PATH
+          FROM
+              CM_GRP_CHAT_ROOM CNR
+          WHERE
+              CNR.GRP_CHAT_NO = :roomNo
+          """);
+    }
+
+    Query query = entityManager.createNativeQuery(sqlBuilder.toString());
     query.setParameter("roomNo", roomNo);
 
-    try {
-      Object result = query.getSingleResult();
-      Object[] row = (Object[]) result;
-      return ChatRoomListDto.builder()
-          .roomNo(((Number) row[0]).longValue())
-          .roomNm((String) row[1])
-          .roomType((String) row[2])
-          .attachFilePath((String) row[3])
-          .build();
-    } catch (jakarta.persistence.NoResultException e) {
+    List<?> results = query.getResultList();
+    if (results.isEmpty()) {
       return null;
     }
+
+    Object[] row = (Object[]) results.get(0);
+    return ChatRoomListDto.builder()
+        .roomNo(((Number) row[0]).longValue())
+        .roomNm((String) row[1])
+        .roomType((String) row[2])
+        .attachFilePath((String) row[3])
+        .build();
   }
 
   @Transactional
