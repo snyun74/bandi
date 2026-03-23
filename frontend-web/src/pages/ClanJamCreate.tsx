@@ -144,10 +144,10 @@ const ClanJamCreate: React.FC = () => {
             showModal("아티스트를 입력해주세요.");
             return;
         }
-        if (!description.trim()) {
-            showModal("방 설명을 입력해주세요.");
-            return;
-        }
+// if (!description.trim()) {
+//     showModal("방 설명을 입력해주세요.");
+//     return;
+// }
 
         // Check if at least one session is selected (either basic or additional)
         const allSessionNames = [...selectedSessions, ...additionalSessions];
@@ -291,7 +291,7 @@ const ClanJamCreate: React.FC = () => {
                 {/* Description */}
                 <div>
                     <SectionTitle as="h2" className="!mt-0 !mb-2">
-                        방 세부 설명 <span className="text-red-500">*</span>
+                        방 세부 설명
                     </SectionTitle>
                     <textarea
                         value={description}

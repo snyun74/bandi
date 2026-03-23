@@ -36,7 +36,7 @@ public class BnGroup {
     @Column(name = "BN_PASSWD", length = 100)
     private String bnPasswd;
 
-    @Column(name = "BN_DESC", length = 4000, nullable = false)
+    @Column(name = "BN_DESC", length = 4000)
     private String bnDesc;
 
     @Column(name = "BN_CONF_FG", length = 1, nullable = false)

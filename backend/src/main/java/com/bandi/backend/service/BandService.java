@@ -60,19 +60,21 @@ public class BandService {
         BnGroup savedGroup = bnGroupRepository.save(group);
         Long bnNo = savedGroup.getBnNo();
 
-        // 2. Save BN_USER (Leader)
-        BnUser user = new BnUser();
-        user.setBnNo(bnNo);
-        user.setBnUserId(userId);
-        user.setBnRoleCd("LEAD");
-        user.setBnJoinDate(currentDate);
-        user.setBnUserStatCd("A");
-        user.setInsDtime(currentDateTime);
-        user.setInsId(userId);
-        user.setUpdDtime(currentDateTime);
-        user.setUpdId(userId);
+        // 2. Save BN_USER (Leader) - Only for Normal (Free) Jams
+        if (dto.getClanId() == null) {
+            BnUser user = new BnUser();
+            user.setBnNo(bnNo);
+            user.setBnUserId(userId);
+            user.setBnRoleCd("LEAD");
+            user.setBnJoinDate(currentDate);
+            user.setBnUserStatCd("A");
+            user.setInsDtime(currentDateTime);
+            user.setInsId(userId);
+            user.setUpdDtime(currentDateTime);
+            user.setUpdId(userId);
 
-        bnUserRepository.save(user);
+            bnUserRepository.save(user);
+        }
 
         // 3. Save BN_SESSION (Basic + Custom)
         if (dto.getSessions() != null) {
