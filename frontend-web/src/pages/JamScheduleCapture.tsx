@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaPen, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaPen } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import { GiGrandPiano } from "react-icons/gi";
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -471,14 +472,11 @@ const JamScheduleCapture: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600">
                     <FaChevronLeft size={24} />
                 </button>
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
+                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
                     {bandInfo.imgUrl ? (
                         <img src={bandInfo.imgUrl} alt={bandInfo.title} className="w-full h-full object-cover" />
                     ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                            <FaUnlink size={14} />
-                            <span className="text-[8px] mt-0.5">미연결</span>
-                        </div>
+                        <DefaultProfile type="jam" iconSize={16} />
                     )}
                 </div>
                 <div className="flex-1 min-w-0">

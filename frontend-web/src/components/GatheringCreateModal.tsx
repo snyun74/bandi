@@ -221,9 +221,9 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                                 let offText = "OFF";
 
                                 if (isSkill) {
-                                    label = "세션 기술능력";
-                                    onText = "세션평균(Lv 평균)";
-                                    offText = "세션기준(Lv2 or Lv4)";
+                                    label = "세션별 실력 배분";
+                                    onText = "모든 팀 실력이 비슷하게!";
+                                    offText = "실력팀/초보팀 나누기";
                                 } else if (isGender) {
                                     label = "멤버균등배분";
                                 } else if (isMbti) {

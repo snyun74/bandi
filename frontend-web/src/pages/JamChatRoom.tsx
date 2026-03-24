@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaCopy, FaCheck, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaDollarSign, FaFileAlt, FaPoll, FaCopy, FaCheck } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
@@ -385,10 +386,7 @@ const JamChatRoom: React.FC = () => {
                         {currentRoomProfile ? (
                             <img src={currentRoomProfile} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                <FaUnlink size={12} />
-                                <span className="text-[7px] mt-0.5">미연결</span>
-                            </div>
+                            <DefaultProfile type="jam" iconSize={16} />
                         )}
                     </div>
                     <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>
@@ -421,7 +419,7 @@ const JamChatRoom: React.FC = () => {
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                                                    <DefaultProfile type="user" iconSize={16} />
                                                 )}
                                             </div>
                                         ) : <div className="w-10"></div>}

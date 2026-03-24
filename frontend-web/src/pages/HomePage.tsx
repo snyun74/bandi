@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUnlink } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
 import JamEvaluationModal from "../components/common/JamEvaluationModal";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import NoticePopup from "../components/notice/NoticePopup";
+import DefaultProfile from '../components/common/DefaultProfile';
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -375,10 +375,7 @@ export default function HomePage() {
                                 {myJams[currentJamIndex].bnImg ? (
                                     <img src={myJams[currentJamIndex].bnImg} alt={myJams[currentJamIndex].bnNm} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                        <FaUnlink size={20} />
-                                        <span className="text-[10px] mt-1">미연결</span>
-                                    </div>
+                                    <DefaultProfile type="jam" iconSize={24} />
                                 )}
                             </div>
 
@@ -436,10 +433,7 @@ export default function HomePage() {
                                 {myClan.attachFilePath ? (
                                     <img src={myClan.attachFilePath} alt={myClan.cnNm} className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                        <FaUnlink size={20} />
-                                        <span className="text-[10px] mt-1">미연결</span>
-                                    </div>
+                                    <DefaultProfile type="clan" iconSize={24} />
                                 )}
                             </div>
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaFileAlt, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaFileAlt } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import { validateFileSize } from '../utils/fileUtils';
@@ -387,7 +388,7 @@ const GroupChatRoom: React.FC = () => {
                         {myProfileUrl ? (
                             <img src={myProfileUrl} alt="My Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                            <DefaultProfile type="user" iconSize={16} />
                         )}
                     </div>
                     <div className="flex-1 truncate cursor-pointer hover:opacity-80 transition-opacity" onClick={fetchMembers}>
@@ -415,7 +416,7 @@ const GroupChatRoom: React.FC = () => {
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                                                    <DefaultProfile type="user" iconSize={16} />
                                                 )}
                                             </div>
                                         ) : <div className="w-10"></div>}
@@ -512,7 +513,7 @@ const GroupChatRoom: React.FC = () => {
                                                 {member.profileUrl ? (
                                                     <img src={member.profileUrl} alt={member.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                                                    <DefaultProfile type="user" iconSize={16} />
                                                 )}
                                             </div>
                                             <span className="text-[#003C48] font-bold text-[14px]">{member.userNickNm} {member.userId === localStorage.getItem('userId') && <span className="text-[10px] text-gray-400 font-normal ml-1">(나)</span>}</span>

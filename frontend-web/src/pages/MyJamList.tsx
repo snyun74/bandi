@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import SectionTitle from '../components/common/SectionTitle';
 
 interface MyJamItem {
@@ -82,11 +83,7 @@ const MyJamList: React.FC = () => {
                                     {jam.bnImg ? (
                                         <img src={jam.bnImg} alt={jam.bnNm} className="w-full h-full object-cover" />
                                     ) : (
-                                        // Placeholder
-                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                            <FaUnlink size={20} />
-                                            <span className="text-[10px] mt-1">미연결</span>
-                                        </div>
+                                        <DefaultProfile type="jam" iconSize={24} />
                                     )}
                                 </div>
 

@@ -1,6 +1,7 @@
 import React from 'react';
-import { FaSearch, FaUnlink } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import DefaultProfile from '../components/common/DefaultProfile';
 
 interface ClanData {
     id: number;
@@ -156,10 +157,7 @@ const Clan: React.FC = () => {
                             {clan.attachFilePath ? (
                                 <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                    <FaUnlink size={20} />
-                                    <span className="text-[10px] mt-1">미연결</span>
-                                </div>
+                                <DefaultProfile type="clan" iconSize={24} />
                             )}
                         </div>
 

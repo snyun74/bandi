@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaSearch, FaUserPlus, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft, FaSearch, FaUserPlus } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 interface ChatRoom {
@@ -310,15 +311,11 @@ const ChatList: React.FC = () => {
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className="unlinked-fallback w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                                        <FaUnlink size={16} />
-                                                        <span className="text-[8px] mt-0.5">미연결</span>
-                                                    </div>
+                                                    <DefaultProfile type={chat.roomType === 'CLAN' ? 'clan' : 'jam'} iconSize={16} />
                                                 )}
                                                 {chat.attachFilePath && (
-                                                    <div className="unlinked-fallback w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400" style={{ display: 'none' }}>
-                                                        <FaUnlink size={16} />
-                                                        <span className="text-[8px] mt-0.5">미연결</span>
+                                                    <div className="unlinked-fallback w-full h-full" style={{ display: 'none' }}>
+                                                        <DefaultProfile type={chat.roomType === 'CLAN' ? 'clan' : 'jam'} iconSize={16} />
                                                     </div>
                                                 )}
                                             </div>

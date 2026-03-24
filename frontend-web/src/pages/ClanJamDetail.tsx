@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import { GiGrandPiano } from "react-icons/gi";
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
@@ -286,8 +287,6 @@ const ClanJamDetail: React.FC = () => {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        bnNo: bandDetail.id,
-                        userId: userId,
                         sessionNo: role.sessionNo,
                         sessionTypeCd: role.sessionTypeCd
                     }),
@@ -493,10 +492,7 @@ const ClanJamDetail: React.FC = () => {
                             {bandDetail.imgUrl ? (
                                 <img src={bandDetail.imgUrl} alt={bandDetail.title} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                    <FaUnlink size={14} />
-                                    <span className="text-[8px] mt-0.5">미연결</span>
-                                </div>
+                                <DefaultProfile type="jam" iconSize={16} />
                             )}
                         </div>
                         {bandDetail.canManage && (
@@ -792,10 +788,7 @@ const ClanJamDetail: React.FC = () => {
                                 {editForm.previewUrl ? (
                                     <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                        <FaUnlink size={28} />
-                                        <span className="text-[11px] mt-1">미연결</span>
-                                    </div>
+                                    <DefaultProfile type="jam" iconSize={28} />
                                 )}
                                 <div className="absolute bottom-0 right-0 bg-[#00BDF8] text-white p-1.5 rounded-full">
                                     <FaRegEdit size={12} />

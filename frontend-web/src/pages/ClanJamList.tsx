@@ -455,8 +455,12 @@ const ClanJamList: React.FC = () => {
                                         const getRoleStatus = (sessionCode: string) => {
                                             const roles = safeRoles.filter(r => r.sessionTypeCd === sessionCode);
                                             if (roles.length === 0) return "-";
-                                            const occupied = roles.filter(r => r.status === 'occupied').length;
-                                            return `${occupied}/${roles.length}`;
+                                            return roles.map(r => {
+                                                if (r.status === 'occupied' && r.user) {
+                                                    return r.user;
+                                                }
+                                                return "공석";
+                                            }).join(', ');
                                         };
 
                                         return (

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaInbox, FaDollarSign, FaFileAlt, FaUnlink } from 'react-icons/fa';
+import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaInbox, FaDollarSign, FaFileAlt } from 'react-icons/fa';
+import DefaultProfile from '../components/common/DefaultProfile';
 import VoteCreationModal from '../components/VoteCreationModal';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
@@ -342,10 +343,7 @@ const ChatRoom: React.FC = () => {
                         {currentRoomProfile ? (
                             <img src={currentRoomProfile} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 text-gray-400">
-                                <FaUnlink size={12} />
-                                <span className="text-[7px] mt-0.5">미연결</span>
-                            </div>
+                            <DefaultProfile type={currentRoomType === 'CLAN' ? 'clan' : 'jam'} iconSize={16} />
                         )}
                     </div>
                     <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>
