@@ -130,10 +130,10 @@ const ClanIntro: React.FC = () => {
         } else if (joinStatus === 'RJ') {
             return (
                 <button
-                    disabled
-                    className="bg-red-300 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-not-allowed"
+                    onClick={handleJoinRequest}
+                    className="bg-red-400 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-red-500 transition-colors"
                 >
-                    승인거절
+                    승인거절(재요청)
                 </button>
             );
         } else if (joinStatus === 'CN') {

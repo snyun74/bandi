@@ -175,22 +175,30 @@ public class ClanService {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        // Check if already a member (Optional validation)
-        boolean exists = clanUserRepository
-                .existsById(new com.bandi.backend.entity.clan.ClanUserId(dto.getCnNo(), dto.getUserId()));
-        if (exists) {
-            throw new RuntimeException("User is already a member of this clan.");
+        com.bandi.backend.entity.clan.ClanUser clanMember = clanUserRepository
+                .findById(new com.bandi.backend.entity.clan.ClanUserId(dto.getCnNo(), dto.getUserId()))
+                .orElse(null);
+
+        if (clanMember != null) {
+            if ("RJ".equals(clanMember.getCnUserApprStatCd())) {
+                // Allow re-request
+                clanMember.setCnUserStatCd("A");
+                clanMember.setCnUserApprStatCd("RQ");
+            } else {
+                throw new RuntimeException("이미 가입 신청 중이거나 멤버입니다.");
+            }
+        } else {
+            clanMember = new ClanUser();
+            clanMember.setCnNo(dto.getCnNo());
+            clanMember.setCnUserId(dto.getUserId());
+            clanMember.setCnUserRoleCd("03"); // Required: 03 (Applicant)
+            clanMember.setCnJoinDate(todayDate);
+            clanMember.setCnUserStatCd("A"); // Required: A (Active)
+            clanMember.setCnUserApprStatCd("RQ"); // Required: RQ (Requested)
+            clanMember.setInsDtime(currentDateTime);
+            clanMember.setInsId(dto.getUserId());
         }
 
-        ClanUser clanMember = new ClanUser();
-        clanMember.setCnNo(dto.getCnNo());
-        clanMember.setCnUserId(dto.getUserId());
-        clanMember.setCnUserRoleCd("03"); // Required: 03 (Applicant)
-        clanMember.setCnJoinDate(todayDate);
-        clanMember.setCnUserStatCd("A"); // Required: A (Active)
-        clanMember.setCnUserApprStatCd("RQ"); // Required: RQ (Requested)
-        clanMember.setInsDtime(currentDateTime);
-        clanMember.setInsId(dto.getUserId());
         clanMember.setUpdDtime(currentDateTime);
         clanMember.setUpdId(dto.getUserId());
 
