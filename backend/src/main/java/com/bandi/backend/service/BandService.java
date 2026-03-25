@@ -252,7 +252,7 @@ public class BandService {
         String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         BnGroup group = bnGroupRepository.findById(dto.getBnNo())
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         if ("Y".equals(group.getBnConfFg())) {
             throw new RuntimeException("확정된 합주는 변경할 수 없습니다.");
@@ -303,7 +303,7 @@ public class BandService {
             session.setUpdId(dto.getUserId());
             bnSessionRepository.save(session);
         } else {
-            throw new RuntimeException("Session not found");
+            throw new RuntimeException("세션 정보를 찾을 수 없습니다.");
         }
 
         updateBandLeader(dto.getBnNo());
@@ -314,7 +314,7 @@ public class BandService {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         BnGroup group = bnGroupRepository.findById(dto.getBnNo())
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         if ("Y".equals(group.getBnConfFg())) {
             throw new RuntimeException("확정된 합주는 변경할 수 없습니다.");
@@ -470,7 +470,7 @@ public class BandService {
 
         // 2. Fetch Group Info
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // 3. Fetch Sessions
         java.util.List<BnSession> sessions = bnSessionRepository.findAll().stream()
@@ -581,7 +581,7 @@ public class BandService {
     @Transactional
     public void deleteBand(Long bnNo, String userId) {
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // Permission Check (Same logic as canManage usually, but minimal verification
         // here)
@@ -603,7 +603,7 @@ public class BandService {
         }
 
         if (!hasPermission) {
-            throw new RuntimeException("No permission to delete this band");
+            throw new RuntimeException("삭제 권한이 없습니다.");
         }
 
         // Soft Delete or Hard Delete? Requirements said "Delete", usually soft delete
@@ -724,7 +724,7 @@ public class BandService {
         com.bandi.backend.entity.band.BnEvaluationId id = new com.bandi.backend.entity.band.BnEvaluationId(bnNo,
                 userId);
         com.bandi.backend.entity.band.BnEvaluation evaluation = bnEvaluationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Evaluation record not found"));
+                .orElseThrow(() -> new RuntimeException("평가 기록을 찾을 수 없습니다."));
         evaluation.setBnEvalYn("Y");
         evaluation.setUpdDtime(currentDateTime);
         evaluation.setUpdId(userId);
@@ -734,7 +734,7 @@ public class BandService {
     @Transactional
     public void updateBandStatus(Long bnNo, String userId, String status) {
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // Permission Check
         boolean isBandLeader = group.getBnLeaderId().equals(userId);
@@ -753,7 +753,7 @@ public class BandService {
         }
 
         if (!hasPermission) {
-            throw new RuntimeException("No permission to update band status");
+            throw new RuntimeException("수정 권한이 없습니다.");
         }
 
         if ("Y".equals(status)) {
@@ -786,7 +786,7 @@ public class BandService {
     @Transactional(readOnly = true)
     public boolean verifyBandPassword(Long bnNo, String password) {
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         if (!"Y".equals(group.getBnPasswdFg())) {
             return true; // No password needed
@@ -798,7 +798,7 @@ public class BandService {
     @Transactional
     public void updateBand(Long bnNo, com.bandi.backend.dto.BandUpdateDto dto) {
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // Permission Check
         boolean hasPermission = false;
@@ -852,7 +852,7 @@ public class BandService {
         String sessionTypeCd = (String) params.get("sessionTypeCd");
 
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // 1. Permission Check (Requester must be Band Leader OR Clan Leader/Executive)
         boolean hasPermission = false;
@@ -1104,7 +1104,7 @@ public class BandService {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         BnGroup group = bnGroupRepository.findById(bnNo)
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         if ("Y".equals(group.getBnConfFg())) {
             throw new RuntimeException("확정된 합주는 예약할 수 없습니다.");
@@ -1178,7 +1178,7 @@ public class BandService {
                 .orElseThrow(() -> new RuntimeException("예약을 찾을 수 없습니다."));
 
         BnGroup group = bnGroupRepository.findById(rsv.getBnNo())
-                .orElseThrow(() -> new RuntimeException("Band not found"));
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // 관리자(방장/클랜장/간부) 또는 본인만 삭제 가능
         boolean hasPermission = group.getBnLeaderId().equals(requesterId)

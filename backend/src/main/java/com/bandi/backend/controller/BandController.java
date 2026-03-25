@@ -88,7 +88,7 @@ public class BandController {
             bandService.joinBand(dto);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Join failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body("참가 실패: " + e.getMessage());
         }
     }
 
@@ -98,7 +98,7 @@ public class BandController {
             bandService.cancelBand(dto);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Cancel failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body("취소 실패: " + e.getMessage());
         }
     }
 
@@ -108,7 +108,7 @@ public class BandController {
             bandService.kickBandMember(params);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Kick failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body("강퇴 실패: " + e.getMessage());
         }
     }
 
@@ -139,7 +139,7 @@ public class BandController {
             @org.springframework.web.bind.annotation.RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
 
         if (dto.getUserId() == null || dto.getUserId().isEmpty()) {
-            return ResponseEntity.badRequest().body("UserId is required");
+            return ResponseEntity.badRequest().body("사용자 ID가 필요합니다.");
         }
 
         // Handle File Upload
@@ -175,7 +175,7 @@ public class BandController {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                return ResponseEntity.badRequest().body("File upload failed: " + e.getMessage());
+                return ResponseEntity.badRequest().body("파일 업로드 실패: " + e.getMessage());
             }
         }
 
@@ -207,7 +207,7 @@ public class BandController {
         if (isValid) {
             return ResponseEntity.ok().build();
         } else {
-            return ResponseEntity.badRequest().body("Incorrect password");
+            return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다.");
         }
     }
 
@@ -216,7 +216,7 @@ public class BandController {
         try {
             return ResponseEntity.ok(bandService.getMyJams(userId));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to fetch my jams: " + e.getMessage());
+            return ResponseEntity.badRequest().body("나의 합주 목록 조회 실패: " + e.getMessage());
         }
     }
 
@@ -238,7 +238,7 @@ public class BandController {
         try {
             return ResponseEntity.ok(bandService.getSchedules(bnNo));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Failed to fetch schedules: " + e.getMessage());
+            return ResponseEntity.badRequest().body("일정 조회 실패: " + e.getMessage());
         }
     }
 
@@ -258,7 +258,7 @@ public class BandController {
             bandService.submitEvaluation(dto);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Evaluation failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body("평가 제출 실패: " + e.getMessage());
         }
     }
 
