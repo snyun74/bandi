@@ -295,6 +295,21 @@ public class ClanController {
         }
     }
 
+    @PutMapping(value = "/boards/posts/{boardNo}", consumes = { "multipart/form-data" })
+    public ResponseEntity<?> updateBoardPost(
+            @PathVariable Long boardNo,
+            @RequestPart("data") com.bandi.backend.dto.ClanBoardCreateDto dto,
+            @RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
+        try {
+            clanService.updateBoardPost(boardNo, dto, file);
+            return ResponseEntity.ok(Map.of("message", "Board post updated successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to update board post", "error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/boards/posts/{boardNo}/comments")
     public ResponseEntity<?> getBoardComments(@PathVariable Long boardNo) {
         try {

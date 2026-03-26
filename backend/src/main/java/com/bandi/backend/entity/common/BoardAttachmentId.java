@@ -8,6 +8,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
+@lombok.Getter
+@lombok.Setter
 public class BoardAttachmentId implements Serializable {
     private Long boardNo;
     private Long attachNo;

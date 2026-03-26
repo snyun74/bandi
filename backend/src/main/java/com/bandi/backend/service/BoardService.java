@@ -4,19 +4,8 @@ import com.bandi.backend.dto.CommunityBoardListDto;
 import com.bandi.backend.dto.CommunityBoardDetailDto;
 import com.bandi.backend.dto.CommunityBoardCommentDto;
 import com.bandi.backend.dto.CommunityBoardCreateDto;
-import com.bandi.backend.entity.common.Board;
-import com.bandi.backend.entity.common.BoardDetail;
-import com.bandi.backend.entity.common.BoardLike;
-import com.bandi.backend.entity.common.BoardDetailLike;
-import com.bandi.backend.entity.common.BoardAttachment;
-import com.bandi.backend.entity.common.CmAttachment;
-import com.bandi.backend.repository.BoardRepository;
-import com.bandi.backend.repository.BoardDetailRepository;
-import com.bandi.backend.repository.BoardLikeRepository;
-import com.bandi.backend.repository.BoardDetailLikeRepository;
-import com.bandi.backend.repository.BoardAttachmentRepository;
-import com.bandi.backend.repository.CmAttachmentRepository;
-import com.bandi.backend.repository.CmScrapRepository;
+import com.bandi.backend.entity.common.*;
+import com.bandi.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,6 +33,8 @@ public class BoardService {
     private final BoardAttachmentRepository boardAttachmentRepository;
     private final CmAttachmentRepository cmAttachmentRepository;
     private final CmScrapRepository cmScrapRepository;
+    private final CmReportRepository cmReportRepository;
+    private final CmBlockRepository cmBlockRepository;
     private final com.bandi.backend.repository.UserRepository userRepository;
 
     @Transactional(readOnly = true)
@@ -328,5 +319,112 @@ public class BoardService {
         board.setUpdDtime(currentDateTime);
         board.setUpdId(userId);
         boardRepository.save(board);
+    }
+
+    @Transactional
+    public void updateBoardPost(Long boardNo, CommunityBoardCreateDto dto, MultipartFile file) {
+        Board board = boardRepository.findById(boardNo)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
+
+        if (!board.getWriterUserId().equals(dto.getUserId())) {
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        board.setTitle(dto.getTitle());
+        board.setContent(dto.getContent());
+        board.setYoutubeUrl(dto.getYoutubeUrl());
+        board.setUpdDtime(currentDateTime);
+        board.setUpdId(dto.getUserId());
+
+        // Handle file update
+        if (file != null && !file.isEmpty()) {
+            try {
+                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
+                File dir = new File(uploadDir);
+                if (!dir.exists())
+                    dir.mkdirs();
+
+                String originalFileName = file.getOriginalFilename();
+                String extension = (originalFileName != null && originalFileName.contains("."))
+                        ? originalFileName.substring(originalFileName.lastIndexOf("."))
+                        : "";
+                String savedFileName = UUID.randomUUID().toString() + extension;
+                File dest = new File(dir, savedFileName);
+                file.transferTo(dest);
+
+                CmAttachment attachment = new CmAttachment();
+                attachment.setFileName(originalFileName);
+                attachment.setFilePath("/api/common_images/" + savedFileName);
+                attachment.setFileSize(file.getSize());
+                attachment.setMimeType(file.getContentType());
+                attachment.setInsDtime(currentDateTime);
+                attachment.setInsId(dto.getUserId());
+                attachment.setUpdDtime(currentDateTime);
+                attachment.setUpdId(dto.getUserId());
+
+                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
+
+                // Delete old attachments and create new BoardAttachment
+                List<BoardAttachment> oldLinks = boardAttachmentRepository.findByBoardNo(boardNo);
+                if (!oldLinks.isEmpty()) {
+                    boardAttachmentRepository.deleteAll(oldLinks);
+                }
+
+                BoardAttachment newLink = new BoardAttachment();
+                newLink.setBoardNo(boardNo);
+                newLink.setAttachNo(savedAttachment.getAttachNo());
+                newLink.setAttachStatCd("A");
+                newLink.setInsDtime(currentDateTime);
+                newLink.setInsId(dto.getUserId());
+                newLink.setUpdDtime(currentDateTime);
+                newLink.setUpdId(dto.getUserId());
+                boardAttachmentRepository.save(newLink);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to update file", e);
+            }
+        } else if (Boolean.TRUE.equals(dto.getDeleteFile())) {
+            List<BoardAttachment> oldLinks = boardAttachmentRepository.findByBoardNo(boardNo);
+            if (!oldLinks.isEmpty()) {
+                boardAttachmentRepository.deleteAll(oldLinks);
+            }
+        }
+
+        boardRepository.save(board);
+    }
+
+    @Transactional
+    public void reportPost(com.bandi.backend.dto.CmReportDto dto) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        CmReport report = new CmReport();
+        report.setReportUserId(dto.getReportUserId());
+        report.setTargetUserId(dto.getTargetUserId());
+        report.setBoardUrl(dto.getBoardUrl());
+        report.setContent(dto.getContent());
+        report.setReportDtime(currentDateTime);
+        report.setProcStatFg("N");
+        report.setInsDtime(currentDateTime);
+        report.setInsId(dto.getReportUserId());
+        report.setUpdDtime(currentDateTime);
+        report.setUpdId(dto.getReportUserId());
+        cmReportRepository.save(report);
+    }
+
+    @Transactional
+    public void blockUser(com.bandi.backend.dto.CmBlockDto dto) {
+        if (cmBlockRepository.existsByUserIdAndBlockUserId(dto.getUserId(), dto.getBlockUserId())) {
+            return;
+        }
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        CmBlock block = new CmBlock();
+        block.setUserId(dto.getUserId());
+        block.setBlockUserId(dto.getBlockUserId());
+        block.setBlockDtime(currentDateTime);
+        block.setInsDtime(currentDateTime);
+        block.setInsId(dto.getUserId());
+        block.setUpdDtime(currentDateTime);
+        block.setUpdId(dto.getUserId());
+        cmBlockRepository.save(block);
     }
 }

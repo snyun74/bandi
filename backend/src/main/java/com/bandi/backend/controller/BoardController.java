@@ -90,4 +90,29 @@ public class BoardController {
             return ResponseEntity.status(403).body(e.getMessage());
         }
     }
+
+    @PutMapping(value = "/posts/{boardNo}", consumes = { "multipart/form-data" })
+    public ResponseEntity<?> updateBoardPost(
+            @PathVariable Long boardNo,
+            @RequestPart("data") com.bandi.backend.dto.CommunityBoardCreateDto dto,
+            @RequestPart(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
+        try {
+            boardService.updateBoardPost(boardNo, dto, file);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/report")
+    public ResponseEntity<?> reportPost(@RequestBody com.bandi.backend.dto.CmReportDto dto) {
+        boardService.reportPost(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/block")
+    public ResponseEntity<?> blockUser(@RequestBody com.bandi.backend.dto.CmBlockDto dto) {
+        boardService.blockUser(dto);
+        return ResponseEntity.ok().build();
+    }
 }

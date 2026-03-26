@@ -148,7 +148,8 @@ export default function HomePage() {
     };
 
     const [schedules, setSchedules] = useState<any[]>(generateCurrentWeek());
-    const [myClan, setMyClan] = useState<any>(null);
+    const [myClans, setMyClans] = useState<any[]>([]);
+    const [currentClanIndex, setCurrentClanIndex] = useState(0);
     const [myJams, setMyJams] = useState<any[]>([]);
     const [currentJamIndex, setCurrentJamIndex] = useState(0);
 
@@ -201,27 +202,25 @@ export default function HomePage() {
         const userId = localStorage.getItem('userId');
         if (userId) {
             fetchSchedules();
-            fetch(`/api/clans/my?userId=${userId}`)
-                .then(res => {
-                    if (res.ok) return res.json();
-                    throw new Error('No clan found');
-                })
-                .then(data => setMyClan(data))
-                .catch(() => {
-                    setMyClan(null);
-                });
-
-            fetch(`/api/bands/my?userId=${userId}`)
+            fetch(`/api/clans/my-list?userId=${userId}`)
                 .then(res => {
                     if (res.ok) return res.json();
                     return [];
                 })
-                .then(data => setMyJams(data))
+                .then(data => setMyClans(data))
+                .catch(err => console.error("Failed to fetch clans", err));
+
+            fetch(`/api/bands/my?userId=${userId}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return { content: [] };
+                })
+                .then(data => setMyJams(data.content || []))
                 .catch(err => console.error("Failed to fetch jams", err));
         }
     }, []);
 
-    // Rotation Logic
+    // Rotation Logic for Jams
     React.useEffect(() => {
         if (myJams.length <= 1) return;
 
@@ -231,6 +230,17 @@ export default function HomePage() {
 
         return () => clearInterval(interval);
     }, [myJams]);
+
+    // Rotation Logic for Clans
+    React.useEffect(() => {
+        if (myClans.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setCurrentClanIndex(prev => (prev + 1) % myClans.length);
+        }, 3000); // 3 seconds
+
+        return () => clearInterval(interval);
+    }, [myClans]);
 
 
     return (
@@ -424,14 +434,14 @@ export default function HomePage() {
                 {/* My Clan Section */}
                 <section className="px-4">
                     <SectionTitle className="mb-[12px]">내 클랜</SectionTitle>
-                    {myClan ? (
+                    {myClans.length > 0 ? (
                         <div
-                            onClick={() => navigate(`/main/clan/detail/${myClan.cnNo}`)}
+                            onClick={() => navigate(`/main/clan/detail/${myClans[currentClanIndex].cnNo}`)}
                             className="bg-white border border-[#00BDF8] rounded-xl p-4 flex items-center shadow-sm relative cursor-pointer hover:bg-gray-50 transition-colors">
                             {/* Logo */}
                             <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 mr-4 bg-gray-100">
-                                {myClan.attachFilePath ? (
-                                    <img src={myClan.attachFilePath} alt={myClan.cnNm} className="w-full h-full object-cover" />
+                                {myClans[currentClanIndex].attachFilePath ? (
+                                    <img src={myClans[currentClanIndex].attachFilePath} alt={myClans[currentClanIndex].cnNm} className="w-full h-full object-cover" />
                                 ) : (
                                     <DefaultProfile type="clan" iconSize={24} />
                                 )}
@@ -441,16 +451,25 @@ export default function HomePage() {
                             <div className="flex-1 overflow-hidden">
                                 <div className="flex items-center justify-between mb-1">
                                     <SectionTitle as="h4" className="!mt-0 !mb-0 truncate flex-1 min-w-0">
-                                        {myClan.cnNm}
+                                        {myClans[currentClanIndex].cnNm}
                                     </SectionTitle>
                                     <span
                                         onClick={(e) => { e.stopPropagation(); navigate('/main/clan/my'); }}
                                         className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8] ml-2 flex-shrink-0"
                                     >더보기</span>
                                 </div>
-                                <p className="text-gray-600 text-[13px] mb-1 truncate">{myClan.cnDesc ? (myClan.cnDesc.length > 20 ? myClan.cnDesc.substring(0, 20) + '...' : myClan.cnDesc) : ''}</p>
-                                <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClan.userCnt}명</p>
+                                <p className="text-gray-600 text-[13px] mb-1 truncate">
+                                    {myClans[currentClanIndex].cnDesc ? (myClans[currentClanIndex].cnDesc.length > 20 ? myClans[currentClanIndex].cnDesc.substring(0, 20) + '...' : myClans[currentClanIndex].cnDesc) : ''}
+                                </p>
+                                <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClans[currentClanIndex].userCnt}명</p>
                             </div>
+
+                            {/* Slide Count */}
+                            {myClans.length > 1 && (
+                                <div className="absolute bottom-3 right-4">
+                                    <span className="text-xs text-gray-400">{currentClanIndex + 1} / {myClans.length}</span>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="bg-white border border-[#00B2D2] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">

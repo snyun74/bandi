@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.bandi.backend.repository.projection.MyJamProjection;
-import java.util.List;
 
 public interface BnGroupRepository extends JpaRepository<BnGroup, Long> {
 
@@ -28,8 +27,8 @@ public interface BnGroupRepository extends JpaRepository<BnGroup, Long> {
             "LEFT JOIN BN_USER U ON U.BN_NO = G.BN_NO AND U.BN_USER_ID = :userId AND U.BN_USER_STAT_CD = 'A' " +
             "LEFT JOIN BN_RSV_SESSION R ON R.BN_NO = G.BN_NO AND R.BN_SESSION_RSV_USER_ID = :userId " +
             "LEFT JOIN CM_ATTACHMENT A ON A.ATTACH_NO = G.ATTACH_NO " +
-            "WHERE   G.BN_STAT_CD = 'A' " +
-            "    AND G.BN_CONF_FG IN ('N','Y') " +
+            "WHERE   G.BN_STAT_CD IN ('A', 'E') " +
+            "    AND G.BN_CONF_FG IN ('N', 'Y', 'E') " +
             "    AND (U.BN_USER_ID IS NOT NULL OR R.BN_SESSION_RSV_USER_ID IS NOT NULL) " +
             "    AND ( " +
             "        G.BN_TYPE <> 'CLAN' OR EXISTS ( " +
@@ -43,6 +42,31 @@ public interface BnGroupRepository extends JpaRepository<BnGroup, Long> {
             "              AND CU.CN_USER_APPR_STAT_CD = 'CN' " +
             "        ) " +
             "    ) " +
-            "GROUP BY G.BN_NO, G.BN_TYPE, G.CN_NO, G.BN_NM, G.BN_SONG_NM, G.BN_SINGER_NM, G.BN_CONF_FG, G.BN_PASSWD_FG", nativeQuery = true)
-    List<MyJamProjection> findMyJams(@Param("userId") String userId);
+            "    AND ( :keyword IS NULL OR :keyword = '' OR G.BN_NM LIKE CONCAT('%', :keyword, '%') OR G.BN_SONG_NM LIKE CONCAT('%', :keyword, '%') OR G.BN_SINGER_NM LIKE CONCAT('%', :keyword, '%') ) " +
+            "GROUP BY G.BN_NO, G.BN_TYPE, G.CN_NO, G.BN_NM, G.BN_SONG_NM, G.BN_SINGER_NM, G.BN_CONF_FG, G.BN_PASSWD_FG, G.INS_DTIME " +
+            "ORDER BY CASE G.BN_CONF_FG WHEN 'N' THEN 1 WHEN 'Y' THEN 2 WHEN 'E' THEN 3 ELSE 4 END ASC, G.INS_DTIME DESC ", 
+            countQuery = "SELECT COUNT(*) FROM ( " +
+            "SELECT G.BN_NO " +
+            "FROM    BN_GROUP G " +
+            "LEFT JOIN BN_USER U ON U.BN_NO = G.BN_NO AND U.BN_USER_ID = :userId AND U.BN_USER_STAT_CD = 'A' " +
+            "LEFT JOIN BN_RSV_SESSION R ON R.BN_NO = G.BN_NO AND R.BN_SESSION_RSV_USER_ID = :userId " +
+            "WHERE   G.BN_STAT_CD IN ('A', 'E') " +
+            "    AND G.BN_CONF_FG IN ('N', 'Y', 'E') " +
+            "    AND (U.BN_USER_ID IS NOT NULL OR R.BN_SESSION_RSV_USER_ID IS NOT NULL) " +
+            "    AND ( " +
+            "        G.BN_TYPE <> 'CLAN' OR EXISTS ( " +
+            "            SELECT 1 FROM CN_GROUP CG " +
+            "            JOIN CN_USER CU ON CU.CN_NO = CG.CN_NO " +
+            "            WHERE CG.CN_NO = G.CN_NO " +
+            "              AND CG.CN_STAT_CD = 'A' " +
+            "              AND CG.CN_APPR_STAT_CD = 'CN' " +
+            "              AND CU.CN_USER_ID = :userId " +
+            "              AND CU.CN_USER_STAT_CD = 'A' " +
+            "              AND CU.CN_USER_APPR_STAT_CD = 'CN' " +
+            "        ) " +
+            "    ) " +
+            "    AND ( :keyword IS NULL OR :keyword = '' OR G.BN_NM LIKE CONCAT('%', :keyword, '%') OR G.BN_SONG_NM LIKE CONCAT('%', :keyword, '%') OR G.BN_SINGER_NM LIKE CONCAT('%', :keyword, '%') ) " +
+            "GROUP BY G.BN_NO " +
+            ") AS T", nativeQuery = true)
+    org.springframework.data.domain.Page<MyJamProjection> findMyJams(@Param("userId") String userId, @Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
 }

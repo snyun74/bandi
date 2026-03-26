@@ -212,9 +212,14 @@ public class BandController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<?> getMyJams(@RequestParam String userId) {
+    public ResponseEntity<?> getMyJams(
+            @RequestParam String userId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
         try {
-            return ResponseEntity.ok(bandService.getMyJams(userId));
+            org.springframework.data.domain.Pageable pr = org.springframework.data.domain.PageRequest.of(page, size);
+            return ResponseEntity.ok(bandService.getMyJams(userId, keyword, pr));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("나의 합주 목록 조회 실패: " + e.getMessage());
         }

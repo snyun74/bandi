@@ -984,8 +984,8 @@ public class BandService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<com.bandi.backend.repository.projection.MyJamProjection> getMyJams(String userId) {
-        return bnGroupRepository.findMyJams(userId);
+    public org.springframework.data.domain.Page<com.bandi.backend.repository.projection.MyJamProjection> getMyJams(String userId, String keyword, org.springframework.data.domain.Pageable pageable) {
+        return bnGroupRepository.findMyJams(userId, keyword, pageable);
     }
 
     // --- Jam Schedule Methods ---

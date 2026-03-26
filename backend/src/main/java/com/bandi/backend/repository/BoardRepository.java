@@ -29,6 +29,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "FROM Board b " +
                         "LEFT JOIN com.bandi.backend.entity.member.User u ON b.writerUserId = u.userId " +
                         "WHERE b.boardTypeFg = :boardTypeFg AND b.boardStatCd = 'A' " +
+                        "AND (:userId = '' OR b.writerUserId NOT IN (SELECT cb.blockUserId FROM CmBlock cb WHERE cb.userId = :userId)) " +
                         "ORDER BY b.insDtime DESC")
         Page<CommunityBoardListDto> findBoardList(@Param("boardTypeFg") String boardTypeFg,
                         @Param("userId") String userId,
@@ -49,6 +50,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "FROM Board b " +
                         "LEFT JOIN com.bandi.backend.entity.member.User u ON b.writerUserId = u.userId " +
                         "WHERE b.boardStatCd = 'A' " +
+                        "AND (:userId = '' OR b.writerUserId NOT IN (SELECT cb.blockUserId FROM CmBlock cb WHERE cb.userId = :userId)) " +
                         "ORDER BY (SELECT COUNT(bl) FROM BoardLike bl WHERE bl.boardNo = b.boardNo) DESC")
         List<CommunityBoardListDto> findHotBoardList(@Param("userId") String userId, Pageable pageable);
 }

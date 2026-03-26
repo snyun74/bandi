@@ -765,6 +765,79 @@ public class ClanService {
     }
 
     @Transactional
+    public void updateBoardPost(Long boardNo, com.bandi.backend.dto.ClanBoardCreateDto dto, MultipartFile file) {
+        com.bandi.backend.entity.clan.ClanBoard board = clanBoardRepository.findById(boardNo)
+                .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다."));
+
+        if (!board.getWriterUserId().equals(dto.getUserId())) {
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        board.setTitle(dto.getTitle());
+        board.setContent(dto.getContent());
+        board.setYoutubeUrl(dto.getYoutubeUrl() != null ? dto.getYoutubeUrl() : "");
+        board.setMaskingYn(dto.getMaskingYn() != null ? dto.getMaskingYn() : "N");
+        board.setUpdDtime(currentDateTime);
+        board.setUpdId(dto.getUserId());
+
+        clanBoardRepository.save(board);
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+
+                String originalFileName = file.getOriginalFilename();
+                String extension = (originalFileName != null && originalFileName.contains(".")) 
+                        ? originalFileName.substring(originalFileName.lastIndexOf(".")) : "";
+                String savedFileName = UUID.randomUUID().toString() + extension;
+                File dest = new File(dir, savedFileName);
+                file.transferTo(dest);
+
+                CmAttachment attachment = new CmAttachment();
+                attachment.setFileName(originalFileName);
+                attachment.setFilePath("/api/common_images/" + savedFileName);
+                attachment.setFileSize(file.getSize());
+                attachment.setMimeType(file.getContentType());
+                attachment.setInsDtime(currentDateTime);
+                attachment.setInsId(dto.getUserId());
+                attachment.setUpdDtime(currentDateTime);
+                attachment.setUpdId(dto.getUserId());
+
+                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
+
+                // Delete old attachments and create new ClanBoardAttachment
+                java.util.List<com.bandi.backend.entity.clan.ClanBoardAttachment> oldLinks = 
+                        clanBoardAttachmentRepository.findByCnBoardNoAndAttachStatCd(boardNo, "A");
+                if (!oldLinks.isEmpty()) {
+                    clanBoardAttachmentRepository.deleteAll(oldLinks);
+                }
+
+                com.bandi.backend.entity.clan.ClanBoardAttachment newLink = new com.bandi.backend.entity.clan.ClanBoardAttachment();
+                newLink.setCnBoardNo(boardNo);
+                newLink.setAttachNo(savedAttachment.getAttachNo());
+                newLink.setAttachStatCd("A");
+                newLink.setInsDtime(currentDateTime);
+                newLink.setInsId(dto.getUserId());
+                newLink.setUpdDtime(currentDateTime);
+                newLink.setUpdId(dto.getUserId());
+                clanBoardAttachmentRepository.save(newLink);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to update file", e);
+            }
+        } else if (Boolean.TRUE.equals(dto.getDeleteFile())) {
+            // Delete existing attachments if user explicitly requested deletion
+            java.util.List<com.bandi.backend.entity.clan.ClanBoardAttachment> oldLinks = clanBoardAttachmentRepository.findByCnBoardNoAndAttachStatCd(boardNo, "A");
+            if (!oldLinks.isEmpty()) {
+                clanBoardAttachmentRepository.deleteAll(oldLinks);
+            }
+        }
+    }
+
+    @Transactional
     public void deleteBoardPost(Long boardNo, Long clanId, String userId) {
         System.out.println("DEBUG: deleteBoardPost boardNo=" + boardNo + " clanId=" + clanId + " userId=" + userId);
 
@@ -800,10 +873,11 @@ public class ClanService {
             throw new RuntimeException("삭제 권한이 없습니다.");
         }
 
-        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         board.setBoardStatCd("D");
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         board.setUpdDtime(currentDateTime);
         board.setUpdId(userId);
+
         clanBoardRepository.save(board);
         System.out.println("DEBUG: board soft-deleted successfully boardNo=" + boardNo);
     }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark } from 'react-icons/fa';
+import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaPaperclip, FaImage, FaTimes } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import { validateFileSize } from '../utils/fileUtils';
 
 const UserAvatar: React.FC<{ userId: string; size?: string; isAnonymous?: boolean }> = ({ userId, size = 'w-8 h-8', isAnonymous = false }) => {
     const [img, setImg] = React.useState<string | null | undefined>(undefined);
@@ -71,6 +72,14 @@ const BoardDetail: React.FC = () => {
     // Scrap Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editTitle, setEditTitle] = useState("");
+    const [editContent, setEditContent] = useState("");
+    const [editYoutubeUrl, setEditYoutubeUrl] = useState("");
+    const [editFile, setEditFile] = useState<File | null>(null);
+    const [editFilePreview, setEditFilePreview] = useState<string | null>(null);
+    const editFileInputRef = useRef<HTMLInputElement>(null);
 
     const userId = localStorage.getItem('userId');
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -291,6 +300,76 @@ const BoardDetail: React.FC = () => {
         });
     };
 
+    const handleEditClick = () => {
+        if (!post) return;
+        setEditTitle(post.title);
+        setEditContent(post.content);
+        setEditYoutubeUrl(post.youtubeUrl || "");
+        setEditFile(null);
+        setEditFilePreview(post.attachFilePath || null);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdate = async () => {
+        if (!editTitle.trim() || !editContent.trim()) {
+            setModalMessage("제목과 내용을 입력해주세요.");
+            setIsModalOpen(true);
+            return;
+        }
+
+        const formData = new FormData();
+        const boardData = {
+            boardTypeFg: post?.boardTypeFg || "0",
+            title: editTitle,
+            content: editContent,
+            userId: userId,
+            youtubeUrl: editYoutubeUrl,
+            maskingYn: post?.maskingYn || "N",
+            deleteFile: !editFilePreview && !!post?.attachFilePath
+        };
+
+        formData.append("data", new Blob([JSON.stringify(boardData)], { type: "application/json" }));
+        if (editFile) {
+            formData.append("file", editFile);
+        }
+
+        try {
+            const res = await fetch(`/api/boards/posts/${boardNo}`, {
+                method: 'PUT',
+                body: formData,
+            });
+
+            if (res.ok) {
+                setIsEditModalOpen(false);
+                setModalMessage("게시글이 수정되었습니다.");
+                setIsModalOpen(true);
+                fetchPostDetail();
+            } else {
+                setModalMessage("수정에 실패했습니다.");
+                setIsModalOpen(true);
+            }
+        } catch (e) {
+            console.error("Failed to update post", e);
+            setModalMessage("오류가 발생했습니다.");
+            setIsModalOpen(true);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const selectedFile = e.target.files[0];
+            const validation = validateFileSize(selectedFile);
+            if (!validation.isValid) {
+                setModalMessage(validation.message);
+                setIsModalOpen(true);
+                if (editFileInputRef.current) editFileInputRef.current.value = '';
+                return;
+            }
+            setEditFile(selectedFile);
+            setEditFilePreview(URL.createObjectURL(selectedFile));
+        }
+    };
+
     const formatDate = (dateStr: string) => {
         if (!dateStr || typeof dateStr !== 'string' || dateStr.length < 12) return dateStr;
         // Format: YYYY.MM.DD AM/PM HH:MM:SS
@@ -334,6 +413,7 @@ const BoardDetail: React.FC = () => {
     }
 
     const boardName = post.boardTypeFg === "0" ? "자유 게시판" : "초보자 게시판";
+    const isAuthor = post.writerUserId === userId;
 
     return (
         <div className="flex flex-col bg-white font-['Pretendard'] min-h-full" style={{ fontFamily: '"Pretendard", sans-serif' }}>
@@ -343,11 +423,14 @@ const BoardDetail: React.FC = () => {
                     <FaChevronLeft size={24} />
                 </button>
                 <h1 className="top-room-detail-title">{boardName}</h1>
+                {isAuthor && (
+                    <button onClick={handleDelete} className="ml-auto text-red-400 text-xs font-medium">삭제</button>
+                )}
             </div>
 
             <div className="flex-1 pb-[130px]">
                 {/* Post Content */}
-                <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100">
+                <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100 relative">
                     <SectionTitle className="!mt-0 mb-4 flex items-center justify-between">
                         <span className="flex-1 min-w-0 truncate">{post.title}</span>
                     </SectionTitle>
@@ -393,11 +476,16 @@ const BoardDetail: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-3 text-gray-400 text-sm">
+                    <div className="flex justify-end gap-3 text-gray-400 text-sm items-center">
+                        {isAuthor && (
+                            <div className="flex items-center gap-1 cursor-pointer text-[#0E3B46] mr-1" onClick={handleEditClick}>
+                                <FaEdit /> <span className="text-xs">수정</span>
+                            </div>
+                        )}
                         <div className={`flex items-center gap-1 cursor-pointer ${post.isLiked ? 'text-red-500' : 'text-[#00BDF8]'}`} onClick={handleLike}>
                             <FaRegThumbsUp /> <span>({post.likeCnt})</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-gray-400">
                             <FaRegCommentDots /> <span>({comments.length})</span>
                         </div>
                         <div className={`flex items-center gap-1 cursor-pointer ${post.isScrapped ? 'text-gray-800' : 'text-gray-400'}`} onClick={handleScrap}>
@@ -422,7 +510,6 @@ const BoardDetail: React.FC = () => {
                             roots.forEach(root => {
                                 organizedComments.push(root);
                                 const myChildren = children.filter(c => c.parentReplyNo === root.replyNo);
-                                // Assuming children are already sorted by date from backend
                                 organizedComments.push(...myChildren);
                             });
 
@@ -527,6 +614,103 @@ const BoardDetail: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-lg flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+                        <div className="flex justify-between items-center p-5 border-b border-gray-100">
+                            <h2 className="text-sm font-bold text-gray-800">게시글 수정</h2>
+                            <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <FaTimes size={20} />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">제목</label>
+                                <input
+                                    type="text"
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#00BDF8] focus:border-transparent transition-all text-[13px]"
+                                    placeholder="제목을 입력하세요"
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">내용</label>
+                                <textarea
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-3 h-48 focus:outline-none focus:ring-2 focus:ring-[#00BDF8] focus:border-transparent transition-all resize-none text-[13px]"
+                                    placeholder="내용을 입력하세요"
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">이미지 첨부 (선택)</label>
+                                <div className="space-y-3">
+                                    <button 
+                                        onClick={() => editFileInputRef.current?.click()}
+                                        className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-4 text-gray-500 hover:border-[#00BDF8] hover:text-[#00BDF8] hover:bg-blue-50 transition-all"
+                                    >
+                                        <FaImage />
+                                        <span className="text-sm font-medium">이미지 변경하기</span>
+                                    </button>
+                                    <input
+                                        type="file"
+                                        ref={editFileInputRef}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                    />
+                                    {editFilePreview && (
+                                        <div className="relative rounded-xl overflow-hidden border border-gray-100 shadow-sm inline-block">
+                                            <img src={editFilePreview} alt="Preview" className="max-w-full h-40 object-cover" />
+                                            <button 
+                                                onClick={() => {
+                                                    setEditFile(null);
+                                                    setEditFilePreview(null);
+                                                }}
+                                                className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1.5 hover:bg-opacity-70 transition-all"
+                                            >
+                                                <FaTimes size={12} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">유튜브 URL (선택)</label>
+                                <input
+                                    type="text"
+                                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#00BDF8] focus:border-transparent transition-all text-[13px]"
+                                    placeholder="https://www.youtube.com/..."
+                                    value={editYoutubeUrl}
+                                    onChange={(e) => setEditYoutubeUrl(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="p-5 bg-gray-50 border-t border-gray-100 flex gap-3">
+                            <button
+                                onClick={() => setIsEditModalOpen(false)}
+                                className="flex-1 py-3.5 border border-gray-200 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-all"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleUpdate}
+                                className="flex-1 py-3.5 bg-[#00BDF8] text-white rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-[#00aee5] transition-all"
+                            >
+                                수정완료
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <CommonModal
                 isOpen={isModalOpen}

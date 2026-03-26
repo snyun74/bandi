@@ -13,4 +13,5 @@ public class CommunityBoardCreateDto {
     private String userId;
     private String youtubeUrl;
     private String maskingYn;
+    private Boolean deleteFile;
 }
