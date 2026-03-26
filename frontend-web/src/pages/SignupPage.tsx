@@ -154,6 +154,18 @@ const SignupPage: React.FC = () => {
 
         try {
             const cleanPhone = formData.phoneNo.replace(/-/g, '');
+            
+            // 1. 중복 체크
+            const checkRes = await fetch(`/api/auth/check-phone?phoneNumber=${cleanPhone}`);
+            if (checkRes.ok) {
+                const checkData = await checkRes.json();
+                if (checkData.exists) {
+                    showModal('이미 휴대폰 번호로는 가입되어 있습니다.');
+                    return;
+                }
+            }
+
+            // 2. 인증번호 발송
             const res = await fetch(`/api/sms/send-verification?phoneNumber=${cleanPhone}`, { method: 'POST' });
             if (res.ok) {
                 const text = await res.text();
@@ -218,8 +230,7 @@ const SignupPage: React.FC = () => {
         if (formData.password !== formData.passwordConfirm) return '비밀번호가 일치하지 않습니다.';
         if (!formData.phoneNo) return '휴대폰 번호를 입력해주세요.';
         if (!isPhoneVerified) return '휴대폰 번호 인증을 해주세요.';
-        if (!formData.birthDt) return '생년월일을 입력해주세요.';
-        if (formData.birthDt.length !== 8) return '생년월일은 8자리(YYYYMMDD)로 입력해주세요.';
+        if (formData.birthDt && formData.birthDt.length !== 8) return '생년월일은 8자리(YYYYMMDD)로 입력해주세요.';
         if (!formData.genderCd) return '성별을 선택해주세요.';
 
         return null;

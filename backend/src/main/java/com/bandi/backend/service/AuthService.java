@@ -45,6 +45,11 @@ public class AuthService {
         return commDetailRepository.findActiveDetailsByCommCd(commCd);
     }
 
+    @Transactional(readOnly = true)
+    public boolean checkPhoneDuplicate(String phoneNo) {
+        return !userRepository.findByPhoneNo(phoneNo).isEmpty();
+    }
+
     @Transactional
     public void registerUser(SignupRequestDto dto) {
         // 0. SMS 인증 여부 확인

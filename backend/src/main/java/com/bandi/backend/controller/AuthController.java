@@ -38,6 +38,12 @@ public class AuthController {
         return ResponseEntity.ok().body(java.util.Collections.singletonMap("exists", exists));
     }
 
+    @GetMapping("/check-phone")
+    public ResponseEntity<?> checkPhone(@RequestParam String phoneNumber) {
+        boolean exists = authService.checkPhoneDuplicate(phoneNumber);
+        return ResponseEntity.ok().body(java.util.Collections.singletonMap("exists", exists));
+    }
+
     @GetMapping("/common/codes/{commCd}")
     public ResponseEntity<?> getCommonCodes(@PathVariable String commCd) {
         return ResponseEntity.ok().body(authService.getCommonCodes(commCd));
