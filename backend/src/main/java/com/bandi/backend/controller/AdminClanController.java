@@ -36,6 +36,20 @@ public class AdminClanController {
         }
     }
 
+    @PutMapping("/reports/{reportNo}/status")
+    public ResponseEntity<?> updateReportStatus(
+            @PathVariable Long reportNo,
+            @RequestParam("status") String status,
+            @RequestParam("userId") String userId) {
+        try {
+            adminService.updateReportStatus(reportNo, status, userId);
+            return ResponseEntity.ok().body("Report status updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error updating report status: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/dashboard/counts")
     public ResponseEntity<?> getDashboardCounts() {
         long pendingClans = adminService.getPendingClanCount();
