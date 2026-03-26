@@ -12,7 +12,7 @@ const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, message, onConf
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[11000] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Pretendard", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Pretendard", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
             <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 scale-100">
                 <div className="p-8 text-center">
                     {/* Icon based on type */}

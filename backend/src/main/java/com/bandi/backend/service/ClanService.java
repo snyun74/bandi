@@ -11,7 +11,6 @@ import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.repository.CmAttachmentRepository;
 import com.bandi.backend.repository.CmScrapRepository;
 import com.bandi.backend.repository.UserRepository;
-import com.bandi.backend.service.PushService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -379,18 +378,18 @@ public class ClanService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<com.bandi.backend.dto.HotBoardPostDto> getHotBoardPosts(Long clanId) {
-        return clanBoardRepository.findHotBoardPosts(clanId);
+    public java.util.List<com.bandi.backend.dto.HotBoardPostDto> getHotBoardPosts(Long clanId, String userId) {
+        return clanBoardRepository.findHotBoardPosts(clanId, userId != null ? userId : "");
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<com.bandi.backend.dto.HotBoardPostDto> getTopBoardPosts(Long clanId) {
-        return clanBoardRepository.findTopBoardPosts(clanId);
+    public java.util.List<com.bandi.backend.dto.HotBoardPostDto> getTopBoardPosts(Long clanId, String userId) {
+        return clanBoardRepository.findTopBoardPosts(clanId, userId != null ? userId : "");
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<com.bandi.backend.dto.BoardPostDto> getBoardPostList(Long boardTypeNo, String keyword) {
-        return clanBoardRepository.findPostsByBoardType(boardTypeNo, keyword);
+    public java.util.List<com.bandi.backend.dto.BoardPostDto> getBoardPostList(Long boardTypeNo, String keyword, String userId) {
+        return clanBoardRepository.findPostsByBoardType(boardTypeNo, keyword, userId != null ? userId : "");
     }
 
     @Transactional

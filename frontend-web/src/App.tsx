@@ -54,6 +54,7 @@ import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
 import AdminQaPage from './pages/AdminQaPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminNoticeManagement from './pages/AdminNoticeManagement';
+import AdminReportBlockPage from './pages/AdminReportBlockPage';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
 import { requestPermission, onMessageListener } from './utils/pushNotification';
@@ -113,6 +114,7 @@ function App() {
             <Route path="admin/qa" element={<AdminQaPage />} />
             <Route path="admin/users" element={<AdminUserManagement />} />
             <Route path="admin/notices" element={<AdminNoticeManagement />} />
+            <Route path="admin/report-block" element={<AdminReportBlockPage />} />
             <Route path="profile/scraps" element={<MyScrapList />} />
             <Route path="profile/posts" element={<MyPostList />} />
             <Route path="customer-center" element={<CustomerCenterPage />} />

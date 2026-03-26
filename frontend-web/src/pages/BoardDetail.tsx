@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaPaperclip, FaImage, FaTimes } from 'react-icons/fa';
+import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaPaperclip, FaImage, FaTimes, FaBan, FaExclamationTriangle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
 import { validateFileSize } from '../utils/fileUtils';
@@ -94,9 +94,15 @@ const BoardDetail: React.FC = () => {
     }>({
         isOpen: false,
         type: 'confirm',
-        message: '',
-        onConfirm: () => { },
+        message: "",
+        onConfirm: () => { }
     });
+
+    // Report & Block State
+    const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+    const [isReportConfirmOpen, setIsReportConfirmOpen] = useState(false);
+    const [isReportInputOpen, setIsReportInputOpen] = useState(false);
+    const [reportContent, setReportContent] = useState("");
 
     useEffect(() => {
         if (boardNo) {
@@ -300,6 +306,69 @@ const BoardDetail: React.FC = () => {
         });
     };
 
+    const handleBlockClick = () => {
+        setIsBlockConfirmOpen(true);
+    };
+
+    const handleBlockConfirm = async () => {
+        try {
+            const res = await fetch('/api/boards/block', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId,
+                    blockUserId: post?.writerUserId
+                })
+            });
+            if (res.ok) {
+                setModalMessage(`${post?.userNickNm || "익명"}님을 차단했습니다. 이제 해당 사용자의 게시물이 보이지 않습니다.`);
+                setIsModalOpen(true);
+                setIsBlockConfirmOpen(false);
+                // Redirect to list since the current post belongs to blocked user
+                setTimeout(() => navigate(-1), 2000);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleReportClick = () => {
+        setIsReportConfirmOpen(true);
+    };
+
+    const handleReportConfirm = () => {
+        setIsReportConfirmOpen(false);
+        setIsReportInputOpen(true);
+    };
+
+    const handleReportSubmit = async () => {
+        if (!reportContent.trim()) {
+            alert("신고 내용을 입력해주세요.");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/boards/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reportUserId: userId,
+                    targetUserId: post?.writerUserId,
+                    boardUrl: window.location.pathname + window.location.search,
+                    content: reportContent
+                })
+            });
+            if (res.ok) {
+                setModalMessage("관리자에게 신고가 접수되었습니다. 검토 후 조치하겠습니다.");
+                setIsModalOpen(true);
+                setIsReportInputOpen(false);
+                setReportContent("");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const handleEditClick = () => {
         if (!post) return;
         setEditTitle(post.title);
@@ -423,9 +492,34 @@ const BoardDetail: React.FC = () => {
                     <FaChevronLeft size={24} />
                 </button>
                 <h1 className="top-room-detail-title">{boardName}</h1>
-                {isAuthor && (
-                    <button onClick={handleDelete} className="ml-auto text-red-400 text-xs font-medium">삭제</button>
-                )}
+                <div className="ml-auto flex items-center gap-3">
+                    {!isAuthor ? (
+                        <>
+                            <button
+                                onClick={handleBlockClick}
+                                className="bg-gray-50 text-gray-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors flex items-center gap-1"
+                            >
+                                <FaBan />
+                                <span>차단</span>
+                            </button>
+                            <button
+                                onClick={handleReportClick}
+                                className="bg-orange-50 text-orange-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-100 transition-colors flex items-center gap-1"
+                            >
+                                <FaExclamationTriangle />
+                                <span>신고</span>
+                            </button>
+                        </>
+                    ) : (
+                        <button
+                            onClick={handleDelete}
+                            className="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1"
+                        >
+                            <FaTimes />
+                            <span>삭제</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="flex-1 pb-[130px]">
@@ -725,6 +819,59 @@ const BoardDetail: React.FC = () => {
                 onConfirm={deleteModal.onConfirm}
                 onCancel={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
             />
+            <CommonModal
+                isOpen={isBlockConfirmOpen}
+                type="confirm"
+                message={`정말 ${post?.userNickNm || "익명"}님을 차단하시겠습니까?\n(차단 시 ${post?.userNickNm || "익명"}님이 작성한 모든 게시물은 보이지 않습니다.)`}
+                onConfirm={handleBlockConfirm}
+                onCancel={() => setIsBlockConfirmOpen(false)}
+            />
+
+            {/* Report Confirmation Modal */}
+            <CommonModal
+                isOpen={isReportConfirmOpen}
+                type="confirm"
+                message="해당 게시글을 관리자에게 신고하시겠습니까?"
+                onConfirm={handleReportConfirm}
+                onCancel={() => setIsReportConfirmOpen(false)}
+            />
+
+            {/* Report Input Modal */}
+            {isReportInputOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black bg-opacity-50 p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-sm flex flex-col shadow-2xl overflow-hidden border border-gray-100">
+                        <div className="p-5 border-b border-gray-50 bg-[#F9FAFB]">
+                            <h2 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+                                <FaExclamationTriangle className="text-orange-500" />
+                                신고 사유 입력
+                            </h2>
+                        </div>
+                        <div className="p-5">
+                            <textarea
+                                className="w-full border border-gray-200 rounded-xl px-4 py-3 h-32 focus:outline-none focus:ring-2 focus:ring-[#00BDF8] focus:border-transparent transition-all resize-none text-[13px]"
+                                placeholder="신고 사유를 입력해주세요."
+                                value={reportContent}
+                                onChange={(e) => setReportContent(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="p-4 bg-gray-50 flex gap-3">
+                            <button
+                                onClick={() => setIsReportInputOpen(false)}
+                                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-bold hover:bg-gray-100 transition-all text-xs"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleReportSubmit}
+                                className="flex-1 py-2.5 bg-[#00BDF8] text-white rounded-xl font-bold shadow-md hover:bg-[#00aee5] transition-all text-xs"
+                            >
+                                신고하기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

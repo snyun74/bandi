@@ -1,9 +1,6 @@
 package com.bandi.backend.controller;
 
 import com.bandi.backend.dto.ClanCreateDto;
-import com.bandi.backend.dto.ClanUpdateDto;
-
-import com.bandi.backend.dto.BandCreateRequestDto;
 import com.bandi.backend.entity.clan.ClanBoardType;
 import com.bandi.backend.service.ClanService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import com.bandi.backend.dto.ClanMemberDetailDto;
-import com.bandi.backend.dto.MemberSessionDto;
 
 @RestController
 @RequestMapping("/api/clans")
@@ -231,9 +227,9 @@ public class ClanController {
     }
 
     @GetMapping("/{id}/boards/hot")
-    public ResponseEntity<?> getHotBoardPosts(@PathVariable Long id) {
+    public ResponseEntity<?> getHotBoardPosts(@PathVariable Long id, @RequestParam(required = false) String userId) {
         try {
-            List<com.bandi.backend.dto.HotBoardPostDto> posts = clanService.getHotBoardPosts(id);
+            List<com.bandi.backend.dto.HotBoardPostDto> posts = clanService.getHotBoardPosts(id, userId);
             return ResponseEntity.ok(posts);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -242,9 +238,9 @@ public class ClanController {
     }
 
     @GetMapping("/{id}/boards/top")
-    public ResponseEntity<?> getTopBoardPosts(@PathVariable Long id) {
+    public ResponseEntity<?> getTopBoardPosts(@PathVariable Long id, @RequestParam(required = false) String userId) {
         try {
-            List<com.bandi.backend.dto.HotBoardPostDto> posts = clanService.getTopBoardPosts(id);
+            List<com.bandi.backend.dto.HotBoardPostDto> posts = clanService.getTopBoardPosts(id, userId);
             return ResponseEntity.ok(posts);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -255,9 +251,10 @@ public class ClanController {
     @GetMapping("/boards/{boardTypeNo}/posts")
     public ResponseEntity<?> getBoardPostList(
             @PathVariable Long boardTypeNo,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String userId) {
         try {
-            return ResponseEntity.ok(clanService.getBoardPostList(boardTypeNo, keyword));
+            return ResponseEntity.ok(clanService.getBoardPostList(boardTypeNo, keyword, userId));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(Map.of("message", "Failed to fetch board posts", "error", e.getMessage()));

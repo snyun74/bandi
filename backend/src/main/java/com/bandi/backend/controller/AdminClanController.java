@@ -40,9 +40,42 @@ public class AdminClanController {
     public ResponseEntity<?> getDashboardCounts() {
         long pendingClans = adminService.getPendingClanCount();
         long unansweredQas = qaService.countUnansweredQas();
+        long reportCount = adminService.getUnprocessedReportCount();
 
         return ResponseEntity.ok(java.util.Map.of(
                 "pendingClans", pendingClans,
-                "unansweredQas", unansweredQas));
+                "unansweredQas", unansweredQas,
+                "reportCount", reportCount));
+    }
+
+    @GetMapping("/reports")
+    public org.springframework.data.domain.Page<com.bandi.backend.repository.CmReportProjection> getReports(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) String search) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return adminService.getReports(search, pageable);
+    }
+
+    @GetMapping("/blocks")
+    public org.springframework.data.domain.Page<com.bandi.backend.repository.CmBlockProjection> getBlocks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) String search) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return adminService.getBlocks(search, pageable);
+    }
+
+    @DeleteMapping("/blocks")
+    public ResponseEntity<?> deleteBlock(
+            @RequestParam("userId") String userId,
+            @RequestParam("blockUserId") String blockUserId) {
+        try {
+            adminService.deleteBlock(userId, blockUserId);
+            return ResponseEntity.ok().body("Block deleted successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error deleting block: " + e.getMessage());
+        }
     }
 }

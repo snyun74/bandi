@@ -53,7 +53,7 @@ const ClanBoardList: React.FC = () => {
     const fetchHotPosts = async () => {
         if (!clanId) return;
         try {
-            const response = await fetch(`/api/clans/${clanId}/boards/hot`);
+            const response = await fetch(`/api/clans/${clanId}/boards/hot?userId=${userId || ''}`);
             if (response.ok) {
                 const data = await response.json();
                 if (Array.isArray(data)) {

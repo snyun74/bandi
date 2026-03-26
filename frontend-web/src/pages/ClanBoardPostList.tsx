@@ -34,8 +34,8 @@ const ClanBoardPostList: React.FC = () => {
     const fetchPosts = async () => {
         if (!boardTypeNo) return;
         try {
-            const query = searchQuery ? `?keyword=${encodeURIComponent(searchQuery)}` : '';
-            const response = await fetch(`/api/clans/boards/${boardTypeNo}/posts${query}`);
+            const query = searchQuery ? `&keyword=${encodeURIComponent(searchQuery)}` : '';
+            const response = await fetch(`/api/clans/boards/${boardTypeNo}/posts?userId=${userId || ''}${query}`);
             if (response.ok) {
                 const data = await response.json();
                 setPosts(data);

@@ -8,6 +8,8 @@ import com.bandi.backend.entity.clan.ClanGroup;
 import com.bandi.backend.repository.CmAdBannerRepository;
 import com.bandi.backend.repository.CmAttachmentRepository;
 import com.bandi.backend.repository.ClanGroupRepository;
+import com.bandi.backend.repository.CmReportRepository;
+import com.bandi.backend.repository.CmBlockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,8 @@ public class AdminService {
     private final CmAdBannerRepository cmAdBannerRepository;
     private final CmAttachmentRepository cmAttachmentRepository;
     private final ClanGroupRepository clanGroupRepository;
+    private final CmReportRepository cmReportRepository;
+    private final CmBlockRepository cmBlockRepository;
 
     public List<AdBannerDto> getBanners() {
         return cmAdBannerRepository.findAllByOrderByInsDtimeDesc().stream()
@@ -158,5 +162,36 @@ public class AdminService {
 
     public long getPendingClanCount() {
         return clanGroupRepository.countPendingClans();
+    }
+
+    public long getUnprocessedReportCount() {
+        return cmReportRepository.countByProcStatFg("N");
+    }
+
+    public org.springframework.data.domain.Page<com.bandi.backend.repository.CmReportProjection> getReports(String search, org.springframework.data.domain.Pageable pageable) {
+        return cmReportRepository.findAllReportsWithNicknames(search, pageable);
+    }
+
+    public org.springframework.data.domain.Page<com.bandi.backend.repository.CmBlockProjection> getBlocks(String search, org.springframework.data.domain.Pageable pageable) {
+        return cmBlockRepository.findAllBlocksWithNicknames(search, pageable);
+    }
+
+    @Transactional
+    public void updateReportStatus(Long reportNo, String status, String userId) {
+        com.bandi.backend.entity.common.CmReport report = cmReportRepository.findById(reportNo)
+                .orElseThrow(() -> new RuntimeException("Report not found: " + reportNo));
+
+        report.setProcStatFg(status);
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        report.setReportProcDtime(currentDateTime); 
+        report.setUpdDtime(currentDateTime);
+        report.setUpdId(userId);
+
+        cmReportRepository.save(report);
+    }
+
+    @Transactional
+    public void deleteBlock(String userId, String blockUserId) {
+        cmBlockRepository.deleteByUserIdAndBlockUserId(userId, blockUserId);
     }
 }

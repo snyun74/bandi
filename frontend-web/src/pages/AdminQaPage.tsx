@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaReply, FaCheck } from 'react-icons/fa';
+import { FaChevronLeft, FaReply, FaCheck, FaTimes } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 
 interface QaItem {
@@ -26,9 +26,26 @@ const AdminQaPage: React.FC = () => {
     const [selectedQa, setSelectedQa] = useState<QaItem | null>(null);
     const [replyContent, setReplyContent] = useState('');
     const [isReplyOpen, setIsReplyOpen] = useState(false);
+    const [answers, setAnswers] = useState<QaItem[]>([]);
+    const [isAnswersLoading, setIsAnswersLoading] = useState(false);
 
     const [alertModal, setAlertModal] = useState({ isOpen: false, message: '' });
     const bottomRef = useRef<HTMLDivElement | null>(null);
+
+    const fetchAnswers = async (qaNo: number) => {
+        setIsAnswersLoading(true);
+        try {
+            const res = await fetch(`/api/qa/${qaNo}/answers`);
+            if (res.ok) {
+                const data = await res.json();
+                setAnswers(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch answers", error);
+        } finally {
+            setIsAnswersLoading(false);
+        }
+    };
 
     const fetchQas = useCallback(async (pageNum: number, currentFilter: string) => {
         if (loading) return;
@@ -153,6 +170,11 @@ const AdminQaPage: React.FC = () => {
                             key={qa.qaNo}
                             onClick={() => {
                                 setSelectedQa(qa);
+                                if (qa.hasAnswer) {
+                                    fetchAnswers(qa.qaNo);
+                                } else {
+                                    setAnswers([]);
+                                }
                                 setIsReplyOpen(true);
                             }}
                             className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer hover:border-[#00BDF8]/30 transition-all"
@@ -183,21 +205,26 @@ const AdminQaPage: React.FC = () => {
 
             {/* Reply Modal */}
             {isReplyOpen && selectedQa && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-                    <div className="bg-white w-full max-w-sm rounded-3xl overflow-hidden flex flex-col max-h-[80vh] animate-fade-in-up">
-                        <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+                    <div className="bg-white w-full max-w-sm rounded-3xl overflow-hidden flex flex-col max-h-[80vh] animate-fade-in-up shadow-2xl">
+                        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                             <h2 className="text-[14px] font-bold text-[#003C48]">문의 상세 및 답변</h2>
-                            <button onClick={() => setIsReplyOpen(false)} className="text-gray-400">
-                                <FaChevronLeft className="rotate-90" />
+                            <button onClick={() => setIsReplyOpen(false)} className="text-gray-400 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                                <FaTimes size={18} />
                             </button>
                         </div>
                         <div className="p-5 overflow-y-auto flex-1 space-y-4">
-                            <div className="bg-gray-50 rounded-2xl p-4">
-                                <div className="text-[11px] text-[#00BDF8] font-bold mb-1">{selectedQa.userNickNm} 님의 문의</div>
+                            {/* Question Section */}
+                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                                <div className="flex justify-between items-center mb-1">
+                                    <div className="text-[11px] text-[#00BDF8] font-bold">{selectedQa.userNickNm} 님의 문의</div>
+                                    <div className="text-[10px] text-gray-400">{formatDate(selectedQa.crdDate)}</div>
+                                </div>
                                 <div className="text-[14px] text-[#003C48] font-bold mb-2">{selectedQa.title}</div>
                                 <div className="text-[13px] text-gray-600 whitespace-pre-wrap leading-relaxed">{selectedQa.content}</div>
                             </div>
 
+                            {/* Answer Section */}
                             {!selectedQa.hasAnswer ? (
                                 <div>
                                     <label className="block text-[12px] font-bold text-gray-400 mb-2 ml-1">답변 작성</label>
@@ -209,9 +236,23 @@ const AdminQaPage: React.FC = () => {
                                     />
                                 </div>
                             ) : (
-                                <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
-                                    <div className="text-[11px] text-blue-500 font-bold mb-1">이미 답변이 등록된 문의입니다.</div>
-                                    <p className="text-[12px] text-gray-400 italic">상세 답변 내역은 사용자 페이지에서 확인 가능합니다.</p>
+                                <div className="space-y-3">
+                                    <label className="block text-[12px] font-bold text-[#00BDF8] mb-1 ml-1">등록된 답변</label>
+                                    {isAnswersLoading ? (
+                                        <div className="text-center py-8 text-gray-400 text-[12px]">답변을 불러오는 중...</div>
+                                    ) : answers.length > 0 ? (
+                                        answers.map((ans, idx) => (
+                                            <div key={idx} className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <div className="text-[11px] text-blue-500 font-bold">운영자 답변</div>
+                                                    <div className="text-[10px] text-gray-400">{formatDate(ans.crdDate)}</div>
+                                                </div>
+                                                <div className="text-[13px] text-gray-700 whitespace-pre-wrap leading-relaxed">{ans.content}</div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="bg-gray-50 rounded-2xl p-4 text-center text-gray-400 text-[12px]">등록된 답변 내용을 찾을 수 없습니다.</div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -221,14 +262,14 @@ const AdminQaPage: React.FC = () => {
                                     onClick={handleReplySubmit}
                                     className="w-full py-3.5 bg-[#00BDF8] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-[#00BDF8]/20 hover:bg-[#009bc9] transition-all flex items-center justify-center gap-2"
                                 >
-                                    <FaReply /> 답변 등록하기
+                                    <FaReply size={14} /> 답변 등록하기
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => setIsReplyOpen(false)}
-                                    className="w-full py-3.5 bg-gray-100 text-gray-500 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2"
+                                    className="w-full py-3.5 bg-gray-100 text-gray-500 rounded-2xl font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
                                 >
-                                    <FaCheck /> 확인 완료
+                                    닫기
                                 </button>
                             )}
                         </div>

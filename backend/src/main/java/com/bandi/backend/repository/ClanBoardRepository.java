@@ -28,10 +28,11 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "WHERE K.CN_NO = :clanId " +
                         "  AND K.BOARD_TYPE_STAT_CD = 'A' " +
                         "  AND B.BOARD_STAT_CD = 'A' " +
+                        "  AND (:userId = '' OR B.WRITER_USER_ID NOT IN (SELECT CB.BLOCK_USER_ID FROM CM_BLOCK CB WHERE CB.USER_ID = :userId)) " +
                         "  AND B.INS_DTIME >= TO_CHAR(NOW() - INTERVAL '7 days', 'YYYYMMDD') || '000000' " +
                         "ORDER BY \"boardLikeCnt\" DESC " +
                         "LIMIT 5", nativeQuery = true)
-        List<HotBoardPostDto> findHotBoardPosts(@Param("clanId") Long clanId);
+        List<HotBoardPostDto> findHotBoardPosts(@Param("clanId") Long clanId, @Param("userId") String userId);
 
         @Query(value = "SELECT " +
                         "    K.CN_NO AS \"cnNo\", " +
@@ -51,10 +52,11 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "WHERE K.CN_NO = :clanId " +
                         "  AND K.BOARD_TYPE_STAT_CD = 'A' " +
                         "  AND B.BOARD_STAT_CD = 'A' " +
+                        "  AND (:userId = '' OR B.WRITER_USER_ID NOT IN (SELECT CB.BLOCK_USER_ID FROM CM_BLOCK CB WHERE CB.USER_ID = :userId)) " +
                         "  AND B.INS_DTIME >= TO_CHAR(NOW() - INTERVAL '31 days', 'YYYYMMDD') || '000000' " +
                         "ORDER BY \"boardLikeCnt\" DESC " +
                         "LIMIT 3", nativeQuery = true)
-        List<HotBoardPostDto> findTopBoardPosts(@Param("clanId") Long clanId);
+        List<HotBoardPostDto> findTopBoardPosts(@Param("clanId") Long clanId, @Param("userId") String userId);
 
         @Query(value = "SELECT " +
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +
@@ -72,9 +74,10 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "WHERE B.CN_BOARD_TYPE_NO = :boardTypeNo " +
                         "  AND B.BOARD_STAT_CD = 'A' " +
                         "  AND (:keyword IS NULL OR :keyword = '' OR B.TITLE LIKE '%' || :keyword || '%') " +
+                        "  AND (:userId = '' OR B.WRITER_USER_ID NOT IN (SELECT CB.BLOCK_USER_ID FROM CM_BLOCK CB WHERE CB.USER_ID = :userId)) " +
                         "ORDER BY B.INS_DTIME DESC", nativeQuery = true)
         List<com.bandi.backend.dto.BoardPostDto> findPostsByBoardType(@Param("boardTypeNo") Long boardTypeNo,
-                        @Param("keyword") String keyword);
+                        @Param("keyword") String keyword, @Param("userId") String userId);
 
         @Query(value = "SELECT " +
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +

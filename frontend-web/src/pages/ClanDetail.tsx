@@ -69,7 +69,7 @@ const ClanDetail: React.FC = () => {
                 const [clanRes, noticeRes, topRes, scheduleRes, jamRes, roleRes, gatheringsRes] = await Promise.all([
                     fetch(clanUrl),
                     fetch(`/api/clans/${id}/notices?limit=5`),
-                    fetch(`/api/clans/${id}/boards/top`),
+                    fetch(`/api/clans/${id}/boards/top?userId=${userId || ''}`),
                     fetch(`/api/clan/schedule?clanId=${id}&year=${year}&month=${month}`),
                     fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`), // Fetch recent jams
                     userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null),

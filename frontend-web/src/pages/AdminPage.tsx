@@ -4,9 +4,10 @@ import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell } from 'react-icons/fa
 
 const AdminPage: React.FC = () => {
     const navigate = useNavigate();
-    const [counts, setCounts] = useState<{ pendingClans: number; unansweredQas: number }>({
+    const [counts, setCounts] = useState<{ pendingClans: number; unansweredQas: number; reportCount: number }>({
         pendingClans: 0,
-        unansweredQas: 0
+        unansweredQas: 0,
+        reportCount: 0
     });
     const [userStats, setUserStats] = useState<{ total: number; male: number; female: number; other: number }>({
         total: 0,
@@ -43,6 +44,7 @@ const AdminPage: React.FC = () => {
         { id: 'qa', label: '고객센터관리', icon: <FaHeadset size={24} />, path: '/main/admin/qa', count: counts.unansweredQas },
         { id: 'user', label: `회원관리(${userStats.total}명)`, icon: <FaUserCog size={24} />, path: '/main/admin/users' },
         { id: 'notice', label: '공지사항관리', icon: <FaBell size={24} />, path: '/main/admin/notices' },
+        { id: 'report-block', label: '신고/차단관리', icon: <FaUserShield size={24} />, path: '/main/admin/report-block', count: counts.reportCount },
     ];
 
     return (
