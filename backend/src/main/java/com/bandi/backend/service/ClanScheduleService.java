@@ -27,6 +27,11 @@ public class ClanScheduleService {
         return schedules.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
+    public List<ClanScheduleDto> getSchedulesByRange(Long clanId, String startDate, String endDate) {
+        List<ClanSchedule> schedules = clanScheduleRepository.findAllByCnNoAndDateRange(clanId, startDate, endDate);
+        return schedules.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
     public List<ClanScheduleDto> getMySchedules(String userId, String startDate, String endDate) {
         List<Long> clanIds = clanUserRepository.findCnNosByUserId(userId);
         if (clanIds.isEmpty()) {

@@ -12,6 +12,10 @@ public interface ClanScheduleRepository extends JpaRepository<ClanSchedule, Long
     @Query("SELECT cs FROM ClanSchedule cs WHERE cs.cnNo = :cnNo AND cs.sttDate LIKE :yearMonth% ORDER BY cs.sttDate ASC, cs.sttTiem ASC")
     List<ClanSchedule> findAllByCnNoAndMonth(@Param("cnNo") Long cnNo, @Param("yearMonth") String yearMonth);
 
+    @Query("SELECT cs FROM ClanSchedule cs WHERE cs.cnNo = :cnNo AND cs.sttDate >= :startDate AND cs.sttDate <= :endDate ORDER BY cs.sttDate ASC, cs.sttTiem ASC")
+    List<ClanSchedule> findAllByCnNoAndDateRange(@Param("cnNo") Long cnNo,
+            @Param("startDate") String startDate, @Param("endDate") String endDate);
+
     @Query("SELECT cs FROM ClanSchedule cs WHERE cs.cnNo IN :cnNos AND cs.sttDate >= :startDate AND cs.sttDate <= :endDate ORDER BY cs.sttDate ASC, cs.sttTiem ASC")
     List<ClanSchedule> findAllByCnNosAndDateRange(@Param("cnNos") List<Long> cnNos,
             @Param("startDate") String startDate, @Param("endDate") String endDate);

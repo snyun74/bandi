@@ -225,9 +225,9 @@ const GatheringCreateModal: React.FC<GatheringCreateModalProps> = ({ clanId, use
                                     onText = "모든 팀 실력이 비슷하게!";
                                     offText = "실력팀/초보팀 나누기";
                                 } else if (isGender) {
-                                    label = "멤버균등배분";
+                                    label = "성비 밸런스";
                                 } else if (isMbti) {
-                                    label = "MBTI균등배분";
+                                    label = "MBTI 밸런스";
                                 }
 
                                 const isActive = w.balanceApplyYn === 'Y';

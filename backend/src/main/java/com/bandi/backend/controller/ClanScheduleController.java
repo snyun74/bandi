@@ -20,8 +20,14 @@ public class ClanScheduleController {
     @GetMapping
     public ResponseEntity<List<ClanScheduleDto>> getSchedules(
             @RequestParam Long clanId,
-            @RequestParam String year,
-            @RequestParam String month) {
+            @RequestParam(required = false) String year,
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        if (startDate != null && endDate != null) {
+            List<ClanScheduleDto> schedules = clanScheduleService.getSchedulesByRange(clanId, startDate, endDate);
+            return ResponseEntity.ok(schedules);
+        }
         List<ClanScheduleDto> schedules = clanScheduleService.getSchedules(clanId, year, month);
         return ResponseEntity.ok(schedules);
     }

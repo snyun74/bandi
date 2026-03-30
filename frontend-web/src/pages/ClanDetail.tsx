@@ -62,15 +62,22 @@ const ClanDetail: React.FC = () => {
                 const userId = localStorage.getItem('userId');
                 const clanUrl = userId ? `/api/clans/${id}?userId=${userId}` : `/api/clans/${id}`;
                 const today = new Date();
-                const year = today.getFullYear();
-                const month = today.getMonth() + 1;
+                const currentDay = today.getDay();
+                const sunday = new Date(today);
+                sunday.setDate(today.getDate() - currentDay);
+                const saturday = new Date(today);
+                saturday.setDate(today.getDate() + (6 - currentDay));
+
+                const formatDate = (d: Date) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+                const startDateStr = formatDate(sunday);
+                const endDateStr = formatDate(saturday);
 
                 // Parallel fetch for clan details, notices, top posts, and schedules
                 const [clanRes, noticeRes, topRes, scheduleRes, jamRes, roleRes, gatheringsRes] = await Promise.all([
                     fetch(clanUrl),
                     fetch(`/api/clans/${id}/notices?limit=5`),
                     fetch(`/api/clans/${id}/boards/top?userId=${userId || ''}`),
-                    fetch(`/api/clan/schedule?clanId=${id}&year=${year}&month=${month}`),
+                    fetch(`/api/clan/schedule?clanId=${id}&startDate=${startDateStr}&endDate=${endDateStr}`),
                     fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`), // Fetch recent jams
                     userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null),
                     fetch(`/api/clans/gatherings/clan/${id}?userId=${userId || ''}`) // Fetch active gatherings
@@ -462,15 +469,6 @@ const ClanDetail: React.FC = () => {
                     <div className="flex justify-between items-center mb-4">
                         <SectionTitle className="!mt-0 !mb-0">클랜 캘린더</SectionTitle>
                         <span onClick={() => navigate(`/main/clan/calendar/${id}`)} className="text-gray-400 text-xs cursor-pointer hover:text-[#00BDF8]">캘린더 보기</span>
-                    </div>
-                    {/* Today's Schedule Display */}
-                    <div className="mb-2 text-[#003C48] font-bold flex items-center gap-2">
-                        <span>
-                            {new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })} ({['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date().getDay()]})
-                        </span>
-                        <span className="font-normal text-sm text-gray-500 truncate flex-1 block">
-                            {todayScheduleTitle}
-                        </span>
                     </div>
 
                     {/* Weekly View */}
