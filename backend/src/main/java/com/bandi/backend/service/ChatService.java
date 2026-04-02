@@ -635,8 +635,22 @@ public class ChatService {
             .setParameter("senderId", dto.getSndUserId())
             .getResultList();
 
+        // 닉네임 고정 (사용자 요청: snyun의 닉네임을 제목으로 사용)
+        String pushTitle = userNickNm;
+        try {
+          // USER_ID가 대소문자 구분될 수 있으므로 LOWER로 검색
+          jakarta.persistence.Query adminQuery = entityManager.createNativeQuery("SELECT USER_NICK_NM FROM MM_USER WHERE LOWER(USER_ID) = 'snyun'");
+          Object adminResult = adminQuery.getSingleResult();
+          if (adminResult != null) {
+            pushTitle = (String) adminResult;
+          }
+        } catch (Exception e) {
+          // snyun 사용자를 찾지 못할 경우 '관리자' 또는 기존 닉네임 사용
+          pushTitle = "관리자"; 
+        }
+
         for (String recipientId : recipients) {
-          pushService.sendPush(recipientId, "합주 " + userNickNm, dto.getMsg(),
+          pushService.sendPush(recipientId, pushTitle, dto.getMsg(),
               "/main/chat/room/" + dto.getCnNo() + "?type=BAND", "BN");
         }
       } catch (Exception e) {
