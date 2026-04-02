@@ -332,21 +332,25 @@ const JamScheduleCapture: React.FC = () => {
 
         // 4. Determine Color
         const totalMembers = bandInfo.roles.length;
-        const isFull = totalMembers > 0 && participantIds.length >= totalMembers;
+        const count = participantIds.length;
+        const isAll = totalMembers > 0 && count === totalMembers;
 
         let color = 'bg-gray-100';
 
         if (selectedTimeSlots.includes(hour)) {
             color = 'bg-[#FF6B6B]'; // 내가 선택한 시간대 (빨간 계열)
-        } else if (participantIds.length > 0) {
-            if (isFull) {
-                color = 'bg-[#2EE59D]'; // 전원 참여 (초록)
+        } else if (count > 0) {
+            if (isAll) {
+                color = 'bg-[#2EE59D]'; // 전원 참여 (사용자 요청: 최종 민트/초록)
             } else {
-                // 일부 참여: 비율에 따라 파란 계열 농도 조절
-                if (participantIds.length / totalMembers > 0.5) {
-                    color = 'bg-[#00BDF8]'; // 과반수 이상 - 진한 파랑
-                } else {
-                    color = 'bg-[#7DDCF8]'; // 과반수 미만 - 연한 파랑
+                // 참여 인원수(1~6명)에 따른 파란색 그라데이션 세분화
+                switch (count) {
+                    case 1: color = 'bg-[#E1F5FE]'; break;
+                    case 2: color = 'bg-[#B3E5FC]'; break;
+                    case 3: color = 'bg-[#81D4FA]'; break;
+                    case 4: color = 'bg-[#4FC3F7]'; break;
+                    case 5: color = 'bg-[#03A9F4]'; break;
+                    case 6: default: color = 'bg-[#0288D1]'; break;
                 }
             }
         }
