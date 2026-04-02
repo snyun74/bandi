@@ -34,6 +34,7 @@ public class AdminService {
     private final ClanGroupRepository clanGroupRepository;
     private final CmReportRepository cmReportRepository;
     private final CmBlockRepository cmBlockRepository;
+    private final ChatService chatService;
 
     public List<AdBannerDto> getBanners() {
         return cmAdBannerRepository.findAllByOrderByInsDtimeDesc().stream()
@@ -152,12 +153,24 @@ public class AdminService {
         ClanGroup clan = clanGroupRepository.findById(cnNo)
                 .orElseThrow(() -> new RuntimeException("Clan not found: " + cnNo));
 
+        String oldStatus = clan.getCnApprStatCd();
         clan.setCnApprStatCd(status);
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         clan.setUpdDtime(currentDateTime);
         clan.setUpdId(userId);
 
         clanGroupRepository.save(clan);
+
+        // 클랜 승인(확정) 시 자동 메시지 및 푸시 발송 (RQ/RJ -> CN 상태 변경 시에만)
+        if ("CN".equals(status) && !"CN".equals(oldStatus)) {
+            com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
+            chatDto.setCnNo(cnNo);
+            chatDto.setSndUserId(userId);
+            chatDto.setMsg("클랜이 개설됐어요! 대화를 시작해보세요!");
+            chatDto.setMsgTypeCd("TEXT");
+            chatDto.setRoomType("CLAN");
+            chatService.saveMessage(chatDto);
+        }
     }
 
     public long getPendingClanCount() {

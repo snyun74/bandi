@@ -35,7 +35,7 @@ public class ChatService {
     String sql = """
             SELECT
                 CNR.CN_NO        AS ROOM_NO, -- 클랜채팅방번호
-                COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM, -- 클랜채팅방이름
+                CNG.CN_NM        AS ROOM_NM, -- 클랜채팅방이름 (수정: 원본 클랜명 사용)
                 (
                   SELECT MSG.MSG
                   FROM CN_CHAT_MESSAGE MSG
@@ -78,7 +78,7 @@ public class ChatService {
 
             SELECT
                 CNR.BN_NO        AS ROOM_NO, -- 합주채팅방번호
-                COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM, -- 합주채팅방이름
+                BNG.BN_NM        AS ROOM_NM, -- 합주채팅방이름 (수정: 원본 합주명 사용)
                 (
                   SELECT MSG.BN_CHAT_MSG
                   FROM BN_CHAT_MESSAGE MSG
@@ -198,7 +198,7 @@ public class ChatService {
       sqlBuilder.append("""
           SELECT
               CNR.CN_NO        AS ROOM_NO,
-              COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM,
+              CNG.CN_NM        AS ROOM_NM,
               'CLAN'           AS ROOM_TYPE,
               CMA.FILE_PATH    AS ATTACH_FILE_PATH
           FROM
@@ -212,7 +212,7 @@ public class ChatService {
       sqlBuilder.append("""
           SELECT
               CNR.BN_NO        AS ROOM_NO,
-              COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM,
+              BNG.BN_NM        AS ROOM_NM,
               'BAND'           AS ROOM_TYPE,
               CMA.FILE_PATH    AS ATTACH_FILE_PATH
           FROM
@@ -239,7 +239,7 @@ public class ChatService {
       sqlBuilder.append("""
           SELECT
               CNR.CN_NO        AS ROOM_NO,
-              COALESCE(NULLIF(TRIM(CNR.CN_ROOM_NM), ''), CNG.CN_NM)   AS ROOM_NM,
+              CNG.CN_NM        AS ROOM_NM,
               'CLAN'           AS ROOM_TYPE,
               CMA.FILE_PATH    AS ATTACH_FILE_PATH
           FROM
@@ -251,7 +251,7 @@ public class ChatService {
           UNION ALL
           SELECT
               CNR.BN_NO        AS ROOM_NO,
-              COALESCE(NULLIF(TRIM(CNR.BN_ROOM_NM), ''), BNG.BN_NM)   AS ROOM_NM,
+              BNG.BN_NM        AS ROOM_NM,
               'BAND'           AS ROOM_TYPE,
               CMA.FILE_PATH    AS ATTACH_FILE_PATH
           FROM
@@ -565,7 +565,7 @@ public class ChatService {
       int unreadCount = 0;
       try {
         Query countQuery = entityManager.createNativeQuery(
-            "SELECT COUNT(1) FROM BN_USER WHERE BN_NO = :roomNo AND BN_USER_STAT_CD = 'A'");
+            "SELECT COUNT(DISTINCT BN_SESSION_JOIN_USER_ID) FROM BN_SESSION WHERE BN_NO = :roomNo AND BN_SESSION_JOIN_USER_ID IS NOT NULL");
         countQuery.setParameter("roomNo", dto.getCnNo());
         unreadCount = ((Number) countQuery.getSingleResult()).intValue();
         unreadCount = Math.max(0, unreadCount - 1);
@@ -628,7 +628,7 @@ public class ChatService {
 
       // Send Push Notification to all active members except sender
       try {
-        String pushSql = "SELECT BN_USER_ID FROM BN_USER WHERE BN_NO = :roomNo AND BN_USER_STAT_CD = 'A' AND BN_USER_ID <> :senderId";
+        String pushSql = "SELECT DISTINCT BN_SESSION_JOIN_USER_ID FROM BN_SESSION WHERE BN_NO = :roomNo AND BN_SESSION_JOIN_USER_ID IS NOT NULL AND BN_SESSION_JOIN_USER_ID <> :senderId";
         @SuppressWarnings("unchecked")
         java.util.List<String> recipients = entityManager.createNativeQuery(pushSql)
             .setParameter("roomNo", dto.getCnNo())

@@ -27,6 +27,7 @@ public class BandService {
     private final com.bandi.backend.repository.ClanUserRepository clanUserRepository;
     private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
     private final com.bandi.backend.repository.BandChatRoomRepository bandChatRoomRepository;
+    private final ChatService chatService;
 
     @Transactional
     public Long createBand(BandCreateRequestDto dto) {
@@ -764,6 +765,27 @@ public class BandService {
             if (!isFull) {
                 throw new RuntimeException("모든 세션이 참여되어야 확정할 수 있습니다.");
             }
+
+            // 채팅방 생성 확인 및 초기 메시지 발송
+            String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            if (!bandChatRoomRepository.existsById(bnNo)) {
+                com.bandi.backend.entity.band.BandChatRoom chatRoom = new com.bandi.backend.entity.band.BandChatRoom();
+                chatRoom.setBnNo(bnNo);
+                chatRoom.setBnRoomNm(group.getBnNm());
+                chatRoom.setInsDtime(currentDateTime);
+                chatRoom.setInsId(userId);
+                chatRoom.setUpdDtime(currentDateTime);
+                chatRoom.setUpdId(userId);
+                bandChatRoomRepository.save(chatRoom);
+            }
+
+            com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
+            chatDto.setCnNo(bnNo);
+            chatDto.setSndUserId(userId);
+            chatDto.setMsg("합주방이 확정됐어요! 대화를 시작해보세요!");
+            chatDto.setMsgTypeCd("TEXT");
+            chatDto.setRoomType("BAND");
+            chatService.saveMessage(chatDto);
         }
 
         // Handle End Jam Logic (Status 'E')
