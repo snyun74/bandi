@@ -391,13 +391,21 @@ const JamChatRoom: React.FC = () => {
                     </div>
                     <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1 truncate">{currentRoomName}</SectionTitle>
                 </div>
-                {/* Vote List Button */}
-                <button
-                    onClick={() => navigate(`/main/jam/vote/list/${roomNo}`)}
-                    className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-[14px] font-bold shadow-md hover:bg-[#009bc9] transition-colors"
-                >
-                    투표하기
-                </button>
+                {/* Action Buttons */}
+                <div className="flex gap-2 shrink-0">
+                    <button
+                        onClick={() => navigate(`/main/jam/schedule/${roomNo}`)}
+                        className="bg-white text-[#00BDF8] border border-[#00BDF8] px-3 py-1 rounded-full text-[14px] font-bold shadow-sm hover:bg-gray-50 transition-colors"
+                    >
+                        일정조율
+                    </button>
+                    <button
+                        onClick={() => navigate(`/main/jam/vote/list/${roomNo}`)}
+                        className="bg-[#00BDF8] text-white px-3 py-1 rounded-full text-[14px] font-bold shadow-md hover:bg-[#009bc9] transition-colors"
+                    >
+                        투표하기
+                    </button>
+                </div>
             </div>
 
             {/* Message List */}

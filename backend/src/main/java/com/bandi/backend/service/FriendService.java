@@ -137,7 +137,26 @@ public class FriendService {
                             .userNickNm(user.getUserNickNm())
                             .profileUrl(profileUrl)
                             .unreadCount(chatService.getUnreadMessageCount(myUserId, user.getUserId()))
+                            .lastMsgDtime(chatService.getPrivateLastMessageTime(myUserId, user.getUserId()))
                             .build();
+                })
+                .sorted((f1, f2) -> {
+                    // 1순위: 읽지 않은 메시지 건수(unreadCount > 0) 우선
+                    boolean f1Unread = f1.getUnreadCount() > 0;
+                    boolean f2Unread = f2.getUnreadCount() > 0;
+                    if (f1Unread != f2Unread) {
+                        return f1Unread ? -1 : 1;
+                    }
+                    // 2순위: 최신 메시지 시간(lastMsgDtime) DESC
+                    String t1 = f1.getLastMsgDtime();
+                    String t2 = f2.getLastMsgDtime();
+                    if (t1 == null && t2 == null)
+                        return 0;
+                    if (t1 == null)
+                        return 1;
+                    if (t2 == null)
+                        return -1;
+                    return t2.compareTo(t1);
                 })
                 .collect(java.util.stream.Collectors.toList());
     }

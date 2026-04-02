@@ -11,4 +11,5 @@ public class FriendResponseDto {
     private String userNickNm; // 친구 닉네임
     private String profileUrl; // 프로필 이미지 URL (User 엔티티에 있다면 추가)
     private Long unreadCount; // 읽지 않은 메시지 건수
+    private String lastMsgDtime; // 최신 메시지 시간 (정렬용)
 }

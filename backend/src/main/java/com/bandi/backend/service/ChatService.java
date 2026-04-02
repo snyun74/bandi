@@ -33,138 +33,158 @@ public class ChatService {
 
   public List<ChatRoomListDto> getGroupChatList(String userId) {
     String sql = """
-            SELECT
-                CNR.CN_NO        AS ROOM_NO, -- 클랜채팅방번호
-                CNG.CN_NM        AS ROOM_NM, -- 클랜채팅방이름 (수정: 원본 클랜명 사용)
-                (
-                  SELECT MSG.MSG
-                  FROM CN_CHAT_MESSAGE MSG
-                  WHERE MSG.CN_NO = CNR.CN_NO
-                    AND MSG.SND_USER_ID <> :userId
-                    AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                                  AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
-                  ORDER BY MSG.SND_DTIME DESC
-                  LIMIT 1
-                ) AS NEW_MSG, -- 신규메시지
-                (
-                  SELECT COUNT(1)
-                  FROM CN_CHAT_MESSAGE MSG
-                  WHERE MSG.CN_NO = CNR.CN_NO
-                    AND MSG.SND_USER_ID <> :userId
-                    AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                          AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM CN_CHAT_MESSAGE_READ MSR
-                        WHERE MSR.CN_MSG_NO = MSG.CN_MSG_NO
-                          AND MSR.READ_USER_ID = :userId
-                    )
-                ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
-                'CLAN' AS ROOM_TYPE,
-                CMA.FILE_PATH AS ATTACH_FILE_PATH
-            FROM
-                CN_USER CNU
-            INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNU.CN_NO
-            INNER JOIN CN_CHAT_ROOM CNR ON CNR.CN_NO = CNU.CN_NO
-            LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = CNG.ATTACH_NO
-            WHERE
-                CNU.CN_USER_ID = :userId
-                AND CNU.CN_USER_STAT_CD = 'A'
-                AND CNU.CN_USER_APPR_STAT_CD = 'CN'
-                AND CNG.CN_STAT_CD = 'A'
-                AND CNG.CN_APPR_STAT_CD = 'CN'
+            SELECT * FROM (
+                SELECT
+                    CNR.CN_NO        AS ROOM_NO, -- 클랜채팅방번호
+                    CNG.CN_NM        AS ROOM_NM, -- 클랜채팅방이름 (수정: 원본 클랜명 사용)
+                    (
+                      SELECT MSG.MSG
+                      FROM CN_CHAT_MESSAGE MSG
+                      WHERE MSG.CN_NO = CNR.CN_NO
+                        AND MSG.SND_USER_ID <> :userId
+                        AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                                      AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                      ORDER BY MSG.SND_DTIME DESC
+                      LIMIT 1
+                    ) AS NEW_MSG, -- 신규메시지
+                    (
+                      SELECT COUNT(1)
+                      FROM CN_CHAT_MESSAGE MSG
+                      WHERE MSG.CN_NO = CNR.CN_NO
+                        AND MSG.SND_USER_ID <> :userId
+                        AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                              AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM CN_CHAT_MESSAGE_READ MSR
+                            WHERE MSR.CN_MSG_NO = MSG.CN_MSG_NO
+                              AND MSR.READ_USER_ID = :userId
+                        )
+                    ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
+                    'CLAN' AS ROOM_TYPE,
+                    CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                    (
+                      SELECT MAX(MSG.SND_DTIME)
+                      FROM CN_CHAT_MESSAGE MSG
+                      WHERE MSG.CN_NO = CNR.CN_NO
+                    ) AS LAST_MSG_DTIME
+                FROM
+                    CN_USER CNU
+                INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNU.CN_NO
+                INNER JOIN CN_CHAT_ROOM CNR ON CNR.CN_NO = CNU.CN_NO
+                LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = CNG.ATTACH_NO
+                WHERE
+                    CNU.CN_USER_ID = :userId
+                    AND CNU.CN_USER_STAT_CD = 'A'
+                    AND CNU.CN_USER_APPR_STAT_CD = 'CN'
+                    AND CNG.CN_STAT_CD = 'A'
+                    AND CNG.CN_APPR_STAT_CD = 'CN'
 
-            UNION ALL
+                UNION ALL
 
-            SELECT
-                CNR.BN_NO        AS ROOM_NO, -- 합주채팅방번호
-                BNG.BN_NM        AS ROOM_NM, -- 합주채팅방이름 (수정: 원본 합주명 사용)
-                (
-                  SELECT MSG.BN_CHAT_MSG
-                  FROM BN_CHAT_MESSAGE MSG
-                  WHERE MSG.BN_NO = CNR.BN_NO
-                    AND MSG.BN_CHAT_SND_USER_ID <> :userId
-                    AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                                  AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
-                  ORDER BY MSG.BN_CHAT_SND_DTIME DESC
-                  LIMIT 1
-                ) AS NEW_MSG, -- 신규메시지
-                (
-                  SELECT COUNT(1)
-                  FROM BN_CHAT_MESSAGE MSG
-                  WHERE MSG.BN_NO = CNR.BN_NO
-                    AND MSG.BN_CHAT_SND_USER_ID <> :userId
-                    AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                                  AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM BN_CHAT_MESSAGE_READ MSR
-                        WHERE MSR.BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO
-                          AND MSR.BN_CHAT_READ_USER_ID = :userId
+                SELECT
+                    CNR.BN_NO        AS ROOM_NO, -- 합주채팅방번호
+                    BNG.BN_NM        AS ROOM_NM, -- 합주채팅방이름 (수정: 원본 합주명 사용)
+                    (
+                      SELECT MSG.BN_CHAT_MSG
+                      FROM BN_CHAT_MESSAGE MSG
+                      WHERE MSG.BN_NO = CNR.BN_NO
+                        AND MSG.BN_CHAT_SND_USER_ID <> :userId
+                        AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                                      AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                      ORDER BY MSG.BN_CHAT_SND_DTIME DESC
+                      LIMIT 1
+                    ) AS NEW_MSG, -- 신규메시지
+                    (
+                      SELECT COUNT(1)
+                      FROM BN_CHAT_MESSAGE MSG
+                      WHERE MSG.BN_NO = CNR.BN_NO
+                        AND MSG.BN_CHAT_SND_USER_ID <> :userId
+                        AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                                                      AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM BN_CHAT_MESSAGE_READ MSR
+                            WHERE MSR.BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO
+                              AND MSR.BN_CHAT_READ_USER_ID = :userId
+                        )
+                    ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
+                    'BAND' AS ROOM_TYPE,
+                    CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                    (
+                      SELECT MAX(MSG.BN_CHAT_SND_DTIME)
+                      FROM BN_CHAT_MESSAGE MSG
+                      WHERE MSG.BN_NO = CNR.BN_NO
+                    ) AS LAST_MSG_DTIME
+                FROM
+                    BN_USER BNU
+                INNER JOIN BN_GROUP BNG ON BNG.BN_NO = BNU.BN_NO
+                INNER JOIN BN_CHAT_ROOM CNR ON CNR.BN_NO = BNU.BN_NO
+                LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
+                WHERE
+                    BNU.BN_USER_ID = :userId
+                    AND BNU.BN_USER_STAT_CD = 'A'
+                    AND BNG.BN_STAT_CD = 'A'
+                    AND BNG.BN_CONF_FG IN ('N', 'Y')
+                    AND (
+                        BNG.CN_NO IS NULL
+                        OR EXISTS (
+                            SELECT 1 FROM CN_USER CU
+                            INNER JOIN CN_GROUP CG ON CG.CN_NO = CU.CN_NO
+                            WHERE CU.CN_NO = BNG.CN_NO
+                              AND CU.CN_USER_ID = :userId
+                              AND CU.CN_USER_STAT_CD = 'A'
+                              AND CU.CN_USER_APPR_STAT_CD = 'CN'
+                              AND CG.CN_STAT_CD = 'A'
+                              AND CG.CN_APPR_STAT_CD = 'CN'
+                        )
                     )
-                ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
-                'BAND' AS ROOM_TYPE,
-                CMA.FILE_PATH AS ATTACH_FILE_PATH
-            FROM
-                BN_USER BNU
-            INNER JOIN BN_GROUP BNG ON BNG.BN_NO = BNU.BN_NO
-            INNER JOIN BN_CHAT_ROOM CNR ON CNR.BN_NO = BNU.BN_NO
-            LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = BNG.ATTACH_NO
-            WHERE
-                BNU.BN_USER_ID = :userId
-                AND BNU.BN_USER_STAT_CD = 'A'
-                AND BNG.BN_STAT_CD = 'A'
-                AND BNG.BN_CONF_FG IN ('N', 'Y')
-                AND (
-                    BNG.CN_NO IS NULL
-                    OR EXISTS (
-                        SELECT 1 FROM CN_USER CU
-                        INNER JOIN CN_GROUP CG ON CG.CN_NO = CU.CN_NO
-                        WHERE CU.CN_NO = BNG.CN_NO
-                          AND CU.CN_USER_ID = :userId
-                          AND CU.CN_USER_STAT_CD = 'A'
-                          AND CU.CN_USER_APPR_STAT_CD = 'CN'
-                          AND CG.CN_STAT_CD = 'A'
-                          AND CG.CN_APPR_STAT_CD = 'CN'
-                    )
-                )
-            UNION ALL
-            SELECT
-                CNR.GRP_CHAT_NO AS ROOM_NO,
-                CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
-                (
-                  SELECT MSG.GRP_CHAT_MSG
-                  FROM CM_GRP_CHAT_MESSAGE MSG
-                  WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
-                    AND MSG.GRP_CHAT_SND_USER_ID <> :userId
-                    AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                    AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
-                  ORDER BY MSG.GRP_CHAT_SND_DTIME DESC
-                  LIMIT 1
-                ) AS NEW_MSG,
-                (
-                  SELECT COUNT(1)
-                  FROM CM_GRP_CHAT_MESSAGE MSG
-                  WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
-                    AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                    AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM CM_GRP_CHAT_MESSAGE_READ MSR
-                        WHERE MSR.GRP_CHAT_MSG_NO = MSG.GRP_CHAT_MSG_NO
-                          AND MSR.GRP_CHAT_READ_USER_ID = :userId
-                    )
-                ) AS NEW_MSG_READ_CNT,
-                'GROUP' AS ROOM_TYPE,
-                MY_CMA.FILE_PATH AS ATTACH_FILE_PATH
-            FROM
-                CM_GRP_CHAT_USER CGU
-            INNER JOIN CM_GRP_CHAT_ROOM CNR ON CNR.GRP_CHAT_NO = CGU.GRP_CHAT_NO
-            LEFT JOIN MM_USER MY_USR ON MY_USR.USER_ID = :userId
-            LEFT JOIN CM_ATTACHMENT MY_CMA ON MY_CMA.ATTACH_NO = MY_USR.ATTACH_NO
-            WHERE
-                CGU.USER_ID = :userId
-        """;
+                UNION ALL
+                SELECT
+                    CNR.GRP_CHAT_NO AS ROOM_NO,
+                    CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
+                    (
+                      SELECT MSG.GRP_CHAT_MSG
+                      FROM CM_GRP_CHAT_MESSAGE MSG
+                      WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                        AND MSG.GRP_CHAT_SND_USER_ID <> :userId
+                        AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                        AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                      ORDER BY MSG.GRP_CHAT_SND_DTIME DESC
+                      LIMIT 1
+                    ) AS NEW_MSG,
+                    (
+                      SELECT COUNT(1)
+                      FROM CM_GRP_CHAT_MESSAGE MSG
+                      WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                        AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
+                        AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM CM_GRP_CHAT_MESSAGE_READ MSR
+                            WHERE MSR.GRP_CHAT_MSG_NO = MSG.GRP_CHAT_MSG_NO
+                              AND MSR.GRP_CHAT_READ_USER_ID = :userId
+                        )
+                    ) AS NEW_MSG_READ_CNT,
+                    'GROUP' AS ROOM_TYPE,
+                    MY_CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                    (
+                      SELECT MAX(MSG.GRP_CHAT_SND_DTIME)
+                      FROM CM_GRP_CHAT_MESSAGE MSG
+                      WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                    ) AS LAST_MSG_DTIME
+                FROM
+                    CM_GRP_CHAT_USER CGU
+                INNER JOIN CM_GRP_CHAT_ROOM CNR ON CNR.GRP_CHAT_NO = CGU.GRP_CHAT_NO
+                LEFT JOIN MM_USER MY_USR ON MY_USR.USER_ID = :userId
+                LEFT JOIN CM_ATTACHMENT MY_CMA ON MY_CMA.ATTACH_NO = MY_USR.ATTACH_NO
+                WHERE
+                    CGU.USER_ID = :userId
+            ) T
+            ORDER BY 
+                (CASE WHEN NEW_MSG_READ_CNT > 0 THEN 0 ELSE 1 END), 
+                LAST_MSG_DTIME DESC NULLS LAST
+            """;
 
     Query query = entityManager.createNativeQuery(sql);
     query.setParameter("userId", userId);
@@ -1236,6 +1256,20 @@ public class ChatService {
     query.setParameter("roomId", roomId);
 
     return ((Number) query.getSingleResult()).longValue();
+  }
+
+  public String getPrivateLastMessageTime(String userId, String friendUserId) {
+    Long roomId = getPrivateChatRoomId(userId, friendUserId);
+    if (roomId == null) {
+      return null;
+    }
+
+    String sql = "SELECT MAX(snd_dtime) FROM mm_chat_message WHERE mm_room_no = :roomId";
+    Query query = entityManager.createNativeQuery(sql);
+    query.setParameter("roomId", roomId);
+
+    Object result = query.getSingleResult();
+    return result != null ? (String) result : null;
   }
 
   public long getTotalUnreadCount(String userId) {
