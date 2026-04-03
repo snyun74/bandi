@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell } from 'react-icons/fa';
+import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell, FaMusic } from 'react-icons/fa';
 
 const AdminPage: React.FC = () => {
     const navigate = useNavigate();
@@ -45,6 +45,7 @@ const AdminPage: React.FC = () => {
         { id: 'user', label: `회원관리(${userStats.total}명)`, icon: <FaUserCog size={24} />, path: '/main/admin/users' },
         { id: 'notice', label: '공지사항관리', icon: <FaBell size={24} />, path: '/main/admin/notices' },
         { id: 'report-block', label: '신고/차단관리', icon: <FaUserShield size={24} />, path: '/main/admin/report-block', count: counts.reportCount },
+        { id: 'jam-list', label: '합주목록', icon: <FaMusic size={24} />, path: '/main/admin/jams' },
     ];
 
     return (
