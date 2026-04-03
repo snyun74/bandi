@@ -671,7 +671,7 @@ public class ChatService {
 
         for (String recipientId : recipients) {
           pushService.sendPush(recipientId, pushTitle, dto.getMsg(),
-              "/main/chat/room/" + dto.getCnNo() + "?type=BAND", "BN");
+              "/main/jam/chat/" + dto.getCnNo(), "BN");
         }
       } catch (Exception e) {
         e.printStackTrace();
