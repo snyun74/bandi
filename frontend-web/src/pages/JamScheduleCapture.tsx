@@ -421,7 +421,7 @@ const JamScheduleCapture: React.FC = () => {
         const renderSlot = (hour: number) => {
             const status = getSlotStatus(hour);
             return (
-                <div key={hour} className="flex items-center w-full h-7 mb-[4px]">
+                <div key={hour} className="flex items-center w-full h-6 mb-[2px]">
                     <span
                         onClick={() => showParticipants(hour)}
                         className="w-8 text-gray-400 text-xs font-bold mr-1 text-right select-none cursor-pointer hover:text-[#00BDF8] active:scale-95 transition-all flex-shrink-0"
@@ -484,7 +484,7 @@ const JamScheduleCapture: React.FC = () => {
             {/* Content Container - Sequential flow for single screen fitness */}
             <div className="flex-1 flex flex-col p-4 overflow-y-auto no-scrollbar">
                 {/* 1. Calendar Area */}
-                <div className="mb-6 bg-white flex-shrink-0">
+                <div className="mb-4 bg-white flex-shrink-0">
                     <Calendar
                         onChange={handleDateChange}
                         className="custom-calendar"
