@@ -493,6 +493,18 @@ const JamScheduleCapture: React.FC = () => {
                         calendarType="gregory"
                         prev2Label={null}
                         next2Label={null}
+                        tileClassName={({ date: tileDate }) => {
+                            const dStr = getFormattedDate(tileDate);
+                            const daySchedules = schedules.filter(s => s.startDate === dStr);
+                            const participantIds = Array.from(new Set(daySchedules.map(s => s.userId).filter(Boolean)));
+                            const totalMembers = bandInfo.roles.length;
+
+                            if (participantIds.length === 0) return '';
+                            if (totalMembers > 0 && participantIds.length === totalMembers) {
+                                return 'highlight-green';
+                            }
+                            return 'highlight-blue';
+                        }}
                     />
                 </div>
 
