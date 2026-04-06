@@ -101,6 +101,34 @@ const JamScheduleCapture: React.FC = () => {
         }
     };
 
+    const showParticipants = (hour: number) => {
+        const targetDate = getFormattedDate(date);
+        const relevantSchedules = schedules.filter(s => {
+            if (s.startDate !== targetDate) return false;
+            const startH = parseInt(s.startTime.substring(0, 2));
+            let endH = parseInt(s.endTime.substring(0, 2));
+            const endM = parseInt(s.endTime.substring(2, 4));
+            if (endM >= 50) endH += 1;
+            return hour >= startH && hour < endH;
+        });
+
+        const participantIds = Array.from(new Set(relevantSchedules.map(s => s.userId).filter(Boolean)));
+        
+        if (participantIds.length === 0) {
+            showAlert(`${String(hour).padStart(2, '0')}:00 시간대에 참여 중인 멤버가 없습니다.`);
+            return;
+        }
+
+        const details = participantIds.map(uid => {
+            const member = bandInfo.roles.find(r => r.userId === uid);
+            const name = member?.user || '익명';
+            const part = member?.part || '미정';
+            return `- [${part}] ${name}`;
+        }).join('\n');
+
+        showAlert(`[${String(hour).padStart(2, '0')}:00 참여 인원]\n\n${details}`);
+    };
+
     const isDragging = React.useRef(false);
     const lastToggledHour = React.useRef<number | null>(null);
     const initialSelectionState = React.useRef<boolean>(true); // true = selecting, false = deselecting
@@ -246,9 +274,6 @@ const JamScheduleCapture: React.FC = () => {
         // Save each range
         try {
             for (const range of ranges) {
-                // User requested format: HH + "0000" for start, HH + "5900" for end
-                // Also "P" for coordination, FIXED title/content
-
                 const startStr = String(range.start).padStart(2, '0') + "0000";
                 const endStr = String(range.end).padStart(2, '0') + "5900";
 
@@ -278,11 +303,11 @@ const JamScheduleCapture: React.FC = () => {
     };
 
     const getIconComponent = (type: string, idx: number) => {
-        const className = "text-white text-[8px]";
+        const className = "text-white text-[6px]";
         switch (type) {
             case 'vocal': return <FaMicrophone key={idx} className={className} />;
             case 'guitar': return <FaGuitar key={idx} className={className} />;
-            case 'bass': return <FaGuitar key={idx} className={className} />; // 베이스 (기타 아이콘 대체)
+            case 'bass': return <FaGuitar key={idx} className={className} />; 
             case 'drum': return <FaDrum key={idx} className={className} />;
             case 'keyboard': return <GiGrandPiano key={idx} className={className} />;
             default: return <FaMicrophone key={idx} className={className} />;
@@ -299,51 +324,38 @@ const JamScheduleCapture: React.FC = () => {
         if (partName.includes('드럼') || partName.includes('drum') || typeCd.includes('bd1004')) return 'drum';
         if (partName.includes('키보드') || partName.includes('건반') || partName.includes('keyboard') || typeCd.includes('bd1005')) return 'keyboard';
 
-        // 매칭 실패 시 partName으로 디버그 가능하도록 콘솔 출력
-        console.log('[getUserIconType] 매칭 실패 - typeCd:', member.sessionTypeCd, 'part:', member.part);
         return 'vocal'; // fallback
     };
 
-    // Check if a slot is occupied by existing schedules
     const getSlotStatus = (hour: number) => {
         const targetDate = getFormattedDate(date);
-
-        // 1. Get schedules for this hour
         const relevantSchedules = schedules.filter(s => {
             if (s.startDate !== targetDate) return false;
-
             const startH = parseInt(s.startTime.substring(0, 2));
             let endH = parseInt(s.endTime.substring(0, 2));
             const endM = parseInt(s.endTime.substring(2, 4));
             if (endM >= 50) endH += 1;
-
             return hour >= startH && hour < endH;
         });
 
-        // 2. Identify Participants
         const participantIds = Array.from(new Set(relevantSchedules.map(s => s.userId).filter(Boolean)));
-
-        // 3. Map to Icons
         const icons = participantIds.map(uid => {
             const member = bandInfo.roles.find(r => r.userId === uid);
             if (member) return getUserIconType(member);
             return 'vocal'; // Fallback
         });
 
-        // 4. Determine Color
         const totalMembers = bandInfo.roles.length;
         const count = participantIds.length;
         const isAll = totalMembers > 0 && count === totalMembers;
 
         let color = 'bg-gray-100';
-
         if (selectedTimeSlots.includes(hour)) {
-            color = 'bg-[#FF6B6B]'; // 내가 선택한 시간대 (빨간 계열)
+            color = 'bg-[#FF6B6B]'; 
         } else if (count > 0) {
             if (isAll) {
-                color = 'bg-[#2EE59D]'; // 전원 참여 (사용자 요청: 최종 민트/초록)
+                color = 'bg-[#2EE59D]'; 
             } else {
-                // 참여 인원수(1~6명)에 따른 파란색 그라데이션 세분화
                 switch (count) {
                     case 1: color = 'bg-[#E1F5FE]'; break;
                     case 2: color = 'bg-[#B3E5FC]'; break;
@@ -354,13 +366,11 @@ const JamScheduleCapture: React.FC = () => {
                 }
             }
         }
-
         return { color, icons };
     };
 
     const handleCancel = async () => {
         if (!userId || !jamId) return;
-
         try {
             const targetDate = getFormattedDate(date);
             await fetch(`/api/bands/schedule?bnNo=${jamId}&userId=${userId}&date=${targetDate}`, {
@@ -377,20 +387,12 @@ const JamScheduleCapture: React.FC = () => {
 
     const renderUnscheduledMembers = () => {
         const targetDate = getFormattedDate(date);
-
-        // 1. Identify members who HAVE scheduled on this date
         const scheduledUserIds = new Set(
             schedules
                 .filter(s => s.startDate === targetDate && s.userId)
                 .map(s => s.userId)
         );
-
-        // 2. Identify all members from bandInfo.roles
         const unscheduledMembers = (bandInfo.roles || []).filter(r => !scheduledUserIds.has(r.userId));
-
-        // Debugging: Log members to console to check sessionTypeCd/part
-        console.log("Unscheduled Members:", unscheduledMembers);
-
         if (unscheduledMembers.length === 0) return null;
 
         return (
@@ -399,9 +401,8 @@ const JamScheduleCapture: React.FC = () => {
                 <div className="flex -space-x-1">
                     {unscheduledMembers.map((member, idx) => {
                         const iconType = getUserIconType(member);
-
                         return (
-                            <div key={idx} className="w-6 h-6 rounded-full bg-gray-300 border border-white flex items-center justify-center text-white text-[10px]">
+                            <div key={idx} className="w-5 h-5 rounded-full bg-gray-300 border border-white flex items-center justify-center text-white text-[8px]">
                                 {getIconComponent(iconType, idx)}
                             </div>
                         );
@@ -412,71 +413,62 @@ const JamScheduleCapture: React.FC = () => {
     };
 
     const renderTimeGrid = () => {
-        const morningSlots = Array.from({ length: 12 }, (_, i) => i + 1);
-        const afternoonSlots = Array.from({ length: 12 }, (_, i) => i + 13);
+        const q1Slots = Array.from({ length: 6 }, (_, i) => i + 1);
+        const q2Slots = Array.from({ length: 6 }, (_, i) => i + 7);
+        const q3Slots = Array.from({ length: 6 }, (_, i) => i + 13);
+        const q4Slots = Array.from({ length: 6 }, (_, i) => i + 19);
 
         const renderSlot = (hour: number) => {
             const status = getSlotStatus(hour);
-
             return (
-                <div
-                    key={hour}
-                    className="flex items-center h-8 mb-px"
-                >
-                    {/* Time Label */}
-                    <span className="w-9 text-gray-400 text-[10px] font-bold mr-1 text-right select-none pointer-events-none">
+                <div key={hour} className="flex items-center w-full h-7 mb-[4px]">
+                    <span
+                        onClick={() => showParticipants(hour)}
+                        className="w-8 text-gray-400 text-xs font-bold mr-1 text-right select-none cursor-pointer hover:text-[#00BDF8] active:scale-95 transition-all flex-shrink-0"
+                    >
                         {String(hour).padStart(2, '0')}:00
                     </span>
-
-                    {/* Bar Area */}
-                    <div className="flex items-center">
-                        {/* 히트 영역 래퍼: 행 전체 높이로 확장해 클릭 편의성 향상 */}
-                        <div
-                            className="flex items-center justify-center h-full w-8 mr-1 cursor-pointer touch-none"
-                            data-hour={hour}
-                            onMouseDown={(e) => onMouseDown(hour, e)}
-                            onMouseEnter={() => onMouseEnter(hour)}
-                            onTouchStart={(e) => onTouchStart(hour, e)}
-                            onTouchMove={onTouchMove}
-                            onTouchEnd={onTouchEnd}
-                        >
-                            {/* 시각적 박스 (h-6 유지) */}
-                            <div className={`w-full h-6 rounded-sm ${status.color} transition-colors duration-200`} />
-                        </div>
-
-                        {/* Icons Row - 이벤트 차단 */}
-                        <div className="flex items-center gap-0.5 pointer-events-none">
-                            {status.icons.map((icon, idx) => (
-                                <div key={idx} className="w-4 h-4 bg-[#00BDF8] rounded-full flex items-center justify-center flex-shrink-0">
-                                    {getIconComponent(icon, idx)}
-                                </div>
-                            ))}
-                        </div>
+                    <div
+                        className="flex-1 flex items-center justify-center h-full cursor-pointer touch-none"
+                        data-hour={hour}
+                        onMouseDown={(e) => onMouseDown(hour, e)}
+                        onMouseEnter={() => onMouseEnter(hour)}
+                        onTouchStart={(e) => onTouchStart(hour, e)}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
+                    >
+                        <div className={`w-full h-full rounded-sm ${status.color} transition-colors duration-200`} />
                     </div>
                 </div>
             );
         };
 
         return (
-            <div className="grid grid-cols-2 gap-x-1 select-none">
+            <div className="grid grid-cols-4 gap-x-5 select-none w-full">
                 <div className="flex flex-col">
-                    {morningSlots.map(hour => renderSlot(hour))}
+                    {q1Slots.map(hour => renderSlot(hour))}
                 </div>
                 <div className="flex flex-col">
-                    {afternoonSlots.map(hour => renderSlot(hour))}
+                    {q2Slots.map(hour => renderSlot(hour))}
+                </div>
+                <div className="flex flex-col">
+                    {q3Slots.map(hour => renderSlot(hour))}
+                </div>
+                <div className="flex flex-col">
+                    {q4Slots.map(hour => renderSlot(hour))}
                 </div>
             </div>
         );
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="flex flex-col min-h-screen bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
-            <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-white z-20">
+            <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-white z-20 flex-shrink-0 border-b border-gray-50">
                 <button onClick={() => navigate(-1)} className="text-gray-600">
-                    <FaChevronLeft size={24} />
+                    <FaChevronLeft size={22} />
                 </button>
-                <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
                     {bandInfo.imgUrl ? (
                         <img src={bandInfo.imgUrl} alt={bandInfo.title} className="w-full h-full object-cover" />
                     ) : (
@@ -489,56 +481,49 @@ const JamScheduleCapture: React.FC = () => {
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto px-4 pb-20 no-scrollbar">
-                {/* Calendar */}
-                <div className="mb-4 bg-white">
+            {/* Content Container - Sequential flow for single screen fitness */}
+            <div className="flex-1 flex flex-col p-4 overflow-y-auto no-scrollbar">
+                {/* 1. Calendar Area */}
+                <div className="mb-6 bg-white flex-shrink-0">
                     <Calendar
                         onChange={handleDateChange}
+                        className="custom-calendar"
                         value={date}
-                        className="w-full border-none !font-['Pretendard'] custom-calendar"
-                        locale="ko-KR"
-                        formatDay={(locale, date) => date.getDate().toString()}
-                        onActiveStartDateChange={({ activeStartDate }) => {
-                            if (activeStartDate) {
-                                handleDateChange(activeStartDate);
-                            }
-                        }}
-                        tileClassName={({ date: tileDate }) => {
-                            // Check if date has schedule
-                            const dStr = getFormattedDate(tileDate);
-                            const hasSchedule = schedules.some(s => s.startDate === dStr);
-                            if (hasSchedule) return 'highlight-blue';
-                            return '';
-                        }}
+                        formatDay={(_, date) => String(date.getDate())}
+                        calendarType="gregory"
+                        prev2Label={null}
+                        next2Label={null}
                     />
                 </div>
 
-                {/* Time Grid */}
-                {renderTimeGrid()}
+                {/* 2. Time Grid Area */}
+                <div className="mb-6 flex-shrink-0">
+                    {renderTimeGrid()}
+                </div>
 
-                {/* Action Buttons - Moved here */}
-                {/* Action Buttons - Moved here */}
-                <div className="mt-6 flex items-center justify-between">
-                    {/* Unscheduled Members (Left) */}
-                    <div className="flex items-center">
-                        {renderUnscheduledMembers()}
-                    </div>
+                {/* 3. Action Area - Follows Grid naturally */}
+                <div className="pt-4 border-t border-gray-100 flex-shrink-0 pb-2">
+                    <div className="flex items-center justify-between">
+                        {/* Unscheduled Members (Left) */}
+                        <div className="flex items-center">
+                            {renderUnscheduledMembers()}
+                        </div>
 
-                    {/* Action Buttons (Right) */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleCancel}
-                            className="bg-[#EFF1F3] text-gray-600 text-xs font-bold px-4 py-2 rounded-full shadow-sm hover:bg-gray-200 transition-colors"
-                        >
-                            취소
-                        </button>
-                        <button
-                            onClick={handleConfirm}
-                            className="bg-[#FFEBEB] text-[#FF5252] text-xs font-bold px-4 py-2 rounded-full shadow-sm hover:bg-[#ffcccc] transition-colors flex items-center gap-1"
-                        >
-                            <span className="text-sm leading-none">✓</span> 시간 확정
-                        </button>
+                        {/* Action Buttons (Right) */}
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                onClick={handleCancel}
+                                className="bg-[#EFF1F3] text-gray-600 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                className="bg-[#FFEBEB] text-[#FF5252] text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-[#ffcccc] transition-colors flex items-center gap-1"
+                            >
+                                <span className="text-xs leading-none">✓</span> 시간 확정
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -4,13 +4,14 @@
     background-color: transparent !important;
     border: none !important;
     width: 100% !important;
+    max-width: 100% !important;
     line-height: 1.125em !important;
 }
 
 .react-calendar__navigation {
     display: flex;
     margin-bottom: 0.25rem;
-    height: 34px;
+    height: 30px;
 }
 
 .react-calendar__navigation button {
@@ -39,7 +40,7 @@
     font-family: 'Pretendard', sans-serif;
     color: #666;
     padding: 0 !important;
-    font-size: 12px;
+    font-size: 13px;
     height: 34px !important;
     display: flex !important;
     align-items: center;
@@ -48,8 +49,8 @@
 
 
 .react-calendar__tile abbr {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
