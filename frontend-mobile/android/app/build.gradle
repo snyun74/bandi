@@ -109,6 +109,13 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+
+    packagingOptions {
+        // 중복되는 매니페스트 속성 충돌을 방지하기 위한 설정
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
 }
 
 dependencies {
@@ -121,3 +128,22 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// @react-native-firebase 빌드 오류(AGP 8.0+ 호환성) 자동 해결을 위한 태스크
+tasks.register("fixReactNativeFirebaseManifest") {
+    doFirst {
+        def manifestPath = "${project.rootDir}/../node_modules/@react-native-firebase/app/android/src/main/AndroidManifest.xml"
+        def manifestFile = file(manifestPath)
+        if (manifestFile.exists()) {
+            def content = manifestFile.text
+            if (content.contains('package="io.invertase.firebase"')) {
+                println("Removing deprecated package attribute from @react-native-firebase/app manifest...")
+                manifestFile.text = content.replace('package="io.invertase.firebase"', '')
+            }
+        }
+    }
+}
+
+preBuild.dependsOn fixReactNativeFirebaseManifest
+
+apply plugin: "com.google.gms.google-services"

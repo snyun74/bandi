@@ -11,14 +11,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-      workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
-      },
       manifest: {
-        name: '세상에서 가장 쉬운 밴드 - 밴디콘',
-        short_name: '밴디콘',
-        description: '밴디콘 앙상블 매칭 서비스',
+        name: 'Bandicon',
+        short_name: 'Bandicon',
+        description: 'Bandicon Web App',
         theme_color: '#00BDF8',
         icons: [
           {
@@ -30,12 +26,6 @@ export default defineConfig({
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
           }
         ]
       }
@@ -43,10 +33,6 @@ export default defineConfig({
   ],
   server: {
     host: true, // Listen on all addresses
-    hmr: {
-      host: 'bandicon.kr', // Force HMR to use this domain
-      port: 5173,
-    },
     proxy: {
       '/api': {
         target: 'http://localhost:8084',

@@ -14,6 +14,7 @@ interface JamRole {
     isCurrentUser?: boolean;
     isBandLeader?: boolean;
     userId?: string;
+    reservedUsers?: string[];
 }
 
 interface JamRoom {
@@ -455,12 +456,20 @@ const ClanJamList: React.FC = () => {
                                         const getRoleStatus = (sessionCode: string) => {
                                             const roles = safeRoles.filter(r => r.sessionTypeCd === sessionCode);
                                             if (roles.length === 0) return "-";
-                                            return roles.map(r => {
-                                                if (r.status === 'occupied' && r.user) {
-                                                    return r.user;
-                                                }
-                                                return "공석";
-                                            }).join(', ');
+                                            return roles.map((r, idx) => (
+                                                <div key={idx} className="flex flex-col items-center">
+                                                    <div>
+                                                        {r.status === 'occupied' && r.user ? r.user : "공석"}
+                                                    </div>
+                                                    {r.reservedUsers && r.reservedUsers.length > 0 && (
+                                                        <div className="text-[9px] text-[#FFB74D] font-bold mt-0.5 leading-tight">
+                                                            {r.reservedUsers.map((nick, nIdx) => (
+                                                                <div key={nIdx}>({nick})</div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ));
                                         };
 
                                         return (

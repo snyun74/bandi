@@ -39,7 +39,7 @@ public class ClanController {
     public ResponseEntity<?> getRecentClanBands(@PathVariable Long clanId,
             @RequestParam(required = false) String userId) {
         try {
-            return ResponseEntity.ok(bandService.getRecentNonFullBands(clanId, 2, userId));
+            return ResponseEntity.ok(bandService.getRecentNonFullBands(clanId, 100, userId));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()

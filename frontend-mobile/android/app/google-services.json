@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1096492690761",
+    "project_id": "bandi-push",
+    "storage_bucket": "bandi-push.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096492690761:android:aa6ca3b06fb096af763e98",
+        "android_client_info": {
+          "package_name": "com.bandimobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQKp1nH8z11M-w-wfJeZaRzc-Nx7tXX5g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

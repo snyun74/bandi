@@ -46,7 +46,7 @@ const ClanMemberStatus: React.FC = () => {
     const { clanId } = useParams<{ clanId: string }>();
     const [allMembers, setAllMembers] = useState<ClanMember[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
     // Modal State
@@ -362,9 +362,9 @@ const ClanMemberStatus: React.FC = () => {
                     </div>
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="whitespace-nowrap ml-auto bg-[#00BDF8] text-white px-4 py-2 rounded-xl text-[14px] font-bold transition-all hover:bg-[#00a0d2]"
+                        className="whitespace-nowrap ml-auto bg-gray-100 text-gray-600 border border-gray-200 px-4 py-2 rounded-xl text-[14px] font-bold transition-all hover:bg-gray-200"
                     >
-                        {isExpanded ? '접어두기' : '펼치기'}
+                        {isExpanded ? '접어두기' : '참여현황'}
                     </button>
                 </div>
 

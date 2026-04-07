@@ -671,16 +671,16 @@ const ClanJamDetail: React.FC = () => {
                         {/* Reservation */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
                             <h3 className="text-[#003C48] font-bold text-sm mb-3">합주실 예약</h3>
-                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-[14px]">
-                                합주실 보러가기
+                            <button className="w-full bg-gray-200 text-gray-400 font-bold py-2.5 rounded-xl shadow-sm text-[14px] cursor-not-allowed" disabled>
+                                합주실 보러가기 (작업 진행중)
                             </button>
                         </div>
 
                         {/* Concert */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
                             <h3 className="text-[#003C48] font-bold text-sm mb-3">밴디콘 정기공연</h3>
-                            <button className="w-full bg-[#00BDF8] text-white font-bold py-2.5 rounded-xl shadow-sm text-[14px]">
-                                밴디콘서트 신청하기
+                            <button className="w-full bg-gray-200 text-gray-400 font-bold py-2.5 rounded-xl shadow-sm text-[14px] cursor-not-allowed" disabled>
+                                밴디콘서트 신청하기 (작업 진행중)
                             </button>
                         </div>
                     </div>

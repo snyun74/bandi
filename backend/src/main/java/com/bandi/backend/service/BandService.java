@@ -184,8 +184,13 @@ public class BandService {
                     isFull = false;
                 }
 
-                int reservedCount = (int) bnRsvSessionRepository.countByBnNoAndBnSessionTypeCd(
-                        group.getBnNo(), session.getBnSessionTypeCd());
+                java.util.List<com.bandi.backend.entity.band.BnRsvSession> reservations = bnRsvSessionRepository
+                        .findByBnNoAndBnSessionTypeCdOrderByBnRsvSessionNoAsc(
+                                group.getBnNo(), session.getBnSessionTypeCd());
+
+                java.util.List<String> reservedUserNicks = reservations.stream()
+                        .map(rsv -> getUserNickname(rsv.getBnSessionRsvUserId()))
+                        .collect(java.util.stream.Collectors.toList());
 
                 roleDtos.add(com.bandi.backend.dto.ClanJamListDto.JamRoleDto.builder()
                         .sessionNo(session.getBnSessionNo())
@@ -194,7 +199,8 @@ public class BandService {
                         .user(userNick)
                         .status(status)
                         .isCurrentUser(isCurrentUser)
-                        .reservedCount(reservedCount)
+                        .reservedCount(reservations.size())
+                        .reservedUsers(reservedUserNicks)
                         .offImgUrl(offImg)
                         .onImgUrl1(onImg1)
                         .onImgUrl2(onImg2)
@@ -460,7 +466,6 @@ public class BandService {
                 null);
 
         return allBands.stream()
-                .filter(band -> !band.isFull())
                 .limit(limit)
                 .collect(java.util.stream.Collectors.toList());
     }

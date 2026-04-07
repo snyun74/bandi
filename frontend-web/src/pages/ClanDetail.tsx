@@ -334,7 +334,6 @@ const ClanDetail: React.FC = () => {
                         </button>
                         <button onClick={() => navigate(`/main/clan/members/${id}`)} className="bg-white border border-gray-200 rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-gray-600 shadow-sm whitespace-nowrap active:scale-95 transition-transform">
                             <FaUserFriends size={11} className="text-[#003C48]" /> 멤버 현황
-                            <span className="bg-[#003C48] text-white text-[9px] rounded-full min-w-[15px] h-3.5 px-1 flex items-center justify-center -mr-1">{clan.memberCount}</span>
                         </button>
                         {(myRole === '01' || myRole === '02') && (
                             <button onClick={() => setIsGatheringCreateModalOpen(true)} className="bg-white border border-[#FF8A80] rounded-full px-2.5 py-1 flex items-center gap-1.5 text-[12px] font-bold text-[#FF8A80] shadow-sm whitespace-nowrap hover:bg-[#FF8A80] hover:text-white transition-all active:scale-95">
@@ -433,7 +432,9 @@ const ClanDetail: React.FC = () => {
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative">
                     <div className="flex justify-between items-center mb-4">
                         <SectionTitle className="!mt-0 !mb-0">클랜 합주방</SectionTitle>
-                        <span onClick={() => navigate(`/main/clan/jam/${id}`)} className="text-gray-400 text-xs cursor-pointer">더보기</span>
+                        <span onClick={() => navigate(`/main/clan/jam/${id}`)} className="text-gray-400 text-xs cursor-pointer">
+                            더보기 ( 총 합주방 : {recentJams.length} )
+                        </span>
                     </div>
                     <div className="flex gap-4 overflow-x-auto pb-2">
                         {recentJams.length > 0 ? (

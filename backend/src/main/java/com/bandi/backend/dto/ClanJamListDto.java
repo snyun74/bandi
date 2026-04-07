@@ -44,5 +44,6 @@ public class ClanJamListDto {
         private String offImgUrl;
         private String onImgUrl1;
         private String onImgUrl2;
+        private java.util.List<String> reservedUsers;
     }
 }

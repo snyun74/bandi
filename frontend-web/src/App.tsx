@@ -58,19 +58,58 @@ import AdminReportBlockPage from './pages/AdminReportBlockPage';
 import AdminJamManagement from './pages/AdminJamManagement';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
-import { requestPermission, onMessageListener } from './utils/pushNotification';
+import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
 import PageTracker from './components/common/PageTracker';
+
+declare global {
+  interface Window {
+    receiveFcmToken?: (token: string) => void;
+    __pendingFcmToken?: string;
+  }
+}
 
 function App() {
   const [pushNotification, setPushNotification] = useState<{ title: string; body: string; link?: string; logNo?: string } | null>(null);
 
   useEffect(() => {
-    // Request permission and save token to server
+    // 1. Web Push Permission (Existing)
     requestPermission();
 
-    // Listen for foreground messages
+    // 2. Native Bridge Setup (For App Push & Messages)
+    window.receiveFcmToken = (token: string) => {
+      console.log('FCM Token received from Native Bridge:', token);
+      saveTokenToServer(token, 'APP');
+    };
+
+    // Native App으로부터 직접 알림 데이터를 전달받는 함수
+    (window as any).receiveNativeMessage = (payloadJson: string) => {
+      try {
+        const payload = JSON.parse(payloadJson);
+        console.log('Native message received via bridge:', payload);
+        
+        if (payload.notification) {
+          setPushNotification({
+            title: payload.notification.title,
+            body: payload.notification.body,
+            link: payload.data?.click_action || payload.data?.link,
+            logNo: payload.data?.logNo
+          });
+        }
+      } catch (e) {
+        console.error('Failed to parse native message:', e);
+      }
+    };
+
+    // Check if there was a pending token from before the bridge was ready
+    if (window.__pendingFcmToken) {
+      console.log('Processing pending FCM token from Native Bridge');
+      window.receiveFcmToken(window.__pendingFcmToken);
+      delete window.__pendingFcmToken;
+    }
+
+    // 3. Foreground Message Listener (Web Environment)
     const unsubscribe = onMessageListener((payload: any) => {
       console.log('Foreground message received:', payload);
       if (payload.notification) {
@@ -83,13 +122,24 @@ function App() {
       }
     });
 
+    // 4. 로그인 보강 로직: userId가 생길 때 펜딩 토큰 재확인
+    const checkTimer = setInterval(() => {
+      const currentUserId = localStorage.getItem('userId');
+      const pending = (window as any).__pendingSaveToken;
+      if (currentUserId && pending) {
+        console.log('Detected userId after login, processing pending token...');
+        saveTokenToServer(pending.token, pending.deviceType);
+        delete (window as any).__pendingSaveToken;
+      }
+    }, 2000); // 2초마다 체크
+
     return () => {
       if (unsubscribe) {
-        // onMessage returns an unsubscribe function
-        // but if it was wrapped in a promise before, we need to be careful.
-        // The current implementation of onMessageListener (callback) returns the unsubscribe function.
         if (typeof unsubscribe === 'function') unsubscribe();
       }
+      clearInterval(checkTimer);
+      delete window.receiveFcmToken;
+      delete (window as any).receiveNativeMessage;
     };
   }, []);
 
