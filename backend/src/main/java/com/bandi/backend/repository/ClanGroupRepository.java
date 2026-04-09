@@ -12,7 +12,8 @@ import java.util.List;
 public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
 
         @Query(value = "SELECT new com.bandi.backend.dto.AdminClanApprovalDto(" +
-                        "g.cnNo, g.cnNm, g.cnDesc, g.cnUrl, g.attachNo, a.filePath, g.cnApprStatCd, g.insDtime) " +
+                        "g.cnNo, g.cnNm, g.cnDesc, g.cnUrl, g.attachNo, a.filePath, g.cnApprStatCd, g.insDtime, " +
+                        "(SELECT count(u) FROM ClanUser u WHERE u.cnNo = g.cnNo AND u.cnUserStatCd = 'A' AND u.cnUserApprStatCd = 'CN')) " +
                         "FROM ClanGroup g " +
                         "LEFT JOIN CmAttachment a ON g.attachNo = a.attachNo " +
                         "ORDER BY (CASE WHEN g.cnApprStatCd = 'RQ' THEN 1 WHEN g.cnApprStatCd = 'CN' THEN 2 WHEN g.cnApprStatCd = 'RJ' THEN 3 ELSE 4 END), g.cnNo DESC")

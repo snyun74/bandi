@@ -90,7 +90,6 @@ const MyClan: React.FC = () => {
                                 <p className="text-[#003C48] text-[13px] mb-1">
                                     {clan.description.length > 20 ? `${clan.description.substring(0, 20)}...` : clan.description}
                                 </p>
-                                <p className="text-[#003C48] text-[12px] font-medium">멤버 : {clan.memberCount}명</p>
                             </div>
                         </div>
                     ))

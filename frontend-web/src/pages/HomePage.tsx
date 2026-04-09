@@ -461,7 +461,6 @@ export default function HomePage() {
                                 <p className="text-gray-600 text-[13px] mb-1 truncate">
                                     {myClans[currentClanIndex].cnDesc ? (myClans[currentClanIndex].cnDesc.length > 20 ? myClans[currentClanIndex].cnDesc.substring(0, 20) + '...' : myClans[currentClanIndex].cnDesc) : ''}
                                 </p>
-                                <p className="text-[#003C48] text-[12px] font-medium">멤버 : {myClans[currentClanIndex].userCnt}명</p>
                             </div>
 
                             {/* Slide Count */}

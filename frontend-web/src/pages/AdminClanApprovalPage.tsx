@@ -12,6 +12,7 @@ interface AdminClanApprovalDto {
     fileUrl: string | null;
     cnApprStatCd: string; // RQ:요청, RJ:거절, CN:확정
     insDtime: string;
+    userCnt: number;
 }
 
 const AdminClanApprovalPage: React.FC = () => {
@@ -133,6 +134,7 @@ const AdminClanApprovalPage: React.FC = () => {
                                         <div>
                                             <h3 className="body-section-title !mt-0 truncate">{clan.cnNm}</h3>
                                             <p className="text-xs text-gray-400 mt-1">등록일: {formatDate(clan.insDtime)}</p>
+                                            <p className="text-xs text-[#003C48] font-medium mt-1">멤버 : {clan.userCnt}명</p>
                                         </div>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-2 line-clamp-2 leading-relaxed">{clan.cnDesc}</p>

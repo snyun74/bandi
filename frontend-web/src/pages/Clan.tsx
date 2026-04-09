@@ -165,7 +165,6 @@ const Clan: React.FC = () => {
                         <div className="flex-1 min-w-0">
                             <h3 className="body-room-title mb-0.5 truncate">{clan.name}</h3>
                             <p className="text-gray-600 text-[13px] mb-1">{clan.description}</p>
-                            <p className="text-[#003C48] text-[12px] font-medium">멤버 : {clan.memberCount}명</p>
                         </div>
                     </div>
                 ))}

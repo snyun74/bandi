@@ -18,4 +18,5 @@ public class AdminClanApprovalDto {
     private String fileUrl;
     private String cnApprStatCd; // RQ:요청, RJ:거절, CN:확정
     private String insDtime;
+    private Long userCnt;
 }
