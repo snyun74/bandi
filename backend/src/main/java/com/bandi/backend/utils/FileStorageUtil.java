@@ -3,21 +3,30 @@ package com.bandi.backend.utils;
 public class FileStorageUtil {
 
     /**
-     * Returns the upload directory based on the operating system.
-     * On Windows (local environment), it returns a path relative to the user
-     * directory.
-     * On Linux (server environment), it returns the absolute server path.
-     *
-     * @return The absolute path to the designated upload directory.
+     * 이미지(common_images) 업로드 경로 반환
      */
     public static String getUploadDir() {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
-            // Local Windows environment
+            // 로컬 윈도우: 프로젝트 루트의 uploads 폴더
             return System.getProperty("user.dir") + "\\uploads\\common_images";
         } else {
-            // Server Linux environment: Persist across deployments
-            return "/home/ubuntu/bandi/uploads/common_images";
+            // AWS 리눅스: dist/common_images (사용자 확인 경로)
+            return "/home/ubuntu/bandi/dist/common_images";
+        }
+    }
+
+    /**
+     * 쇼츠 동영상(shorts) 업로드 경로 반환
+     */
+    public static String getShortsDir() {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            // 로컬 윈도우: 기존 하드코딩된 경로 유지 (또는 프로젝트 상대경로)
+            return "d:/Project/bandi/frontend-web/public/shorts";
+        } else {
+            // AWS 리눅스: dist/shorts (사용자 확인 경로)
+            return "/home/ubuntu/bandi/dist/shorts";
         }
     }
 }

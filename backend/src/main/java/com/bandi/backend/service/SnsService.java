@@ -174,8 +174,8 @@ public class SnsService {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
         try {
-            // 1. 비디오 파일 저장 (frontend-web/public/shorts 경로)
-            String shortsDirStr = "d:/Project/bandi/frontend-web/public/shorts";
+            // 1. 비디오 파일 저장 (OS별 유동적 경로)
+            String shortsDirStr = FileStorageUtil.getShortsDir();
             File shortsDir = new File(shortsDirStr);
             if (!shortsDir.exists()) {
                 shortsDir.mkdirs();
