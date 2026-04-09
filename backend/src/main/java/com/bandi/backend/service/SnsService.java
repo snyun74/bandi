@@ -193,8 +193,8 @@ public class SnsService {
             // 비디오 CmAttachment 생성
             CmAttachment videoAttach = new CmAttachment();
             videoAttach.setFileName(videoOrigName);
-            // 프론트엔드 접근 경로
-            videoAttach.setFilePath("/shorts/" + videoSavedName);
+            // 프론트엔드 접근 경로 (API Prefix 추가)
+            videoAttach.setFilePath("/api/shorts/" + videoSavedName);
             videoAttach.setFileSize(videoFile.getSize());
             videoAttach.setMimeType(videoFile.getContentType());
             videoAttach.setInsDtime(currentDateTime);

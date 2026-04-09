@@ -10,17 +10,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Use FileStorageUtil to get the base path and convert to valid Spring file:///
-        // URI
+        // 1. 공통 이미지 핸들러 (common_images)
         String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
         String uploadPath = Paths.get(uploadDir).toAbsolutePath().toUri().toString();
-
-        // Resource locations MUST end with a trailing slash!
-        if (!uploadPath.endsWith("/")) {
-            uploadPath += "/";
-        }
+        if (!uploadPath.endsWith("/")) uploadPath += "/";
 
         registry.addResourceHandler("/api/common_images/**")
                 .addResourceLocations(uploadPath);
+
+        // 2. 쇼츠 동영상 핸들러 (shorts)
+        String shortsDir = com.bandi.backend.utils.FileStorageUtil.getShortsDir();
+        String shortsPath = Paths.get(shortsDir).toAbsolutePath().toUri().toString();
+        if (!shortsPath.endsWith("/")) shortsPath += "/";
+
+        registry.addResourceHandler("/api/shorts/**")
+                .addResourceLocations(shortsPath);
     }
 }
