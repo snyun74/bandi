@@ -11,8 +11,8 @@ public class FileStorageUtil {
             // 로컬 윈도우: 프로젝트 루트의 uploads 폴더
             return System.getProperty("user.dir") + "\\uploads\\common_images";
         } else {
-            // AWS 리눅스: 운영 서버 실제 배포 폴더 (dist)
-            return "/home/ubuntu/bandi/dist/common_images";
+            // AWS 리눅스: 운영 서버 실제 배포 폴더 상위의 uploads (Nginx 설정과 일치)
+            return "/home/ubuntu/bandi/uploads/common_images";
         }
     }
 
@@ -23,10 +23,10 @@ public class FileStorageUtil {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
             // 로컬 윈도우: 개발용 폴더
-            return "d:/Project/bandi/frontend-web/public/shorts";
+            return System.getProperty("user.dir") + "\\uploads\\shorts";
         } else {
-            // AWS 리눅스: 운영 서버 실제 배포 폴더 (dist/shorts)
-            return "/home/ubuntu/bandi/dist/shorts";
+            // AWS 리눅스: 운영 서버 실제 배포 폴더 상위의 uploads
+            return "/home/ubuntu/bandi/uploads/shorts";
         }
     }
 }
