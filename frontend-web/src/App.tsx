@@ -62,6 +62,10 @@ import { requestPermission, onMessageListener, saveTokenToServer } from './utils
 import './App.css';
 import PushToast from './components/common/PushToast';
 import PageTracker from './components/common/PageTracker';
+import SnsPostCreate from './pages/sns/SnsPostCreate';
+import SnsShortsCreate from './pages/sns/SnsShortsCreate';
+import SnsShortsFeed from './pages/sns/SnsShortsFeed';
+import SnsPostFeed from './pages/sns/SnsPostFeed';
 
 declare global {
   interface Window {
@@ -169,6 +173,8 @@ function App() {
             <Route path="admin/jams" element={<AdminJamManagement />} />
             <Route path="profile/scraps" element={<MyScrapList />} />
             <Route path="profile/posts" element={<MyPostList />} />
+            <Route path="profile/post/create" element={<SnsPostCreate />} />
+            <Route path="profile/shorts/create" element={<SnsShortsCreate />} />
             <Route path="customer-center" element={<CustomerCenterPage />} />
             <Route path="freejam" element={<FreeJam />} />
             <Route path="board" element={<Board />} />
@@ -218,6 +224,10 @@ function App() {
             <Route path="board/detail/:boardNo" element={<BoardDetail />} />
             <Route path="jam/schedule/:jamId" element={<JamScheduleCapture />} />
           </Route>
+
+          {/* Full Screen Feeds (Outside MainLayout to hide Header/Footer) */}
+          <Route path="/main/profile/shorts/feed/:userId" element={<SnsShortsFeed />} />
+          <Route path="/main/profile/post/feed/:userId" element={<SnsPostFeed />} />
         </Routes>
       </BrowserRouter>
 

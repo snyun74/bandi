@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars } from 'react-icons/fa';
 import { BsPersonCircle, BsChatSquare, BsDoorOpen } from 'react-icons/bs';
@@ -38,6 +38,84 @@ const MyProfile: React.FC = () => {
         setAlertMessage(message);
         setIsAlertModalOpen(true);
     };
+
+    // 탭 및 목록 상태 관리
+    const [activeTab, setActiveTab] = useState<'SHORTS' | 'POSTS'>('SHORTS');
+    const [posts, setPosts] = useState<any[]>([]);
+    const [shorts, setShorts] = useState<any[]>([]);
+    const [postsPage, setPostsPage] = useState(0);
+    const [shortsPage, setShortsPage] = useState(0);
+    const [hasMorePosts, setHasMorePosts] = useState(true);
+    const [hasMoreShorts, setHasMoreShorts] = useState(true);
+
+    const observer = useRef<IntersectionObserver | null>(null);
+    const lastElementRef = useCallback((node: any) => {
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                if (activeTab === 'POSTS' && hasMorePosts) {
+                    setPostsPage(prev => prev + 1);
+                } else if (activeTab === 'SHORTS' && hasMoreShorts) {
+                    setShortsPage(prev => prev + 1);
+                }
+            }
+        }, { threshold: 0.5 });
+        if (node) observer.current.observe(node);
+    }, [activeTab, hasMorePosts, hasMoreShorts]);
+
+    const fetchPosts = async (page: number) => {
+        if (!userId) return;
+        try {
+            const res = await fetch(`/api/sns/posts/user/${userId}?page=${page}&size=30`);
+            if (res.ok) {
+                const data = await res.json();
+                setPosts(prev => page === 0 ? data.content : [...prev, ...data.content]);
+                setHasMorePosts(!data.last);
+            }
+        } catch (e) {
+            console.error("게시물 조회 실패", e);
+        }
+    };
+
+    const fetchShorts = async (page: number) => {
+        if (!userId) return;
+        try {
+            const res = await fetch(`/api/sns/shorts/user/${userId}?page=${page}&size=30`);
+            if (res.ok) {
+                const data = await res.json();
+                setShorts(prev => page === 0 ? data.content : [...prev, ...data.content]);
+                setHasMoreShorts(!data.last);
+            }
+        } catch (e) {
+            console.error("쇼츠 조회 실패", e);
+        }
+    };
+
+    useEffect(() => {
+        if (userId) {
+            setPostsPage(0);
+            fetchPosts(0);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (userId && postsPage > 0) {
+            fetchPosts(postsPage);
+        }
+    }, [postsPage]);
+
+    useEffect(() => {
+        if (userId) {
+            setShortsPage(0);
+            fetchShorts(0);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (userId && shortsPage > 0) {
+            fetchShorts(shortsPage);
+        }
+    }, [shortsPage]);
 
     const fetchProfile = async () => {
         if (!userId) return;
@@ -85,7 +163,7 @@ const MyProfile: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <FaChevronLeft size={20} />
                     </button>
-                    <h1 className="text-[18px] font-bold text-[#003C48]">프로필</h1>
+                    <h1 className="text-[14px] font-bold text-[#003C48]">프로필</h1>
                 </div>
                 <div className="flex items-center gap-2 relative">
                     {profile?.adminYn === 'Y' && (
@@ -153,7 +231,7 @@ const MyProfile: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col flex-1 overflow-hidden bg-white">
                 {/* Profile Info */}
                 <div className="px-6 py-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -195,39 +273,114 @@ const MyProfile: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Post Grid (Instagram Style) */}
-                <div className="px-0.5 py-0.5">
-                    <div className="grid grid-cols-3 gap-1">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                            <div
-                                key={i}
-                                className="aspect-[4/5] bg-gray-50 rounded-lg overflow-hidden border border-gray-100 flex flex-col items-center justify-center text-gray-300 relative group cursor-pointer hover:brightness-95 transition-all"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 opacity-40 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span className="text-[10px] opacity-40">게시물 {i}</span>
-                            </div>
-                        ))}
-                    </div>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-100 sticky top-0 bg-white z-10 text-[13px]">
+                    <button
+                        onClick={() => setActiveTab('SHORTS')}
+                        className={`flex-1 py-3.5 font-bold transition-all relative ${activeTab === 'SHORTS' ? 'text-[#003C48]' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        쇼츠
+                        {activeTab === 'SHORTS' && (
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-[#003C48]"></div>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('POSTS')}
+                        className={`flex-1 py-3.5 font-bold transition-all relative ${activeTab === 'POSTS' ? 'text-[#003C48]' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        게시물
+                        {activeTab === 'POSTS' && (
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-[#003C48]"></div>
+                        )}
+                    </button>
                 </div>
 
-                {/* Create Buttons - Moved to Bottom */}
-                <div className="px-5 py-8 mt-4 flex gap-2">
-                    <button
-                        disabled
-                        className="flex-1 bg-[#F8F9FA] text-[#ADB5BD] font-bold py-3.5 rounded-2xl text-[14px] cursor-not-allowed border border-gray-100/50 flex flex-col items-center justify-center gap-1 opacity-70"
-                    >
-                        <span className="text-lg grayscale">📸</span>
-                        <span>게시물 만들기</span>
-                    </button>
-                    <button
-                        disabled
-                        className="flex-1 bg-[#F8F9FA] text-[#ADB5BD] font-bold py-3.5 rounded-2xl text-[14px] cursor-not-allowed border border-gray-100/50 flex flex-col items-center justify-center gap-1 opacity-70"
-                    >
-                        <span className="text-lg grayscale">🎬</span>
-                        <span>쇼츠 만들기</span>
-                    </button>
+                {/* Create Button (Dynamic) */}
+                <div className="px-4 py-3 bg-white flex-shrink-0 z-10 border-b border-gray-50 pb-4">
+                    {activeTab === 'SHORTS' ? (
+                        <button
+                            onClick={() => navigate('/main/profile/shorts/create')}
+                            className="w-full bg-[#F8F9FA] text-[#003C48] font-bold py-2 rounded-xl text-[13px] border border-gray-200 flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors shadow-sm"
+                        >
+                            <span className="text-base">🎬</span>
+                            <span>쇼츠 만들기</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/main/profile/post/create')}
+                            className="w-full bg-[#F8F9FA] text-[#003C48] font-bold py-2 rounded-xl text-[13px] border border-gray-200 flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors shadow-sm"
+                        >
+                            <span className="text-base">📸</span>
+                            <span>게시물 만들기</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* Grid Content */}
+                <div className="flex-1 overflow-y-auto px-0.5 py-0.5 pb-20 nice-scroll">
+                    <div className="grid grid-cols-3 gap-1">
+                        {activeTab === 'SHORTS' ? (
+                            <>
+                                {shorts.map((item, index) => {
+                                    const isLast = index === shorts.length - 1;
+                                    return (
+                                        <div
+                                            key={item.shortsNo}
+                                            ref={isLast ? lastElementRef : null}
+                                            className="aspect-[4/5] bg-gray-50 rounded-md overflow-hidden relative group cursor-pointer"
+                                            onClick={() => navigate(`/main/profile/shorts/feed/${userId}`, { state: { initialShortsNo: item.shortsNo } })}
+                                        >
+                                            {item.videoPath ? (
+                                                <video 
+                                                    src={`${item.videoPath}#t=0.1`} 
+                                                    className="w-full h-full object-cover" 
+                                                    muted 
+                                                    playsInline 
+                                                    preload="metadata"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                                                    <span className="text-[20px]">🎬</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                {Array.from({ length: Math.max(0, 6 - shorts.length) }).map((_, idx) => (
+                                    <div key={`empty-shorts-${idx}`} className="aspect-[4/5] bg-gray-50 rounded-md overflow-hidden border border-gray-100 flex items-center justify-center relative cursor-default">
+                                        <span className="text-[28px] opacity-20 grayscale">🎬</span>
+                                    </div>
+                                ))}
+                            </>
+                        ) : (
+                            <>
+                                {posts.map((item, index) => {
+                                    const isLast = index === posts.length - 1;
+                                    return (
+                                        <div
+                                            key={item.postId}
+                                            ref={isLast ? lastElementRef : null}
+                                            className="aspect-[4/5] bg-gray-50 rounded-md overflow-hidden relative group cursor-pointer"
+                                            onClick={() => navigate(`/main/profile/post/feed/${userId}`, { state: { initialPostId: item.postId } })}
+                                        >
+                                            {item.thumbnailPath ? (
+                                                <img src={item.thumbnailPath} alt="post" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gray-100">
+                                                    <span className="text-[10px] text-gray-500 line-clamp-3">{item.contentPreview}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                {Array.from({ length: Math.max(0, 6 - posts.length) }).map((_, idx) => (
+                                    <div key={`empty-post-${idx}`} className="aspect-[4/5] bg-gray-50 rounded-md overflow-hidden border border-gray-100 flex items-center justify-center relative cursor-default">
+                                        <span className="text-[28px] opacity-20 grayscale">📸</span>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 

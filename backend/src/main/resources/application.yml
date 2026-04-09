@@ -10,8 +10,8 @@ spring:
     driver-class-name: org.postgresql.Driver
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
+      max-file-size: 100MB
+      max-request-size: 100MB
   jpa:
     hibernate:
       ddl-auto: none
@@ -50,8 +50,8 @@ spring:
       on-profile: prod
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: 100MB
+      max-request-size: 100MB
 server:
   port: 8084 # 서버(운영)에서는 8084 사용
 kakao:
