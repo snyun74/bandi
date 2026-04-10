@@ -185,7 +185,7 @@ const ShortsVideoItem: React.FC<{ item: FeedItem }> = ({ item }) => {
             <video
                 ref={videoRef}
                 src={item.videoPath}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover bg-black"
                 loop
                 playsInline
                 onClick={(e) => {
@@ -195,16 +195,16 @@ const ShortsVideoItem: React.FC<{ item: FeedItem }> = ({ item }) => {
                 }}
             />
             {/* Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none pb-12 text-white">
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none pb-12 text-white">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-[12px] font-bold">
+                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-[12px] font-bold shadow-xl">
                         {(item.userNickNm || item.userId).substring(0, 1).toUpperCase()}
                     </div>
-                    <span className="font-bold text-[15px]">@{item.userNickNm || item.userId}</span>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-md text-[10px] font-bold">🎬 SHORTS</span>
+                    <span className="font-bold text-[15px] drop-shadow-md">@{item.userNickNm || item.userId}</span>
+                    <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">🎬 Shorts</span>
                 </div>
                 <div className="w-full max-w-[85%]">
-                    <h3 className="text-[16px] leading-[1.4] line-clamp-3 font-medium">{item.title}</h3>
+                    <h3 className="text-[16px] leading-[1.4] line-clamp-3 font-medium drop-shadow-md">{item.title}</h3>
                 </div>
             </div>
         </div>
@@ -232,7 +232,7 @@ const PostFeedItem: React.FC<{ post: FeedItem }> = ({ post }) => {
             >
                 {post.imagePaths?.map((path, idx) => (
                     <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center">
-                        <img src={path} alt={`post-${idx}`} className="w-full h-full object-contain" />
+                        <img src={path} alt={`post-${idx}`} className="w-full h-full object-cover" />
                     </div>
                 ))}
                 
@@ -246,16 +246,16 @@ const PostFeedItem: React.FC<{ post: FeedItem }> = ({ post }) => {
             </div>
 
             {/* Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none pb-12 text-white">
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none pb-12 text-white">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-[12px] font-bold">
+                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-[12px] font-bold shadow-xl">
                         {(post.userNickNm || post.userId).substring(0, 1).toUpperCase()}
                     </div>
-                    <span className="font-bold text-[15px]">@{post.userNickNm || post.userId}</span>
-                    <span className="bg-white/20 px-2 py-0.5 rounded-md text-[10px] font-bold">📸 POST</span>
+                    <span className="font-bold text-[15px] drop-shadow-md">@{post.userNickNm || post.userId}</span>
+                    <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">📸 Post</span>
                 </div>
                 <div className="w-full max-w-[85%]">
-                    <p className="text-[15px] leading-[1.5] line-clamp-3">{post.contentPreview}</p>
+                    <p className="text-[15px] leading-[1.5] line-clamp-3 drop-shadow-md">{post.contentPreview}</p>
                 </div>
             </div>
         </div>
