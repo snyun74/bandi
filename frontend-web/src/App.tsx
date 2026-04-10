@@ -66,6 +66,7 @@ import SnsPostCreate from './pages/sns/SnsPostCreate';
 import SnsShortsCreate from './pages/sns/SnsShortsCreate';
 import SnsShortsFeed from './pages/sns/SnsShortsFeed';
 import SnsPostFeed from './pages/sns/SnsPostFeed';
+import SnsUnifiedFeed from './pages/sns/SnsUnifiedFeed';
 
 declare global {
   interface Window {
@@ -228,6 +229,7 @@ function App() {
           {/* Full Screen Feeds (Outside MainLayout to hide Header/Footer) */}
           <Route path="/main/profile/shorts/feed/:userId" element={<SnsShortsFeed />} />
           <Route path="/main/profile/post/feed/:userId" element={<SnsPostFeed />} />
+          <Route path="/main/profile/feed/:userId" element={<SnsUnifiedFeed />} />
         </Routes>
       </BrowserRouter>
 
