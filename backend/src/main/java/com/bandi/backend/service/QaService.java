@@ -4,6 +4,7 @@ import com.bandi.backend.dto.QaRequestDto;
 import com.bandi.backend.dto.QaResponseDto;
 import com.bandi.backend.entity.member.MmQa;
 import com.bandi.backend.repository.MmQaRepository;
+import com.bandi.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,8 @@ import java.util.List;
 public class QaService {
 
     private final MmQaRepository qaRepository;
+    private final UserRepository userRepository;
+    private final PushService pushService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -47,6 +50,51 @@ public class QaService {
         qa.setUpdId(requestDto.getUserId());
 
         MmQa savedQa = qaRepository.save(qa);
+
+        // Notify admins if it's a new inquiry (no parentQaNo)
+        if (requestDto.getParentQaNo() == null) {
+            try {
+                String userNickNm = userRepository.findById(requestDto.getUserId())
+                        .map(u -> (u.getUserNickNm() != null && !u.getUserNickNm().isEmpty()) ? u.getUserNickNm() : u.getUserNm())
+                        .orElse(requestDto.getUserId());
+
+                java.util.List<com.bandi.backend.entity.member.User> admins = userRepository.findByAdminYn("Y");
+                for (com.bandi.backend.entity.member.User admin : admins) {
+                    pushService.sendPush(
+                            admin.getUserId(),
+                            userNickNm,
+                            "고객센터 문의 요청이 왔습니다.",
+                            "/main/admin/customer-center", // Assuming admin path
+                            "ADMIN_QA_REQUEST"
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Failed to send admin push notification for QA: {}", e.getMessage());
+            }
+        } else {
+            // Notify inquirer if it's an answer (parentQaNo is not null)
+            try {
+                qaRepository.findById(requestDto.getParentQaNo()).ifPresent(parentQa -> {
+                    String recipientId = parentQa.getUserId();
+                    
+                    // Sender info (Fixed to snyun)
+                    String senderNickNm = userRepository.findById("snyun")
+                            .map(u -> (u.getUserNickNm() != null && !u.getUserNickNm().isEmpty()) ? u.getUserNickNm() : u.getUserNm())
+                            .orElse("관리자");
+
+                    pushService.sendPush(
+                            recipientId,
+                            senderNickNm,
+                            "고객센터 문의에 대한 답변이 등록되었습니다.",
+                            "/main/customer-center",
+                            "USER_QA_ANSWER"
+                    );
+                });
+            } catch (Exception e) {
+                log.error("Failed to send user push notification for QA answer: {}", e.getMessage());
+            }
+        }
+
         return savedQa.getQaNo();
     }
 

@@ -260,7 +260,6 @@ const ClanIntro: React.FC = () => {
                     <div className="flex-1">
                         <h2 className="text-[#003C48] text-xl font-bold mb-0.5">{clan.name}</h2>
                         <p className="text-[#003C48] text-xs mb-1">{clan.description}</p>
-                        <p className="text-[#003C48] text-xs font-medium">멤버 : {clan.memberCount}명</p>
                     </div>
                     {renderActionButton()}
                 </div>
