@@ -32,4 +32,6 @@ public interface UserRepository extends JpaRepository<User, String> {
            "LEFT JOIN CmAttachment a ON u.attachNo = a.attachNo " +
            "ORDER BY u.insDtime DESC")
     java.util.List<com.bandi.backend.dto.AdminUserDto> findAllAdminUsers();
+
+    java.util.List<User> findByAdminYn(String adminYn);
 }

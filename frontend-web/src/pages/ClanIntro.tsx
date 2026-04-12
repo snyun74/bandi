@@ -186,59 +186,45 @@ const ClanIntro: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (clan && clan.cnUrl) {
-            const embedUrl = getEmbedUrl(clan.cnUrl);
-            if (embedUrl.includes('youtube.com/embed')) {
-                return (
-                    <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-black mb-6">
-                        <iframe
-                            width="100%"
-                            height="100%"
-                            src={embedUrl}
-                            title="Clan Video"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="absolute inset-0"
-                        ></iframe>
-                    </div>
-                );
-            } else {
-                return (
-                    <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-gray-900 mb-6 group">
-                        <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 to-transparent">
-                            <h3 className="text-white text-xl font-bold mb-1">{clan.name}</h3>
-                            <p className="text-gray-300 text-xs">{clan.description}</p>
-                        </div>
-                        <div className="absolute inset-0 -z-10 bg-gray-700 flex items-center justify-center text-gray-500">
-                            (외부 링크 자료)
-                        </div>
-                        <a
-                            href={clan.cnUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#00BDF8] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#00ACD8] transition-colors shadow-lg"
-                        >
-                            클랜 자료 보러가기
-                        </a>
-                    </div>
-                );
-            }
-        }
+        if (!clan || !clan.cnUrl) return null;
 
-        // Default Placeholder
-        return (
-            <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-gray-900 mb-6">
-                <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 to-transparent">
-                    <h3 className="text-white text-xl font-bold mb-1">렛츠무드</h3>
-                    <p className="text-gray-300 text-xs">2025 동국대학교 가을 대동제 Full ver.</p>
-                    <span className="absolute bottom-4 right-4 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">19:40</span>
+        const embedUrl = getEmbedUrl(clan.cnUrl);
+        if (embedUrl.includes('youtube.com/embed')) {
+            return (
+                <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-black mb-6">
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        src={embedUrl}
+                        title="Clan Video"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0"
+                    ></iframe>
                 </div>
-                <div className="absolute inset-0 -z-10 bg-gray-700 flex items-center justify-center text-gray-500">
-                    (클랜 대표 영상/이미지)
+            );
+        } else {
+            return (
+                <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-gray-900 mb-6 group">
+                    <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 to-transparent">
+                        <h3 className="text-white text-xl font-bold mb-1">{clan.name}</h3>
+                        <p className="text-gray-300 text-xs">{clan.description}</p>
+                    </div>
+                    <div className="absolute inset-0 -z-10 bg-gray-700 flex items-center justify-center text-gray-500">
+                        (외부 링크 자료)
+                    </div>
+                    <a
+                        href={clan.cnUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#00BDF8] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#00ACD8] transition-colors shadow-lg"
+                    >
+                        클랜 자료 보러가기
+                    </a>
                 </div>
-            </div>
-        );
+            );
+        }
     };
 
     if (loading) return <div className="text-center py-10">Loading...</div>;

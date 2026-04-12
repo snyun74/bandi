@@ -134,6 +134,26 @@ public class ClanService {
                 .setParameter("updId", dto.getUserId())
                 .executeUpdate();
 
+        // 5. Send push notification to system admins (ADMIN_YN = 'Y')
+        try {
+            String applicantNickname = userRepository.findById(dto.getUserId())
+                    .map(u -> (u.getUserNickNm() != null && !u.getUserNickNm().isEmpty()) ? u.getUserNickNm() : u.getUserNm())
+                    .orElse("새로운 회원");
+
+            java.util.List<com.bandi.backend.entity.member.User> admins = userRepository.findByAdminYn("Y");
+            for (com.bandi.backend.entity.member.User admin : admins) {
+                pushService.sendPush(
+                        admin.getUserId(),
+                        applicantNickname, // Title is applicant's nickname as requested
+                        "[" + savedClan.getCnNm() + "] 클랜 개설 신청이 들어왔습니다.",
+                        "", 
+                        "ADMIN_CLAN_REQUEST"
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to send admin clan request push notification: " + e.getMessage());
+        }
+
         return savedClan.getCnNo();
     }
 

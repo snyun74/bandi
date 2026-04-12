@@ -165,7 +165,7 @@ public class AdminService {
         if ("CN".equals(status) && !"CN".equals(oldStatus)) {
             com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
             chatDto.setCnNo(cnNo);
-            chatDto.setSndUserId(userId);
+            chatDto.setSndUserId("snyun");
             chatDto.setMsg("클랜이 개설됐어요! 대화를 시작해보세요!");
             chatDto.setMsgTypeCd("TEXT");
             chatDto.setRoomType("CLAN");
