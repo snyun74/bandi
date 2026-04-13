@@ -31,27 +31,30 @@ public class ChatService {
   @org.springframework.beans.factory.annotation.Autowired
   private com.bandi.backend.service.PushService pushService;
 
-  public List<ChatRoomListDto> getGroupChatList(String userId) {
+  public List<ChatRoomListDto> getUnifiedChatList(String userId, int offset, int limit) {
     String sql = """
             SELECT * FROM (
+                -- 클랜 채팅
                 SELECT
-                    CNR.CN_NO        AS ROOM_NO, -- 클랜채팅방번호
-                    CNG.CN_NM        AS ROOM_NM, -- 클랜채팅방이름 (수정: 원본 클랜명 사용)
+                    CNR.CN_NO        AS ROOM_NO,
+                    CNG.CN_NM        AS ROOM_NM,
                     (
                       SELECT MSG.MSG
                       FROM CN_CHAT_MESSAGE MSG
                       WHERE MSG.CN_NO = CNR.CN_NO
                         AND MSG.SND_USER_ID <> :userId
+                        AND MSG.CHAT_STAT_CD = 'A'
                         AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                                                       AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                       ORDER BY MSG.SND_DTIME DESC
                       LIMIT 1
-                    ) AS NEW_MSG, -- 신규메시지
+                    ) AS NEW_MSG,
                     (
                       SELECT COUNT(1)
                       FROM CN_CHAT_MESSAGE MSG
                       WHERE MSG.CN_NO = CNR.CN_NO
                         AND MSG.SND_USER_ID <> :userId
+                        AND MSG.CHAT_STAT_CD = 'A'
                         AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                                               AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                         AND NOT EXISTS (
@@ -60,13 +63,14 @@ public class ChatService {
                             WHERE MSR.CN_MSG_NO = MSG.CN_MSG_NO
                               AND MSR.READ_USER_ID = :userId
                         )
-                    ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
+                    ) AS NEW_MSG_READ_CNT,
                     'CLAN' AS ROOM_TYPE,
                     CMA.FILE_PATH AS ATTACH_FILE_PATH,
                     (
                       SELECT MAX(MSG.SND_DTIME)
                       FROM CN_CHAT_MESSAGE MSG
                       WHERE MSG.CN_NO = CNR.CN_NO
+                        AND MSG.CHAT_STAT_CD = 'A'
                     ) AS LAST_MSG_DTIME
                 FROM
                     CN_USER CNU
@@ -82,24 +86,27 @@ public class ChatService {
 
                 UNION ALL
 
+                -- 합주 채팅
                 SELECT
-                    CNR.BN_NO        AS ROOM_NO, -- 합주채팅방번호
-                    BNG.BN_NM        AS ROOM_NM, -- 합주채팅방이름 (수정: 원본 합주명 사용)
+                    CNR.BN_NO        AS ROOM_NO,
+                    BNG.BN_NM        AS ROOM_NM,
                     (
                       SELECT MSG.BN_CHAT_MSG
                       FROM BN_CHAT_MESSAGE MSG
                       WHERE MSG.BN_NO = CNR.BN_NO
                         AND MSG.BN_CHAT_SND_USER_ID <> :userId
+                        AND MSG.BN_CHAT_STAT_CD = 'A'
                         AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                                                       AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                       ORDER BY MSG.BN_CHAT_SND_DTIME DESC
                       LIMIT 1
-                    ) AS NEW_MSG, -- 신규메시지
+                    ) AS NEW_MSG,
                     (
                       SELECT COUNT(1)
                       FROM BN_CHAT_MESSAGE MSG
                       WHERE MSG.BN_NO = CNR.BN_NO
                         AND MSG.BN_CHAT_SND_USER_ID <> :userId
+                        AND MSG.BN_CHAT_STAT_CD = 'A'
                         AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                                                       AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                         AND NOT EXISTS (
@@ -108,13 +115,14 @@ public class ChatService {
                             WHERE MSR.BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO
                               AND MSR.BN_CHAT_READ_USER_ID = :userId
                         )
-                    ) AS NEW_MSG_READ_CNT, -- 채팅읽지않은건수
+                    ) AS NEW_MSG_READ_CNT,
                     'BAND' AS ROOM_TYPE,
                     CMA.FILE_PATH AS ATTACH_FILE_PATH,
                     (
                       SELECT MAX(MSG.BN_CHAT_SND_DTIME)
                       FROM BN_CHAT_MESSAGE MSG
                       WHERE MSG.BN_NO = CNR.BN_NO
+                        AND MSG.BN_CHAT_STAT_CD = 'A'
                     ) AS LAST_MSG_DTIME
                 FROM
                     BN_USER BNU
@@ -139,7 +147,10 @@ public class ChatService {
                               AND CG.CN_APPR_STAT_CD = 'CN'
                         )
                     )
+
                 UNION ALL
+
+                -- 그룹 채팅
                 SELECT
                     CNR.GRP_CHAT_NO AS ROOM_NO,
                     CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
@@ -148,6 +159,7 @@ public class ChatService {
                       FROM CM_GRP_CHAT_MESSAGE MSG
                       WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
                         AND MSG.GRP_CHAT_SND_USER_ID <> :userId
+                        AND MSG.GRP_CHAT_STAT_CD = 'A'
                         AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                         AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                       ORDER BY MSG.GRP_CHAT_SND_DTIME DESC
@@ -157,6 +169,8 @@ public class ChatService {
                       SELECT COUNT(1)
                       FROM CM_GRP_CHAT_MESSAGE MSG
                       WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                        AND MSG.GRP_CHAT_SND_USER_ID <> :userId
+                        AND MSG.GRP_CHAT_STAT_CD = 'A'
                         AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
                         AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                         AND NOT EXISTS (
@@ -167,36 +181,77 @@ public class ChatService {
                         )
                     ) AS NEW_MSG_READ_CNT,
                     'GROUP' AS ROOM_TYPE,
-                    MY_CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                    NULL AS ATTACH_FILE_PATH,
                     (
                       SELECT MAX(MSG.GRP_CHAT_SND_DTIME)
                       FROM CM_GRP_CHAT_MESSAGE MSG
                       WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
+                        AND MSG.GRP_CHAT_STAT_CD = 'A'
                     ) AS LAST_MSG_DTIME
                 FROM
                     CM_GRP_CHAT_USER CGU
                 INNER JOIN CM_GRP_CHAT_ROOM CNR ON CNR.GRP_CHAT_NO = CGU.GRP_CHAT_NO
-                LEFT JOIN MM_USER MY_USR ON MY_USR.USER_ID = :userId
-                LEFT JOIN CM_ATTACHMENT MY_CMA ON MY_CMA.ATTACH_NO = MY_USR.ATTACH_NO
                 WHERE
                     CGU.USER_ID = :userId
+
+                UNION ALL
+
+                -- 개인 채팅 (1:1)
+                SELECT
+                    CR.MM_ROOM_NO AS ROOM_NO,
+                    U.USER_NICK_NM AS ROOM_NM,
+                    (
+                      SELECT MSG.MSG
+                      FROM MM_CHAT_MESSAGE MSG
+                      WHERE MSG.MM_ROOM_NO = CR.MM_ROOM_NO
+                        AND MSG.SND_USER_ID <> :userId
+                        AND MSG.CHAT_STAT_CD = 'A'
+                        AND MSG.SND_DTIME >= TO_CHAR(NOW() - INTERVAL '300 days', 'YYYYMMDD') || '000000'
+                      ORDER BY MSG.SND_DTIME DESC
+                      LIMIT 1
+                    ) AS NEW_MSG,
+                    (
+                      SELECT COUNT(1)
+                      FROM MM_CHAT_MESSAGE MSG
+                      WHERE MSG.MM_ROOM_NO = CR.MM_ROOM_NO
+                        AND MSG.SND_USER_ID <> :userId
+                        AND MSG.CHAT_STAT_CD = 'A'
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM MM_CHAT_MESSAGE_READ MSR
+                            WHERE MSR.MM_MSG_NO = MSG.MM_MSG_NO
+                              AND MSR.READ_USER_ID = :userId
+                        )
+                    ) AS NEW_MSG_READ_CNT,
+                    'PRIVATE' AS ROOM_TYPE,
+                    CMA.FILE_PATH AS ATTACH_FILE_PATH,
+                    (
+                      SELECT MAX(MSG.SND_DTIME)
+                      FROM MM_CHAT_MESSAGE MSG
+                      WHERE MSG.MM_ROOM_NO = CR.MM_ROOM_NO
+                        AND MSG.CHAT_STAT_CD = 'A'
+                    ) AS LAST_MSG_DTIME
+                FROM
+                    MM_CHAT_ROOM CR
+                INNER JOIN MM_USER U ON U.USER_ID = CASE WHEN CR.USER_ID = :userId THEN CR.FRIEND_USER_ID ELSE CR.USER_ID END
+                LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = U.ATTACH_NO
+                WHERE
+                    CR.USER_ID = :userId OR CR.FRIEND_USER_ID = :userId
             ) T
             ORDER BY 
-                (CASE WHEN NEW_MSG_READ_CNT > 0 THEN 0 ELSE 1 END), 
                 LAST_MSG_DTIME DESC NULLS LAST
+            LIMIT :limit OFFSET :offset
             """;
 
     Query query = entityManager.createNativeQuery(sql);
     query.setParameter("userId", userId);
+    query.setParameter("limit", limit);
+    query.setParameter("offset", offset);
 
     List<Object[]> results = query.getResultList();
-    // System.out.println("DEBUG: Chat List Query Results Count: " +
-    // results.size());
     List<ChatRoomListDto> chatRooms = new ArrayList<>();
 
     for (Object[] result : results) {
-      // System.out.println("DEBUG: Room: " + result[1] + ", Type: " + result[4] + ",
-      // AttachPath: " + result[5]);
       ChatRoomListDto dto = ChatRoomListDto.builder()
           .roomNo(((Number) result[0]).longValue())
           .roomNm((String) result[1])
@@ -204,6 +259,7 @@ public class ChatService {
           .newMsgReadCnt(((Number) result[3]).intValue())
           .roomType((String) result[4])
           .attachFilePath((String) result[5])
+          .lastMsgDtime((String) result[6])
           .build();
       chatRooms.add(dto);
     }

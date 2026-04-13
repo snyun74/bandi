@@ -22,9 +22,11 @@ public class ChatController {
     private final ChatService chatService;
 
     @GetMapping("/list")
-    public ResponseEntity<List<ChatRoomListDto>> getGroupChatList(@RequestParam String userId) {
-
-        List<ChatRoomListDto> chatList = chatService.getGroupChatList(userId);
+    public ResponseEntity<List<ChatRoomListDto>> getChatList(
+            @RequestParam String userId,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "30") int limit) {
+        List<ChatRoomListDto> chatList = chatService.getUnifiedChatList(userId, offset, limit);
         return ResponseEntity.ok(chatList);
     }
 

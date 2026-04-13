@@ -9,7 +9,7 @@ interface ChatRoom {
     roomNm: string;
     newMsg: string;
     newMsgReadCnt: number;
-    roomType: 'GROUP' | 'CLAN' | 'BAND';
+    roomType: 'GROUP' | 'CLAN' | 'BAND' | 'PRIVATE';
     attachFilePath?: string | null;
     logoText?: string;
     logoColor?: string;
@@ -30,6 +30,11 @@ const ChatList: React.FC = () => {
     }, [location.state]);
     const [chatList, setChatList] = useState<ChatRoom[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [offset, setOffset] = useState(0);
+    const PAGE_SIZE = 30;
+
     const [searchText, setSearchText] = useState('');
     const [eligibleMembers, setEligibleMembers] = useState<any[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<any[]>([]);
@@ -52,32 +57,51 @@ const ChatList: React.FC = () => {
     const [friends, setFriends] = useState<Friend[]>([]);
 
 
+    const fetchChatList = async (isInitial = false) => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            console.error("User ID not found");
+            setLoading(false);
+            return;
+        }
+
+        const currentOffset = isInitial ? 0 : offset;
+        if (!isInitial && !hasMore) return;
+
+        if (isInitial) setLoading(true);
+        else setIsFetchingMore(true);
+
+        try {
+            const response = await fetch(`/api/chat/list?userId=${userId}&offset=${currentOffset}&limit=${PAGE_SIZE}`);
+            if (response.ok) {
+                const data: ChatRoom[] = await response.json();
+                console.log("Fetched Chat List:", data);
+                
+                if (isInitial) {
+                    setChatList(data);
+                    setOffset(data.length);
+                } else {
+                    setChatList(prev => [...prev, ...data]);
+                    setOffset(prev => prev + data.length);
+                }
+                
+                if (data.length < PAGE_SIZE) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
+                }
+            } else {
+                console.error("Failed to fetch chat list");
+            }
+        } catch (error) {
+            console.error("Error fetching chat list:", error);
+        } finally {
+            setLoading(false);
+            setIsFetchingMore(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchChatList = async () => {
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                console.error("User ID not found");
-                setLoading(false);
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/chat/list?userId=${userId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log("Fetched Chat List:", data);
-                    setChatList(data);
-                } else {
-                    console.error("Failed to fetch chat list");
-                }
-            } catch (error) {
-                console.error("Error fetching chat list:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         const fetchFriendList = async () => {
             const userId = localStorage.getItem('userId');
             if (!userId) return;
@@ -132,8 +156,8 @@ const ChatList: React.FC = () => {
         };
 
         if (activeTab === 'chat') {
-            fetchChatList();
-            fetchFriendList(); // Fetch friends for Personal Chat section
+            fetchChatList(true);
+            fetchFriendList();
             fetchMyProfile();
         } else if (activeTab === 'friend') {
             fetchFriendList();
@@ -143,6 +167,22 @@ const ChatList: React.FC = () => {
             setLoading(false);
         }
     }, [activeTab]);
+
+    // Infinite Scroll Implementation
+    const observer = React.useRef<IntersectionObserver | null>(null);
+    const lastElementRef = React.useCallback(
+        (node: HTMLDivElement | null) => {
+            if (loading || isFetchingMore) return;
+            if (observer.current) observer.current.disconnect();
+            observer.current = new IntersectionObserver(entries => {
+                if (entries[0].isIntersecting && hasMore) {
+                    fetchChatList();
+                }
+            });
+            if (node) observer.current.observe(node);
+        },
+        [loading, isFetchingMore, hasMore, offset]
+    );
 
     const handleAccept = async (friendUserId: string) => {
         const userId = localStorage.getItem('userId');
@@ -259,124 +299,117 @@ const ChatList: React.FC = () => {
             <div className="flex-1 flex flex-col bg-[#FAFAFA] overflow-hidden">
                 {activeTab === 'chat' && (
                     <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20">
-                        {/* Group Chat Section - Both CLAN and BAND */}
+                        {/* Integrated Chat Section */}
                         <section>
-                            <h2 className="body-section-title mb-3">단체 채팅</h2>
+                            <h2 className="body-section-title mb-3">채팅 목록</h2>
                             <div className="space-y-3">
-                                {loading ? (
-                                    <div className="text-center text-gray-400 py-4">로딩 중...</div>
+                                {loading && offset === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                                        <div className="w-10 h-10 border-4 border-[#00BDF8] border-t-transparent rounded-full animate-spin"></div>
+                                        <p className="text-gray-400 text-sm animate-pulse">채팅 목록을 불러오는 중...</p>
+                                    </div>
                                 ) : chatList.length > 0 ? (
-                                    chatList.map((chat) => (
-                                        <div
-                                            key={`${chat.roomType}-${chat.roomNo}`}
-                                            onClick={() => {
-                                                if (chat.roomType === 'BAND') {
-                                                    navigate(`/main/jam/chat/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
-                                                } else if (chat.roomType === 'GROUP') {
-                                                    navigate(`/main/chat/group/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType } });
-                                                } else {
-                                                    navigate(`/main/chat/room/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
-                                                }
-                                            }}
-                                            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center cursor-pointer hover:bg-gray-50 transition-colors"
-                                        >
-                                            <div 
-                                                className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 bg-gray-100 hover:scale-105 transition-transform"
-                                                onClick={(e) => {
-                                                    if (chat.roomType === 'GROUP') {
-                                                        e.stopPropagation();
-                                                        const userId = localStorage.getItem('userId');
-                                                        if (userId) {
-                                                            setSelectedUserId(userId);
-                                                            setIsProfileModalOpen(true);
-                                                        }
+                                    <>
+                                        {chatList.map((chat, index) => (
+                                            <div
+                                                key={`${chat.roomType}-${chat.roomNo}-${index}`}
+                                                ref={index === chatList.length - 1 ? lastElementRef : null}
+                                                onClick={() => {
+                                                    if (chat.roomType === 'BAND') {
+                                                        navigate(`/main/jam/chat/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
+                                                    } else if (chat.roomType === 'GROUP') {
+                                                        navigate(`/main/chat/group/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType } });
+                                                    } else if (chat.roomType === 'PRIVATE') {
+                                                        navigate(`/main/chat/private/${chat.roomNo}`, { state: { friendNickname: chat.roomNm, friendProfileUrl: chat.attachFilePath } });
+                                                    } else {
+                                                        navigate(`/main/chat/room/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
                                                     }
                                                 }}
+                                                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center cursor-pointer hover:bg-gray-50 transition-colors"
                                             >
-                                                {chat.roomType === 'GROUP' ? (
-                                                    myProfileUrl ? (
-                                                        <img src={myProfileUrl} alt="My Profile" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
-                                                    )
-                                                ) : chat.attachFilePath ? (
-                                                    <img
-                                                        src={chat.attachFilePath}
-                                                        alt={chat.roomNm}
-                                                        className="w-full h-full object-cover"
-                                                        onError={(e) => {
-                                                            e.currentTarget.style.display = 'none';
-                                                            const fallback = e.currentTarget.parentElement?.querySelector('.unlinked-fallback');
-                                                            if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <DefaultProfile type={chat.roomType === 'CLAN' ? 'clan' : 'jam'} iconSize={16} />
-                                                )}
-                                                {chat.attachFilePath && (
-                                                    <div className="unlinked-fallback w-full h-full" style={{ display: 'none' }}>
-                                                        <DefaultProfile type={chat.roomType === 'CLAN' ? 'clan' : 'jam'} iconSize={16} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-0.5 min-w-0">
-                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-gray-100 text-gray-500">
-                                                        {chat.roomType === 'GROUP' ? '그룹' : chat.roomType === 'CLAN' ? '클랜' : '합주'}
-                                                    </span>
-                                                    <h3 className="body-board-post-title !m-0 leading-tight truncate min-w-0">{chat.roomNm}</h3>
-                                                </div>
-                                                <p className="text-xs truncate text-gray-400">
-                                                    {chat.newMsg || "대화 내용이 없습니다."}
-                                                </p>
-                                            </div>
-                                            {chat.newMsgReadCnt > 0 && (
-                                                <div className="ml-2 bg-[#00BDF8] text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                                                    {chat.newMsgReadCnt}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center text-gray-400 py-4">참여 중인 채팅방이 없습니다.</div>
-                                )}
-                            </div>
-                        </section>
-
-                        {/* Personal Chat Section - Placeholder for now as query was only for Group */}
-                        <section>
-                            <h2 className="body-section-title mb-3">개인 채팅</h2>
-                            <div className="space-y-3">
-                                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                                    {friends.length > 0 ? (
-                                        friends.map((friend, index) => (
-                                            <div key={friend.userId} onClick={() => handleFriendClick(friend.userId, friend.userNickNm, friend.profileUrl)} className={`flex items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors ${index !== friends.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                <div
-                                                    className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] mr-3 bg-white hover:scale-105 transition-transform"
+                                                <div 
+                                                    className="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-4 bg-gray-50 hover:scale-105 transition-transform"
                                                     onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedUserId(friend.userId);
-                                                        setIsProfileModalOpen(true);
+                                                        if (chat.roomType === 'GROUP') {
+                                                            e.stopPropagation();
+                                                            const userId = localStorage.getItem('userId');
+                                                            if (userId) {
+                                                                setSelectedUserId(userId);
+                                                                setIsProfileModalOpen(true);
+                                                            }
+                                                        }
                                                     }}
                                                 >
-                                                    {friend.profileUrl ? (
-                                                        <img src={friend.profileUrl} alt={friend.userNickNm} className="w-full h-full object-cover" />
+                                                    {chat.roomType === 'GROUP' ? (
+                                                        myProfileUrl ? (
+                                                            <img src={myProfileUrl} alt="My Profile" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                                                        )
+                                                    ) : chat.attachFilePath ? (
+                                                        <img
+                                                            src={chat.attachFilePath}
+                                                            alt={chat.roomNm}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                e.currentTarget.style.display = 'none';
+                                                                const fallback = e.currentTarget.parentElement?.querySelector('.unlinked-fallback');
+                                                                if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                                                            }}
+                                                        />
                                                     ) : (
-                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                        <DefaultProfile type={chat.roomType === 'CLAN' ? 'clan' : chat.roomType === 'BAND' ? 'jam' : 'user'} iconSize={16} />
+                                                    )}
+                                                    {chat.attachFilePath && (
+                                                        <div className="unlinked-fallback w-full h-full" style={{ display: 'none' }}>
+                                                            <DefaultProfile type={chat.roomType === 'CLAN' ? 'clan' : chat.roomType === 'BAND' ? 'jam' : 'user'} iconSize={16} />
+                                                        </div>
                                                     )}
                                                 </div>
-                                                <span className="text-[#003C48] font-bold text-sm">{friend.userNickNm}</span>
-                                                {(friend.unreadCount || 0) > 0 && (
-                                                    <div className="ml-auto bg-[#00BDF8] text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
-                                                        {friend.unreadCount! > 99 ? '99+' : friend.unreadCount}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-0.5 min-w-0">
+                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                                            chat.roomType === 'GROUP' ? 'bg-indigo-50 text-indigo-500' : 
+                                                            chat.roomType === 'CLAN' ? 'bg-blue-50 text-blue-500' : 
+                                                            chat.roomType === 'BAND' ? 'bg-emerald-50 text-emerald-500' :
+                                                            'bg-gray-100 text-gray-500'
+                                                        }`}>
+                                                            {chat.roomType === 'GROUP' ? '그룹' : chat.roomType === 'CLAN' ? '클랜' : chat.roomType === 'BAND' ? '합주' : '개인'}
+                                                        </span>
+                                                        <h3 className="body-board-post-title !m-0 leading-tight truncate min-w-0">{chat.roomNm}</h3>
                                                     </div>
-                                                )}
+                                                    <p className="text-xs truncate text-gray-400">
+                                                        {chat.newMsg || "대화 내용이 없습니다."}
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1 ml-2">
+                                                    {chat.newMsgReadCnt > 0 && (
+                                                        <div className="bg-[#00BDF8] text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+                                                            {chat.newMsgReadCnt > 99 ? '99+' : chat.newMsgReadCnt}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center text-gray-400 py-4 text-sm">참여 가능한 개인 채팅이 없습니다.</div>
-                                    )}
-                                </div>
+                                        ))}
+                                        {isFetchingMore && (
+                                            <div className="flex justify-center py-4">
+                                                <div className="w-6 h-6 border-2 border-[#00BDF8] border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                        )}
+                                        {!hasMore && chatList.length > 0 && (
+                                            <div className="text-center py-8 text-gray-300 text-xs">
+                                                모든 채팅 목록을 불러왔습니다.
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 transition-transform hover:scale-110">
+                                            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                        </div>
+                                        <p className="text-gray-400 text-sm">참여 중인 채팅방이 없습니다.</p>
+                                    </div>
+                                )}
                             </div>
                         </section>
                     </div>
