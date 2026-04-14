@@ -5,8 +5,10 @@ import com.bandi.backend.entity.common.CommDetail;
 import com.bandi.backend.entity.member.User;
 import com.bandi.backend.entity.member.UserAccount;
 import com.bandi.backend.repository.CommDetailRepository;
+import com.bandi.backend.repository.PrivacyAgreeInfoRepository;
 import com.bandi.backend.repository.UserAccountRepository;
 import com.bandi.backend.repository.UserRepository;
+import com.bandi.backend.entity.member.PrivacyAgreeInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserAccountRepository userAccountRepository;
     private final CommDetailRepository commDetailRepository;
+    private final PrivacyAgreeInfoRepository privacyAgreeInfoRepository;
     private final SmsService smsService;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -72,6 +75,16 @@ public class AuthService {
         user.setGenderCd(dto.getGenderCd());
         user.setUserStatCd("A"); // Active
         user.setJoinDay(today);
+        user.setPrivacyAgreeYn(dto.getPrivacyAgreeYn());
+        user.setPrivacyAgreeVerId(dto.getPrivacyAgreeVerId());
+
+        // Validate Privacy Agreement
+        if (!"Y".equals(dto.getPrivacyAgreeYn())) {
+            throw new RuntimeException("개인정보 동의가 필요합니다.");
+        }
+        if (dto.getPrivacyAgreeVerId() == null || dto.getPrivacyAgreeVerId().isEmpty()) {
+            throw new RuntimeException("개인정보 동의 버전 정보가 없습니다.");
+        }
 
         // Audit
         user.setInsDtime(nowDtime);
@@ -226,5 +239,10 @@ public class AuthService {
 
     private String encryptPassword(String password) {
         return passwordEncoder.encode(password);
+    }
+
+    public PrivacyAgreeInfo getActivePrivacyPolicy() {
+        return privacyAgreeInfoRepository.findFirstByPrivacyStatCd("A")
+                .orElseThrow(() -> new RuntimeException("활성화된 개인정보 동의항목이 없습니다."));
     }
 }

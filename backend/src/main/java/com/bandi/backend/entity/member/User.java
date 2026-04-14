@@ -57,4 +57,10 @@ public class User {
 
     @Column(name = "admin_yn", length = 1)
     private String adminYn;
+
+    @Column(name = "privacy_agree_yn", length = 1)
+    private String privacyAgreeYn;
+
+    @Column(name = "privacy_agree_ver_id", length = 20)
+    private String privacyAgreeVerId;
 }

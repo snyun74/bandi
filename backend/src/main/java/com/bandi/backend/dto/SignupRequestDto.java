@@ -12,4 +12,6 @@ public class SignupRequestDto {
     private String birthDt;
     private String genderCd;
     private String password;
+    private String privacyAgreeYn;
+    private String privacyAgreeVerId;
 }

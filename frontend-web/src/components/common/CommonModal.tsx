@@ -3,12 +3,14 @@ import React from 'react';
 interface CommonModalProps {
     isOpen: boolean;
     type: 'alert' | 'confirm';
-    message: string;
+    title?: string;
+    message?: string;
     onConfirm: () => void;
     onCancel?: () => void;
+    children?: React.ReactNode;
 }
 
-const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, message, onConfirm, onCancel }) => {
+const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, title, message, onConfirm, onCancel, children }) => {
     if (!isOpen) return null;
 
     return (
@@ -29,11 +31,18 @@ const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, message, onConf
                     </div>
 
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
-                        {type === 'alert' ? '알림' : '확인'}
+                        {title || (type === 'alert' ? '알림' : '확인')}
                     </h3>
-                    <p className="text-[14px] text-gray-500 mb-8 leading-relaxed break-keep whitespace-pre-line">
-                        {message}
-                    </p>
+                    
+                    {children ? (
+                        <div className="text-left mb-8">
+                            {children}
+                        </div>
+                    ) : (
+                        <p className="text-[14px] text-gray-500 mb-8 leading-relaxed break-keep whitespace-pre-line">
+                            {message}
+                        </p>
+                    )}
 
                     <div className={`grid ${type === 'confirm' ? 'grid-cols-2 gap-3' : 'grid-cols-1'}`}>
                         {type === 'confirm' && (

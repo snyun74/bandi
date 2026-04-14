@@ -55,6 +55,15 @@ public class AuthController {
         return ResponseEntity.ok().body(java.util.Collections.singletonMap("name", name));
     }
 
+    @GetMapping("/privacy-policy")
+    public ResponseEntity<?> getPrivacyPolicy() {
+        try {
+            return ResponseEntity.ok().body(authService.getActivePrivacyPolicy());
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(java.util.Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
     @GetMapping("/find-id")
     public ResponseEntity<?> findId(@RequestParam String phoneNumber) {
         try {
