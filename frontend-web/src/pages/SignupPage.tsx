@@ -323,8 +323,9 @@ const SignupPage: React.FC = () => {
             {/* Privacy Policy Modal */}
             <CommonModal
                 isOpen={isPrivacyModalOpen}
-                type="confirm"
+                type="alert"
                 title="개인정보 수집 및 이용 동의"
+                icon={<img src="/pwa-192x192.png" className="w-10 h-10 object-contain" alt="logo" />}
                 onConfirm={() => {
                     setIsPrivacyViewed(true);
                     setIsPrivacyAgreed(true);

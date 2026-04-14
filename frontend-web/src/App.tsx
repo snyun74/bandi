@@ -67,6 +67,7 @@ import SnsShortsCreate from './pages/sns/SnsShortsCreate';
 import SnsShortsFeed from './pages/sns/SnsShortsFeed';
 import SnsPostFeed from './pages/sns/SnsPostFeed';
 import SnsUnifiedFeed from './pages/sns/SnsUnifiedFeed';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 declare global {
   interface Window {
@@ -157,6 +158,7 @@ function App() {
           <Route path="/find-id" element={<FindIdPage />} />
           <Route path="/find-password" element={<FindPasswordPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
 
           {/* Main Layout Routes */}

@@ -8,18 +8,21 @@ interface CommonModalProps {
     onConfirm: () => void;
     onCancel?: () => void;
     children?: React.ReactNode;
+    icon?: React.ReactNode;
 }
 
-const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, title, message, onConfirm, onCancel, children }) => {
+const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, title, message, onConfirm, onCancel, children, icon }) => {
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[11000] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300" style={{ fontFamily: '"Pretendard", sans-serif', backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
             <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all duration-300 scale-100">
                 <div className="p-8 text-center">
-                    {/* Icon based on type */}
-                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 mb-6">
-                        {type === 'alert' ? (
+                    {/* Icon based on type or custom icon */}
+                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-50 mb-6 overflow-hidden">
+                        {icon ? (
+                            icon
+                        ) : type === 'alert' ? (
                             <svg className="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
