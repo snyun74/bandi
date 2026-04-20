@@ -105,3 +105,21 @@
 .animate-bounce-subtle {
   animation: bounce-subtle 2s ease-in-out infinite;
 }
+
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .min-h-safe-bottom {
+    min-height: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  .min-h-safe-top {
+    min-height: calc(60px + env(safe-area-inset-top));
+  }
+}

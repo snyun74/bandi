@@ -34,7 +34,7 @@ const Header: React.FC = () => {
     }, []);
 
     return (
-        <header className="fixed top-0 left-0 right-0 h-[60px] bg-white border-b border-gray-100 flex items-center justify-between pl-4 pr-0 z-50">
+        <header className="fixed top-0 left-0 right-0 min-h-safe-top pt-safe bg-white border-b border-gray-100 flex items-center justify-between pl-4 pr-0 z-50">
             {/* Left: Bandicon Logo */}
             <img
                 src="/images/bandicon.png"
