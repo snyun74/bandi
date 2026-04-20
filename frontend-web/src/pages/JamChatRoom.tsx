@@ -375,7 +375,7 @@ const JamChatRoom: React.FC = () => {
     };
 
     return (
-        <div className="fixed top-[50px] bottom-[60px] left-0 right-0 z-40 flex flex-col bg-[#f2f4f5] font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="fixed top-[calc(60px+env(safe-area-inset-top))] bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 z-40 flex flex-col bg-[#f2f4f5] font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex-none flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
                 <div className="flex items-center flex-1 min-w-0">
@@ -506,7 +506,7 @@ const JamChatRoom: React.FC = () => {
 
             {
                 replyTo && (
-                    <div className="absolute bottom-[60px] left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-3 flex justify-between items-center z-30 shadow-sm animate-slide-up">
+                    <div className="absolute bottom-[calc(60px+env(safe-area-inset-bottom))] left-0 right-0 bg-white/95 backdrop-blur border-t border-gray-200 px-4 py-3 flex justify-between items-center z-30 shadow-sm animate-slide-up">
                         <div className="text-sm text-gray-600 truncate mr-4">
                             <span className="font-bold text-[#00BDF8] mr-1">@{replyTo.userNickNm}</span>
                             에게 답장: <span className="text-gray-400">{replyTo.msg}</span>
@@ -518,7 +518,7 @@ const JamChatRoom: React.FC = () => {
 
             {
                 isMenuOpen && (
-                    <div className="absolute bottom-[70px] left-4 bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-50 animate-fade-in flex flex-col min-w-[140px]">
+                    <div className="absolute bottom-[calc(70px+env(safe-area-inset-bottom))] left-4 bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-gray-100 py-3 z-50 animate-fade-in flex flex-col min-w-[140px]">
                         <button onClick={handleFileSelect} className="flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 text-[#003C48] text-sm font-medium transition-colors text-left">
                             <FaPaperclip className="text-lg text-[#003C48]" /> <span>파일 업로드</span>
                         </button>
