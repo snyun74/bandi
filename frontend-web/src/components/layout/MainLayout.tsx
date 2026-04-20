@@ -35,7 +35,7 @@ const MainLayout: React.FC = () => {
             <Header />
 
             {/* Content Area with padding for Header and BottomNav */}
-            <main className="flex-1 pt-[calc(60px+env(safe-area-inset-top))] pb-[calc(70px+env(safe-area-inset-bottom))]">
+            <main className="flex-1 pt-[calc(var(--header-height)+var(--safe-top))] pb-[calc(var(--nav-offset)+var(--safe-bottom))]">
                 {/* Only render content if authenticated to prevent unnecessary API calls */}
                 {isInitialized && <Outlet />}
             </main>

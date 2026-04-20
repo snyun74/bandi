@@ -1,6 +1,18 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --header-height: 60px;
+    --nav-height: 60px;
+    --nav-offset: 70px; /* Base offset for chat/content above BottomNav */
+    
+    /* Safe Area Fallbacks */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@layer base {
 
   html,
   body,
@@ -108,18 +120,25 @@
 
 @layer utilities {
   .pb-safe {
+    padding-bottom: constant(safe-area-inset-bottom);
     padding-bottom: env(safe-area-inset-bottom);
   }
 
   .pt-safe {
+    padding-top: constant(safe-area-inset-top);
     padding-top: env(safe-area-inset-top);
   }
 
   .min-h-safe-bottom {
+    min-height: 60px; /* Fallback */
+    min-height: calc(60px + constant(safe-area-inset-bottom));
     min-height: calc(60px + env(safe-area-inset-bottom));
   }
 
   .min-h-safe-top {
+    min-height: 60px; /* Fallback */
+    min-height: calc(60px + constant(safe-area-inset-top));
     min-height: calc(60px + env(safe-area-inset-top));
   }
-}
+}
+
