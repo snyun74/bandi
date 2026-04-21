@@ -339,10 +339,36 @@ const GroupChatRoom: React.FC = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inputText.trim()) return;
+        const messageText = inputText.trim();
+        if (!messageText) return;
 
         const userId = localStorage.getItem('userId');
         if (!userId) return;
+
+        // 1. 임시 데이터 생성 (Optimistic UI)
+        const tempId = -Date.now();
+        const currentDateTime = new Date().toISOString().replace(/[-:T]/g, '').substring(0, 14);
+        
+        const tempMessage: ChatMessage = {
+            cnMsgNo: tempId,
+            cnNo: Number(roomNo),
+            sndUserId: userId,
+            userNickNm: '나', // 실제 전송 시의 유저명은 서버에서 받아오지만 일단 '나'로 표시
+            msg: messageText,
+            msgTypeCd: 'TEXT',
+            sndDtime: currentDateTime,
+            isMyMessage: true,
+            unreadCount: 0,
+            parentMsgNo: replyTo?.cnMsgNo,
+            parentMsgContent: replyTo?.msg,
+            parentMsgUserNickNm: replyTo?.userNickNm
+        };
+
+        // UI 즉시 업데이트
+        setMessages(prev => [...prev, tempMessage]);
+        setInputText("");
+        setReplyTo(null);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
         try {
             const res = await fetch('/api/chat/message', {
@@ -351,9 +377,9 @@ const GroupChatRoom: React.FC = () => {
                 body: JSON.stringify({
                     cnNo: Number(roomNo),
                     sndUserId: userId,
-                    msg: inputText,
+                    msg: messageText,
                     msgTypeCd: 'TEXT',
-                    parentMsgNo: replyTo?.cnMsgNo,
+                    parentMsgNo: tempMessage.parentMsgNo,
                     roomType: 'GROUP'
                 })
             });
@@ -361,14 +387,18 @@ const GroupChatRoom: React.FC = () => {
             if (res.ok) {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
-                setMessages(prev => [...prev, processedMessage]);
+                
+                // 2. 임시 메시지를 서버 결과로 교체
+                setMessages(prev => prev.map(msg => msg.cnMsgNo === tempId ? processedMessage : msg));
                 latestMsgNoRef.current = newMessage.cnMsgNo;
-                setInputText("");
-                setReplyTo(null);
-                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+            } else {
+                throw new Error("전송 실패");
             }
         } catch (error) {
             console.error(error);
+            // 3. 실패 시 메시지 제거 및 알림
+            setMessages(prev => prev.filter(msg => msg.cnMsgNo !== tempId));
+            showAlert("메시지 전송에 실패했습니다.");
         }
     };
 

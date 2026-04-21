@@ -8,6 +8,7 @@ import com.google.firebase.messaging.WebpushFcmOptions;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,6 +43,7 @@ public class PushService {
                 .executeUpdate();
     }
 
+    @Async
     @Transactional
     public void sendPush(String userId, String title, String body, String link, String pushType) {
         // 1. 수신 설정 확인 (MM_USER_PUSH_SETTING)

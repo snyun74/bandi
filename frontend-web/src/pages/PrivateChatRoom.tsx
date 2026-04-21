@@ -275,10 +275,36 @@ const PrivateChatRoom: React.FC = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inputText.trim()) return;
+        const messageText = inputText.trim();
+        if (!messageText) return;
 
         const userId = localStorage.getItem('userId');
         if (!userId) return;
+
+        // 1. 임시 데이터 생성 (Optimistic UI)
+        const tempId = -Date.now();
+        const currentDateTime = new Date().toISOString().replace(/[-:T]/g, '').substring(0, 14);
+
+        const tempMessage: ChatMessage = {
+            cnMsgNo: tempId,
+            cnNo: Number(roomNo),
+            sndUserId: userId,
+            userNickNm: '나',
+            msg: messageText,
+            msgTypeCd: 'TEXT',
+            sndDtime: currentDateTime,
+            isMyMessage: true,
+            unreadCount: 1, // 개인 채팅은 상대가 읽기 전까지 기본 1
+            parentMsgNo: replyTo?.cnMsgNo,
+            parentMsgContent: replyTo?.msg,
+            parentMsgUserNickNm: replyTo?.userNickNm
+        };
+
+        // UI 즉시 업데이트
+        setMessages(prev => [...prev, tempMessage]);
+        setInputText("");
+        setReplyTo(null);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
         try {
             const res = await fetch('/api/chat/private/message', {
@@ -287,23 +313,27 @@ const PrivateChatRoom: React.FC = () => {
                 body: JSON.stringify({
                     cnNo: Number(roomNo),
                     sndUserId: userId,
-                    msg: inputText,
+                    msg: messageText,
                     msgTypeCd: 'TEXT',
-                    parentMsgNo: replyTo?.cnMsgNo
+                    parentMsgNo: tempMessage.parentMsgNo
                 })
             });
 
             if (res.ok) {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
-                setMessages(prev => [...prev, processedMessage]);
+                
+                // 2. 임시 메시지를 서버 결과로 교체
+                setMessages(prev => prev.map(msg => msg.cnMsgNo === tempId ? processedMessage : msg));
                 latestMsgNoRef.current = newMessage.cnMsgNo;
-                setInputText("");
-                setReplyTo(null);
-                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+            } else {
+                throw new Error("전송 실패");
             }
         } catch (error) {
             console.error(error);
+            // 3. 실패 시 메시지 제거 및 알림
+            setMessages(prev => prev.filter(msg => msg.cnMsgNo !== tempId));
+            showAlert("메시지 전송에 실패했습니다.");
         }
     };
 

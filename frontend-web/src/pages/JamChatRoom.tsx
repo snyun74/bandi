@@ -338,10 +338,36 @@ const JamChatRoom: React.FC = () => {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inputText.trim()) return;
+        const messageText = inputText.trim();
+        if (!messageText) return;
 
         const userId = localStorage.getItem('userId');
         if (!userId) return;
+
+        // 1. 임시 데이터 생성 (Optimistic UI)
+        const tempId = -Date.now();
+        const currentDateTime = new Date().toISOString().replace(/[-:T]/g, '').substring(0, 14);
+
+        const tempMessage: ChatMessage = {
+            cnMsgNo: tempId,
+            cnNo: Number(roomNo),
+            sndUserId: userId,
+            userNickNm: '나',
+            msg: messageText,
+            msgTypeCd: 'TEXT',
+            sndDtime: currentDateTime,
+            isMyMessage: true,
+            unreadCount: 0,
+            parentMsgNo: replyTo?.cnMsgNo,
+            parentMsgContent: replyTo?.msg,
+            parentMsgUserNickNm: replyTo?.userNickNm
+        };
+
+        // UI 즉시 업데이트
+        setMessages(prev => [...prev, tempMessage]);
+        setInputText("");
+        setReplyTo(null);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
         try {
             const res = await fetch('/api/jam-chat/message', {
@@ -350,23 +376,26 @@ const JamChatRoom: React.FC = () => {
                 body: JSON.stringify({
                     cnNo: Number(roomNo),
                     sndUserId: userId,
-                    msg: inputText,
+                    msg: messageText,
                     msgTypeCd: 'TEXT',
-                    parentMsgNo: replyTo?.cnMsgNo,
+                    parentMsgNo: tempMessage.parentMsgNo,
                 })
             });
 
             if (res.ok) {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
-                setMessages(prev => [...prev, processedMessage]);
-                latestMsgNoRef.current = newMessage.cnMsgNo; // 폴링 기준점 업데이트
-                setInputText("");
-                setReplyTo(null);
-                setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                
+                // 2. 임시 메시지를 서버 결과로 교체
+                setMessages(prev => prev.map(msg => msg.cnMsgNo === tempId ? processedMessage : msg));
+                latestMsgNoRef.current = newMessage.cnMsgNo;
+            } else {
+                throw new Error("전송 실패");
             }
         } catch (error) {
             console.error(error);
+            setMessages(prev => prev.filter(msg => msg.cnMsgNo !== tempId));
+            showAlert("메시지 전송에 실패했습니다.");
         }
     };
 
@@ -592,6 +621,24 @@ const JamChatRoom: React.FC = () => {
                                 content += `- ${u.userNm}: ${u.amount.toLocaleString()}원\n`;
                             });
 
+                            const tempId = -Date.now();
+                            const currentDateTime = new Date().toISOString().replace(/[-:T]/g, '').substring(0, 14);
+                            const tempMessage: ChatMessage = {
+                                cnMsgNo: tempId,
+                                cnNo: Number(roomNo),
+                                sndUserId: userId,
+                                userNickNm: '나',
+                                msg: content.trim(),
+                                msgTypeCd: 'TEXT',
+                                sndDtime: currentDateTime,
+                                isMyMessage: true,
+                                unreadCount: 0
+                            };
+
+                            setMessages(prev => [...prev, tempMessage]);
+                            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                            setIsSettlementModalOpen(false);
+
                             try {
                                 const res = await fetch('/api/jam-chat/message', {
                                     method: 'POST',
@@ -607,16 +654,15 @@ const JamChatRoom: React.FC = () => {
                                 if (res.ok) {
                                     const newMessage = await res.json();
                                     const processedMessage = { ...newMessage, isMyMessage: true };
-                                    setMessages(prev => [...prev, processedMessage]);
+                                    setMessages(prev => prev.map(msg => msg.cnMsgNo === tempId ? processedMessage : msg));
                                     latestMsgNoRef.current = newMessage.cnMsgNo;
-                                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                                    setIsSettlementModalOpen(false);
                                 } else {
-                                    showAlert("정산 메시지 전송에 실패했습니다.");
+                                    throw new Error("정산 전송 실패");
                                 }
                             } catch (error) {
                                 console.error(error);
-                                showAlert("오류가 발생했습니다.");
+                                setMessages(prev => prev.filter(msg => msg.cnMsgNo !== tempId));
+                                showAlert("정산 메시지 전송에 실패했습니다.");
                             }
                         }}
                     />
