@@ -66,4 +66,24 @@ public class SnsController {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(snsService.getShortsByUser(userId, pageable));
     }
+
+    @DeleteMapping("/posts/{postId}")
+    public ResponseEntity<?> deletePost(@PathVariable Long postId, @RequestParam String userId) {
+        try {
+            snsService.deletePost(postId, userId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/shorts/{shortsNo}")
+    public ResponseEntity<?> deleteShorts(@PathVariable Long shortsNo, @RequestParam String userId) {
+        try {
+            snsService.deleteShorts(shortsNo, userId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
 }

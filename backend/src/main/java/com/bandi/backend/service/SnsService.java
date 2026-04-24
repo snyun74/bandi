@@ -110,7 +110,7 @@ public class SnsService {
 
     @Transactional(readOnly = true)
     public Page<PostListDto> getPostsByUser(String userId, Pageable pageable) {
-        Page<Post> postsPage = postRepository.findByUserIdOrderByInsDtimeDesc(userId, pageable);
+        Page<Post> postsPage = postRepository.findByUserIdAndPostStatCdOrderByInsDtimeDesc(userId, "A", pageable);
         User user = userRepository.findById(userId).orElse(null);
         String userNickNm = user != null ? user.getUserNickNm() : userId;
 
@@ -144,7 +144,7 @@ public class SnsService {
         User user = userRepository.findById(userId).orElse(null);
         String userNickNm = user != null ? user.getUserNickNm() : userId;
 
-        return shortsRepository.findByUserIdOrderByInsDtimeDesc(userId, pageable).map(shorts -> {
+        return shortsRepository.findByUserIdAndShortsStatCdOrderByInsDtimeDesc(userId, "A", pageable).map(shorts -> {
             String videoPath = null;
             if (shorts.getVideoAttachNo() != null) {
                  CmAttachment cmAttach = cmAttachmentRepository.findById(shorts.getVideoAttachNo()).orElse(null);
@@ -252,5 +252,31 @@ public class SnsService {
         } catch (IOException e) {
             throw new RuntimeException("쇼츠 파일 업로드 중 오류가 발생했습니다.", e);
         }
+    }
+
+    @Transactional
+    public void deletePost(Long postId, String userId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시물을 찾을 수 없습니다."));
+        if (!post.getUserId().equals(userId)) {
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        }
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        post.setPostStatCd("D");
+        post.setUpdDtime(currentDateTime);
+        postRepository.save(post);
+    }
+
+    @Transactional
+    public void deleteShorts(Long shortsNo, String userId) {
+        Shorts shorts = shortsRepository.findById(shortsNo)
+                .orElseThrow(() -> new RuntimeException("쇼츠를 찾을 수 없습니다."));
+        if (!shorts.getUserId().equals(userId)) {
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        }
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        shorts.setShortsStatCd("D");
+        shorts.setUpdDtime(currentDateTime);
+        shortsRepository.save(shorts);
     }
 }

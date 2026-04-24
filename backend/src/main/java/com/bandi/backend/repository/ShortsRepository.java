@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ShortsRepository extends JpaRepository<Shorts, Long> {
     Page<Shorts> findByUserIdOrderByInsDtimeDesc(String userId, Pageable pageable);
+    Page<Shorts> findByUserIdAndShortsStatCdOrderByInsDtimeDesc(String userId, String shortsStatCd, Pageable pageable);
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes } from 'react-icons/fa';
 import { BsPersonCircle, BsChatSquare, BsDoorOpen } from 'react-icons/bs';
 import CommonModal from '../components/common/CommonModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
@@ -32,6 +32,8 @@ const MyProfile: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
     const userId = localStorage.getItem('userId');
 
     const showAlert = (message: string) => {
@@ -151,6 +153,43 @@ const MyProfile: React.FC = () => {
         navigate('/');
     };
 
+    const handleDeleteClick = (e: React.MouseEvent, type: 'POST' | 'SHORTS', id: number | string) => {
+        e.stopPropagation();
+        setItemToDelete({ type, id });
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!itemToDelete || !userId) return;
+
+        try {
+            const url = itemToDelete.type === 'POST' 
+                ? `/api/sns/posts/${itemToDelete.id}?userId=${userId}`
+                : `/api/sns/shorts/${itemToDelete.id}?userId=${userId}`;
+            
+            const response = await fetch(url, { method: 'DELETE' });
+            
+            if (response.ok) {
+                setCombinedItems(prev => prev.filter(item => {
+                    if (itemToDelete.type === 'POST') {
+                        return !(item.type === 'POST' && item.postId === itemToDelete.id);
+                    } else {
+                        return !(item.type === 'SHORTS' && item.shortsNo === itemToDelete.id);
+                    }
+                }));
+                showAlert("삭제되었습니다.");
+            } else {
+                showAlert("삭제에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+            showAlert("오류가 발생했습니다.");
+        } finally {
+            setIsDeleteModalOpen(false);
+            setItemToDelete(null);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
@@ -159,7 +198,7 @@ const MyProfile: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <FaChevronLeft size={20} />
                     </button>
-                    <h1 className="text-[14px] font-bold text-[#003C48]">프로필</h1>
+                    <h1 className="text-[14px] font-bold text-[#003C48]">프로필 (삭제버튼 추가됨)</h1>
                 </div>
                 <div className="flex items-center gap-2 relative">
                     {profile?.adminYn === 'Y' && (
@@ -335,12 +374,30 @@ const MyProfile: React.FC = () => {
                                             )}
                                         </>
                                     )}
+
+                                    {/* Delete Button */}
+                                    <button
+                                        onClick={(e) => handleDeleteClick(e, item.type as any, isShorts ? item.shortsNo : item.postId)}
+                                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center z-[50] shadow-lg border-2 border-white"
+                                        style={{ pointerEvents: 'auto' }}
+                                    >
+                                        <FaTimes size={14} />
+                                    </button>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <CommonModal
+                isOpen={isDeleteModalOpen}
+                type="confirm"
+                message={itemToDelete?.type === 'SHORTS' ? "쇼츠를 삭제하시겠습니까?" : "게시물을 삭제하시겠습니까?"}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => { setIsDeleteModalOpen(false); setItemToDelete(null); }}
+            />
 
             {/* Logout Confirmation Modal */}
             <CommonModal
