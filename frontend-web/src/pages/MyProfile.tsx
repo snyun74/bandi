@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes } from 'react-icons/fa';
-import { BsPersonCircle, BsChatSquare, BsDoorOpen } from 'react-icons/bs';
+import { BsPersonCircle, BsChatSquare, BsDoorOpen, BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../components/common/CommonModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 
@@ -33,6 +33,7 @@ const MyProfile: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
     const userId = localStorage.getItem('userId');
 
@@ -198,7 +199,7 @@ const MyProfile: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <FaChevronLeft size={20} />
                     </button>
-                    <h1 className="text-[14px] font-bold text-[#003C48]">프로필 (삭제버튼 추가됨)</h1>
+                    <h1 className="text-[14px] font-bold text-[#003C48]">프로필</h1>
                 </div>
                 <div className="flex items-center gap-2 relative">
                     {profile?.adminYn === 'Y' && (
@@ -375,13 +376,16 @@ const MyProfile: React.FC = () => {
                                         </>
                                     )}
 
-                                    {/* Delete Button */}
+                                    {/* Action Menu Button (Glassmorphism Style) */}
                                     <button
-                                        onClick={(e) => handleDeleteClick(e, item.type as any, isShorts ? item.shortsNo : item.postId)}
-                                        className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center z-[50] shadow-lg border-2 border-white"
-                                        style={{ pointerEvents: 'auto' }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setItemToDelete({ type: item.type as any, id: isShorts ? item.shortsNo : item.postId });
+                                            setIsActionMenuOpen(true);
+                                        }}
+                                        className="absolute top-1.5 right-1.5 w-7 h-7 flex items-center justify-center z-[30] bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md border border-white/20 shadow-sm active:scale-90 transition-all"
                                     >
-                                        <FaTimes size={14} />
+                                        <BsThreeDotsVertical size={16} className="drop-shadow-sm" />
                                     </button>
                                 </div>
                             );
@@ -394,10 +398,47 @@ const MyProfile: React.FC = () => {
             <CommonModal
                 isOpen={isDeleteModalOpen}
                 type="confirm"
+                variant="danger"
                 message={itemToDelete?.type === 'SHORTS' ? "쇼츠를 삭제하시겠습니까?" : "게시물을 삭제하시겠습니까?"}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => { setIsDeleteModalOpen(false); setItemToDelete(null); }}
             />
+
+            {/* Instagram-style Action Menu (Bottom Sheet) */}
+            {isActionMenuOpen && (
+                <div className="fixed inset-0 z-[10000] flex items-end justify-center">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        onClick={() => setIsActionMenuOpen(false)}
+                    />
+                    {/* Menu Content */}
+                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] pb-[calc(20px+var(--safe-bottom))] animate-in slide-in-from-bottom duration-300 overflow-hidden shadow-2xl">
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-2" />
+                        <div className="flex flex-col py-2">
+                            <button
+                                onClick={() => {
+                                    setIsActionMenuOpen(false);
+                                    setIsDeleteModalOpen(true);
+                                }}
+                                className="w-full py-4 text-[#FF3B30] font-bold text-[16px] active:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>삭제</span>
+                            </button>
+                            <div className="mx-4 h-[1px] bg-gray-100" />
+                            <button
+                                onClick={() => setIsActionMenuOpen(false)}
+                                className="w-full py-4 text-gray-800 font-medium text-[16px] active:bg-gray-50 transition-colors"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Logout Confirmation Modal */}
             <CommonModal

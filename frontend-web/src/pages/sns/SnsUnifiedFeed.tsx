@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { BsThreeDotsVertical } from 'react-icons/bs';
+import CommonModal from '../../components/common/CommonModal';
 
 interface FeedItem {
     type: 'SHORTS' | 'POST';
@@ -32,6 +34,11 @@ const SnsUnifiedFeed: React.FC = () => {
     const [hasMoreShorts, setHasMoreShorts] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
+    const currentUserId = localStorage.getItem('userId');
 
     const fetchCombined = async (pPage: number, sPage: number, isInitial: boolean = false) => {
         if (!userId || isLoading) return;
@@ -114,6 +121,33 @@ const SnsUnifiedFeed: React.FC = () => {
         }
     };
 
+    const handleDeleteConfirm = async () => {
+        if (!itemToDelete || !currentUserId) return;
+
+        try {
+            const url = itemToDelete.type === 'POST' 
+                ? `/api/sns/posts/${itemToDelete.id}?userId=${currentUserId}`
+                : `/api/sns/shorts/${itemToDelete.id}?userId=${currentUserId}`;
+            
+            const response = await fetch(url, { method: 'DELETE' });
+            
+            if (response.ok) {
+                setFeedList(prev => prev.filter(item => {
+                    if (itemToDelete.type === 'POST') {
+                        return !(item.type === 'POST' && item.postId === itemToDelete.id);
+                    } else {
+                        return !(item.type === 'SHORTS' && item.shortsNo === itemToDelete.id);
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error("Delete error:", error);
+        } finally {
+            setIsDeleteModalOpen(false);
+            setItemToDelete(null);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black flex flex-col h-full font-['Pretendard']">
             {/* Header Overlay */}
@@ -131,13 +165,36 @@ const SnsUnifiedFeed: React.FC = () => {
                 className="flex-1 overflow-y-scroll snap-y snap-mandatory scrollbar-none h-full"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-                {feedList.map((item) => (
-                    item.type === 'SHORTS' ? (
-                        <ShortsVideoItem key={`shorts-${item.shortsNo}`} item={item} />
-                    ) : (
-                        <PostFeedItem key={`post-${item.postId}`} post={item} />
-                    )
-                ))}
+                {feedList.map((item) => {
+                    const isMyContent = item.userId === currentUserId;
+                    const itemKey = item.type === 'SHORTS' ? `shorts-${item.shortsNo}` : `post-${item.postId}`;
+                    
+                    return (
+                        <div key={itemKey} className="relative h-screen w-full snap-start">
+                            {item.type === 'SHORTS' ? (
+                                <ShortsVideoItem item={item} />
+                            ) : (
+                                <PostFeedItem post={item} />
+                            )}
+                            
+                            {/* More Menu Button (Glassmorphism) */}
+                            {isMyContent && (
+                                <button
+                                    onClick={() => {
+                                        setItemToDelete({ 
+                                            type: item.type, 
+                                            id: item.type === 'SHORTS' ? item.shortsNo! : item.postId! 
+                                        });
+                                        setIsActionMenuOpen(true);
+                                    }}
+                                    className="absolute top-6 right-4 z-[60] w-10 h-10 flex items-center justify-center bg-black/20 text-white rounded-full backdrop-blur-md border border-white/20 shadow-lg active:scale-90 transition-all"
+                                >
+                                    <BsThreeDotsVertical size={22} className="drop-shadow-md" />
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
                 
                 {isLoading && (
                     <div className="h-screen flex items-center justify-center text-white">
@@ -145,6 +202,50 @@ const SnsUnifiedFeed: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <CommonModal
+                isOpen={isDeleteModalOpen}
+                type="confirm"
+                variant="danger"
+                message={itemToDelete?.type === 'SHORTS' ? "쇼츠를 삭제하시겠습니까?" : "게시물을 삭제하시겠습니까?"}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => { setIsDeleteModalOpen(false); setItemToDelete(null); }}
+            />
+
+            {/* Action Menu (Bottom Sheet) */}
+            {isActionMenuOpen && (
+                <div className="fixed inset-0 z-[10000] flex items-end justify-center">
+                    <div 
+                        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        onClick={() => setIsActionMenuOpen(false)}
+                    />
+                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] pb-[calc(24px+var(--safe-bottom))] animate-in slide-in-from-bottom duration-300 overflow-hidden shadow-2xl">
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-2" />
+                        <div className="flex flex-col py-2">
+                            <button
+                                onClick={() => {
+                                    setIsActionMenuOpen(false);
+                                    setIsDeleteModalOpen(true);
+                                }}
+                                className="w-full py-4 text-[#FF3B30] font-bold text-[16px] active:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>삭제</span>
+                            </button>
+                            <div className="mx-4 h-[1px] bg-gray-100" />
+                            <button
+                                onClick={() => setIsActionMenuOpen(false)}
+                                className="w-full py-4 text-gray-800 font-medium text-[16px] active:bg-gray-50 transition-colors"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

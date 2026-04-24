@@ -3,6 +3,7 @@ import React from 'react';
 interface CommonModalProps {
     isOpen: boolean;
     type: 'alert' | 'confirm';
+    variant?: 'primary' | 'danger';
     title?: string;
     message?: string;
     onConfirm: () => void;
@@ -11,7 +12,7 @@ interface CommonModalProps {
     icon?: React.ReactNode;
 }
 
-const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, title, message, onConfirm, onCancel, children, icon }) => {
+const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, variant = 'primary', title, message, onConfirm, onCancel, children, icon }) => {
     if (!isOpen) return null;
 
     return (
@@ -58,7 +59,11 @@ const CommonModal: React.FC<CommonModalProps> = ({ isOpen, type, title, message,
                         )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onConfirm(); }}
-                            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-colors duration-200 shadow-lg shadow-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className={`w-full py-3 px-4 text-white rounded-xl font-semibold transition-colors duration-200 shadow-lg focus:outline-none focus:ring-2 ${
+                                variant === 'danger' 
+                                    ? 'bg-red-500 hover:bg-red-600 shadow-red-100 focus:ring-red-500' 
+                                    : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 focus:ring-indigo-500'
+                            }`}
                         >
                             확인
                         </button>
