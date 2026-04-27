@@ -34,8 +34,25 @@ const MyProfile: React.FC = () => {
     const menuRef = useRef<HTMLDivElement>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+    const [isPublicTypeModalOpen, setIsPublicTypeModalOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
+    const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
     const userId = localStorage.getItem('userId');
+
+    useEffect(() => {
+        const fetchCommonCodes = async () => {
+            try {
+                const res = await fetch('/api/auth/common/codes/BD007');
+                if (res.ok) {
+                    const data = await res.json();
+                    setPublicTypes(data);
+                }
+            } catch (err) {
+                console.error("공통코드 BD007 조회 실패", err);
+            }
+        };
+        fetchCommonCodes();
+    }, []);
 
     const showAlert = (message: string) => {
         setAlertMessage(message);
@@ -187,6 +204,35 @@ const MyProfile: React.FC = () => {
             showAlert("오류가 발생했습니다.");
         } finally {
             setIsDeleteModalOpen(false);
+            setItemToDelete(null);
+        }
+    };
+
+    const handlePublicTypeChange = async (typeCd: string) => {
+        if (!itemToDelete || !userId) return;
+        try {
+            const url = itemToDelete.type === 'POST' 
+                ? `/api/sns/posts/${itemToDelete.id}/public-type?userId=${userId}&publicTypeCd=${typeCd}`
+                : `/api/sns/shorts/${itemToDelete.id}/public-type?userId=${userId}&publicTypeCd=${typeCd}`;
+            
+            const response = await fetch(url, { method: 'PATCH' });
+            if (response.ok) {
+                // 목록에서 해당 아이템의 publicTypeCd 업데이트
+                setCombinedItems(prev => prev.map(item => {
+                    if (item.type === itemToDelete.type && (item.postId === itemToDelete.id || item.shortsNo === itemToDelete.id)) {
+                        return { ...item, publicTypeCd: typeCd };
+                    }
+                    return item;
+                }));
+                showAlert("공개 설정이 변경되었습니다.");
+            } else {
+                showAlert("공개 설정 변경에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("Update public type error:", error);
+            showAlert("오류가 발생했습니다.");
+        } finally {
+            setIsPublicTypeModalOpen(false);
             setItemToDelete(null);
         }
     };
@@ -419,6 +465,19 @@ const MyProfile: React.FC = () => {
                             <button
                                 onClick={() => {
                                     setIsActionMenuOpen(false);
+                                    setIsPublicTypeModalOpen(true);
+                                }}
+                                className="w-full py-4 text-gray-800 font-bold text-[16px] active:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <span>공개여부 설정</span>
+                            </button>
+                            <div className="mx-4 h-[1px] bg-gray-100" />
+                            <button
+                                onClick={() => {
+                                    setIsActionMenuOpen(false);
                                     setIsDeleteModalOpen(true);
                                 }}
                                 className="w-full py-4 text-[#FF3B30] font-bold text-[16px] active:bg-gray-50 transition-colors flex items-center justify-center gap-2"
@@ -432,6 +491,51 @@ const MyProfile: React.FC = () => {
                             <button
                                 onClick={() => setIsActionMenuOpen(false)}
                                 className="w-full py-4 text-gray-800 font-medium text-[16px] active:bg-gray-50 transition-colors"
+                            >
+                                취소
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Public Type Modal (Bottom Sheet) */}
+            {isPublicTypeModalOpen && (
+                <div className="fixed inset-0 z-[10000] flex items-end justify-center">
+                    <div 
+                        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        onClick={() => {
+                            setIsPublicTypeModalOpen(false);
+                            setItemToDelete(null);
+                        }}
+                    />
+                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] pb-[calc(20px+var(--safe-bottom))] animate-in slide-in-from-bottom duration-300 overflow-hidden shadow-2xl">
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-2" />
+                        <div className="px-4 py-3 text-center border-b border-gray-100">
+                            <h3 className="text-[16px] font-bold text-gray-800">공개여부 설정</h3>
+                        </div>
+                        <div className="flex flex-col py-2">
+                            {publicTypes.map(pt => {
+                                const currentItem = itemToDelete ? combinedItems.find(item => item.type === itemToDelete.type && (item.postId === itemToDelete.id || item.shortsNo === itemToDelete.id)) : null;
+                                const isSelected = currentItem?.publicTypeCd === pt.commDtlCd;
+                                return (
+                                    <button
+                                        key={pt.commDtlCd}
+                                        onClick={() => handlePublicTypeChange(pt.commDtlCd)}
+                                        className={`w-full py-4 text-[15px] transition-colors flex items-center justify-center gap-2 ${isSelected ? 'text-[#003C48] font-bold bg-gray-50' : 'text-gray-800 font-medium active:bg-gray-50'}`}
+                                    >
+                                        <span>{pt.commDtlNm}</span>
+                                        {isSelected && <span className="text-[#003C48]">✓</span>}
+                                    </button>
+                                );
+                            })}
+                            <div className="mx-4 h-[1px] bg-gray-100 my-2" />
+                            <button
+                                onClick={() => {
+                                    setIsPublicTypeModalOpen(false);
+                                    setItemToDelete(null);
+                                }}
+                                className="w-full py-3 text-gray-500 font-medium text-[15px] active:bg-gray-50 transition-colors"
                             >
                                 취소
                             </button>

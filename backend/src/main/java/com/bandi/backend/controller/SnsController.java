@@ -102,4 +102,24 @@ public class SnsController {
             return ResponseEntity.status(403).body(e.getMessage());
         }
     }
+
+    @PatchMapping("/posts/{postId}/public-type")
+    public ResponseEntity<?> updatePostPublicType(@PathVariable Long postId, @RequestParam String userId, @RequestParam String publicTypeCd) {
+        try {
+            snsService.updatePostPublicType(postId, userId, publicTypeCd);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/shorts/{shortsNo}/public-type")
+    public ResponseEntity<?> updateShortsPublicType(@PathVariable Long shortsNo, @RequestParam String userId, @RequestParam String publicTypeCd) {
+        try {
+            snsService.updateShortsPublicType(shortsNo, userId, publicTypeCd);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
 }

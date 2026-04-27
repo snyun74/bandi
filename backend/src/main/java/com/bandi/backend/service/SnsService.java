@@ -337,4 +337,30 @@ public class SnsService {
         shorts.setUpdDtime(currentDateTime);
         shortsRepository.save(shorts);
     }
+
+    @Transactional
+    public void updatePostPublicType(Long postId, String userId, String publicTypeCd) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시물을 찾을 수 없습니다."));
+        if (!post.getUserId().equals(userId)) {
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        post.setPublicTypeCd(publicTypeCd);
+        post.setUpdDtime(currentDateTime);
+        postRepository.save(post);
+    }
+
+    @Transactional
+    public void updateShortsPublicType(Long shortsNo, String userId, String publicTypeCd) {
+        Shorts shorts = shortsRepository.findById(shortsNo)
+                .orElseThrow(() -> new RuntimeException("쇼츠를 찾을 수 없습니다."));
+        if (!shorts.getUserId().equals(userId)) {
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        shorts.setPublicTypeCd(publicTypeCd);
+        shorts.setUpdDtime(currentDateTime);
+        shortsRepository.save(shorts);
+    }
 }
