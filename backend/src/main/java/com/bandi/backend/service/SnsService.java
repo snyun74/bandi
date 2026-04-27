@@ -165,6 +165,64 @@ public class SnsService {
         });
     }
 
+    @Transactional(readOnly = true)
+    public Page<PostListDto> getPublicPosts(Pageable pageable) {
+        Page<Post> postsPage = postRepository.findByPublicTypeCdAndPostStatCdOrderByInsDtimeDesc("A", "A", pageable);
+
+        return postsPage.map(post -> {
+            User user = userRepository.findById(post.getUserId()).orElse(null);
+            String userNickNm = user != null ? user.getUserNickNm() : post.getUserId();
+
+            List<PostAttachment> attaches = postAttachmentRepository.findByPostId(post.getPostId());
+            List<String> imagePaths = attaches.stream()
+                    .map(attach -> cmAttachmentRepository.findById(attach.getAttachNo()).orElse(null))
+                    .filter(cm -> cm != null)
+                    .map(cm -> cm.getFilePath())
+                    .collect(Collectors.toList());
+
+            String thumbnailPath = imagePaths.isEmpty() ? null : imagePaths.get(0);
+
+            return PostListDto.builder()
+                    .postId(post.getPostId())
+                    .userId(post.getUserId())
+                    .userNickNm(userNickNm)
+                    .contentPreview(post.getContent() != null && post.getContent().length() > 50 
+                                    ? post.getContent().substring(0, 50) + "..." 
+                                    : post.getContent())
+                    .thumbnailPath(thumbnailPath)
+                    .imagePaths(imagePaths)
+                    .publicTypeCd(post.getPublicTypeCd())
+                    .insDtime(post.getInsDtime())
+                    .build();
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ShortsListDto> getPublicShorts(Pageable pageable) {
+        return shortsRepository.findByPublicTypeCdAndShortsStatCdOrderByInsDtimeDesc("A", "A", pageable).map(shorts -> {
+            User user = userRepository.findById(shorts.getUserId()).orElse(null);
+            String userNickNm = user != null ? user.getUserNickNm() : shorts.getUserId();
+
+            String videoPath = null;
+            if (shorts.getVideoAttachNo() != null) {
+                 CmAttachment cmAttach = cmAttachmentRepository.findById(shorts.getVideoAttachNo()).orElse(null);
+                 if (cmAttach != null) {
+                     videoPath = cmAttach.getFilePath();
+                 }
+            }
+            
+            return ShortsListDto.builder()
+                    .shortsNo(shorts.getShortsNo())
+                    .userId(shorts.getUserId())
+                    .userNickNm(userNickNm)
+                    .title(shorts.getTitle())
+                    .videoPath(videoPath)
+                    .publicTypeCd(shorts.getPublicTypeCd())
+                    .insDtime(shorts.getInsDtime())
+                    .build();
+        });
+    }
+
     @Transactional
     public void createShorts(ShortsCreateDto dto, MultipartFile videoFile, MultipartFile thumbnailFile) {
         if (videoFile == null || videoFile.isEmpty()) {

@@ -49,6 +49,12 @@ public class BoardService {
         return boardRepository.findHotBoardList(userId, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<CommunityBoardListDto> getRecentBoardList(int page, int size, String userId) {
+        Pageable pageable = PageRequest.of(page, size);
+        return boardRepository.findRecentBoardList(userId, pageable);
+    }
+
     @Transactional
     public void createBoardPost(CommunityBoardCreateDto dto, MultipartFile file) {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));

@@ -29,6 +29,15 @@ public class BoardController {
         return ResponseEntity.ok(boardService.getHotBoardList(safeUserId));
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<?> getRecentBoardList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) String userId) {
+        String safeUserId = (userId != null) ? userId : "";
+        return ResponseEntity.ok(boardService.getRecentBoardList(page, size, safeUserId));
+    }
+
     @PostMapping(value = "/posts", consumes = { "multipart/form-data" })
     public ResponseEntity<?> createBoardPost(
             @RequestPart("data") com.bandi.backend.dto.CommunityBoardCreateDto dto,

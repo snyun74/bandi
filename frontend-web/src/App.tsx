@@ -67,6 +67,7 @@ import SnsShortsCreate from './pages/sns/SnsShortsCreate';
 import SnsShortsFeed from './pages/sns/SnsShortsFeed';
 import SnsPostFeed from './pages/sns/SnsPostFeed';
 import SnsUnifiedFeed from './pages/sns/SnsUnifiedFeed';
+import SnsExplore from './pages/sns/SnsExplore';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 declare global {
@@ -180,6 +181,7 @@ function App() {
             <Route path="profile/shorts/create" element={<SnsShortsCreate />} />
             <Route path="customer-center" element={<CustomerCenterPage />} />
             <Route path="freejam" element={<FreeJam />} />
+            <Route path="explore" element={<SnsExplore />} />
             <Route path="board" element={<Board />} />
             <Route path="clan" element={<Clan />} />
             <Route path="clan/create" element={<ClanCreatePage />} />

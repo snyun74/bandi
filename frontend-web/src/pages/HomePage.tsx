@@ -5,6 +5,7 @@ import JamEvaluationModal from "../components/common/JamEvaluationModal";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import NoticePopup from "../components/notice/NoticePopup";
 import DefaultProfile from '../components/common/DefaultProfile';
+import { FaUser, FaThumbsUp, FaRegComment, FaChevronRight } from 'react-icons/fa';
 
 export default function HomePage() {
     const navigate = useNavigate();
@@ -13,12 +14,14 @@ export default function HomePage() {
     const [mainBanner, setMainBanner] = useState<{ url: string; isVideo: boolean; linkUrl: string | null } | null>(null);
     const [isBannerLoading, setIsBannerLoading] = useState(true);
     const [activeNotices, setActiveNotices] = useState<any[]>([]);
+    const [recentPosts, setRecentPosts] = useState<any[]>([]);
 
     useEffect(() => {
         checkPendingEvaluation();
         checkProfileComplete();
         fetchMainBanner();
         fetchActiveNotices();
+        fetchRecentPosts();
 
         // Ensure smooth scroll but remove snap-start which might cause issues on mobile
         const html = document.documentElement;
@@ -100,6 +103,24 @@ export default function HomePage() {
         } catch (error) {
             console.error("Failed to fetch active notices", error);
         }
+    };
+
+    const fetchRecentPosts = async () => {
+        try {
+            const userId = localStorage.getItem("userId") || "";
+            const res = await fetch(`/api/boards/recent?userId=${userId}&size=5`);
+            if (res.ok) {
+                const data = await res.json();
+                setRecentPosts(data.content || []);
+            }
+        } catch (e) {
+            console.error("Failed to fetch recent posts", e);
+        }
+    };
+
+    const formatBoardDate = (dateStr: string) => {
+        if (!dateStr || dateStr.length < 8) return dateStr;
+        return `${dateStr.substring(0, 4)}.${dateStr.substring(4, 6)}.${dateStr.substring(6, 8)}`;
     };
 
     const [expandedDayId, setExpandedDayId] = useState<number | null>(null);
@@ -274,6 +295,59 @@ export default function HomePage() {
 
             {/* Content Wrapper - Scrolls over the sticky banner */}
             <div className="relative z-10 bg-white pt-6 space-y-6 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                
+                {/* Board Section */}
+                <section className="px-4">
+                    <div className="flex justify-between items-center mb-[12px]">
+                        <SectionTitle className="!mb-0">게시판</SectionTitle>
+                        <span 
+                            onClick={() => navigate('/main/board')} 
+                            className="text-gray-500 text-xs cursor-pointer hover:text-[#00BDF8]"
+                        >
+                            더보기
+                        </span>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+                        {recentPosts.length === 0 ? (
+                            <div className="p-4 text-center text-gray-400 text-sm">
+                                최근 게시글이 없습니다.
+                            </div>
+                        ) : (
+                            recentPosts.map((post) => (
+                                <div key={post.boardNo} className="p-4 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/detail/${post.boardNo}`)}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex-1 mr-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${post.boardTypeFg === "0" ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                                    {post.boardTypeFg === "0" ? '자유' : '초보'}
+                                                </span>
+                                                <h4 className="text-[#003C48] text-[15px] font-medium line-clamp-1">
+                                                    {post.title}
+                                                </h4>
+                                            </div>
+                                        </div>
+                                        <span className="text-gray-400 text-[11px] whitespace-nowrap">{formatBoardDate(post.regDate)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1 text-gray-500 text-[11px] bg-gray-50 px-2 py-0.5 rounded-full">
+                                            <FaUser className="text-[10px]" />
+                                            <span>{post.userNickNm || "익명"}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-gray-500 text-[11px] bg-gray-50 px-2 py-0.5 rounded-full">
+                                            <FaThumbsUp className="text-[10px]" />
+                                            <span>({post.likeCnt})</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-gray-500 text-[11px] bg-gray-50 px-2 py-0.5 rounded-full">
+                                            <FaRegComment className="text-[10px]" />
+                                            <span>({post.commentCnt})</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
+
                 {/* Schedule Section */}
                 <section className="px-4">
                     <SectionTitle className="mb-[12px]">다가오는 합주 일정</SectionTitle>

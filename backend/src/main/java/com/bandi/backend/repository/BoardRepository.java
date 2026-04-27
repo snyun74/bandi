@@ -53,4 +53,22 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "AND (:userId = '' OR b.writerUserId NOT IN (SELECT cb.blockUserId FROM CmBlock cb WHERE cb.userId = :userId)) " +
                         "ORDER BY (SELECT COUNT(bl) FROM BoardLike bl WHERE bl.boardNo = b.boardNo) DESC")
         List<CommunityBoardListDto> findHotBoardList(@Param("userId") String userId, Pageable pageable);
+        @Query("SELECT new com.bandi.backend.dto.CommunityBoardListDto(" +
+                        "b.boardNo, " +
+                        "b.boardTypeFg, " +
+                        "b.title, " +
+                        "b.insDtime, " +
+                        "b.writerUserId, " +
+                        "(CASE WHEN b.maskingYn = 'Y' THEN '익명' ELSE u.userNickNm END), " +
+                        "(SELECT COUNT(bl) FROM BoardLike bl WHERE bl.boardNo = b.boardNo), " +
+                        "(SELECT COUNT(bd) FROM BoardDetail bd WHERE bd.boardNo = b.boardNo), " +
+                        "(CASE WHEN (SELECT COUNT(bl2) FROM BoardLike bl2 WHERE bl2.boardNo = b.boardNo AND bl2.userId = :userId) > 0 THEN true ELSE false END), " +
+                        "b.maskingYn) "
+                        +
+                        "FROM Board b " +
+                        "LEFT JOIN com.bandi.backend.entity.member.User u ON b.writerUserId = u.userId " +
+                        "WHERE b.boardStatCd = 'A' " +
+                        "AND (:userId = '' OR b.writerUserId NOT IN (SELECT cb.blockUserId FROM CmBlock cb WHERE cb.userId = :userId)) " +
+                        "ORDER BY b.insDtime DESC")
+        Page<CommunityBoardListDto> findRecentBoardList(@Param("userId") String userId, Pageable pageable);
 }

@@ -67,6 +67,22 @@ public class SnsController {
         return ResponseEntity.ok(snsService.getShortsByUser(userId, pageable));
     }
 
+    @GetMapping("/posts/public")
+    public ResponseEntity<?> getPublicPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(snsService.getPublicPosts(pageable));
+    }
+
+    @GetMapping("/shorts/public")
+    public ResponseEntity<?> getPublicShorts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(snsService.getPublicShorts(pageable));
+    }
+
     @DeleteMapping("/posts/{postId}")
     public ResponseEntity<?> deletePost(@PathVariable Long postId, @RequestParam String userId) {
         try {

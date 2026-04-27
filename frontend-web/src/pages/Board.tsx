@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaThumbsUp, FaRegComment, FaChevronRight } from 'react-icons/fa';
+import { FaUser, FaThumbsUp, FaRegComment, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
 
 interface HotPost {
@@ -17,27 +17,68 @@ interface HotPost {
 const Board: React.FC = () => {
     const navigate = useNavigate();
     const [hotPosts, setHotPosts] = useState<HotPost[]>([]);
+    
+    // Recent posts state for infinite scroll
+    const [recentPosts, setRecentPosts] = useState<HotPost[]>([]);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchHotPosts();
     }, []);
 
+    useEffect(() => {
+        fetchRecentPosts();
+    }, [page]);
+
     const fetchHotPosts = async () => {
         try {
-            // Retrieve userId from localStorage or context if available for 'isLiked' check
-            // For now, passing generic or null if not handled strictly in frontend yet
             const userId = localStorage.getItem("userId") || "";
             const res = await fetch(`/api/boards/hot?userId=${userId}`);
             if (res.ok) {
                 const data = await res.json();
                 setHotPosts(data);
-            } else {
-                console.error("Failed to fetch hot posts");
             }
         } catch (e) {
             console.error("Error fetching hot posts", e);
         }
     };
+
+    const fetchRecentPosts = async () => {
+        if (loading) return;
+        setLoading(true);
+        try {
+            const userId = localStorage.getItem("userId") || "";
+            const res = await fetch(`/api/boards/recent?userId=${userId}&page=${page}&size=30`);
+            if (res.ok) {
+                const data = await res.json();
+                const newPosts = data.content || [];
+                setRecentPosts(prev => {
+                    const existingIds = new Set(prev.map(p => p.boardNo));
+                    const filteredNew = newPosts.filter((p: HotPost) => !existingIds.has(p.boardNo));
+                    return [...prev, ...filteredNew];
+                });
+                setHasMore(!data.last);
+            }
+        } catch (e) {
+            console.error("Error fetching recent posts", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const observer = useRef<IntersectionObserver | null>(null);
+    const lastPostElementRef = useCallback((node: HTMLDivElement | null) => {
+        if (loading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [loading, hasMore]);
 
     const formatDate = (dateStr: string) => {
         if (!dateStr || dateStr.length < 8) return dateStr;
@@ -53,9 +94,29 @@ const Board: React.FC = () => {
     return (
         <div className="p-4 pb-20" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
-            <SectionTitle as="h2" className="!mb-6 !mt-0">게시판</SectionTitle>
+            <div className="flex items-center gap-2 mb-6 mt-0">
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:text-gray-900">
+                    <FaChevronLeft className="text-xl" />
+                </button>
+                <SectionTitle as="h2" className="!mb-0 !mt-0">게시판</SectionTitle>
+            </div>
 
-            {/* Hot Section */}
+            {/* 1. Board Type Section */}
+            <div className="mb-8">
+                <SectionTitle className="mb-3">게시 유형별 등록</SectionTitle>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+                    <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/list/0`)}>
+                        <span className="text-[#003C48] font-medium text-[14px]">자유 게시판</span>
+                        <FaChevronRight className="text-[#003C48] text-sm" />
+                    </div>
+                    <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/list/1`)}>
+                        <span className="text-[#003C48] font-medium text-[14px]">초보자 게시판</span>
+                        <FaChevronRight className="text-[#003C48] text-sm" />
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. Hot Section */}
             <div className="mb-8">
                 <SectionTitle className="!text-[#FF5A5A] mb-3 flex items-center gap-1">
                     # 🔥 Hot 🔥
@@ -101,18 +162,60 @@ const Board: React.FC = () => {
                 </div>
             </div>
 
-            {/* Board List Section */}
+            {/* 3. Board List (Recent Infinite Scroll) Section */}
             <div>
-                <SectionTitle className="mb-3">게시판 목록</SectionTitle>
+                <SectionTitle className="mb-3">목록</SectionTitle>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-                    <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/list/0`)}>
-                        <span className="text-[#003C48] font-medium text-[14px]">자유 게시판</span>
-                        <FaChevronRight className="text-[#003C48] text-sm" />
-                    </div>
-                    <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/main/board/list/1`)}>
-                        <span className="text-[#003C48] font-medium text-[14px]">초보자 게시판</span>
-                        <FaChevronRight className="text-[#003C48] text-sm" />
-                    </div>
+                    {recentPosts.length === 0 && !loading ? (
+                        <div className="p-4 text-center text-gray-400 text-sm">
+                            등록된 게시글이 없습니다.
+                        </div>
+                    ) : (
+                        recentPosts.map((post, index) => {
+                            const isLast = index === recentPosts.length - 1;
+                            return (
+                                <div 
+                                    ref={isLast ? lastPostElementRef : null}
+                                    key={`recent-${post.boardNo}`} 
+                                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors" 
+                                    onClick={() => handlePostClick(post)}
+                                >
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex-1 mr-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${post.boardTypeFg === "0" ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                                    {post.boardTypeFg === "0" ? '자유' : '초보'}
+                                                </span>
+                                                <h4 className="text-[#003C48] text-[15px] font-medium line-clamp-1">
+                                                    {post.title}
+                                                </h4>
+                                            </div>
+                                        </div>
+                                        <span className="text-gray-400 text-[11px] whitespace-nowrap">{formatDate(post.regDate)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1 text-gray-500 text-[11px] bg-gray-50 px-2 py-0.5 rounded-full">
+                                            <FaUser className="text-[10px]" />
+                                            <span>{post.userNickNm || "익명"}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-gray-500 text-[11px] bg-gray-50 px-2 py-0.5 rounded-full">
+                                            <FaThumbsUp className="text-[10px]" />
+                                            <span>({post.likeCnt})</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-gray-500 text-[11px] bg-gray-50 px-2 py-0.5 rounded-full">
+                                            <FaRegComment className="text-[10px]" />
+                                            <span>({post.commentCnt})</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                    {loading && (
+                        <div className="p-4 text-center text-gray-400 text-sm">
+                            로딩 중...
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

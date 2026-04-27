@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Music2, ClipboardList, Home, Users, Medal } from 'lucide-react';
+import { Music2, Compass, Home, Users, Medal } from 'lucide-react';
 
 const BottomNav: React.FC = () => {
     const navigate = useNavigate();
@@ -8,7 +8,7 @@ const BottomNav: React.FC = () => {
 
     const menuItems = [
         { id: 'freejam', label: '자유합주방', icon: Music2, path: '/main/jam' },
-        { id: 'board', label: '게시판', icon: ClipboardList, path: '/main/board' },
+        { id: 'explore', label: '피드', icon: Compass, path: '/main/explore' },
         { id: 'home', label: '홈', icon: Home, path: '/main/home' },
         { id: 'clan', label: '클랜', icon: Users, path: '/main/clan' },
         { id: 'membersador', label: '엠버서더', icon: Medal, path: '/main/membersador' },

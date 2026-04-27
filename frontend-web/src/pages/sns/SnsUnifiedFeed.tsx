@@ -46,8 +46,12 @@ const SnsUnifiedFeed: React.FC = () => {
 
         try {
             const [postsRes, shortsRes] = await Promise.all([
-                hasMorePosts || isInitial ? fetch(`/api/sns/posts/user/${userId}?page=${pPage}&size=15`) : Promise.resolve(null),
-                hasMoreShorts || isInitial ? fetch(`/api/sns/shorts/user/${userId}?page=${sPage}&size=15`) : Promise.resolve(null)
+                hasMorePosts || isInitial 
+                    ? fetch(userId === 'public' ? `/api/sns/posts/public?page=${pPage}&size=15` : `/api/sns/posts/user/${userId}?page=${pPage}&size=15`) 
+                    : Promise.resolve(null),
+                hasMoreShorts || isInitial 
+                    ? fetch(userId === 'public' ? `/api/sns/shorts/public?page=${sPage}&size=15` : `/api/sns/shorts/user/${userId}?page=${sPage}&size=15`) 
+                    : Promise.resolve(null)
             ]);
 
             let newPosts: FeedItem[] = [];
@@ -166,7 +170,7 @@ const SnsUnifiedFeed: React.FC = () => {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {feedList.map((item) => {
-                    const isMyContent = item.userId === currentUserId;
+                    const isMyContent = item.userId === currentUserId && userId !== 'public';
                     const itemKey = item.type === 'SHORTS' ? `shorts-${item.shortsNo}` : `post-${item.postId}`;
                     
                     return (

@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByUserIdOrderByInsDtimeDesc(String userId, Pageable pageable);
     Page<Post> findByUserIdAndPostStatCdOrderByInsDtimeDesc(String userId, String postStatCd, Pageable pageable);
+    Page<Post> findByPublicTypeCdAndPostStatCdOrderByInsDtimeDesc(String publicTypeCd, String postStatCd, Pageable pageable);
 }
