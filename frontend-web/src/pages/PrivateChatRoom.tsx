@@ -47,6 +47,7 @@ const PrivateChatRoom: React.FC = () => {
     // Modals
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -130,9 +131,17 @@ const PrivateChatRoom: React.FC = () => {
                         isMyMessage: item.sndUserId === userId || item.isMyMessage
                     })).reverse();
 
-                    setMessages(prev => [...prev, ...processedData]);
-                    latestMsgNoRef.current = processedData[processedData.length - 1].cnMsgNo;
-                    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                    setMessages(prev => {
+                        const newOnly = processedData.filter(
+                            newMsg => !prev.some(oldMsg => oldMsg.cnMsgNo === newMsg.cnMsgNo)
+                        );
+                        return [...prev, ...newOnly];
+                    });
+                    
+                    if (processedData.length > 0) {
+                        latestMsgNoRef.current = processedData[processedData.length - 1].cnMsgNo;
+                        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                    }
                 }
             }
         } catch (error) {
@@ -276,7 +285,7 @@ const PrivateChatRoom: React.FC = () => {
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         const messageText = inputText.trim();
-        if (!messageText) return;
+        if (!messageText || isSending) return;
 
         const userId = localStorage.getItem('userId');
         if (!userId) return;
@@ -304,6 +313,7 @@ const PrivateChatRoom: React.FC = () => {
         setMessages(prev => [...prev, tempMessage]);
         setInputText("");
         setReplyTo(null);
+        setIsSending(true);
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
 
         try {
@@ -334,6 +344,8 @@ const PrivateChatRoom: React.FC = () => {
             // 3. 실패 시 메시지 제거 및 알림
             setMessages(prev => prev.filter(msg => msg.cnMsgNo !== tempId));
             showAlert("메시지 전송에 실패했습니다.");
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -467,7 +479,9 @@ const PrivateChatRoom: React.FC = () => {
                 <div className="flex-1 bg-gray-100 rounded-[20px] px-4 py-2 flex items-center min-h-[40px]">
                     <textarea ref={textareaRef} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={handleKeyDown} placeholder="메세지 입력" className="bg-transparent w-full focus:outline-none text-sm placeholder-gray-400 resize-none overflow-hidden" rows={1} style={{ minHeight: '24px', maxHeight: '100px' }} />
                 </div>
-                <button type="submit" className="text-[#003C48] mb-2"><FaPaperPlane size={20} /></button>
+                <button type="submit" disabled={isSending} className={`mb-2 transition-colors ${isSending ? 'text-gray-300' : 'text-[#003C48]'}`}>
+                    <FaPaperPlane size={20} />
+                </button>
             </form>
 
             <CommonModal isOpen={isAlertOpen} type="alert" message={alertMessage} onConfirm={() => setIsAlertOpen(false)} />
