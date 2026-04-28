@@ -155,7 +155,7 @@ const ChatRoom: React.FC = () => {
 
                     setMessages(prev => {
                         const newOnly = processedData.filter(
-                            newMsg => !prev.some(oldMsg => oldMsg.cnMsgNo === newMsg.cnMsgNo)
+                            (newMsg: ChatMessage) => !prev.some((oldMsg: ChatMessage) => oldMsg.cnMsgNo === newMsg.cnMsgNo)
                         );
                         return [...prev, ...newOnly];
                     });
