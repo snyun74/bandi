@@ -727,7 +727,7 @@ public class ChatService {
 
         for (String recipientId : recipients) {
           pushService.sendPush(recipientId, pushTitle, dto.getMsg(),
-              "/main/jam/chat/" + dto.getCnNo(), "BN");
+              "/main/jam/chat/" + dto.getCnNo(), "BN", "BN_" + dto.getCnNo());
         }
       } catch (Exception e) {
         e.printStackTrace();
@@ -847,7 +847,7 @@ public class ChatService {
 
         for (String recipientId : recipients) {
           pushService.sendPush(recipientId, "그룹 " + userNickNm, dto.getMsg(),
-              "/main/chat/room/" + dto.getCnNo() + "?type=GROUP", "GP");
+              "/main/chat/room/" + dto.getCnNo() + "?type=GROUP", "GP", "GP_" + dto.getCnNo());
         }
       } catch (Exception e) {
       }
@@ -980,7 +980,7 @@ public class ChatService {
 
         for (String recipientId : recipients) {
           pushService.sendPush(recipientId, "클랜 " + userNickNm, dto.getMsg(),
-              "/main/chat/room/" + dto.getCnNo() + "?type=CLAN", "CN");
+              "/main/chat/room/" + dto.getCnNo() + "?type=CLAN", "CN", "CN_" + dto.getCnNo());
         }
       } catch (Exception e) {
         e.printStackTrace();
@@ -1224,7 +1224,7 @@ public class ChatService {
 
     // Send Push Notification to receiver
     try {
-      pushService.sendPush(rcvUserId, userNickNm, dto.getMsg(), "/main/chat/private/" + dto.getCnNo(), "SN");
+      pushService.sendPush(rcvUserId, userNickNm, dto.getMsg(), "/main/chat/private/" + dto.getCnNo(), "SN", "SN_" + dto.getCnNo());
     } catch (Exception e) {
       e.printStackTrace();
     }

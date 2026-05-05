@@ -65,7 +65,8 @@ public class QaService {
                             userNickNm,
                             "고객센터 문의 요청이 왔습니다.",
                             "/main/admin/customer-center", // Assuming admin path
-                            "ADMIN_QA_REQUEST"
+                            "ADMIN_QA_REQUEST",
+                            "QA_ADMIN"
                     );
                 }
             } catch (Exception e) {
@@ -87,7 +88,8 @@ public class QaService {
                             senderNickNm,
                             "고객센터 문의에 대한 답변이 등록되었습니다.",
                             "/main/customer-center",
-                            "USER_QA_ANSWER"
+                            "USER_QA_ANSWER",
+                            "QA_" + parentQa.getQaNo()
                     );
                 });
             } catch (Exception e) {

@@ -123,7 +123,7 @@ public class AdminJamService {
         
         for (BnSession session : sessions) {
             if (session.getBnSessionJoinUserId() != null) {
-                pushService.sendPush(session.getBnSessionJoinUserId(), adminNickNm, pushMessage, "/main/jam/chat/" + bnNo, "SN");
+                pushService.sendPush(session.getBnSessionJoinUserId(), adminNickNm, pushMessage, "/main/jam/chat/" + bnNo, "SN", "BN_" + bnNo);
             }
         }
     }

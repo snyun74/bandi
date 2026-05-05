@@ -23,7 +23,7 @@ public class PushController {
     @PostMapping("/test")
     public ResponseEntity<String> testPush(@RequestParam String userId, @RequestParam String title,
             @RequestParam String body) {
-        pushService.sendPush(userId, title, body, "/main", "SN");
+        pushService.sendPush(userId, title, body, "/main", "SN", "TEST_" + userId);
         return ResponseEntity.ok("Push sent successfully");
     }
 

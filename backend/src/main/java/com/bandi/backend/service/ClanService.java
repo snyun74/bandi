@@ -147,7 +147,8 @@ public class ClanService {
                         applicantNickname, // Title is applicant's nickname as requested
                         "[" + savedClan.getCnNm() + "] 클랜 개설 신청이 들어왔습니다.",
                         "", 
-                        "ADMIN_CLAN_REQUEST"
+                        "ADMIN_CLAN_REQUEST",
+                        "CLAN_ADMIN"
                 );
             }
         } catch (Exception e) {
@@ -238,7 +239,8 @@ public class ClanService {
                         "클랜 신청 알림",
                         applicantNickname + "님이 클랜 신규 회원 가입을 요청을 했습니다.",
                         "", // No link as requested
-                        "CLAN_JOIN"
+                        "CLAN_JOIN",
+                        "CLAN_JOIN_" + dto.getCnNo()
                 );
             }
         } catch (Exception e) {

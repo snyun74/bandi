@@ -45,7 +45,7 @@ public class PushService {
 
     @Async
     @Transactional
-    public void sendPush(String userId, String title, String body, String link, String pushType) {
+    public void sendPush(String userId, String title, String body, String link, String pushType, String threadId) {
         // 1. 수신 설정 확인 (MM_USER_PUSH_SETTING)
         if (!isPushEnabled(userId, pushType)) {
             System.out.println("DEBUG: Push disabled for user=" + userId + ", type=" + pushType);
@@ -76,6 +76,16 @@ public class PushService {
                         .setToken(token)
                         .putData("click_action", link)
                         .putData("logNo", String.valueOf(logNo))
+                        .setAndroidConfig(com.google.firebase.messaging.AndroidConfig.builder()
+                                .setNotification(com.google.firebase.messaging.AndroidNotification.builder()
+                                        .setTag(threadId) // Android 그룹화 (동일 태그 시 묶임)
+                                        .build())
+                                .build())
+                        .setApnsConfig(com.google.firebase.messaging.ApnsConfig.builder()
+                                .setAps(com.google.firebase.messaging.Aps.builder()
+                                        .setThreadId(threadId) // iOS 그룹화
+                                        .build())
+                                .build())
                         .setWebpushConfig(WebpushConfig.builder()
                                 .setFcmOptions(WebpushFcmOptions.withLink(link))
                                 .build())
