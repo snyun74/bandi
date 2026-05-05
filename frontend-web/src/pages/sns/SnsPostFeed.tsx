@@ -123,7 +123,7 @@ const PostFeedItem: React.FC<{ post: PostItem }> = ({ post }) => {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {post.imagePaths.map((path, idx) => (
-                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center">
+                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center">
                         <img 
                             src={path} 
                             alt={`post-${idx}`} 

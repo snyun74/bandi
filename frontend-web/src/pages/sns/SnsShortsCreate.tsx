@@ -16,7 +16,7 @@ const SnsShortsCreate: React.FC = () => {
                 const res = await fetch('/api/auth/common/codes/BD007');
                 if (res.ok) {
                     const data = await res.json();
-                    setPublicTypes(data);
+                    setPublicTypes(data.filter((pt: any) => pt.commDtlNm !== '친구'));
                 }
             } catch (err) {
                 console.error("공통코드 BD007 조회 실패", err);

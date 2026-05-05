@@ -92,7 +92,7 @@ const SnsExplore: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-white z-20 border-b border-gray-50">
+            <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-white z-[100] border-b border-gray-50">
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigate(-1)} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <FaChevronLeft size={20} />

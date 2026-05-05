@@ -48,7 +48,7 @@ const SnsUnifiedFeed: React.FC = () => {
                 const res = await fetch('/api/auth/common/codes/BD007');
                 if (res.ok) {
                     const data = await res.json();
-                    setPublicTypes(data);
+                    setPublicTypes(data.filter((pt: any) => pt.commDtlNm !== '친구'));
                 }
             } catch (err) {
                 console.error("공통코드 BD007 조회 실패", err);
@@ -436,7 +436,7 @@ const PostFeedItem: React.FC<{ post: FeedItem }> = ({ post }) => {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {post.imagePaths?.map((path, idx) => (
-                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex items-center justify-center">
+                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center">
                         <img src={path} alt={`post-${idx}`} className="w-full h-full object-cover" />
                     </div>
                 ))}
