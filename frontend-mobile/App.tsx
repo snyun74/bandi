@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, StatusBar, useColorScheme, ActivityIndicator, PermissionsAndroid, Platform } from 'react-native';
+import { SafeAreaView, StatusBar, useColorScheme, ActivityIndicator, PermissionsAndroid, Platform, BackHandler } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import messaging from '@react-native-firebase/messaging';
@@ -8,6 +8,7 @@ function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
   const webViewRef = useRef<WebView>(null);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [canGoBack, setCanGoBack] = useState(false);
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -18,6 +19,7 @@ function App(): React.JSX.Element {
   const PROD_WEB_URL = 'https://www.bandicon.kr';
   const WEB_URL = __DEV__ ? LOCAL_WEB_URL : PROD_WEB_URL;
 
+  const [currentUrl, setCurrentUrl] = useState(WEB_URL);
   const [isLoading, setIsLoading] = useState(true);
 
   // 알림 권한 요청 (iOS 및 Android 13+)
@@ -66,7 +68,7 @@ function App(): React.JSX.Element {
     }
   };
 
-  // 웹뷰로 푸시 알림 데이터 전달
+  // 웹뷰로 푸시 알림 데이터 전달 (포그라운드용)
   const sendPushToWebView = (remoteMessage: any) => {
     if (webViewRef.current && remoteMessage) {
       const payloadString = JSON.stringify(remoteMessage);
@@ -80,6 +82,23 @@ function App(): React.JSX.Element {
     }
   };
 
+  // 알림 클릭 시 특정 페이지로 이동 처리 (백그라운드/종료 상태용)
+  const handleDeepLink = (remoteMessage: any) => {
+    if (remoteMessage?.data?.click_action) {
+      const link = remoteMessage.data.click_action;
+      const targetUrl = link.startsWith('http') ? link : `${WEB_URL}${link}`;
+      console.log('Navigating to deep link:', targetUrl);
+      
+      if (webViewRef.current) {
+        const script = `window.location.href = "${targetUrl}"; true;`;
+        webViewRef.current.injectJavaScript(script);
+      } else {
+        // 웹뷰가 아직 준비되지 않은 경우 초기 URL 변경
+        setCurrentUrl(targetUrl);
+      }
+    }
+  };
+
   useEffect(() => {
     const setupMessaging = async () => {
       const hasPermission = await requestUserPermission();
@@ -87,27 +106,58 @@ function App(): React.JSX.Element {
         await getAndSetFcmToken();
       }
 
-      // 토큰 갱신 시 처리
+      // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
+      const unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
+        console.log('Notification caused app to open from background:', remoteMessage);
+        handleDeepLink(remoteMessage);
+      });
+
+      // 2. 앱이 완전히 종료된 상태일 때 알림 클릭 처리
+      messaging().getInitialNotification().then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('Notification caused app to open from quit state:', remoteMessage);
+          handleDeepLink(remoteMessage);
+        }
+      });
+
+      // 3. 토큰 갱신 시 처리
       const unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
         console.log('FCM Token Refreshed:', token);
         setFcmToken(token);
         sendTokenToWebView(token);
       });
 
-      // 포그라운드 메시지 수신 핸들러 (웹뷰로 전달)
+      // 4. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
       const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
         console.log('Foreground message received:', remoteMessage);
         sendPushToWebView(remoteMessage);
       });
 
       return () => {
+        unsubscribeOnNotificationOpenedApp();
         unsubscribeTokenRefresh();
         unsubscribeOnMessage();
       };
     };
 
     setupMessaging();
-  }, []);
+
+    // 안드로이드 하드웨어 뒤로가기 버튼 처리
+    const backAction = () => {
+      if (canGoBack && webViewRef.current) {
+        webViewRef.current.goBack();
+        return true; // 기본 동작(앱 종료) 방지
+      }
+      return false; // 기본 동작(앱 종료) 수행
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, [canGoBack]);
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -117,7 +167,7 @@ function App(): React.JSX.Element {
       />
       <WebView
         ref={webViewRef}
-        source={{ uri: WEB_URL }}
+        source={{ uri: currentUrl }}
         style={{ flex: 1 }}
         onLoadStart={() => setIsLoading(true)}
         onLoadEnd={() => {
@@ -125,6 +175,9 @@ function App(): React.JSX.Element {
           if (fcmToken) {
             sendTokenToWebView(fcmToken);
           }
+        }}
+        onNavigationStateChange={(navState) => {
+          setCanGoBack(navState.canGoBack);
         }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
@@ -148,3 +201,4 @@ function App(): React.JSX.Element {
 }
 
 export default App;
+
