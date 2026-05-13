@@ -159,7 +159,7 @@ const ChatRoom: React.FC = () => {
                         );
                         return [...prev, ...newOnly];
                     });
-                    
+
                     if (processedData.length > 0) {
                         latestMsgNoRef.current = processedData[processedData.length - 1].cnMsgNo;
                         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -312,7 +312,7 @@ const ChatRoom: React.FC = () => {
         // 1. 임시 데이터 생성 (Optimistic UI)
         const tempId = -Date.now();
         const currentDateTime = new Date().toISOString().replace(/[-:T]/g, '').substring(0, 14);
-        
+
         const tempMessage: ChatMessage = {
             cnMsgNo: tempId,
             cnNo: Number(roomNo),
@@ -352,7 +352,7 @@ const ChatRoom: React.FC = () => {
             if (res.ok) {
                 const newMessage = await res.json();
                 const processedMessage = { ...newMessage, isMyMessage: true };
-                
+
                 // 2. 임시 메시지를 서버 결과로 교체
                 setMessages(prev => prev.map(msg => msg.cnMsgNo === tempId ? processedMessage : msg));
                 latestMsgNoRef.current = newMessage.cnMsgNo;
@@ -435,15 +435,15 @@ const ChatRoom: React.FC = () => {
                                                 <span className="text-[10px] text-gray-400 whitespace-nowrap">{formatTime(msg.sndDtime)}</span>
                                             </div>
                                         )}
-                                            <div
-                                                onClick={() => setReplyTo(msg)}
-                                                className={`text-sm leading-relaxed shadow-sm break-all relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
-                                                    ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
-                                                    : msg.isMyMessage
-                                                        ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
-                                                        : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
-                                                    }`}
-                                            >
+                                        <div
+                                            onClick={() => setReplyTo(msg)}
+                                            className={`text-sm leading-relaxed shadow-sm break-all relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
+                                                ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
+                                                : msg.isMyMessage
+                                                    ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
+                                                    : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
+                                                }`}
+                                        >
                                             {msg.parentMsgNo && (
                                                 <div className={`mb-1.5 px-2 py-1 rounded border-l-2 text-xs opacity-90 ${msg.isMyMessage ? 'border-white/50 bg-white/10' : 'border-gray-300 bg-gray-50'}`}>
                                                     <div className="font-bold mb-0.5 opacity-80">{msg.parentMsgUserNickNm || '알 수 없음'}</div>

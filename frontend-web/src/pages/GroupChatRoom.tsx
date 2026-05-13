@@ -473,15 +473,15 @@ const GroupChatRoom: React.FC = () => {
                                                 <span className="text-[10px] text-gray-400 whitespace-nowrap">{formatTime(msg.sndDtime)}</span>
                                             </div>
                                         )}
-                                            <div
-                                                onClick={() => setReplyTo(msg)}
-                                                className={`text-sm leading-relaxed shadow-sm break-all relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
-                                                    ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
-                                                    : msg.isMyMessage
-                                                        ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
-                                                        : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
-                                                    }`}
-                                            >
+                                        <div
+                                            onClick={() => setReplyTo(msg)}
+                                            className={`text-sm leading-relaxed shadow-sm break-all relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
+                                                ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
+                                                : msg.isMyMessage
+                                                    ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
+                                                    : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
+                                                }`}
+                                        >
                                             {msg.parentMsgNo && (
                                                 <div className={`mb-1.5 px-2 py-1 rounded border-l-2 text-xs opacity-90 ${msg.isMyMessage ? 'border-white/50 bg-white/10' : 'border-gray-300 bg-gray-50'}`}>
                                                     <div className="font-bold mb-0.5 opacity-80">{msg.parentMsgUserNickNm || '알 수 없음'}</div>
