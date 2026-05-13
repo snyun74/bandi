@@ -82,8 +82,8 @@ android {
         applicationId "com.bandimobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1"
+        versionCode 19
+        versionName "3.3"
     }
     signingConfigs {
         debug {
@@ -110,7 +110,7 @@ android {
         }
     }
 
-    packagingOptions {
+    packaging {
         // 중복되는 매니페스트 속성 충돌을 방지하기 위한 설정
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'

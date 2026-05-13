@@ -378,7 +378,7 @@ const ChatList: React.FC = () => {
                                                         </span>
                                                         <h3 className="body-board-post-title !m-0 leading-tight truncate min-w-0">{chat.roomNm}</h3>
                                                     </div>
-                                                    <p className="text-xs truncate text-gray-400">
+                                                    <p className="text-xs truncate text-gray-400 min-w-0">
                                                         {chat.newMsg || "대화 내용이 없습니다."}
                                                     </p>
                                                 </div>
@@ -499,7 +499,7 @@ const ChatList: React.FC = () => {
                                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                                 )}
                                             </div>
-                                            <span className="text-[#003C48] font-bold text-sm">{friend.userNickNm}</span>
+                                            <span className="text-[#003C48] font-bold text-sm truncate min-w-0">{friend.userNickNm}</span>
                                             {(friend.unreadCount || 0) > 0 && (
                                                 <div className="ml-auto bg-[#00BDF8] text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
                                                     {friend.unreadCount! > 99 ? '99+' : friend.unreadCount}

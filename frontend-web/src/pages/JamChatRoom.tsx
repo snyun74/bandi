@@ -450,7 +450,7 @@ const JamChatRoom: React.FC = () => {
             </div>
 
             {/* Message List */}
-            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 space-y-4 pb-[80px]">
+            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 pb-[80px]">
                 {isFetchingOld && <div className="text-center py-2 text-xs text-gray-400">불러오는 중...</div>}
                 {loading && messages.length === 0 ? (
                     <div className="text-center mt-10 text-gray-400">로딩 중...</div>
@@ -460,7 +460,7 @@ const JamChatRoom: React.FC = () => {
                     messages.map((msg, index) => {
                         const showProfile = !msg.isMyMessage && (index === 0 || messages[index - 1].sndUserId !== msg.sndUserId);
                         return (
-                            <div key={msg.cnMsgNo} className={`flex w-full ${msg.isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                            <div key={msg.cnMsgNo} className={`flex w-full min-w-0 ${msg.isMyMessage ? 'justify-end' : 'justify-start'}`}>
                                 {!msg.isMyMessage && (
                                     <div className="mr-2 flex-shrink-0 w-10 flex flex-col items-center">
                                         {showProfile ? (
@@ -474,24 +474,24 @@ const JamChatRoom: React.FC = () => {
                                         ) : <div className="w-10"></div>}
                                     </div>
                                 )}
-                                <div className={`max-w-[70%] flex flex-col ${msg.isMyMessage ? 'items-end' : 'items-start'}`}>
+                                <div className={`max-w-[65%] min-w-0 flex flex-col ${msg.isMyMessage ? 'items-end' : 'items-start'}`}>
                                     {!msg.isMyMessage && showProfile && <span className="text-xs text-gray-500 mb-1 ml-1">{msg.userNickNm}</span>}
                                     <div className="flex items-end gap-1">
                                         {msg.isMyMessage && (
-                                            <div className="flex flex-col items-end min-w-[30px]">
+                                            <div className="flex flex-col items-end min-w-[30px] shrink-0">
                                                 {(msg.unreadCount || 0) > 0 && <span className="text-[#00BDF8] text-[10px] font-bold mb-0.5">{msg.unreadCount}</span>}
                                                 <span className="text-[10px] text-gray-400 whitespace-nowrap">{formatTime(msg.sndDtime)}</span>
                                             </div>
                                         )}
-                                        <div
-                                            onClick={() => setReplyTo(msg)}
-                                            className={`text-sm leading-relaxed shadow-sm break-words relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
-                                                ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
-                                                : msg.isMyMessage
-                                                    ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
-                                                    : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
-                                                }`}
-                                        >
+                                            <div
+                                                onClick={() => setReplyTo(msg)}
+                                                className={`text-sm leading-relaxed shadow-sm break-all relative cursor-pointer ${msg.msgTypeCd === 'IMAGE' && msg.attachFilePath
+                                                    ? 'rounded-[12px] overflow-hidden p-0 shadow-md'
+                                                    : msg.isMyMessage
+                                                        ? 'px-4 py-2 bg-[#00BDF8] text-white rounded-[20px] rounded-tr-none border-0 shadow-md'
+                                                        : 'px-4 py-2 bg-white text-[#003C48] rounded-[20px] rounded-tl-none border border-gray-100 shadow-sm'
+                                                    }`}
+                                            >
                                             {msg.parentMsgNo && (
                                                 <div className={`mb-1.5 px-2 py-1 rounded border-l-2 text-xs opacity-90 ${msg.isMyMessage ? 'border-white/50 bg-white/10' : 'border-gray-300 bg-gray-50'}`}>
                                                     <div className="font-bold mb-0.5 opacity-80">{msg.parentMsgUserNickNm || '알 수 없음'}</div>
@@ -531,7 +531,7 @@ const JamChatRoom: React.FC = () => {
                                             )}
                                         </div>
                                         {!msg.isMyMessage && (
-                                            <div className="flex flex-col items-start min-w-[30px]">
+                                            <div className="flex flex-col items-start min-w-[30px] shrink-0">
                                                 {(msg.unreadCount || 0) > 0 && <span className="text-[#00BDF8] text-[10px] font-bold mb-0.5">{msg.unreadCount}</span>}
                                                 <span className="text-[10px] text-gray-400 whitespace-nowrap">{formatTime(msg.sndDtime)}</span>
                                             </div>
