@@ -24,6 +24,7 @@ public class JamChatService {
 
     private final com.bandi.backend.repository.BandChatMessageRepository bandChatMessageRepository;
     private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
+    private final PushService pushService;
 
     public ChatRoomListDto getChatRoomInfo(Long roomNo) {
         String sql = """
@@ -258,7 +259,7 @@ public class JamChatService {
             }
         }
 
-        return ChatMessageDto.builder()
+        ChatMessageDto chatMessageDto = ChatMessageDto.builder()
                 .cnMsgNo(savedMessage.getBnMsgNo())
                 .cnNo(savedMessage.getBnNo())
                 .sndUserId(savedMessage.getSndUserId())
@@ -276,6 +277,31 @@ public class JamChatService {
                 .attachFilePath(attachFilePath)
                 .attachFileName(attachFileName)
                 .build();
+
+        // Send Push Notifications
+        try {
+            // Get recipients (active members except sender)
+            String recipientSql = "SELECT BN_USER_ID FROM BN_USER WHERE BN_NO = :roomNo AND BN_USER_STAT_CD = 'A' AND BN_USER_ID <> :senderId";
+            @SuppressWarnings("unchecked")
+            java.util.List<String> recipients = entityManager.createNativeQuery(recipientSql)
+                    .setParameter("roomNo", dto.getCnNo())
+                    .setParameter("senderId", dto.getSndUserId())
+                    .getResultList();
+
+            for (String recipientId : recipients) {
+                pushService.sendPush(
+                        recipientId,
+                        userNickNm,
+                        dto.getMsg(),
+                        "/main/jam/chat/" + dto.getCnNo(),
+                        "BN",
+                        "BN_" + dto.getCnNo());
+            }
+        } catch (Exception e) {
+            log.error("Failed to send push notifications for Jam Chat message", e);
+        }
+
+        return chatMessageDto;
     }
 
     @Transactional

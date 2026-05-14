@@ -1,5 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { SafeAreaView, StatusBar, useColorScheme, ActivityIndicator, PermissionsAndroid, Platform, BackHandler } from 'react-native';
+import { 
+  SafeAreaView, 
+  StatusBar, 
+  useColorScheme, 
+  ActivityIndicator, 
+  PermissionsAndroid, 
+  Platform, 
+  BackHandler, 
+  Alert, 
+  Linking, 
+  Modal, 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet 
+} from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import messaging from '@react-native-firebase/messaging';
@@ -21,6 +35,12 @@ function App(): React.JSX.Element {
 
   const [currentUrl, setCurrentUrl] = useState(WEB_URL);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCheckingInitialNotification, setIsCheckingInitialNotification] = useState(true);
+
+  // 업데이트 알림 관련 상태
+  const CURRENT_VERSION_CODE = 21; // 현재 앱의 버전 코드
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [latestVersionInfo, setLatestVersionInfo] = useState<any>(null);
 
   // 알림 권한 요청 (iOS 및 Android 13+)
   const requestUserPermission = async () => {
@@ -99,6 +119,25 @@ function App(): React.JSX.Element {
     }
   };
 
+  // 앱 버전 체크 로직
+  const checkAppVersion = async () => {
+    try {
+      // 운영 환경과 로컬 환경에 따른 API 주소 설정
+      const API_BASE_URL = __DEV__ ? (Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080') : 'https://api.bandicon.kr';
+      const response = await fetch(`${API_BASE_URL}/api/common/app-version`);
+      if (response.ok) {
+        const data = await response.json();
+        setLatestVersionInfo(data);
+        if (data.latestVersionCode > CURRENT_VERSION_CODE) {
+          console.log('Update available! Current:', CURRENT_VERSION_CODE, 'Latest:', data.latestVersionCode);
+          setShowUpdateModal(true);
+        }
+      }
+    } catch (error) {
+      console.warn('App version check failed:', error);
+    }
+  };
+
   useEffect(() => {
     const setupMessaging = async () => {
       const hasPermission = await requestUserPermission();
@@ -106,32 +145,45 @@ function App(): React.JSX.Element {
         await getAndSetFcmToken();
       }
 
+      // 버전 체크 실행
+      await checkAppVersion();
+
       // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
       const unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
         console.log('Notification caused app to open from background:', remoteMessage);
         handleDeepLink(remoteMessage);
       });
 
-      // 2. 앱이 완전히 종료된 상태일 때 알림 클릭 처리
-      messaging().getInitialNotification().then(remoteMessage => {
-        if (remoteMessage) {
-          console.log('Notification caused app to open from quit state:', remoteMessage);
-          handleDeepLink(remoteMessage);
-        }
-      });
-
-      // 3. 토큰 갱신 시 처리
+      // 2. 토큰 갱신 시 처리
       const unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
         console.log('FCM Token Refreshed:', token);
         setFcmToken(token);
         sendTokenToWebView(token);
       });
 
-      // 4. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
+      // 3. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
       const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
         console.log('Foreground message received:', remoteMessage);
         sendPushToWebView(remoteMessage);
       });
+
+      // 4. 초기 알림 확인 (앱이 완전히 종료된 상태에서 실행될 때)
+      try {
+        const initialMessage = await messaging().getInitialNotification();
+        if (initialMessage) {
+          console.log('Notification caused app to open from quit state (initial):', initialMessage);
+          if (initialMessage.data?.click_action) {
+            const link = initialMessage.data.click_action;
+            const targetUrl = link.startsWith('http') ? link : `${WEB_URL}${link}`;
+            console.log('Setting initial URL from deep link:', targetUrl);
+            setCurrentUrl(targetUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking initial notification:', error);
+      } finally {
+        setIsCheckingInitialNotification(false);
+      }
 
       return () => {
         unsubscribeOnNotificationOpenedApp();
@@ -158,6 +210,14 @@ function App(): React.JSX.Element {
 
     return () => backHandler.remove();
   }, [canGoBack]);
+
+  if (isCheckingInitialNotification) {
+    return (
+      <SafeAreaView style={{ ...backgroundStyle, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#00BDF8" size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={backgroundStyle}>
@@ -196,9 +256,134 @@ function App(): React.JSX.Element {
           />
         )}
       />
+      
+      {/* 업데이트 알림 모달 */}
+      <Modal
+        visible={showUpdateModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>새로운 버전 출시!</Text>
+            </View>
+            <View style={styles.modalBody}>
+              <Text style={styles.modalDescription}>
+                더 나은 서비스를 위해 최신 버전({latestVersionInfo?.latestVersionName})으로 업데이트해 주세요.
+              </Text>
+              <Text style={styles.modalSubDescription}>
+                안정적인 앱 사용을 위해 업데이트를 권장합니다.
+              </Text>
+            </View>
+            <View style={styles.modalFooter}>
+              {!latestVersionInfo?.forceUpdate && (
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setShowUpdateModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>나중에</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity 
+                style={styles.updateButton} 
+                onPress={() => {
+                  const url = Platform.OS === 'ios' 
+                    ? (latestVersionInfo?.iosStoreUrl || 'itms-apps://itunes.apple.com/app/id6475653554')
+                    : (latestVersionInfo?.storeUrl || 'market://details?id=com.bandimobile');
+                    
+                  Linking.openURL(url).catch(err => {
+                    console.error('Failed to open store URL:', err);
+                    Alert.alert('오류', '스토어를 열 수 없습니다.');
+                  });
+                }}
+              >
+                <Text style={styles.updateButtonText}>업데이트 하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalHeader: {
+    paddingTop: 25,
+    paddingBottom: 15,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#003C48',
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingBottom: 25,
+    alignItems: 'center',
+  },
+  modalDescription: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  modalSubDescription: {
+    fontSize: 13,
+    color: '#888',
+    textAlign: 'center',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#999',
+    fontWeight: '500',
+  },
+  updateButton: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  updateButtonText: {
+    fontSize: 16,
+    color: '#00BDF8',
+    fontWeight: 'bold',
+  },
+});
 
 export default App;
 
