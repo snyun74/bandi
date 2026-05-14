@@ -13,6 +13,7 @@ public class MemberSessionDto {
     private String userId;
     private String songTitle;
     private String artist;
+    private String bnNm;
     private String part; // Will store the decoded name
     private String sessionTypeCd; // Raw code
 }

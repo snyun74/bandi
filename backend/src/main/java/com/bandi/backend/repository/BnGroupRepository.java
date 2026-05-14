@@ -69,4 +69,15 @@ public interface BnGroupRepository extends JpaRepository<BnGroup, Long> {
             "GROUP BY G.BN_NO " +
             ") AS T", nativeQuery = true)
     org.springframework.data.domain.Page<MyJamProjection> findMyJams(@Param("userId") String userId, @Param("keyword") String keyword, org.springframework.data.domain.Pageable pageable);
+
+    @Query(value = "SELECT * FROM BN_GROUP G " +
+            "WHERE G.BN_STAT_CD = 'A' " +
+            "AND ( (:clanId IS NULL AND G.CN_NO IS NULL) OR (:clanId IS NOT NULL AND G.CN_NO = :clanId) ) " +
+            "AND G.BN_CONF_FG IN ('N', 'Y') " +
+            "AND ( :keyword IS NULL OR :keyword = '' " +
+            "      OR REPLACE(UPPER(G.BN_NM), ' ', '') LIKE CONCAT('%', :keyword, '%') " +
+            "      OR REPLACE(UPPER(G.BN_SONG_NM), ' ', '') LIKE CONCAT('%', :keyword, '%') " +
+            "      OR REPLACE(UPPER(G.BN_SINGER_NM), ' ', '') LIKE CONCAT('%', :keyword, '%') ) " +
+            "ORDER BY G.BN_NO DESC", nativeQuery = true)
+    java.util.List<BnGroup> findFilteredBands(@Param("clanId") Long clanId, @Param("keyword") String keyword);
 }

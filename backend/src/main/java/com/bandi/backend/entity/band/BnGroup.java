@@ -24,10 +24,10 @@ public class BnGroup {
     @Column(name = "BN_NM", length = 100, nullable = false)
     private String bnNm;
 
-    @Column(name = "BN_SONG_NM", length = 100, nullable = false)
+    @Column(name = "BN_SONG_NM", length = 100)
     private String bnSongNm;
 
-    @Column(name = "BN_SINGER_NM", length = 100, nullable = false)
+    @Column(name = "BN_SINGER_NM", length = 100)
     private String bnSingerNm;
 
     @Column(name = "BN_PASSWD_FG", length = 1, nullable = false)

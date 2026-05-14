@@ -28,7 +28,7 @@ const Header: React.FC = () => {
             };
 
             fetchUnreadCount();
-            const interval = setInterval(fetchUnreadCount, 30000);
+            const interval = setInterval(fetchUnreadCount, 7000); // 7초마다 체크
             return () => clearInterval(interval);
         }
     }, []);

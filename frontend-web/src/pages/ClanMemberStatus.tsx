@@ -27,6 +27,7 @@ interface MemberSession {
     userId: string;
     songTitle: string;
     artist: string;
+    bnNm: string;
     part: string;
     sessionTypeCd: string;
 }
@@ -447,7 +448,11 @@ const ClanMemberStatus: React.FC = () => {
                                     {member.sessions.map((session, sIdx) => (
                                         <div key={sIdx} className="text-xs text-gray-600 flex items-center gap-2">
                                             <span className="font-bold text-[#00BDF8] min-w-[40px]">{session.part}</span>
-                                            <span className="text-gray-500 truncate">{session.songTitle} - {session.artist}</span>
+                                            <span className="text-gray-500 truncate">
+                                                {(session.songTitle && session.artist) 
+                                                    ? `${session.songTitle} - ${session.artist}` 
+                                                    : session.bnNm}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>

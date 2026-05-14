@@ -113,41 +113,14 @@ public class BandService {
         log.info("Fetching band list for clanId: {}, userId: {}, keyword: {}, sort: {}, filterPart: {}", clanId, userId,
                 keyword, sort, filterPart);
 
-        // Fetch all active bands for the clan
-        java.util.List<BnGroup> allGroups = bnGroupRepository.findAll();
-        log.info("Total groups found: {}", allGroups.size());
+        // Normalize keyword: remove spaces and convert to uppercase
+        String normalizedKeyword = null;
+        if (keyword != null && !keyword.isEmpty()) {
+            normalizedKeyword = keyword.replaceAll("\\s+", "").toUpperCase();
+        }
 
-        java.util.List<BnGroup> groups = allGroups.stream()
-                .filter(g -> {
-                    boolean isStatA = "A".equals(g.getBnStatCd());
-                    boolean isClanMatch = (clanId == null && g.getCnNo() == null)
-                            || (clanId != null && clanId.equals(g.getCnNo()));
-
-                    if (!isStatA || !isClanMatch) {
-                        return false;
-                    }
-
-                    if (keyword != null && !keyword.isEmpty()) {
-                        boolean matchTitle = g.getBnNm() != null && g.getBnNm().contains(keyword);
-                        boolean matchSong = g.getBnSongNm() != null && g.getBnSongNm().contains(keyword);
-                        boolean matchArtist = g.getBnSingerNm() != null && g.getBnSingerNm().contains(keyword);
-
-                        if (!matchTitle && !matchSong && !matchArtist) {
-                            return false;
-                        }
-                    }
-
-                    // User Request: BN_CONF_FG IN ('N', 'Y') for Table View (Applying globally for
-                    // consistency)
-                    String confFg = g.getBnConfFg();
-                    if (confFg == null || (!"N".equals(confFg) && !"Y".equals(confFg))) {
-                        return false;
-                    }
-
-                    return true;
-                })
-                .sorted((b1, b2) -> b2.getBnNo().compareTo(b1.getBnNo())) // Initial sort by desc
-                .collect(java.util.stream.Collectors.toList());
+        // Fetch filtered bands from DB
+        java.util.List<BnGroup> groups = bnGroupRepository.findFilteredBands(clanId, normalizedKeyword);
 
         log.info("Filtered groups count: {}", groups.size());
 

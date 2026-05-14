@@ -136,14 +136,7 @@ const ClanJamCreate: React.FC = () => {
             showModal("방 제목을 입력해주세요.");
             return;
         }
-        if (!songTitle.trim()) {
-            showModal("곡 제목을 입력해주세요.");
-            return;
-        }
-        if (!artist.trim()) {
-            showModal("아티스트를 입력해주세요.");
-            return;
-        }
+// Optionals: songTitle and artist are no longer required
 // if (!description.trim()) {
 //     showModal("방 설명을 입력해주세요.");
 //     return;
@@ -263,7 +256,7 @@ const ClanJamCreate: React.FC = () => {
                 {/* Song Title */}
                 <div>
                     <SectionTitle as="h2" className="!mt-0 !mb-2">
-                        곡 제목 <span className="text-red-500">*</span>
+                        곡 제목
                     </SectionTitle>
                     <input
                         type="text"
@@ -277,7 +270,7 @@ const ClanJamCreate: React.FC = () => {
                 {/* Artist */}
                 <div>
                     <SectionTitle as="h2" className="!mt-0 !mb-2">
-                        아티스트 <span className="text-red-500">*</span>
+                        아티스트
                     </SectionTitle>
                     <input
                         type="text"

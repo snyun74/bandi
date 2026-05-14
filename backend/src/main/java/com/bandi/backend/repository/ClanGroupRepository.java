@@ -123,7 +123,7 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
         List<ClanMemberProjection> findClanMembers(@Param("clanId") Long clanId);
 
         @Query("SELECT new com.bandi.backend.dto.MemberSessionDto(" +
-                        "s.bnSessionJoinUserId, g.bnSongNm, g.bnSingerNm, '', s.bnSessionTypeCd) " +
+                        "s.bnSessionJoinUserId, g.bnSongNm, g.bnSingerNm, g.bnNm, '', s.bnSessionTypeCd) " +
                         "FROM BnSession s " +
                         "JOIN BnGroup g ON s.bnNo = g.bnNo " +
                         "WHERE g.cnNo = :clanId " +
