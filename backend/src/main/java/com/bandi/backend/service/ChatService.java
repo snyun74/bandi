@@ -39,13 +39,16 @@ public class ChatService {
                     CNR.CN_NO        AS ROOM_NO,
                     CNG.CN_NM        AS ROOM_NM,
                     (
-                      SELECT MSG.MSG
+                      SELECT 
+                        CASE 
+                            WHEN MSG.MSG_TYPE_CD = 'IMAGE' THEN '[사진]'
+                            WHEN MSG.MSG_TYPE_CD = 'FILE' THEN '[파일]'
+                            WHEN MSG.MSG_TYPE_CD = 'VOTE' THEN '[투표]'
+                            ELSE MSG.MSG 
+                        END
                       FROM CN_CHAT_MESSAGE MSG
                       WHERE MSG.CN_NO = CNR.CN_NO
-                        AND MSG.SND_USER_ID <> :userId
                         AND MSG.CHAT_STAT_CD = 'A'
-                        AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                                      AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                       ORDER BY MSG.SND_DTIME DESC
                       LIMIT 1
                     ) AS NEW_MSG,
@@ -55,8 +58,6 @@ public class ChatService {
                       WHERE MSG.CN_NO = CNR.CN_NO
                         AND MSG.SND_USER_ID <> :userId
                         AND MSG.CHAT_STAT_CD = 'A'
-                        AND MSG.SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                              AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                         AND NOT EXISTS (
                             SELECT 1
                             FROM CN_CHAT_MESSAGE_READ MSR
@@ -91,13 +92,15 @@ public class ChatService {
                     CNR.BN_NO        AS ROOM_NO,
                     BNG.BN_NM        AS ROOM_NM,
                     (
-                      SELECT MSG.BN_CHAT_MSG
+                      SELECT 
+                        CASE 
+                            WHEN MSG.BN_CHAT_MSG_TYPE_CD = 'IMAGE' THEN '[사진]'
+                            WHEN MSG.BN_CHAT_MSG_TYPE_CD = 'FILE' THEN '[파일]'
+                            ELSE MSG.BN_CHAT_MSG 
+                        END
                       FROM BN_CHAT_MESSAGE MSG
                       WHERE MSG.BN_NO = CNR.BN_NO
-                        AND MSG.BN_CHAT_SND_USER_ID <> :userId
                         AND MSG.BN_CHAT_STAT_CD = 'A'
-                        AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                                      AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                       ORDER BY MSG.BN_CHAT_SND_DTIME DESC
                       LIMIT 1
                     ) AS NEW_MSG,
@@ -107,8 +110,6 @@ public class ChatService {
                       WHERE MSG.BN_NO = CNR.BN_NO
                         AND MSG.BN_CHAT_SND_USER_ID <> :userId
                         AND MSG.BN_CHAT_STAT_CD = 'A'
-                        AND MSG.BN_CHAT_SND_DTIME BETWEEN TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                                                      AND TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                         AND NOT EXISTS (
                             SELECT 1
                             FROM BN_CHAT_MESSAGE_READ MSR
@@ -155,13 +156,15 @@ public class ChatService {
                     CNR.GRP_CHAT_NO AS ROOM_NO,
                     CNR.GRP_CHAT_ROOM_NM AS ROOM_NM,
                     (
-                      SELECT MSG.GRP_CHAT_MSG
+                      SELECT 
+                        CASE 
+                            WHEN MSG.GRP_CHAT_MSG_TYPE_CD = 'IMAGE' THEN '[사진]'
+                            WHEN MSG.GRP_CHAT_MSG_TYPE_CD = 'FILE' THEN '[파일]'
+                            ELSE MSG.GRP_CHAT_MSG 
+                        END
                       FROM CM_GRP_CHAT_MESSAGE MSG
                       WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
-                        AND MSG.GRP_CHAT_SND_USER_ID <> :userId
                         AND MSG.GRP_CHAT_STAT_CD = 'A'
-                        AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                        AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                       ORDER BY MSG.GRP_CHAT_SND_DTIME DESC
                       LIMIT 1
                     ) AS NEW_MSG,
@@ -171,8 +174,6 @@ public class ChatService {
                       WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
                         AND MSG.GRP_CHAT_SND_USER_ID <> :userId
                         AND MSG.GRP_CHAT_STAT_CD = 'A'
-                        AND MSG.GRP_CHAT_SND_DTIME >= TO_CHAR(NOW() - INTERVAL '30 days', 'YYYYMMDD') || '000000'
-                        AND MSG.GRP_CHAT_SND_DTIME <= TO_CHAR(NOW(), 'YYYYMMDD') || '999999'
                         AND NOT EXISTS (
                             SELECT 1
                             FROM CM_GRP_CHAT_MESSAGE_READ MSR
@@ -201,12 +202,15 @@ public class ChatService {
                     CR.MM_ROOM_NO AS ROOM_NO,
                     U.USER_NICK_NM AS ROOM_NM,
                     (
-                      SELECT MSG.MSG
+                      SELECT 
+                        CASE 
+                            WHEN MSG.MSG_TYPE_CD = 'IMAGE' THEN '[사진]'
+                            WHEN MSG.MSG_TYPE_CD = 'FILE' THEN '[파일]'
+                            ELSE MSG.MSG 
+                        END
                       FROM MM_CHAT_MESSAGE MSG
                       WHERE MSG.MM_ROOM_NO = CR.MM_ROOM_NO
-                        AND MSG.SND_USER_ID <> :userId
                         AND MSG.CHAT_STAT_CD = 'A'
-                        AND MSG.SND_DTIME >= TO_CHAR(NOW() - INTERVAL '300 days', 'YYYYMMDD') || '000000'
                       ORDER BY MSG.SND_DTIME DESC
                       LIMIT 1
                     ) AS NEW_MSG,
