@@ -1,3 +1,4 @@
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   SafeAreaView, 
   StatusBar, 
@@ -38,7 +39,7 @@ function App(): React.JSX.Element {
   const [isCheckingInitialNotification, setIsCheckingInitialNotification] = useState(true);
 
   // 업데이트 알림 관련 상태
-  const CURRENT_VERSION_CODE = 21; // 현재 앱의 버전 코드
+  const CURRENT_VERSION_CODE = 22; // 현재 앱의 버전 코드
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [latestVersionInfo, setLatestVersionInfo] = useState<any>(null);
 
@@ -139,6 +140,10 @@ function App(): React.JSX.Element {
   };
 
   useEffect(() => {
+    let unsubscribeOnNotificationOpenedApp: (() => void) | undefined;
+    let unsubscribeTokenRefresh: (() => void) | undefined;
+    let unsubscribeOnMessage: (() => void) | undefined;
+
     const setupMessaging = async () => {
       const hasPermission = await requestUserPermission();
       if (hasPermission) {
@@ -149,20 +154,20 @@ function App(): React.JSX.Element {
       await checkAppVersion();
 
       // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
-      const unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
+      unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
         console.log('Notification caused app to open from background:', remoteMessage);
         handleDeepLink(remoteMessage);
       });
 
       // 2. 토큰 갱신 시 처리
-      const unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
+      unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
         console.log('FCM Token Refreshed:', token);
         setFcmToken(token);
         sendTokenToWebView(token);
       });
 
       // 3. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
-      const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+      unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
         console.log('Foreground message received:', remoteMessage);
         sendPushToWebView(remoteMessage);
       });
@@ -184,16 +189,18 @@ function App(): React.JSX.Element {
       } finally {
         setIsCheckingInitialNotification(false);
       }
-
-      return () => {
-        unsubscribeOnNotificationOpenedApp();
-        unsubscribeTokenRefresh();
-        unsubscribeOnMessage();
-      };
     };
 
     setupMessaging();
 
+    return () => {
+      if (unsubscribeOnNotificationOpenedApp) unsubscribeOnNotificationOpenedApp();
+      if (unsubscribeTokenRefresh) unsubscribeTokenRefresh();
+      if (unsubscribeOnMessage) unsubscribeOnMessage();
+    };
+  }, []);
+
+  useEffect(() => {
     // 안드로이드 하드웨어 뒤로가기 버튼 처리
     const backAction = () => {
       if (canGoBack && webViewRef.current) {

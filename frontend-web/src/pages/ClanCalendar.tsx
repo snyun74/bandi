@@ -180,7 +180,7 @@ const ClanCalendar: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 pb-20"> {/* pb-20 for fixed bottom input */}
+            <div className="flex-1 overflow-y-auto p-4 pb-[calc(100px+var(--safe-bottom))]"> {/* pb-20 for fixed bottom input */}
                 {/* Calendar Card */}
                 <div className="bg-[#f2f4f5] rounded-3xl p-6 mb-6">
                     {/* Month Nav */}
@@ -236,7 +236,7 @@ const ClanCalendar: React.FC = () => {
 
             {/* Bottom Input - Only for Managers */}
             {canManage && (
-                <div className="p-3 bg-gray-50 border-t border-gray-100 flex items-center gap-1.5 fixed bottom-[60px] left-0 right-0 z-50">
+                <div className="p-3 bg-gray-50 border-t border-gray-100 flex items-center gap-1.5 fixed bottom-[calc(var(--nav-height)+var(--safe-bottom))] left-0 right-0 z-50">
                     <input
                         type="text"
                         value={newScheduleTitle}

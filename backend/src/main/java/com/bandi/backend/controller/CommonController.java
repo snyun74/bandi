@@ -28,8 +28,8 @@ public class CommonController {
     public ResponseEntity<java.util.Map<String, Object>> getAppVersion() {
         // 최신 버전 정보 반환 (추후 DB화 가능)
         return ResponseEntity.ok(java.util.Map.of(
-            "latestVersionCode", 21,
-            "latestVersionName", "3.5",
+            "latestVersionCode", 22,
+            "latestVersionName", "3.6",
             "forceUpdate", false,
             "storeUrl", "market://details?id=com.bandimobile",
             "iosStoreUrl", "itms-apps://itunes.apple.com/app/id6475653554" // iOS 앱 스토어 ID (확인 필요)

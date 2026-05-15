@@ -530,7 +530,7 @@ const ClanBoardPostDetail: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 pb-[130px]">
+            <div className="flex-1 pb-[calc(130px+var(--safe-bottom))]">
                 <div className="p-5 bg-[#F9FAFB] m-4 rounded-xl shadow-sm border border-gray-100">
                     <SectionTitle className="!mt-0 mb-4">{post.title}</SectionTitle>
 
@@ -675,7 +675,7 @@ const ClanBoardPostDetail: React.FC = () => {
             </div>
 
             {/* Main Input Footer */}
-            <div className="fixed bottom-[60px] left-0 right-0 bg-white border-t border-gray-200 p-3 z-[60]">
+            <div className="fixed bottom-[calc(var(--nav-height)+var(--safe-bottom))] left-0 right-0 bg-white border-t border-gray-200 p-3 z-[60]">
                 <div className="relative bg-[#F3F4F6] rounded-xl flex items-center p-2 gap-2">
                     <div className="flex flex-col items-center ml-1 flex-shrink-0 cursor-pointer select-none" onClick={() => setIsAnonymous(!isAnonymous)}>
                         <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${isAnonymous ? 'bg-[#00BDF8] border-[#00BDF8]' : 'bg-white border-gray-300'}`}>
