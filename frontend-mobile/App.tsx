@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { 
-  SafeAreaView, 
-  StatusBar, 
-  useColorScheme, 
-  ActivityIndicator, 
-  PermissionsAndroid, 
-  Platform, 
-  BackHandler, 
-  Alert, 
-  Linking, 
-  Modal, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet 
+import {
+  SafeAreaView,
+  StatusBar,
+  useColorScheme,
+  ActivityIndicator,
+  PermissionsAndroid,
+  Platform,
+  BackHandler,
+  Alert,
+  Linking,
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
@@ -63,6 +63,9 @@ function App(): React.JSX.Element {
   // FCM 토큰 획득 및 설정
   const getAndSetFcmToken = async () => {
     try {
+      if (Platform.OS === 'ios') {
+        await messaging().registerDeviceForRemoteMessages();
+      }
       const token = await messaging().getToken();
       if (token) {
         console.log('Firebase Token:', token);
@@ -109,7 +112,7 @@ function App(): React.JSX.Element {
       const link = remoteMessage.data.click_action;
       const targetUrl = link.startsWith('http') ? link : `${WEB_URL}${link}`;
       console.log('Navigating to deep link:', targetUrl);
-      
+
       if (webViewRef.current) {
         const script = `window.location.href = "${targetUrl}"; true;`;
         webViewRef.current.injectJavaScript(script);
@@ -145,35 +148,35 @@ function App(): React.JSX.Element {
     let unsubscribeOnMessage: (() => void) | undefined;
 
     const setupMessaging = async () => {
-      const hasPermission = await requestUserPermission();
-      if (hasPermission) {
-        await getAndSetFcmToken();
-      }
-
-      // 버전 체크 실행
-      await checkAppVersion();
-
-      // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
-      unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
-        console.log('Notification caused app to open from background:', remoteMessage);
-        handleDeepLink(remoteMessage);
-      });
-
-      // 2. 토큰 갱신 시 처리
-      unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
-        console.log('FCM Token Refreshed:', token);
-        setFcmToken(token);
-        sendTokenToWebView(token);
-      });
-
-      // 3. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
-      unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
-        console.log('Foreground message received:', remoteMessage);
-        sendPushToWebView(remoteMessage);
-      });
-
-      // 4. 초기 알림 확인 (앱이 완전히 종료된 상태에서 실행될 때)
       try {
+        const hasPermission = await requestUserPermission();
+        if (hasPermission) {
+          await getAndSetFcmToken();
+        }
+
+        // 버전 체크 실행
+        await checkAppVersion();
+
+        // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
+        unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
+          console.log('Notification caused app to open from background:', remoteMessage);
+          handleDeepLink(remoteMessage);
+        });
+
+        // 2. 토큰 갱신 시 처리
+        unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
+          console.log('FCM Token Refreshed:', token);
+          setFcmToken(token);
+          sendTokenToWebView(token);
+        });
+
+        // 3. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
+        unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+          console.log('Foreground message received:', remoteMessage);
+          sendPushToWebView(remoteMessage);
+        });
+
+        // 4. 초기 알림 확인 (앱이 완전히 종료된 상태에서 실행될 때)
         const initialMessage = await messaging().getInitialNotification();
         if (initialMessage) {
           console.log('Notification caused app to open from quit state (initial):', initialMessage);
@@ -185,7 +188,7 @@ function App(): React.JSX.Element {
           }
         }
       } catch (error) {
-        console.error('Error checking initial notification:', error);
+        console.error('setupMessaging error:', error);
       } finally {
         setIsCheckingInitialNotification(false);
       }
@@ -263,7 +266,7 @@ function App(): React.JSX.Element {
           />
         )}
       />
-      
+
       {/* 업데이트 알림 모달 */}
       <Modal
         visible={showUpdateModal}
@@ -285,20 +288,20 @@ function App(): React.JSX.Element {
             </View>
             <View style={styles.modalFooter}>
               {!latestVersionInfo?.forceUpdate && (
-                <TouchableOpacity 
-                  style={styles.cancelButton} 
+                <TouchableOpacity
+                  style={styles.cancelButton}
                   onPress={() => setShowUpdateModal(false)}
                 >
                   <Text style={styles.cancelButtonText}>나중에</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity 
-                style={styles.updateButton} 
+              <TouchableOpacity
+                style={styles.updateButton}
                 onPress={() => {
-                  const url = Platform.OS === 'ios' 
+                  const url = Platform.OS === 'ios'
                     ? (latestVersionInfo?.iosStoreUrl || 'itms-apps://itunes.apple.com/app/id6475653554')
                     : (latestVersionInfo?.storeUrl || 'market://details?id=com.bandimobile');
-                    
+
                   Linking.openURL(url).catch(err => {
                     console.error('Failed to open store URL:', err);
                     Alert.alert('오류', '스토어를 열 수 없습니다.');
