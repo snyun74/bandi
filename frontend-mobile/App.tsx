@@ -145,35 +145,35 @@ function App(): React.JSX.Element {
     let unsubscribeOnMessage: (() => void) | undefined;
 
     const setupMessaging = async () => {
-      const hasPermission = await requestUserPermission();
-      if (hasPermission) {
-        await getAndSetFcmToken();
-      }
-
-      // 버전 체크 실행
-      await checkAppVersion();
-
-      // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
-      unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
-        console.log('Notification caused app to open from background:', remoteMessage);
-        handleDeepLink(remoteMessage);
-      });
-
-      // 2. 토큰 갱신 시 처리
-      unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
-        console.log('FCM Token Refreshed:', token);
-        setFcmToken(token);
-        sendTokenToWebView(token);
-      });
-
-      // 3. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
-      unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
-        console.log('Foreground message received:', remoteMessage);
-        sendPushToWebView(remoteMessage);
-      });
-
-      // 4. 초기 알림 확인 (앱이 완전히 종료된 상태에서 실행될 때)
       try {
+        const hasPermission = await requestUserPermission();
+        if (hasPermission) {
+          await getAndSetFcmToken();
+        }
+
+        // 버전 체크 실행
+        await checkAppVersion();
+
+        // 1. 앱이 백그라운드 상태일 때 알림 클릭 처리
+        unsubscribeOnNotificationOpenedApp = messaging().onNotificationOpenedApp(remoteMessage => {
+          console.log('Notification caused app to open from background:', remoteMessage);
+          handleDeepLink(remoteMessage);
+        });
+
+        // 2. 토큰 갱신 시 처리
+        unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
+          console.log('FCM Token Refreshed:', token);
+          setFcmToken(token);
+          sendTokenToWebView(token);
+        });
+
+        // 3. 포그라운드 메시지 수신 핸들러 (웹뷰 내부 토스트용)
+        unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
+          console.log('Foreground message received:', remoteMessage);
+          sendPushToWebView(remoteMessage);
+        });
+
+        // 4. 초기 알림 확인 (앱이 완전히 종료된 상태에서 실행될 때)
         const initialMessage = await messaging().getInitialNotification();
         if (initialMessage) {
           console.log('Notification caused app to open from quit state (initial):', initialMessage);
@@ -185,7 +185,7 @@ function App(): React.JSX.Element {
           }
         }
       } catch (error) {
-        console.error('Error checking initial notification:', error);
+        console.error('Error setting up Firebase Messaging:', error);
       } finally {
         setIsCheckingInitialNotification(false);
       }
