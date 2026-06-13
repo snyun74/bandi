@@ -32,11 +32,12 @@ function App(): React.JSX.Element {
 
   const LOCAL_WEB_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5173' : 'http://localhost:5173';
   const PROD_WEB_URL = 'https://www.bandicon.kr';
-  const WEB_URL = __DEV__ ? LOCAL_WEB_URL : PROD_WEB_URL;
+  const WEB_URL = PROD_WEB_URL; // 임시: 에러 확인용
 
   const [currentUrl, setCurrentUrl] = useState(WEB_URL);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingInitialNotification, setIsCheckingInitialNotification] = useState(true);
+  const [webViewError, setWebViewError] = useState<string | null>(null);
 
   // 업데이트 알림 관련 상태
   const CURRENT_VERSION_CODE = 22; // 현재 앱의 버전 코드
@@ -235,12 +236,26 @@ function App(): React.JSX.Element {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
+      {webViewError && (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ fontSize: 16, color: '#333', textAlign: 'center', marginBottom: 8 }}>페이지를 불러올 수 없습니다.</Text>
+          <Text style={{ fontSize: 12, color: '#999', textAlign: 'center', marginBottom: 20 }}>{webViewError}</Text>
+          <TouchableOpacity onPress={() => { setWebViewError(null); webViewRef.current?.reload(); }} style={{ backgroundColor: '#00BDF8', padding: 12, borderRadius: 8 }}>
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>다시 시도</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <WebView
         ref={webViewRef}
         source={{ uri: currentUrl }}
-        style={{ flex: 1 }}
+        style={{ flex: 1, display: webViewError ? 'none' : 'flex' }}
         onLoadStart={() => setIsLoading(true)}
-        onLoadEnd={() => {
+        onLoadEnd={(e) => {
+          const url = e.nativeEvent.url;
+          if (url === 'about:blank' && webViewRef.current) {
+            webViewRef.current.injectJavaScript(`window.location.replace('${currentUrl}'); true;`);
+            return;
+          }
           setIsLoading(false);
           if (fcmToken) {
             sendTokenToWebView(fcmToken);
@@ -252,10 +267,12 @@ function App(): React.JSX.Element {
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.warn('WebView error: ', nativeEvent);
+          setWebViewError(`${nativeEvent.code}: ${nativeEvent.description}`);
         }}
         onHttpError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.warn('WebView HTTP error: ', nativeEvent);
+          setWebViewError(`HTTP ${nativeEvent.statusCode}: ${nativeEvent.url}`);
         }}
         startInLoadingState={true}
         renderLoading={() => (
