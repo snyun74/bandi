@@ -145,15 +145,7 @@ const LoginPage: React.FC = () => {
                                 </button>
                             </form>
 
-                            <div className="mt-5 mb-1">
-                                <p className="text-sm text-gray-500 mb-2 ml-1">다른 로그인</p>
-                                <button
-                                    disabled
-                                    className="w-full py-2.5 bg-gray-200 text-gray-400 rounded-xl font-bold text-base cursor-not-allowed"
-                                >
-                                    Kakao 로그인 (준비 중)
-                                </button>
-                            </div>
+                            {/* 다른 로그인 (소셜 로그인 활성화 시 함께 애플 로그인 추가 필요하므로 임시 주석 혹은 삭제) */}
                         </div>
                     </div>
 

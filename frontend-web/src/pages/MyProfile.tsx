@@ -35,6 +35,8 @@ const MyProfile: React.FC = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
     const [isPublicTypeModalOpen, setIsPublicTypeModalOpen] = useState(false);
+    const [isAccountWithdrawModalOpen, setIsAccountWithdrawModalOpen] = useState(false);
+    const [alertCallback, setAlertCallback] = useState<(() => void) | null>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
     const userId = localStorage.getItem('userId');
@@ -54,8 +56,9 @@ const MyProfile: React.FC = () => {
         fetchCommonCodes();
     }, []);
 
-    const showAlert = (message: string) => {
+    const showAlert = (message: string, callback?: () => void) => {
         setAlertMessage(message);
+        setAlertCallback(() => callback || null);
         setIsAlertModalOpen(true);
     };
 
@@ -169,6 +172,27 @@ const MyProfile: React.FC = () => {
         localStorage.clear();
         setIsLogoutModalOpen(false);
         navigate('/');
+    };
+
+    const handleAccountWithdrawConfirm = async () => {
+        if (!userId) return;
+        try {
+            const response = await fetch(`/api/user/withdraw/${userId}`, {
+                method: 'PUT'
+            });
+            if (response.ok) {
+                setIsAccountWithdrawModalOpen(false);
+                showAlert("회원 탈퇴가 완료되었습니다.", () => {
+                    localStorage.clear();
+                    navigate('/');
+                });
+            } else {
+                showAlert("회원 탈퇴에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("Account withdraw error:", error);
+            showAlert("오류가 발생했습니다.");
+        }
     };
 
     const handleDeleteClick = (e: React.MouseEvent, type: 'POST' | 'SHORTS', id: number | string) => {
@@ -307,6 +331,19 @@ const MyProfile: React.FC = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                                 <span>로그아웃</span>
+                            </button>
+                            <div className="mx-3 h-[1px] bg-gray-100"></div>
+                            <button
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    setIsAccountWithdrawModalOpen(true);
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-gray-400 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142a2 2 0 011.667 1.667H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>회원 탈퇴</span>
                             </button>
                         </div>
                     )}
@@ -563,12 +600,28 @@ const MyProfile: React.FC = () => {
                 />
             )}
 
+            {/* Account Withdraw Confirmation Modal */}
+            <CommonModal
+                isOpen={isAccountWithdrawModalOpen}
+                type="confirm"
+                variant="danger"
+                message="정말 탈퇴하시겠습니까? 탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다."
+                onConfirm={handleAccountWithdrawConfirm}
+                onCancel={() => setIsAccountWithdrawModalOpen(false)}
+            />
+
             {/* General Alert Modal */}
             <CommonModal
                 isOpen={isAlertModalOpen}
                 type="alert"
                 message={alertMessage}
-                onConfirm={() => setIsAlertModalOpen(false)}
+                onConfirm={() => {
+                    setIsAlertModalOpen(false);
+                    if (alertCallback) {
+                        alertCallback();
+                        setAlertCallback(null);
+                    }
+                }}
             />
         </div>
     );

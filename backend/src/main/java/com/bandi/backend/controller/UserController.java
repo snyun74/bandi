@@ -58,4 +58,15 @@ public class UserController {
             return ResponseEntity.badRequest().body("Failed to update profile: " + e.getMessage());
         }
     }
+
+    @PutMapping("/withdraw/{userId}")
+    public ResponseEntity<?> withdrawUser(@PathVariable String userId) {
+        try {
+            userService.withdrawUser(userId);
+            return ResponseEntity.ok().body("User withdrawn successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error withdrawing user: " + e.getMessage());
+        }
+    }
 }

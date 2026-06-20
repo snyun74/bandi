@@ -232,4 +232,17 @@ public class UserService {
         return cmScrapRepository.findMyCommentedPosts(userId, size, page * size)
                 .stream().map(this::mapToMyPostDto).collect(Collectors.toList());
     }
+
+    @Transactional
+    public void withdrawUser(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+        user.setUserStatCd("D");
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        user.setUpdDtime(currentDateTime);
+        user.setUpdId(userId);
+
+        userRepository.save(user);
+    }
 }

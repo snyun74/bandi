@@ -201,6 +201,13 @@ public class AuthService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
+        // 탈퇴 사용자 체크
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null && "D".equals(user.getUserStatCd())) {
+            log.warn("Login Failed - Withdrawn User (UserId: {})", userId);
+            throw new RuntimeException("탈퇴한 회원입니다.");
+        }
+
         // Update Audit Fields (Last Login Time)
         String nowDtime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
@@ -209,9 +216,9 @@ public class AuthService {
         account.setUpdId(userId);
 
         // 2. Update User (Optional but recommended for consistency)
-        userRepository.findById(userId).ifPresent(user -> {
-            user.setUpdDtime(nowDtime);
-            user.setUpdId(userId);
+        userRepository.findById(userId).ifPresent(u -> {
+            u.setUpdDtime(nowDtime);
+            u.setUpdId(userId);
         });
 
         return account;

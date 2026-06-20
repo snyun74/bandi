@@ -5,10 +5,16 @@ import java.io.Serializable;
 
 @Entity
 @Table(name = "MM_CHAT_MESSAGE_READ")
+@IdClass(ChatMessageReadId.class)
 public class ChatMessageRead {
 
-    @EmbeddedId
-    private ChatMessageReadId id;
+    @Id
+    @Column(name = "mm_msg_no")
+    private Long mmMsgNo;
+
+    @Id
+    @Column(name = "read_user_id", length = 20)
+    private String readUserId;
 
     @Column(name = "read_dtime", length = 14)
     private String readDtime;
@@ -16,17 +22,30 @@ public class ChatMessageRead {
     public ChatMessageRead() {
     }
 
-    public ChatMessageRead(ChatMessageReadId id, String readDtime) {
-        this.id = id;
+    public ChatMessageRead(Long mmMsgNo, String readUserId, String readDtime) {
+        this.mmMsgNo = mmMsgNo;
+        this.readUserId = readUserId;
         this.readDtime = readDtime;
     }
 
     public ChatMessageReadId getId() {
-        return id;
+        return new ChatMessageReadId(mmMsgNo, readUserId);
     }
 
-    public void setId(ChatMessageReadId id) {
-        this.id = id;
+    public Long getMmMsgNo() {
+        return mmMsgNo;
+    }
+
+    public void setMmMsgNo(Long mmMsgNo) {
+        this.mmMsgNo = mmMsgNo;
+    }
+
+    public String getReadUserId() {
+        return readUserId;
+    }
+
+    public void setReadUserId(String readUserId) {
+        this.readUserId = readUserId;
     }
 
     public String getReadDtime() {
