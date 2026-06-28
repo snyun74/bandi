@@ -255,7 +255,6 @@ const SignupPage: React.FC = () => {
         if (!formData.phoneNo) return '휴대폰 번호를 입력해주세요.';
         if (!isPhoneVerified) return '휴대폰 번호 인증을 해주세요.';
         if (formData.birthDt && formData.birthDt.length !== 8) return '생년월일은 8자리(YYYYMMDD)로 입력해주세요.';
-        if (!formData.genderCd) return '성별을 선택해주세요.';
         
         // Final sequential check for Privacy
         if (!isPrivacyAgreed) return '개인정보 수집 및 이용에 동의해주세요.';
@@ -513,7 +512,7 @@ const SignupPage: React.FC = () => {
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[#003C48] font-bold text-[14px]">성별 <span className="text-red-500">*</span></label>
+                                <label className="text-[#003C48] font-bold text-[14px]">성별 <span className="text-gray-400 text-xs font-normal">(선택)</span></label>
                                 <select
                                     name="genderCd"
                                     value={formData.genderCd}

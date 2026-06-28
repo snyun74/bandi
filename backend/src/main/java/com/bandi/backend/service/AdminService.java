@@ -10,6 +10,9 @@ import com.bandi.backend.repository.CmAttachmentRepository;
 import com.bandi.backend.repository.ClanGroupRepository;
 import com.bandi.backend.repository.CmReportRepository;
 import com.bandi.backend.repository.CmBlockRepository;
+import com.bandi.backend.repository.BoardRepository;
+import com.bandi.backend.repository.ClanBoardRepository;
+import com.bandi.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,9 @@ public class AdminService {
     private final CmReportRepository cmReportRepository;
     private final CmBlockRepository cmBlockRepository;
     private final ChatService chatService;
+    private final BoardRepository boardRepository;
+    private final ClanBoardRepository clanBoardRepository;
+    private final UserRepository userRepository;
 
     public List<AdBannerDto> getBanners() {
         return cmAdBannerRepository.findAllByOrderByInsDtimeDesc().stream()
@@ -201,6 +207,100 @@ public class AdminService {
         report.setUpdId(userId);
 
         cmReportRepository.save(report);
+
+        // 만약 상태가 'Y' (승인/처리완료)이면 실제 콘텐츠 삭제 및 사용자 추방(정지)을 진행합니다.
+        if ("Y".equals(status)) {
+            // 1. 사용자 정지 처리
+            String targetUserId = report.getTargetUserId();
+            if (targetUserId != null && !targetUserId.isEmpty()) {
+                userRepository.findById(targetUserId).ifPresent(u -> {
+                    u.setUserStatCd("B"); // 'B': Blocked (정지/차단)
+                    u.setUpdDtime(currentDateTime);
+                    u.setUpdId(userId);
+                    userRepository.save(u);
+                    log.info("Admin Service - Banned User: {}", targetUserId);
+                });
+            }
+
+            // 2. 게시글(콘텐츠) 논리 삭제 처리
+            String boardUrl = report.getBoardUrl();
+            if (boardUrl != null && !boardUrl.isEmpty()) {
+                try {
+                    // boardUrl 예:
+                    // 1) 일반 게시판: /main/board/detail?boardNo=123 또는 /main/board/detail/123
+                    // 2) 클랜 게시판: /main/clan/board/detail/2/3/182 또는 쿼리/패스구조
+                    if (boardUrl.contains("clan")) {
+                        // 클랜 게시판 게시글 처리
+                        Long boardNoVal = extractBoardNo(boardUrl, "boardNo");
+                        if (boardNoVal == null) {
+                            boardNoVal = extractBoardNoFromPath(boardUrl);
+                        }
+                        if (boardNoVal != null) {
+                            final Long finalBoardNo = boardNoVal;
+                            clanBoardRepository.findById(finalBoardNo).ifPresent(cb -> {
+                                cb.setBoardStatCd("D"); // 'D': Deleted
+                                cb.setUpdDtime(currentDateTime);
+                                cb.setUpdId(userId);
+                                clanBoardRepository.save(cb);
+                                log.info("Admin Service - Deleted Clan Board Post: {}", finalBoardNo);
+                            });
+                        }
+                    } else {
+                        // 일반 자유 게시판 게시글 처리
+                        Long boardNoVal = extractBoardNo(boardUrl, "boardNo");
+                        if (boardNoVal == null) {
+                            boardNoVal = extractBoardNoFromPath(boardUrl);
+                        }
+                        if (boardNoVal != null) {
+                            final Long finalBoardNo = boardNoVal;
+                            boardRepository.findById(finalBoardNo).ifPresent(b -> {
+                                b.setBoardStatCd("D"); // 'D': Deleted
+                                b.setUpdDtime(currentDateTime);
+                                b.setUpdId(userId);
+                                boardRepository.save(b);
+                                log.info("Admin Service - Deleted Free Board Post: {}", finalBoardNo);
+                            });
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Admin Service - Failed to parse boardUrl or delete content: " + boardUrl, e);
+                }
+            }
+        }
+    }
+
+    private Long extractBoardNo(String url, String paramName) {
+        try {
+            if (url.contains("?")) {
+                String queryString = url.substring(url.indexOf("?") + 1);
+                String[] params = queryString.split("&");
+                for (String param : params) {
+                    String[] pair = param.split("=");
+                    if (pair.length == 2 && pair[0].equals(paramName)) {
+                        return Long.parseLong(pair[1]);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract param " + paramName + " from url: " + url, e);
+        }
+        return null;
+    }
+
+    private Long extractBoardNoFromPath(String url) {
+        try {
+            String path = url.contains("?") ? url.substring(0, url.indexOf("?")) : url;
+            String[] segments = path.split("/");
+            for (int i = segments.length - 1; i >= 0; i--) {
+                String segment = segments[i];
+                if (!segment.isEmpty() && segment.matches("\\d+")) {
+                    return Long.parseLong(segment);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract boardNo from path: " + url, e);
+        }
+        return null;
     }
 
     @Transactional

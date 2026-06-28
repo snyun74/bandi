@@ -156,6 +156,22 @@ const CustomerCenterPage: React.FC = () => {
                             {loading ? '전송중...' : '전송하기'}
                         </button>
                     </div>
+
+                    {/* UGC 신고 안내 배너 */}
+                    <div className="mt-8 p-4 bg-orange-50/60 rounded-2xl border border-orange-100 flex flex-col gap-1.5">
+                        <div className="text-[12px] font-bold text-orange-600 flex items-center gap-1">
+                            ⚠️ 부적절한 사용자 및 게시물 신고 안내
+                        </div>
+                        <p className="text-[11px] text-[#003C48] leading-relaxed">
+                            서비스 내 부적절한 게시물이나 사용자(UGC)를 발견하신 경우, 고객센터 문의 작성 외에 아래 이메일로도 즉시 신고 접수가 가능합니다.
+                        </p>
+                        <div className="text-[11px] text-[#003C48] font-bold mt-1">
+                            신고 접수 이메일: <a href="mailto:snyun74@gmail.com" className="text-blue-500 underline">snyun74@gmail.com</a>
+                        </div>
+                        <p className="text-[10px] text-gray-400 leading-relaxed mt-1">
+                            ※ 접수된 모든 신고는 24시간 이내에 신속히 검토되며, 부적절한 콘텐츠 삭제 및 해당 사용자의 이용 제한(정지/추방) 조치를 취하고 있습니다.
+                        </p>
+                    </div>
                 </div>
 
                 {/* History Header */}

@@ -201,11 +201,17 @@ public class AuthService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
-        // 탈퇴 사용자 체크
+        // 탈퇴 및 정지 사용자 체크
         User user = userRepository.findById(userId).orElse(null);
-        if (user != null && "D".equals(user.getUserStatCd())) {
-            log.warn("Login Failed - Withdrawn User (UserId: {})", userId);
-            throw new RuntimeException("탈퇴한 회원입니다.");
+        if (user != null) {
+            if ("D".equals(user.getUserStatCd())) {
+                log.warn("Login Failed - Withdrawn User (UserId: {})", userId);
+                throw new RuntimeException("탈퇴한 회원입니다.");
+            }
+            if ("B".equals(user.getUserStatCd())) {
+                log.warn("Login Failed - Blocked User (UserId: {})", userId);
+                throw new RuntimeException("신고로 인해 정지된 회원입니다.");
+            }
         }
 
         // Update Audit Fields (Last Login Time)
