@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaChevronLeft, FaThumbsUp, FaThumbsDown, FaComment, FaEye } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../../components/common/CommonModal';
+import SnsCommentModal from '../../components/sns/SnsCommentModal';
+import UserAvatar from '../../components/common/UserAvatar';
 
 interface FeedItem {
     type: 'SHORTS' | 'POST';
@@ -17,8 +19,15 @@ interface FeedItem {
     // Common fields
     userId: string;
     userNickNm: string;
+    userProfileImagePath?: string | null;
     insDtime: string;
     publicTypeCd: string;
+    // Stats & Action fields
+    viewCount?: number;
+    likeCount?: number;
+    dislikeCount?: number;
+    userAction?: 'L' | 'D' | null;
+    commentCount?: number;
 }
 
 const SnsUnifiedFeed: React.FC = () => {
@@ -42,6 +51,17 @@ const SnsUnifiedFeed: React.FC = () => {
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
     const currentUserId = localStorage.getItem('userId');
 
+    // Comment Modal State
+    const [commentModalState, setCommentModalState] = useState<{
+        isOpen: boolean;
+        type: 'POST' | 'SHORTS';
+        targetId: number;
+    }>({
+        isOpen: false,
+        type: 'POST',
+        targetId: 0
+    });
+
     useEffect(() => {
         const fetchCommonCodes = async () => {
             try {
@@ -61,13 +81,19 @@ const SnsUnifiedFeed: React.FC = () => {
         if (!userId || isLoading) return;
         setIsLoading(true);
 
+        const userQuery = currentUserId ? `&currentUserId=${currentUserId}` : '';
+
         try {
             const [postsRes, shortsRes] = await Promise.all([
                 hasMorePosts || isInitial 
-                    ? fetch(userId === 'public' ? `/api/sns/posts/public?page=${pPage}&size=15` : `/api/sns/posts/user/${userId}?page=${pPage}&size=15`) 
+                    ? fetch(userId === 'public' 
+                        ? `/api/sns/posts/public?page=${pPage}&size=15${userQuery}` 
+                        : `/api/sns/posts/user/${userId}?page=${pPage}&size=15${userQuery}`) 
                     : Promise.resolve(null),
                 hasMoreShorts || isInitial 
-                    ? fetch(userId === 'public' ? `/api/sns/shorts/public?page=${sPage}&size=15` : `/api/sns/shorts/user/${userId}?page=${sPage}&size=15`) 
+                    ? fetch(userId === 'public' 
+                        ? `/api/sns/shorts/public?page=${sPage}&size=15${userQuery}` 
+                        : `/api/sns/shorts/user/${userId}?page=${sPage}&size=15${userQuery}`) 
                     : Promise.resolve(null)
             ]);
 
@@ -112,9 +138,11 @@ const SnsUnifiedFeed: React.FC = () => {
         }
     }, [postsPage, shortsPage]);
 
-    // 초기 위치로 이동
+    const hasScrolledToInitial = useRef(false);
+
+    // 초기 위치로 이동 (최초 1회만 수행)
     useEffect(() => {
-        if (feedList.length > 0 && containerRef.current) {
+        if (!hasScrolledToInitial.current && feedList.length > 0 && containerRef.current) {
             let initialIndex = -1;
             if (state?.initialPostId) {
                 initialIndex = feedList.findIndex(item => item.type === 'POST' && item.postId === state.initialPostId);
@@ -128,6 +156,7 @@ const SnsUnifiedFeed: React.FC = () => {
                     targetElement.scrollIntoView();
                 }
             }
+            hasScrolledToInitial.current = true;
         }
     }, [feedList, state?.initialPostId, state?.initialShortsNo]);
 
@@ -184,7 +213,6 @@ const SnsUnifiedFeed: React.FC = () => {
                     }
                     return item;
                 }));
-                // In a real app we might show a toast message here
             }
         } catch (error) {
             console.error("Update public type error:", error);
@@ -194,10 +222,64 @@ const SnsUnifiedFeed: React.FC = () => {
         }
     };
 
+    const handleLikeToggle = async (type: 'POST' | 'SHORTS', id: number, actionType: 'L' | 'D') => {
+        if (!currentUserId) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const url = type === 'POST'
+                ? `/api/sns/posts/${id}/like?userId=${currentUserId}&actionTypeFg=${actionType}`
+                : `/api/sns/shorts/${id}/like?userId=${currentUserId}&actionTypeFg=${actionType}`;
+
+            const res = await fetch(url, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json(); // { likeCount, dislikeCount, userAction }
+                setFeedList(prev => prev.map(item => {
+                    if (type === 'POST' && item.type === 'POST' && item.postId === id) {
+                        return { ...item, likeCount: data.likeCount, dislikeCount: data.dislikeCount, userAction: data.userAction };
+                    }
+                    if (type === 'SHORTS' && item.type === 'SHORTS' && item.shortsNo === id) {
+                        return { ...item, likeCount: data.likeCount, dislikeCount: data.dislikeCount, userAction: data.userAction };
+                    }
+                    return item;
+                }));
+            }
+        } catch (err) {
+            console.error("Like toggle failed:", err);
+        }
+    };
+
+    const handleViewRecorded = (type: 'POST' | 'SHORTS', id: number, newTotalViews: number) => {
+        setFeedList(prev => prev.map(item => {
+            if (type === 'POST' && item.type === 'POST' && item.postId === id) {
+                return { ...item, viewCount: newTotalViews };
+            }
+            if (type === 'SHORTS' && item.type === 'SHORTS' && item.shortsNo === id) {
+                return { ...item, viewCount: newTotalViews };
+            }
+            return item;
+        }));
+    };
+
+    const handleCommentCountUpdate = (newCount: number) => {
+        const { type, targetId } = commentModalState;
+        setFeedList(prev => prev.map(item => {
+            if (type === 'POST' && item.type === 'POST' && item.postId === targetId) {
+                return { ...item, commentCount: newCount };
+            }
+            if (type === 'SHORTS' && item.type === 'SHORTS' && item.shortsNo === targetId) {
+                return { ...item, commentCount: newCount };
+            }
+            return item;
+        }));
+    };
+
     return (
         <div className="fixed inset-0 bg-black flex flex-col h-full font-['Pretendard']">
             {/* Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 z-50 flex items-center px-4 py-6 bg-gradient-to-b from-black/60 to-transparent">
+            <div className="absolute top-0 left-0 right-0 z-50 flex items-center px-4 py-6 bg-gradient-to-b from-black/70 to-transparent">
                 <button onClick={() => navigate(-1)} className="text-white p-2 hover:bg-white/10 rounded-full transition-colors">
                     <FaChevronLeft size={20} />
                 </button>
@@ -214,22 +296,93 @@ const SnsUnifiedFeed: React.FC = () => {
                 {feedList.map((item) => {
                     const isMyContent = item.userId === currentUserId && userId !== 'public';
                     const itemKey = item.type === 'SHORTS' ? `shorts-${item.shortsNo}` : `post-${item.postId}`;
+                    const targetId = item.type === 'SHORTS' ? item.shortsNo! : item.postId!;
                     
                     return (
-                        <div key={itemKey} className="relative h-screen w-full snap-start">
+                        <div key={itemKey} className="relative h-screen w-full snap-start overflow-hidden">
                             {item.type === 'SHORTS' ? (
-                                <ShortsVideoItem item={item} />
+                                <ShortsVideoItem 
+                                    item={item} 
+                                    onViewRecord={(count) => handleViewRecorded('SHORTS', item.shortsNo!, count)}
+                                />
                             ) : (
-                                <PostFeedItem post={item} />
+                                <PostFeedItem 
+                                    post={item} 
+                                    onViewRecord={(count) => handleViewRecorded('POST', item.postId!, count)}
+                                />
                             )}
                             
+                            {/* Right Action Bar (YouTube Shorts Style) */}
+                            <div className="absolute right-4 bottom-28 z-40 flex flex-col items-center gap-5 text-white">
+                                {/* Thumbs Up Button */}
+                                <button
+                                    onClick={() => handleLikeToggle(item.type, targetId, 'L')}
+                                    className="flex flex-col items-center group"
+                                >
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
+                                        item.userAction === 'L'
+                                            ? 'bg-emerald-500 text-black border-emerald-400 shadow-emerald-500/40'
+                                            : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
+                                    }`}>
+                                        <FaThumbsUp size={20} className={item.userAction === 'L' ? 'scale-110' : ''} />
+                                    </div>
+                                    <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                        {item.likeCount || 0}
+                                    </span>
+                                </button>
+
+                                {/* Thumbs Down Button */}
+                                <button
+                                    onClick={() => handleLikeToggle(item.type, targetId, 'D')}
+                                    className="flex flex-col items-center group"
+                                >
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
+                                        item.userAction === 'D'
+                                            ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/40'
+                                            : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
+                                    }`}>
+                                        <FaThumbsDown size={20} className={item.userAction === 'D' ? 'scale-110' : ''} />
+                                    </div>
+                                    <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                        {item.dislikeCount || 0}
+                                    </span>
+                                </button>
+
+                                {/* Comment Button */}
+                                <button
+                                    onClick={() => setCommentModalState({
+                                        isOpen: true,
+                                        type: item.type,
+                                        targetId: targetId
+                                    })}
+                                    className="flex flex-col items-center group"
+                                >
+                                    <div className="w-12 h-12 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-lg">
+                                        <FaComment size={20} />
+                                    </div>
+                                    <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                        {item.commentCount || 0}
+                                    </span>
+                                </button>
+
+                                {/* View Count Indicator */}
+                                <div className="flex flex-col items-center">
+                                    <div className="w-10 h-10 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
+                                        <FaEye size={17} />
+                                    </div>
+                                    <span className="text-[11px] font-medium text-zinc-300 mt-1 drop-shadow-md">
+                                        {item.viewCount || 0}
+                                    </span>
+                                </div>
+                            </div>
+
                             {/* More Menu Button (Glassmorphism) */}
                             {isMyContent && (
                                 <button
                                     onClick={() => {
                                         setItemToDelete({ 
                                             type: item.type, 
-                                            id: item.type === 'SHORTS' ? item.shortsNo! : item.postId! 
+                                            id: targetId 
                                         });
                                         setIsActionMenuOpen(true);
                                     }}
@@ -248,6 +401,15 @@ const SnsUnifiedFeed: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Comment Modal */}
+            <SnsCommentModal
+                isOpen={commentModalState.isOpen}
+                onClose={() => setCommentModalState(prev => ({ ...prev, isOpen: false }))}
+                type={commentModalState.type}
+                targetId={commentModalState.targetId}
+                onCommentCountChange={handleCommentCountUpdate}
+            />
 
             {/* Delete Confirmation Modal */}
             <CommonModal
@@ -355,9 +517,14 @@ const SnsUnifiedFeed: React.FC = () => {
 };
 
 /* --- 서브 컴포넌트: 쇼츠 아이템 --- */
-const ShortsVideoItem: React.FC<{ item: FeedItem }> = ({ item }) => {
+const ShortsVideoItem: React.FC<{
+    item: FeedItem;
+    onViewRecord: (newCount: number) => void;
+}> = ({ item, onViewRecord }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isIntersecting, setIsIntersecting] = useState(false);
+    const hasViewBeenRecorded = useRef(false);
+    const currentUserId = localStorage.getItem('userId');
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -380,10 +547,19 @@ const ShortsVideoItem: React.FC<{ item: FeedItem }> = ({ item }) => {
                     videoRef.current.play();
                 }
             });
+
+            // Trigger view record once when visible
+            if (!hasViewBeenRecorded.current && item.shortsNo) {
+                hasViewBeenRecorded.current = true;
+                fetch(`/api/sns/shorts/${item.shortsNo}/view?userId=${currentUserId || ''}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(totalViews => onViewRecord(totalViews))
+                    .catch(err => console.error("View record failed:", err));
+            }
         } else {
             videoRef.current.pause();
         }
-    }, [isIntersecting]);
+    }, [isIntersecting, item.shortsNo, currentUserId, onViewRecord]);
 
     return (
         <div className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
@@ -399,17 +575,21 @@ const ShortsVideoItem: React.FC<{ item: FeedItem }> = ({ item }) => {
                     else v.pause();
                 }}
             />
-            {/* Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none pb-12 text-white">
+            {/* Bottom Info Overlay */}
+            <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12 text-white">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-[12px] font-bold shadow-xl">
-                        {(item.userNickNm || item.userId).substring(0, 1).toUpperCase()}
-                    </div>
+                    <UserAvatar
+                        profileImagePath={item.userProfileImagePath}
+                        nickName={item.userNickNm}
+                        userId={item.userId}
+                        size={36}
+                        className="border-white/40"
+                    />
                     <span className="font-bold text-[15px] drop-shadow-md">@{item.userNickNm || item.userId}</span>
                     <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">🎬 Shorts</span>
                 </div>
-                <div className="w-full max-w-[85%]">
-                    <h3 className="text-[16px] leading-[1.4] line-clamp-3 font-medium drop-shadow-md">{item.title}</h3>
+                <div className="w-full">
+                    <h3 className="text-[15px] leading-[1.4] line-clamp-3 font-medium drop-shadow-md">{item.title}</h3>
                 </div>
             </div>
         </div>
@@ -417,9 +597,32 @@ const ShortsVideoItem: React.FC<{ item: FeedItem }> = ({ item }) => {
 };
 
 /* --- 서브 컴포넌트: 게시물 아이템 --- */
-const PostFeedItem: React.FC<{ post: FeedItem }> = ({ post }) => {
+const PostFeedItem: React.FC<{
+    post: FeedItem;
+    onViewRecord: (newCount: number) => void;
+}> = ({ post, onViewRecord }) => {
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const itemRef = useRef<HTMLDivElement>(null);
+    const hasViewBeenRecorded = useRef(false);
+    const currentUserId = localStorage.getItem('userId');
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting && !hasViewBeenRecorded.current && post.postId) {
+                    hasViewBeenRecorded.current = true;
+                    fetch(`/api/sns/posts/${post.postId}/view?userId=${currentUserId || ''}`, { method: 'POST' })
+                        .then(res => res.json())
+                        .then(totalViews => onViewRecord(totalViews))
+                        .catch(err => console.error("View record failed:", err));
+                }
+            },
+            { threshold: 0.6 }
+        );
+
+        if (itemRef.current) observer.observe(itemRef.current);
+        return () => observer.disconnect();
+    }, [post.postId, currentUserId, onViewRecord]);
 
     const handleXScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollLeft, clientWidth } = e.currentTarget;
@@ -428,9 +631,8 @@ const PostFeedItem: React.FC<{ post: FeedItem }> = ({ post }) => {
     };
 
     return (
-        <div className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
+        <div ref={itemRef} className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
             <div 
-                ref={scrollRef}
                 onScroll={handleXScroll}
                 className="relative w-full aspect-[4/5] bg-black flex overflow-x-scroll snap-x snap-mandatory scrollbar-none"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -450,17 +652,21 @@ const PostFeedItem: React.FC<{ post: FeedItem }> = ({ post }) => {
                 )}
             </div>
 
-            {/* Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none pb-12 text-white">
+            {/* Bottom Info Overlay */}
+            <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12 text-white">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-[12px] font-bold shadow-xl">
-                        {(post.userNickNm || post.userId).substring(0, 1).toUpperCase()}
-                    </div>
+                    <UserAvatar
+                        profileImagePath={post.userProfileImagePath}
+                        nickName={post.userNickNm}
+                        userId={post.userId}
+                        size={36}
+                        className="border-white/40"
+                    />
                     <span className="font-bold text-[15px] drop-shadow-md">@{post.userNickNm || post.userId}</span>
                     <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">📸 Post</span>
                 </div>
-                <div className="w-full max-w-[85%]">
-                    <p className="text-[15px] leading-[1.5] line-clamp-3 drop-shadow-md">{post.contentPreview}</p>
+                <div className="w-full">
+                    <p className="text-[14px] leading-[1.5] line-clamp-3 drop-shadow-md">{post.contentPreview}</p>
                 </div>
             </div>
         </div>

@@ -1,15 +1,23 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft } from 'react-icons/fa';
+import { FaChevronLeft, FaThumbsUp, FaThumbsDown, FaComment, FaEye } from 'react-icons/fa';
+import SnsCommentModal from '../../components/sns/SnsCommentModal';
+import UserAvatar from '../../components/common/UserAvatar';
 
 interface ShortsItem {
     shortsNo: number;
     userId: string;
     userNickNm: string;
+    userProfileImagePath?: string | null;
     title: string;
     videoPath: string;
     publicTypeCd: string;
     insDtime: string;
+    viewCount?: number;
+    likeCount?: number;
+    dislikeCount?: number;
+    userAction?: 'L' | 'D' | null;
+    commentCount?: number;
 }
 
 const SnsShortsFeed: React.FC = () => {
@@ -23,12 +31,23 @@ const SnsShortsFeed: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const currentUserId = localStorage.getItem('userId');
+
+    // Comment Modal State
+    const [commentModalState, setCommentModalState] = useState<{
+        isOpen: boolean;
+        targetId: number;
+    }>({
+        isOpen: false,
+        targetId: 0
+    });
 
     const fetchShorts = async (pageNum: number) => {
         if (!userId || isLoading) return;
         setIsLoading(true);
+        const userQuery = currentUserId ? `&currentUserId=${currentUserId}` : '';
         try {
-            const res = await fetch(`/api/sns/shorts/user/${userId}?page=${pageNum}&size=30`);
+            const res = await fetch(`/api/sns/shorts/user/${userId}?page=${pageNum}&size=30${userQuery}`);
             if (res.ok) {
                 const data = await res.json();
                 setShortsList(prev => pageNum === 0 ? data.content : [...prev, ...data.content]);
@@ -51,9 +70,11 @@ const SnsShortsFeed: React.FC = () => {
         }
     }, [page]);
 
-    // 초기 위치로 이동
+    const hasScrolledToInitial = useRef(false);
+
+    // 초기 위치로 이동 (최초 1회만 수행)
     useEffect(() => {
-        if (shortsList.length > 0 && state?.initialShortsNo && containerRef.current) {
+        if (!hasScrolledToInitial.current && shortsList.length > 0 && state?.initialShortsNo && containerRef.current) {
             const initialIndex = shortsList.findIndex(s => s.shortsNo === state.initialShortsNo);
             if (initialIndex !== -1) {
                 const targetElement = containerRef.current.children[initialIndex] as HTMLElement;
@@ -61,6 +82,7 @@ const SnsShortsFeed: React.FC = () => {
                     targetElement.scrollIntoView();
                 }
             }
+            hasScrolledToInitial.current = true;
         }
     }, [shortsList, state?.initialShortsNo]);
 
@@ -72,10 +94,51 @@ const SnsShortsFeed: React.FC = () => {
         }
     };
 
+    const handleLikeToggle = async (shortsNo: number, actionType: 'L' | 'D') => {
+        if (!currentUserId) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        try {
+            const url = `/api/sns/shorts/${shortsNo}/like?userId=${currentUserId}&actionTypeFg=${actionType}`;
+            const res = await fetch(url, { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                setShortsList(prev => prev.map(item => {
+                    if (item.shortsNo === shortsNo) {
+                        return { ...item, likeCount: data.likeCount, dislikeCount: data.dislikeCount, userAction: data.userAction };
+                    }
+                    return item;
+                }));
+            }
+        } catch (err) {
+            console.error("Shorts like toggle failed:", err);
+        }
+    };
+
+    const handleViewRecorded = (shortsNo: number, newTotalViews: number) => {
+        setShortsList(prev => prev.map(item => {
+            if (item.shortsNo === shortsNo) {
+                return { ...item, viewCount: newTotalViews };
+            }
+            return item;
+        }));
+    };
+
+    const handleCommentCountUpdate = (newCount: number) => {
+        setShortsList(prev => prev.map(item => {
+            if (item.shortsNo === commentModalState.targetId) {
+                return { ...item, commentCount: newCount };
+            }
+            return item;
+        }));
+    };
+
     return (
         <div className="fixed inset-0 bg-black flex flex-col h-full font-['Pretendard']">
             {/* Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 z-50 flex items-center px-4 py-6 bg-gradient-to-b from-black/60 to-transparent">
+            <div className="absolute top-0 left-0 right-0 z-50 flex items-center px-4 py-6 bg-gradient-to-b from-black/70 to-transparent">
                 <button onClick={() => navigate(-1)} className="text-white p-2 hover:bg-white/10 rounded-full transition-colors">
                     <FaChevronLeft size={20} />
                 </button>
@@ -90,7 +153,75 @@ const SnsShortsFeed: React.FC = () => {
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {shortsList.map((item) => (
-                    <ShortsVideoItem key={item.shortsNo} item={item} />
+                    <div key={item.shortsNo} className="relative h-screen w-full snap-start overflow-hidden">
+                        <ShortsVideoItem 
+                            item={item} 
+                            onViewRecord={(count) => handleViewRecorded(item.shortsNo, count)}
+                        />
+
+                        {/* Right Action Bar */}
+                        <div className="absolute right-4 bottom-28 z-40 flex flex-col items-center gap-5 text-white">
+                            {/* Thumbs Up Button */}
+                            <button
+                                onClick={() => handleLikeToggle(item.shortsNo, 'L')}
+                                className="flex flex-col items-center group"
+                            >
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
+                                    item.userAction === 'L'
+                                        ? 'bg-emerald-500 text-black border-emerald-400 shadow-emerald-500/40'
+                                        : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
+                                }`}>
+                                    <FaThumbsUp size={20} className={item.userAction === 'L' ? 'scale-110' : ''} />
+                                </div>
+                                <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                    {item.likeCount || 0}
+                                </span>
+                            </button>
+
+                            {/* Thumbs Down Button */}
+                            <button
+                                onClick={() => handleLikeToggle(item.shortsNo, 'D')}
+                                className="flex flex-col items-center group"
+                            >
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
+                                    item.userAction === 'D'
+                                        ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/40'
+                                        : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
+                                }`}>
+                                    <FaThumbsDown size={20} className={item.userAction === 'D' ? 'scale-110' : ''} />
+                                </div>
+                                <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                    {item.dislikeCount || 0}
+                                </span>
+                            </button>
+
+                            {/* Comment Button */}
+                            <button
+                                onClick={() => setCommentModalState({
+                                    isOpen: true,
+                                    targetId: item.shortsNo
+                                })}
+                                className="flex flex-col items-center group"
+                            >
+                                <div className="w-12 h-12 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-lg">
+                                    <FaComment size={20} />
+                                </div>
+                                <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                    {item.commentCount || 0}
+                                </span>
+                            </button>
+
+                            {/* View Count Indicator */}
+                            <div className="flex flex-col items-center">
+                                <div className="w-10 h-10 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
+                                    <FaEye size={17} />
+                                </div>
+                                <span className="text-[11px] font-medium text-zinc-300 mt-1 drop-shadow-md">
+                                    {item.viewCount || 0}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 ))}
                 
                 {isLoading && (
@@ -99,20 +230,34 @@ const SnsShortsFeed: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Comment Modal */}
+            <SnsCommentModal
+                isOpen={commentModalState.isOpen}
+                onClose={() => setCommentModalState(prev => ({ ...prev, isOpen: false }))}
+                type="SHORTS"
+                targetId={commentModalState.targetId}
+                onCommentCountChange={handleCommentCountUpdate}
+            />
         </div>
     );
 };
 
-const ShortsVideoItem: React.FC<{ item: ShortsItem }> = ({ item }) => {
+const ShortsVideoItem: React.FC<{
+    item: ShortsItem;
+    onViewRecord: (newCount: number) => void;
+}> = ({ item, onViewRecord }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isIntersecting, setIsIntersecting] = useState(false);
+    const hasViewBeenRecorded = useRef(false);
+    const currentUserId = localStorage.getItem('userId');
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setIsIntersecting(entry.isIntersecting);
             },
-            { threshold: 0.7 } // 70% 이상 보일 때 재생
+            { threshold: 0.7 }
         );
 
         if (videoRef.current) observer.observe(videoRef.current);
@@ -122,7 +267,6 @@ const ShortsVideoItem: React.FC<{ item: ShortsItem }> = ({ item }) => {
     useEffect(() => {
         if (!videoRef.current) return;
         if (isIntersecting) {
-            // 소리 포함 재생 시도 (사용자 제스처 이후이므로 가능할 확률 높음)
             videoRef.current.play().catch(err => {
                 console.log("자동 재생 차단됨 (음소거로 시도)", err);
                 if (videoRef.current) {
@@ -130,17 +274,25 @@ const ShortsVideoItem: React.FC<{ item: ShortsItem }> = ({ item }) => {
                     videoRef.current.play();
                 }
             });
+
+            if (!hasViewBeenRecorded.current && item.shortsNo) {
+                hasViewBeenRecorded.current = true;
+                fetch(`/api/sns/shorts/${item.shortsNo}/view?userId=${currentUserId || ''}`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(totalViews => onViewRecord(totalViews))
+                    .catch(err => console.error("View record failed:", err));
+            }
         } else {
             videoRef.current.pause();
         }
-    }, [isIntersecting]);
+    }, [isIntersecting, item.shortsNo, currentUserId, onViewRecord]);
 
     return (
         <div className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
             <video
                 ref={videoRef}
                 src={item.videoPath}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain bg-black"
                 loop
                 playsInline
                 onClick={(e) => {
@@ -151,15 +303,19 @@ const ShortsVideoItem: React.FC<{ item: ShortsItem }> = ({ item }) => {
             />
 
             {/* Bottom Overlay Info */}
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none pb-12">
+            <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12">
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-full bg-gray-500 border border-white/40 flex items-center justify-center text-white text-[12px] font-bold shadow-lg">
-                        {(item.userNickNm || item.userId).substring(0, 1).toUpperCase()}
-                    </div>
+                    <UserAvatar
+                        profileImagePath={item.userProfileImagePath}
+                        nickName={item.userNickNm}
+                        userId={item.userId}
+                        size={36}
+                        className="border-white/40"
+                    />
                     <span className="text-white font-bold text-[15px] drop-shadow-lg">@{item.userNickNm || item.userId}</span>
                 </div>
-                <div className="w-full max-w-[85%]">
-                    <h3 className="text-white text-[16px] leading-[1.4] break-all overflow-hidden line-clamp-3 drop-shadow-md font-medium">
+                <div className="w-full">
+                    <h3 className="text-white text-[15px] leading-[1.4] break-all overflow-hidden line-clamp-3 drop-shadow-md font-medium">
                         {item.title}
                     </h3>
                 </div>

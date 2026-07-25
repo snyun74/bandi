@@ -39,6 +39,7 @@ const MyProfile: React.FC = () => {
     const [alertCallback, setAlertCallback] = useState<(() => void) | null>(null);
     const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
+    const [partnerStatus, setPartnerStatus] = useState<string | null>(null); // null: 미신청, REQ: 대기, APR: 승인, REJ: 반려
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
@@ -151,6 +152,24 @@ const MyProfile: React.FC = () => {
 
     useEffect(() => {
         fetchProfile();
+    }, [userId]);
+
+    useEffect(() => {
+        const fetchPartnerStatus = async () => {
+            if (!userId) return;
+            try {
+                const res = await fetch(`/api/partner/status?userId=${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setPartnerStatus(data ? data.partnerStatCd : null);
+                } else {
+                    setPartnerStatus(null);
+                }
+            } catch {
+                setPartnerStatus(null);
+            }
+        };
+        fetchPartnerStatus();
     }, [userId]);
 
     useEffect(() => {
@@ -322,6 +341,44 @@ const MyProfile: React.FC = () => {
                                 <FaPen className="text-gray-400" size={14} />
                                 <span>내가 쓴 글</span>
                             </button>
+                            <div className="mx-3 h-[1px] bg-gray-100"></div>
+                            {/* 합주실 파트너 메뉴 */}
+                            {partnerStatus === 'A' ? (
+                                <button
+                                    onClick={() => { setIsMenuOpen(false); navigate('/main/partner/manage'); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                >
+                                    <span className="text-gray-400">🎸</span>
+                                    <span>합주실관리</span>
+                                    <span className="ml-auto text-[10px] bg-green-100 text-green-600 font-bold px-1.5 py-0.5 rounded-full">승인</span>
+                                </button>
+                            ) : partnerStatus === 'R' ? (
+                                <button
+                                    className="w-full px-4 py-3 text-left text-sm text-gray-400 flex items-center gap-3 cursor-default"
+                                    disabled
+                                >
+                                    <span>🎸</span>
+                                    <span>합주입점신청</span>
+                                    <span className="ml-auto text-[10px] bg-yellow-100 text-yellow-600 font-bold px-1.5 py-0.5 rounded-full">심사중</span>
+                                </button>
+                            ) : partnerStatus === 'B' ? (
+                                <button
+                                    onClick={() => { setIsMenuOpen(false); navigate('/main/partner/apply'); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                                >
+                                    <span>🎸</span>
+                                    <span>합주입점신청</span>
+                                    <span className="ml-auto text-[10px] bg-red-100 text-red-500 font-bold px-1.5 py-0.5 rounded-full">거절됨</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => { setIsMenuOpen(false); navigate('/main/partner/apply'); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                >
+                                    <span className="text-gray-400">🎸</span>
+                                    <span>합주입점신청</span>
+                                </button>
+                            )}
                             <div className="mx-3 h-[1px] bg-gray-100"></div>
                             <button
                                 onClick={handleLogoutClick}

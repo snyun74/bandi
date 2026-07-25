@@ -4,8 +4,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.io.PrintWriter;
+import java.io.File;
 
 @Component
 public class SchemaInspector implements CommandLineRunner {
@@ -18,72 +20,61 @@ public class SchemaInspector implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        java.io.File file = new java.io.File("schema_check.log");
-        try (java.io.PrintWriter writer = new java.io.PrintWriter(file)) {
+        File file = new File("schema_check.log");
+        try (PrintWriter writer = new PrintWriter(file)) {
             writer.println("==================================================");
-            writer.println(" SCHEMA INSPECTOR - CHECKING BN_CHAT_MESSAGE ");
+            writer.println(" SCHEMA INSPECTOR - BANDI MASTER TABLES CHECK ");
             writer.println("==================================================");
 
-            try (Connection conn = dataSource.getConnection();
-                    Statement stmt = conn.createStatement()) {
+            String[] targetTables = {"bn_partner", "bn_studio", "bn_room", "bn_room_price", "bn_reservation"};
 
-                // Check columns for BN_CHAT_MESSAGE
-                ResultSet rs = stmt.executeQuery(
-                        "SELECT column_name, data_type, is_nullable " +
-                                "FROM information_schema.columns " +
-                                "WHERE table_name = 'bn_chat_message' " + // PostgreSQL stores table names in lowercase
-                                                                          // usually, or check case sensitivity
-                                "ORDER BY ordinal_position");
-
-                boolean found = false;
-                while (rs.next()) {
-                    found = true;
-                    String colName = rs.getString("column_name");
-                    String dataType = rs.getString("data_type");
-                    String isNullable = rs.getString("is_nullable");
-                    writer.println("COLUMN: " + colName + " | TYPE: " + dataType + " | NULLABLE: " + isNullable);
-                }
-
-                if (!found) {
-                    // Try upper case if not found
-                    rs = stmt.executeQuery(
-                            "SELECT column_name, data_type, is_nullable " +
-                                    "FROM information_schema.columns " +
-                                    "WHERE table_name = 'BN_CHAT_MESSAGE' " +
-                                    "ORDER BY ordinal_position");
-                    while (rs.next()) {
-                        found = true;
-                        String colName = rs.getString("column_name");
-                        String dataType = rs.getString("data_type");
-                        String isNullable = rs.getString("is_nullable");
-                        writer.println(
-                                "COLUMN (Upper): " + colName + " | TYPE: " + dataType + " | NULLABLE: " + isNullable);
+            try (Connection conn = dataSource.getConnection()) {
+                DatabaseMetaData metaData = conn.getMetaData();
+                for (String table : targetTables) {
+                    writer.println("\nTable: " + table);
+                    
+                    // check in lowercase and uppercase
+                    boolean exists = false;
+                    String actualTableName = table;
+                    
+                    try (ResultSet tables = metaData.getTables(null, null, table, null)) {
+                        if (tables.next()) {
+                            exists = true;
+                        }
                     }
+                    
+                    if (!exists) {
+                        try (ResultSet tablesUpper = metaData.getTables(null, null, table.toUpperCase(), null)) {
+                            if (tablesUpper.next()) {
+                                exists = true;
+                                actualTableName = table.toUpperCase();
+                            }
+                        }
+                    }
+
+                    if (exists) {
+                        writer.println("Status: EXISTS");
+                        try (ResultSet columns = metaData.getColumns(null, null, actualTableName, null)) {
+                            while (columns.next()) {
+                                String columnName = columns.getString("COLUMN_NAME");
+                                String typeName = columns.getString("TYPE_NAME");
+                                int columnSize = columns.getInt("COLUMN_SIZE");
+                                String isNullable = columns.getString("IS_NULLABLE");
+                                writer.printf(" - Column: %s | Type: %s(%d) | Nullable: %s%n", 
+                                        columnName, typeName, columnSize, isNullable);
+                            }
+                        }
+                    } else {
+                        writer.println("Status: NOT FOUND");
+                    }
+                    writer.println("--------------------------------------------------");
                 }
-
-                if (!found) {
-                    writer.println("TABLE 'BN_CHAT_MESSAGE' NOT FOUND IN INFORMATION_SCHEMA");
-                }
-
-                writer.println("==================================================");
-
-                // Also check BN_CHAT_MESSAGE_READ
-                writer.println(" CHECKING BN_CHAT_MESSAGE_READ ");
-                rs = stmt.executeQuery(
-                        "SELECT column_name, data_type, is_nullable " +
-                                "FROM information_schema.columns " +
-                                "WHERE table_name = 'bn_chat_message_read' " +
-                                "ORDER BY ordinal_position");
-                while (rs.next()) {
-                    String colName = rs.getString("column_name");
-                    writer.println("COLUMN: " + colName);
-                }
-                writer.println("==================================================");
-
             } catch (Exception e) {
                 writer.println("SCHEMA INSPECT ERROR: " + e.getMessage());
                 e.printStackTrace(writer);
             }
+            writer.println("==================================================");
         }
+        System.out.println("Schema check written to schema_check.log");
     }
 }

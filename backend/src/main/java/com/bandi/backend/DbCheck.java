@@ -1,9 +1,11 @@
 package com.bandi.backend;
 
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class DbCheck {
     public static void main(String[] args) {
@@ -11,19 +13,56 @@ public class DbCheck {
         String user = "postgres";
         String password = "admin0325";
 
+        String[] targetTables = {"bn_partner", "bn_studio", "bn_room", "bn_room_price", "bn_reservation"};
+
         try (Connection conn = DriverManager.getConnection(url, user, password);
-             Statement stmt = conn.createStatement()) {
+             PrintWriter writer = new PrintWriter(new FileWriter("db_tables_schema.txt"))) {
             
-            String sql = "SELECT privacy_agree_content FROM mm_privacy_agree_info WHERE privacy_stat_cd = 'A'";
-            ResultSet rs = stmt.executeQuery(sql);
+            DatabaseMetaData metaData = conn.getMetaData();
             
-            if (rs.next()) {
-                System.out.println("--- PRIVACY POLICY CONTENT ---");
-                System.out.println(rs.getString("privacy_agree_content"));
-                System.out.println("--- END ---");
-            } else {
-                System.out.println("No active privacy policy found.");
+            writer.println("=== Database Tables Schema Check ===");
+            for (String table : targetTables) {
+                writer.println("\nTable: " + table);
+                
+                // check table presence
+                try (ResultSet tables = metaData.getTables(null, null, table, null)) {
+                    if (tables.next()) {
+                        writer.println("Status: EXISTS");
+                        
+                        // print columns
+                        try (ResultSet columns = metaData.getColumns(null, null, table, null)) {
+                            while (columns.next()) {
+                                String columnName = columns.getString("COLUMN_NAME");
+                                String typeName = columns.getString("TYPE_NAME");
+                                int columnSize = columns.getInt("COLUMN_SIZE");
+                                String isNullable = columns.getString("IS_NULLABLE");
+                                writer.printf(" - Column: %s | Type: %s(%d) | Nullable: %s%n", 
+                                        columnName, typeName, columnSize, isNullable);
+                            }
+                        }
+                    } else {
+                        // check upper case just in case
+                        try (ResultSet tablesUpper = metaData.getTables(null, null, table.toUpperCase(), null)) {
+                            if (tablesUpper.next()) {
+                                writer.println("Status: EXISTS (uppercase)");
+                                try (ResultSet columns = metaData.getColumns(null, null, table.toUpperCase(), null)) {
+                                    while (columns.next()) {
+                                        String columnName = columns.getString("COLUMN_NAME");
+                                        String typeName = columns.getString("TYPE_NAME");
+                                        int columnSize = columns.getInt("COLUMN_SIZE");
+                                        String isNullable = columns.getString("IS_NULLABLE");
+                                        writer.printf(" - Column: %s | Type: %s(%d) | Nullable: %s%n", 
+                                                columnName, typeName, columnSize, isNullable);
+                                    }
+                                }
+                            } else {
+                                writer.println("Status: NOT FOUND");
+                            }
+                        }
+                    }
+                }
             }
+            System.out.println("Metadata dump complete. Saved to db_tables_schema.txt");
             
         } catch (Exception e) {
             e.printStackTrace();

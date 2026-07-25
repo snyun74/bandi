@@ -12,7 +12,7 @@ const SnsPostCreate: React.FC = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(0); // 0: 이미지 선택, 1: 정보 입력
     const [content, setContent] = useState('');
-    const [publicTypeCd, setPublicTypeCd] = useState('N'); // BD007 디폴트 미공개(N)
+    const [publicTypeCd, setPublicTypeCd] = useState('A'); // BD007 디폴트 전체공개(A)
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
 
     useEffect(() => {

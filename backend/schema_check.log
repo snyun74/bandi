@@ -1,27 +1,84 @@
 ==================================================
- SCHEMA INSPECTOR - CHECKING BN_CHAT_MESSAGE 
+ SCHEMA INSPECTOR - BANDI MASTER TABLES CHECK 
 ==================================================
-COLUMN: bn_chat_msg_no | TYPE: bigint | NULLABLE: NO
-COLUMN: bn_no | TYPE: bigint | NULLABLE: NO
-COLUMN: bn_chat_snd_user_id | TYPE: character varying | NULLABLE: NO
-COLUMN: bn_chat_msg_type_cd | TYPE: character varying | NULLABLE: NO
-COLUMN: bn_chat_msg | TYPE: text | NULLABLE: NO
-COLUMN: attach_no | TYPE: bigint | NULLABLE: YES
-COLUMN: bn_chat_snd_dtime | TYPE: character varying | NULLABLE: NO
-COLUMN: bn_chat_stat_cd | TYPE: character varying | NULLABLE: NO
-COLUMN: ins_dtime | TYPE: character varying | NULLABLE: NO
-COLUMN: upd_dtime | TYPE: character varying | NULLABLE: NO
-COLUMN: bn_msg_no | TYPE: bigint | NULLABLE: NO
-COLUMN: chat_stat_cd | TYPE: character varying | NULLABLE: YES
-COLUMN: msg | TYPE: text | NULLABLE: YES
-COLUMN: msg_type_cd | TYPE: character varying | NULLABLE: YES
-COLUMN: snd_dtime | TYPE: character varying | NULLABLE: YES
-COLUMN: snd_user_id | TYPE: character varying | NULLABLE: YES
-COLUMN: upd_id | TYPE: character varying | NULLABLE: YES
-COLUMN: parent_msg_no | TYPE: bigint | NULLABLE: YES
-==================================================
- CHECKING BN_CHAT_MESSAGE_READ 
-COLUMN: bn_chat_msg_no
-COLUMN: bn_chat_read_user_id
-COLUMN: bn_chat_read_dtime
+
+Table: bn_partner
+Status: EXISTS
+ - Column: partner_no | Type: bigserial(19) | Nullable: NO
+ - Column: user_id | Type: varchar(20) | Nullable: NO
+ - Column: biz_reg_no | Type: varchar(20) | Nullable: NO
+ - Column: biz_nm | Type: varchar(200) | Nullable: NO
+ - Column: biz_master_nm | Type: varchar(50) | Nullable: NO
+ - Column: biz_tel_no | Type: varchar(20) | Nullable: YES
+ - Column: biz_hp_no | Type: varchar(20) | Nullable: YES
+ - Column: partner_stat_cd | Type: varchar(20) | Nullable: NO
+ - Column: ins_dtime | Type: varchar(14) | Nullable: NO
+ - Column: ins_id | Type: varchar(20) | Nullable: NO
+ - Column: upd_dtime | Type: varchar(14) | Nullable: NO
+ - Column: upd_id | Type: varchar(20) | Nullable: NO
+--------------------------------------------------
+
+Table: bn_studio
+Status: EXISTS
+ - Column: studio_no | Type: bigserial(19) | Nullable: NO
+ - Column: partner_no | Type: int8(19) | Nullable: NO
+ - Column: studio_nm | Type: varchar(200) | Nullable: NO
+ - Column: address | Type: varchar(400) | Nullable: YES
+ - Column: bigo | Type: text(2147483647) | Nullable: YES
+ - Column: studio_stat_cd | Type: varchar(20) | Nullable: NO
+ - Column: ins_dtime | Type: varchar(14) | Nullable: NO
+ - Column: ins_id | Type: varchar(20) | Nullable: NO
+ - Column: upd_dtime | Type: varchar(14) | Nullable: NO
+ - Column: upd_id | Type: varchar(20) | Nullable: NO
+--------------------------------------------------
+
+Table: bn_room
+Status: EXISTS
+ - Column: room_no | Type: bigserial(19) | Nullable: NO
+ - Column: studio_no | Type: int8(19) | Nullable: NO
+ - Column: room_nm | Type: varchar(200) | Nullable: NO
+ - Column: hour_base_uprice | Type: int4(10) | Nullable: NO
+ - Column: capacity_cnt | Type: int4(10) | Nullable: NO
+ - Column: equipment_info | Type: text(2147483647) | Nullable: YES
+ - Column: room_stat_cd | Type: varchar(20) | Nullable: NO
+ - Column: ins_dtime | Type: varchar(14) | Nullable: NO
+ - Column: ins_id | Type: varchar(20) | Nullable: NO
+ - Column: upd_dtime | Type: varchar(14) | Nullable: NO
+ - Column: upd_id | Type: varchar(20) | Nullable: NO
+--------------------------------------------------
+
+Table: bn_room_price
+Status: EXISTS
+ - Column: price_no | Type: bigserial(19) | Nullable: NO
+ - Column: room_no | Type: int8(19) | Nullable: NO
+ - Column: day_of_week | Type: int4(10) | Nullable: NO
+ - Column: stt_time | Type: varchar(4) | Nullable: NO
+ - Column: end_time | Type: varchar(4) | Nullable: NO
+ - Column: time_uprice | Type: int4(10) | Nullable: NO
+ - Column: price_stat_cd | Type: varchar(20) | Nullable: NO
+ - Column: ins_dtime | Type: varchar(14) | Nullable: NO
+ - Column: ins_id | Type: varchar(20) | Nullable: NO
+ - Column: upd_dtime | Type: varchar(14) | Nullable: NO
+ - Column: upd_id | Type: varchar(20) | Nullable: NO
+--------------------------------------------------
+
+Table: bn_reservation
+Status: EXISTS
+ - Column: resv_no | Type: bigserial(19) | Nullable: NO
+ - Column: room_no | Type: int8(19) | Nullable: NO
+ - Column: user_id | Type: varchar(20) | Nullable: NO
+ - Column: use_date | Type: varchar(8) | Nullable: NO
+ - Column: stt_time | Type: varchar(4) | Nullable: NO
+ - Column: end_time | Type: varchar(4) | Nullable: NO
+ - Column: resv_tot_amt | Type: int4(10) | Nullable: NO
+ - Column: payment_amt | Type: int4(10) | Nullable: NO
+ - Column: payment_pg_key | Type: varchar(400) | Nullable: YES
+ - Column: payment_stat_fg | Type: varchar(20) | Nullable: NO
+ - Column: resv_stat_fg | Type: varchar(20) | Nullable: NO
+ - Column: resv_reject_bigo | Type: text(2147483647) | Nullable: YES
+ - Column: ins_dtime | Type: varchar(14) | Nullable: NO
+ - Column: ins_id | Type: varchar(20) | Nullable: NO
+ - Column: upd_dtime | Type: varchar(14) | Nullable: NO
+ - Column: upd_id | Type: varchar(20) | Nullable: NO
+--------------------------------------------------
 ==================================================

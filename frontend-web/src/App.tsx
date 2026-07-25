@@ -58,6 +58,9 @@ import AdminReportBlockPage from './pages/AdminReportBlockPage';
 import AdminJamManagement from './pages/AdminJamManagement';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
+import ApplyPartnerPage from './pages/ApplyPartnerPage';
+import PartnerManagePage from './pages/PartnerManagePage';
+import AdminPartnerApprovalPage from './pages/AdminPartnerApprovalPage';
 import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
@@ -175,6 +178,9 @@ function App() {
             <Route path="admin/notices" element={<AdminNoticeManagement />} />
             <Route path="admin/report-block" element={<AdminReportBlockPage />} />
             <Route path="admin/jams" element={<AdminJamManagement />} />
+            <Route path="admin/partner-approval" element={<AdminPartnerApprovalPage />} />
+            <Route path="partner/apply" element={<ApplyPartnerPage />} />
+            <Route path="partner/manage" element={<PartnerManagePage />} />
             <Route path="profile/scraps" element={<MyScrapList />} />
             <Route path="profile/posts" element={<MyPostList />} />
             <Route path="profile/post/create" element={<SnsPostCreate />} />
