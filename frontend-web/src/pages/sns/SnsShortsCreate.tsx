@@ -1,14 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaTimes, FaPlus, FaVideo, FaImage } from 'react-icons/fa';
+import { FaChevronLeft, FaTimes, FaVideo, FaMagic, FaFont, FaCut, FaPlay, FaPause } from 'react-icons/fa';
 import CommonModal from '../../components/common/CommonModal';
+
+interface TextOverlay {
+    text: string;
+    color: string;
+    bgColor: string;
+    fontSize: number;
+    posY: number; // 10% ~ 90%
+}
+
+const FILTER_OPTIONS = [
+    { id: 'none', label: '원본', filterCss: 'none' },
+    { id: 'blur', label: '흐리게', filterCss: 'blur(3px)' },
+    { id: 'bright', label: '밝게', filterCss: 'brightness(1.25)' },
+    { id: 'dark', label: '어둡게', filterCss: 'brightness(0.75)' },
+    { id: 'grayscale', label: '흑백', filterCss: 'grayscale(1)' },
+    { id: 'sepia', label: '세피아', filterCss: 'sepia(0.8)' },
+    { id: 'warm', label: '따뜻함', filterCss: 'sepia(0.3) brightness(1.05) saturate(1.2)' },
+    { id: 'cool', label: '시원함', filterCss: 'hue-rotate(30deg) brightness(1.05) saturate(0.9)' },
+];
 
 const SnsShortsCreate: React.FC = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(0); // 0: 영상 선택, 1: 정보 입력
+    const [step, setStep] = useState(0); // 0: 영상 선택/편집, 1: 정보 입력
     const [title, setTitle] = useState('');
     const [publicTypeCd, setPublicTypeCd] = useState('A'); // BD007 디폴트 전체공개(A)
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
+
+    // 탭 선택: 'filter' | 'text' | 'trim'
+    const [activeTab, setActiveTab] = useState<'filter' | 'text' | 'trim'>('filter');
 
     useEffect(() => {
         const fetchCommonCodes = async () => {
@@ -25,10 +47,24 @@ const SnsShortsCreate: React.FC = () => {
         fetchCommonCodes();
     }, []);
     
-    // 비디오 상태
+    // 비디오 상태 및 편집 상태
     const [videoFile, setVideoFile] = useState<File | null>(null);
     const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
-    const [duration, setDuration] = useState<number>(0);
+    const [totalDuration, setTotalDuration] = useState<number>(0);
+    const [startTime, setStartTime] = useState<number>(0);
+    const [endTime, setEndTime] = useState<number>(0);
+    const [filter, setFilter] = useState<string>('none');
+    const [textOverlay, setTextOverlay] = useState<TextOverlay>({
+        text: '',
+        color: '#ffffff',
+        bgColor: 'rgba(0,0,0,0.5)',
+        fontSize: 24,
+        posY: 50
+    });
+
+    const [isPlaying, setIsPlaying] = useState<boolean>(true);
+    const [isProcessing, setIsProcessing] = useState<boolean>(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
     // 공통 모달 상태
@@ -54,6 +90,9 @@ const SnsShortsCreate: React.FC = () => {
             if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
             setVideoFile(file);
             setVideoPreviewUrl(URL.createObjectURL(file));
+            // 초기화
+            setFilter('none');
+            setTextOverlay({ text: '', color: '#ffffff', bgColor: 'rgba(0,0,0,0.5)', fontSize: 24, posY: 50 });
         }
     };
 
@@ -61,7 +100,9 @@ const SnsShortsCreate: React.FC = () => {
         if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
         setVideoFile(null);
         setVideoPreviewUrl('');
-        setDuration(0);
+        setTotalDuration(0);
+        setStartTime(0);
+        setEndTime(0);
         if (videoInputRef.current) videoInputRef.current.value = '';
     };
 
@@ -71,6 +112,147 @@ const SnsShortsCreate: React.FC = () => {
             if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
         };
     }, []);
+
+    // 영상 재생 타임 루프 제어
+    const handleTimeUpdate = () => {
+        if (videoRef.current) {
+            const curr = videoRef.current.currentTime;
+            if (curr < startTime || curr >= endTime) {
+                videoRef.current.currentTime = startTime;
+            }
+        }
+    };
+
+    const togglePlay = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+                setIsPlaying(false);
+            } else {
+                videoRef.current.play();
+                setIsPlaying(true);
+            }
+        }
+    };
+
+    // Canvas + MediaRecorder 비디오 합성 렌더링
+    const processVideoToBlob = async (): Promise<{ blob: Blob, durationSec: number }> => {
+        const trimDuration = Math.max(1, Math.round(endTime - startTime));
+
+        // 편집사항이 없고 전체 구간이면 원본 사용
+        if (filter === 'none' && !textOverlay.text.trim() && startTime === 0 && (totalDuration === 0 || Math.abs(endTime - totalDuration) < 0.5)) {
+            return { blob: videoFile!, durationSec: totalDuration || trimDuration };
+        }
+
+        return new Promise((resolve) => {
+            const video = document.createElement('video');
+            video.src = videoPreviewUrl;
+            video.muted = true;
+            video.playsInline = true;
+
+            video.onloadedmetadata = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth || 720;
+                canvas.height = video.videoHeight || 1280;
+                const ctx = canvas.getContext('2d');
+                
+                if (!ctx || !window.MediaRecorder) {
+                    resolve({ blob: videoFile!, durationSec: trimDuration });
+                    return;
+                }
+
+                let mimeType = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+
+                const stream = canvas.captureStream(30);
+                let mediaRecorder: MediaRecorder;
+                try {
+                    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+                } catch (e) {
+                    resolve({ blob: videoFile!, durationSec: trimDuration });
+                    return;
+                }
+
+                const chunks: Blob[] = [];
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const finalBlob = new Blob(chunks, { type: mediaRecorder.mimeType || 'video/mp4' });
+                    resolve({ blob: finalBlob, durationSec: trimDuration });
+                };
+
+                const filterObj = FILTER_OPTIONS.find(f => f.id === filter);
+                const filterCss = filterObj?.filterCss || 'none';
+
+                video.currentTime = startTime;
+                mediaRecorder.start();
+
+                let animId: number;
+                const drawFrame = () => {
+                    if (video.currentTime >= endTime || video.ended || video.paused) {
+                        video.pause();
+                        if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                        cancelAnimationFrame(animId);
+                        return;
+                    }
+
+                    ctx.save();
+                    ctx.filter = filterCss;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+
+                    // 자막
+                    if (textOverlay.text.trim()) {
+                        ctx.save();
+                        const fontSize = Math.max(24, Math.round(canvas.width * (textOverlay.fontSize / 350)));
+                        ctx.font = `bold ${fontSize}px Pretendard, sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+
+                        const posX = canvas.width / 2;
+                        const posY = (canvas.height * textOverlay.posY) / 100;
+
+                        if (textOverlay.bgColor && textOverlay.bgColor !== 'transparent') {
+                            const metrics = ctx.measureText(textOverlay.text);
+                            const padX = fontSize * 0.5;
+                            const padY = fontSize * 0.25;
+                            ctx.fillStyle = textOverlay.bgColor;
+                            ctx.beginPath();
+                            ctx.roundRect(
+                                posX - metrics.width / 2 - padX,
+                                posY - fontSize / 2 - padY,
+                                metrics.width + padX * 2,
+                                fontSize + padY * 2,
+                                8
+                            );
+                            ctx.fill();
+                        }
+
+                        ctx.fillStyle = textOverlay.color || '#ffffff';
+                        ctx.fillText(textOverlay.text, posX, posY);
+                        ctx.restore();
+                    }
+
+                    if (mediaRecorder.state === 'recording') {
+                        animId = requestAnimationFrame(drawFrame);
+                    }
+                };
+
+                video.onplay = () => {
+                    drawFrame();
+                };
+
+                video.play().catch(() => {
+                    resolve({ blob: videoFile!, durationSec: trimDuration });
+                });
+            };
+
+            video.onerror = () => resolve({ blob: videoFile!, durationSec: trimDuration });
+        });
+    };
 
     const handleNext = () => {
         if (!videoFile) {
@@ -91,27 +273,31 @@ const SnsShortsCreate: React.FC = () => {
 
     const executeSubmit = async () => {
         setIsConfirmOpen(false);
+        setIsProcessing(true);
         const userId = localStorage.getItem('userId');
         if (!userId) {
             showAlert("로그인 정보가 없습니다.");
+            setIsProcessing(false);
             return;
         }
 
-        const formData = new FormData();
-        const data = {
-            userId: userId,
-            title: title,
-            duration: duration,
-            publicTypeCd: publicTypeCd
-        };
-
-        // 데이터 파트 (JSON)
-        formData.append('data', new Blob([JSON.stringify(data)], { type: "application/json" }));
-        
-        // 파일 파트
-        formData.append('video', videoFile!);
-
         try {
+            const { blob: finalVideoBlob, durationSec } = await processVideoToBlob();
+
+            const formData = new FormData();
+            const data = {
+                userId: userId,
+                title: title,
+                duration: durationSec,
+                publicTypeCd: publicTypeCd
+            };
+
+            formData.append('data', new Blob([JSON.stringify(data)], { type: "application/json" }));
+            
+            // 처리된 비디오 파일명 명시
+            const videoFileName = videoFile?.name ? videoFile.name.replace(/\.[^/.]+$/, "") + "_edited.mp4" : "shorts.mp4";
+            formData.append('video', finalVideoBlob, videoFileName);
+
             const response = await fetch('/api/sns/shorts', {
                 method: 'POST',
                 body: formData,
@@ -128,8 +314,13 @@ const SnsShortsCreate: React.FC = () => {
             }
         } catch (error) {
             showAlert("쇼츠 등록 중 오류가 발생했습니다.");
+        } finally {
+            setIsProcessing(false);
         }
     };
+
+    const filterObj = FILTER_OPTIONS.find(f => f.id === filter);
+    const selectedDuration = Math.max(1, Math.round(endTime - startTime));
 
     return (
         <div className="flex flex-col h-full bg-white font-['Pretendard'] overflow-hidden">
@@ -142,87 +333,293 @@ const SnsShortsCreate: React.FC = () => {
                     <FaChevronLeft size={18} />
                 </button>
                 <h1 className="text-[15px] font-bold text-gray-800">
-                    {step === 0 ? '쇼츠 만들기' : '게시 정보 입력'}
+                    {step === 0 ? '쇼츠 편집 및 만들기' : '게시 정보 입력'}
                 </h1>
                 <button 
                     onClick={step === 0 ? handleNext : handleSubmit} 
-                    className="text-blue-500 font-bold text-[15px] px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
+                    disabled={isProcessing}
+                    className="text-blue-500 font-bold text-[15px] px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                 >
-                    {step === 0 ? '다음' : '공유'}
+                    {isProcessing ? '처리중...' : (step === 0 ? '다음' : '공유')}
                 </button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
                 {step === 0 ? (
-                    /* 1단계: 비디오 선택 및 프리뷰 */
-                    <div className="w-full bg-gray-900 relative aspect-[9/16] flex flex-col items-center justify-center overflow-hidden shadow-inner">
-                        {videoPreviewUrl ? (
-                            <div className="relative w-full h-full">
-                                <video 
-                                    src={videoPreviewUrl} 
-                                    controls 
-                                    className="w-full h-full object-cover bg-black"
-                                    onLoadedMetadata={(e) => {
-                                        const dur = Math.round(e.currentTarget.duration);
-                                        if (dur > 60) {
-                                            showAlert("쇼츠 동영상은 1분(60초)을 초과할 수 없습니다.");
-                                            removeVideo();
-                                        } else {
-                                            setDuration(dur);
-                                        }
-                                    }}
-                                />
-                                <div className="absolute bottom-6 left-3 bg-white/20 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-md pointer-events-none border border-white/10">
-                                    권장 비율 9:16
+                    /* 1단계: 비디오 선택 & 편집 영역 */
+                    <div className="flex flex-col min-h-full">
+                        {/* 동영상 프리뷰 영역 */}
+                        <div className="w-full bg-gray-900 relative aspect-[9/16] max-h-[55vh] flex flex-col items-center justify-center overflow-hidden shadow-inner">
+                            {videoPreviewUrl ? (
+                                <div className="relative w-full h-full flex items-center justify-center bg-black">
+                                    <video 
+                                        ref={videoRef}
+                                        src={videoPreviewUrl} 
+                                        autoPlay
+                                        loop
+                                        playsInline
+                                        onTimeUpdate={handleTimeUpdate}
+                                        onClick={togglePlay}
+                                        className="w-full h-full object-contain cursor-pointer"
+                                        style={{
+                                            filter: filterObj?.filterCss || 'none'
+                                        }}
+                                        onLoadedMetadata={(e) => {
+                                            const dur = Math.round(e.currentTarget.duration);
+                                            setTotalDuration(dur);
+                                            setStartTime(0);
+                                            setEndTime(Math.min(dur, 60));
+                                        }}
+                                    />
+
+                                    {/* 재생/일시정지 오버레이 버튼 */}
+                                    {!isPlaying && (
+                                        <div 
+                                            onClick={togglePlay}
+                                            className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer z-10"
+                                        >
+                                            <div className="w-14 h-14 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center text-white">
+                                                <FaPlay size={20} className="ml-1" />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 자막 라이브 프리뷰 */}
+                                    {textOverlay.text && (
+                                        <div 
+                                            className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
+                                            style={{ top: `${textOverlay.posY}%`, transform: 'translateY(-50%)' }}
+                                        >
+                                            <span 
+                                                className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90%] break-words"
+                                                style={{
+                                                    color: textOverlay.color,
+                                                    backgroundColor: textOverlay.bgColor,
+                                                    fontSize: `${textOverlay.fontSize}px`
+                                                }}
+                                            >
+                                                {textOverlay.text}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-md pointer-events-none border border-white/10 z-10 font-medium">
+                                        구간: {selectedDuration}초 ({startTime}초 ~ {endTime}초)
+                                    </div>
+
+                                    <button 
+                                        onClick={removeVideo}
+                                        className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-all z-20"
+                                    >
+                                        <FaTimes size={12} />
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={removeVideo}
-                                    className="absolute top-3 right-3 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all z-10"
+                            ) : (
+                                <div 
+                                    className="flex flex-col items-center justify-center text-gray-400 gap-3 cursor-pointer w-full h-full hover:bg-gray-800 transition-colors"
+                                    onClick={() => videoInputRef.current?.click()}
                                 >
-                                    <FaTimes size={12} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div 
-                                className="flex flex-col items-center justify-center text-gray-400 gap-3 cursor-pointer w-full h-full hover:bg-gray-800 transition-colors"
-                                onClick={() => videoInputRef.current?.click()}
-                            >
-                                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center shadow-lg border border-gray-700">
-                                    <FaVideo size={24} className="text-gray-300" />
+                                    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center shadow-lg border border-gray-700">
+                                        <FaVideo size={24} className="text-gray-300" />
+                                    </div>
+                                    <div className="flex flex-col items-center gap-1">
+                                        <span className="text-sm font-medium text-gray-300">동영상을 선택해주세요 (필수)</span>
+                                        <span className="text-[11px] text-gray-500 italic">권장 비율 9:16 (최대 1분)</span>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-sm font-medium text-gray-300">동영상을 선택해주세요 (필수)</span>
-                                    <span className="text-[11px] text-gray-500 italic">권장 비율 9:16 (세로형)</span>
+                            )}
+                            <input 
+                                type="file" 
+                                accept="video/*" 
+                                className="hidden" 
+                                ref={videoInputRef}
+                                onChange={handleVideoChange}
+                            />
+                        </div>
+
+                        {/* 편집 툴바 영역 */}
+                        {videoPreviewUrl && (
+                            <div className="flex-1 bg-white flex flex-col border-t border-gray-100">
+                                {/* 탭 선택 버튼 */}
+                                <div className="flex border-b border-gray-100 bg-gray-50 text-[13px] font-bold text-gray-500">
+                                    <button 
+                                        onClick={() => setActiveTab('filter')}
+                                        className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'filter' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
+                                    >
+                                        <FaMagic size={14} /> 필터
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('text')}
+                                        className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'text' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
+                                    >
+                                        <FaFont size={14} /> 자막/글쓰기
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('trim')}
+                                        className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'trim' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
+                                    >
+                                        <FaCut size={14} /> 구간 자르기
+                                    </button>
+                                </div>
+
+                                {/* 탭별 상세 도구 */}
+                                <div className="p-4 flex-1">
+                                    {activeTab === 'filter' && (
+                                        <div className="space-y-2">
+                                            <span className="text-[12px] font-bold text-gray-500">비디오 필터 선택</span>
+                                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                                {FILTER_OPTIONS.map(f => (
+                                                    <button
+                                                        key={f.id}
+                                                        onClick={() => setFilter(f.id)}
+                                                        className={`flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer`}
+                                                    >
+                                                        <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 bg-black flex items-center justify-center transition-all ${filter === f.id ? 'border-blue-500 ring-2 ring-blue-100 scale-105' : 'border-gray-200'}`}>
+                                                            <video 
+                                                                src={videoPreviewUrl} 
+                                                                className="w-full h-full object-cover pointer-events-none"
+                                                                style={{ filter: f.filterCss }}
+                                                            />
+                                                        </div>
+                                                        <span className={`text-[11px] ${filter === f.id ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
+                                                            {f.label}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'text' && (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-[12px] font-bold text-gray-500 block mb-1">자막 입력</label>
+                                                <input 
+                                                    type="text"
+                                                    placeholder="쇼츠에 표시할 자막 문구 추가..."
+                                                    value={textOverlay.text}
+                                                    onChange={(e) => setTextOverlay(prev => ({ ...prev, text: e.target.value }))}
+                                                    className="w-full px-3 py-2 text-[14px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"
+                                                />
+                                            </div>
+
+                                            {textOverlay.text && (
+                                                <div className="grid grid-cols-2 gap-4 pt-1">
+                                                    <div>
+                                                        <label className="text-[12px] font-bold text-gray-500 block mb-1">글자 색상</label>
+                                                        <div className="flex gap-2">
+                                                            {['#ffffff', '#000000', '#ff4d4f', '#ffc53d', '#52c41a', '#1890ff', '#722ed1'].map(c => (
+                                                                <button
+                                                                    key={c}
+                                                                    onClick={() => setTextOverlay(prev => ({ ...prev, color: c }))}
+                                                                    className={`w-6 h-6 rounded-full border border-gray-300 transition-transform ${textOverlay.color === c ? 'scale-125 ring-2 ring-blue-400' : ''}`}
+                                                                    style={{ backgroundColor: c }}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
+                                                        <input 
+                                                            type="range"
+                                                            min="10"
+                                                            max="90"
+                                                            value={textOverlay.posY}
+                                                            onChange={(e) => setTextOverlay(prev => ({ ...prev, posY: Number(e.target.value) }))}
+                                                            className="w-full accent-blue-500"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'trim' && (
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center text-[12px] font-bold text-gray-600">
+                                                <span>재생 구간 설정</span>
+                                                <span className="text-blue-600">{selectedDuration}초 선택됨</span>
+                                            </div>
+
+                                            <div className="space-y-3 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                                                <div>
+                                                    <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+                                                        <span>시작 시간</span>
+                                                        <span>{startTime}초</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range"
+                                                        min="0"
+                                                        max={Math.max(0, endTime - 1)}
+                                                        value={startTime}
+                                                        onChange={(e) => {
+                                                            const newStart = Number(e.target.value);
+                                                            setStartTime(newStart);
+                                                            if (videoRef.current) videoRef.current.currentTime = newStart;
+                                                        }}
+                                                        className="w-full accent-blue-500"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <div className="flex justify-between text-[11px] text-gray-500 mb-1">
+                                                        <span>종료 시간</span>
+                                                        <span>{endTime}초</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range"
+                                                        min={startTime + 1}
+                                                        max={totalDuration || 60}
+                                                        value={endTime}
+                                                        onChange={(e) => {
+                                                            const newEnd = Number(e.target.value);
+                                                            setEndTime(newEnd);
+                                                        }}
+                                                        className="w-full accent-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
-                        <input 
-                            type="file" 
-                            accept="video/*" 
-                            className="hidden" 
-                            ref={videoInputRef}
-                            onChange={handleVideoChange}
-                        />
                     </div>
                 ) : (
                     /* 2단계: 상세 정보 입력 */
                     <div className="px-4 py-6 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         {/* 썸네일 미리보기 섹션 */}
                         <div className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                            <div className="w-24 aspect-[9/16] bg-black rounded-lg overflow-hidden flex-shrink-0 shadow-md">
+                            <div className="w-24 aspect-[9/16] bg-black rounded-lg overflow-hidden flex-shrink-0 shadow-md relative">
                                 <video 
                                     src={videoPreviewUrl} 
                                     className="w-full h-full object-cover"
+                                    style={{ filter: filterObj?.filterCss || 'none' }}
                                 />
+                                {textOverlay.text && (
+                                    <div 
+                                        className="absolute inset-x-1 flex justify-center pointer-events-none"
+                                        style={{ top: `${textOverlay.posY}%`, transform: 'translateY(-50%)' }}
+                                    >
+                                        <span 
+                                            className="px-1 py-0.5 rounded text-[8px] font-bold truncate max-w-full"
+                                            style={{ color: textOverlay.color, backgroundColor: textOverlay.bgColor }}
+                                        >
+                                            {textOverlay.text}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
-                                <span className="text-[12px] text-gray-400 font-medium mb-1">선택된 영상</span>
-                                <span className="text-[14px] text-gray-700 font-bold truncate">동영상 {duration}초</span>
+                                <span className="text-[12px] text-gray-400 font-medium mb-1">편집 완료된 영상</span>
+                                <span className="text-[14px] text-gray-700 font-bold truncate">동영상 {selectedDuration}초</span>
+                                {filter !== 'none' && <span className="text-[11px] text-blue-500 font-medium">필터: {filterObj?.label}</span>}
                                 <button 
                                     onClick={() => setStep(0)}
                                     className="mt-2 text-blue-500 text-[12px] font-medium self-start hover:underline"
                                 >
-                                    영상 변경하기
+                                    편집 수정하기
                                 </button>
                             </div>
                         </div>
@@ -292,3 +689,4 @@ const SnsShortsCreate: React.FC = () => {
 };
 
 export default SnsShortsCreate;
+
