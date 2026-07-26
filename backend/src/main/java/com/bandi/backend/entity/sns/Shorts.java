@@ -36,6 +36,9 @@ public class Shorts {
     @Column(name = "public_type_cd", nullable = false, length = 20)
     private String publicTypeCd;
 
+    @Column(name = "overlay_data", columnDefinition = "TEXT")
+    private String overlayData;
+
     @Column(name = "shorts_stat_cd", nullable = false, length = 20)
     private String shortsStatCd;
 

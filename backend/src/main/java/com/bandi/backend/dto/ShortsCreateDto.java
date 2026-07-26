@@ -8,4 +8,5 @@ public class ShortsCreateDto {
     private String title;
     private Integer duration;
     private String publicTypeCd;
+    private String overlayData;
 }

@@ -14,6 +14,7 @@ public class PostListDto {
     private String contentPreview;
     private String thumbnailPath;   // 첫 번째 이미지 (썸네일용)
     private List<String> imagePaths; // 전체 이미지 리스트 (피드용)
+    private List<String> editDataList; // 각 이미지별 편집 메타데이터 (JSON)
     private String publicTypeCd;
     private String insDtime;
 

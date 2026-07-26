@@ -13,6 +13,7 @@ public class ShortsListDto {
     private String title;
     private String videoPath;
     private String publicTypeCd;
+    private String overlayData;
     private String insDtime;
 
     // 추가된 통계 및 액션 정보

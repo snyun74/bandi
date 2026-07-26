@@ -66,7 +66,8 @@ public class SnsService {
             dir.mkdirs();
         }
 
-        for (MultipartFile file : files) {
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
             try {
@@ -97,6 +98,9 @@ public class SnsService {
                 postAttachment.setPostStatCd("A");
                 postAttachment.setInsDtime(currentDateTime);
                 postAttachment.setUpdDtime(currentDateTime);
+                if (dto.getEditDataList() != null && i < dto.getEditDataList().size()) {
+                    postAttachment.setEditData(dto.getEditDataList().get(i));
+                }
 
                 postAttachmentRepository.save(postAttachment);
 
@@ -166,6 +170,10 @@ public class SnsService {
                 .map(CmAttachment::getFilePath)
                 .collect(Collectors.toList());
 
+        List<String> editDataList = attaches.stream()
+                .map(PostAttachment::getEditData)
+                .collect(Collectors.toList());
+
         String thumbnailPath = imagePaths.isEmpty() ? null : imagePaths.get(0);
 
         long viewCount = postViewRepository.countByPostId(post.getPostId());
@@ -191,6 +199,7 @@ public class SnsService {
                                 : post.getContent())
                 .thumbnailPath(thumbnailPath)
                 .imagePaths(imagePaths)
+                .editDataList(editDataList)
                 .publicTypeCd(post.getPublicTypeCd())
                 .insDtime(post.getInsDtime())
                 .viewCount(viewCount)
@@ -234,6 +243,7 @@ public class SnsService {
                 .title(shorts.getTitle())
                 .videoPath(videoPath)
                 .publicTypeCd(shorts.getPublicTypeCd())
+                .overlayData(shorts.getOverlayData())
                 .insDtime(shorts.getInsDtime())
                 .viewCount(viewCount)
                 .likeCount(likeCount)
@@ -316,6 +326,7 @@ public class SnsService {
                 shorts.setThumbnailAttachNo(savedThumbAttach.getAttachNo());
             }
             shorts.setPublicTypeCd(dto.getPublicTypeCd());
+            shorts.setOverlayData(dto.getOverlayData());
             shorts.setShortsStatCd("A");
             shorts.setInsDtime(currentDateTime);
             shorts.setUpdDtime(currentDateTime);

@@ -488,33 +488,101 @@ const MyProfile: React.FC = () => {
                                         });
                                     }}
                                 >
-                                    {isShorts ? (
-                                        <>
-                                            {item.videoPath ? (
-                                                <video 
-                                                    src={`${item.videoPath}#t=0.1`} 
-                                                    className="w-full h-full object-cover" 
-                                                    muted 
-                                                    playsInline 
-                                                    preload="metadata"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
-                                                    <span className="text-[20px]">🎬</span>
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {item.thumbnailPath ? (
-                                                <img src={item.thumbnailPath} alt="post" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gray-100">
-                                                    <span className="text-[10px] text-gray-500 line-clamp-3">{item.contentPreview}</span>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
+                                    {isShorts ? (() => {
+                                        let overlayInfo: any = null;
+                                        try { if (item.overlayData) overlayInfo = JSON.parse(item.overlayData); } catch(e) {}
+                                        const filterCss = overlayInfo?.filter && overlayInfo.filter !== 'none' ? (
+                                            overlayInfo.filter === 'blur' ? 'blur(3px)' :
+                                            overlayInfo.filter === 'bright' ? 'brightness(1.25)' :
+                                            overlayInfo.filter === 'dark' ? 'brightness(0.75)' :
+                                            overlayInfo.filter === 'grayscale' ? 'grayscale(1)' :
+                                            overlayInfo.filter === 'sepia' ? 'sepia(0.8)' :
+                                            overlayInfo.filter === 'warm' ? 'sepia(0.3) brightness(1.05) saturate(1.2)' :
+                                            overlayInfo.filter === 'cool' ? 'hue-rotate(30deg) brightness(1.05) saturate(0.9)' : 'none'
+                                        ) : 'none';
+                                        return (
+                                            <>
+                                                {item.videoPath ? (
+                                                    <video
+                                                        src={`${item.videoPath}#t=0.1`}
+                                                        className="w-full h-full object-cover"
+                                                        style={{ filter: filterCss }}
+                                                        muted
+                                                        playsInline
+                                                        preload="metadata"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                                                        <span className="text-[20px]">🎬</span>
+                                                    </div>
+                                                )}
+                                                {overlayInfo?.textOverlay?.text && (
+                                                    <div
+                                                        className="absolute left-0 right-0 px-1 flex justify-center pointer-events-none z-10"
+                                                        style={{ top: `${overlayInfo.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                                                    >
+                                                        <span
+                                                            className="px-1 py-0.5 rounded text-center max-w-full break-words font-bold"
+                                                            style={{
+                                                                color: overlayInfo.textOverlay.color || '#ffffff',
+                                                                backgroundColor: overlayInfo.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                                                                fontSize: `${Math.max(8, Math.round((overlayInfo.textOverlay.fontSize || 22) * 0.45))}px`
+                                                            }}
+                                                        >
+                                                            {overlayInfo.textOverlay.text}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })() : (() => {
+                                        let imgEdit: any = null;
+                                        try { if (item.editDataList?.[0]) imgEdit = JSON.parse(item.editDataList[0]); } catch(e) {}
+                                        const filterCss = imgEdit?.filter && imgEdit.filter !== 'none' ? (
+                                            imgEdit.filter === 'blur' ? 'blur(3px)' :
+                                            imgEdit.filter === 'bright' ? 'brightness(1.25)' :
+                                            imgEdit.filter === 'dark' ? 'brightness(0.75)' :
+                                            imgEdit.filter === 'grayscale' ? 'grayscale(1)' :
+                                            imgEdit.filter === 'sepia' ? 'sepia(0.8)' :
+                                            imgEdit.filter === 'warm' ? 'sepia(0.3) brightness(1.05) saturate(1.2)' :
+                                            imgEdit.filter === 'cool' ? 'hue-rotate(30deg) brightness(1.05) saturate(0.9)' : 'none'
+                                        ) : 'none';
+                                        const rotation = imgEdit?.rotation || 0;
+                                        const flipH = imgEdit?.flipH || false;
+                                        return (
+                                            <>
+                                                {item.thumbnailPath ? (
+                                                    <div
+                                                        className="w-full h-full"
+                                                        style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
+                                                    >
+                                                        <img src={item.thumbnailPath} alt="post" className="w-full h-full object-cover" style={{ filter: filterCss }} />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gray-100">
+                                                        <span className="text-[10px] text-gray-500 line-clamp-3">{item.contentPreview}</span>
+                                                    </div>
+                                                )}
+                                                {imgEdit?.textOverlay?.text && (
+                                                    <div
+                                                        className="absolute left-0 right-0 px-1 flex justify-center pointer-events-none z-10"
+                                                        style={{ top: `${imgEdit.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                                                    >
+                                                        <span
+                                                            className="px-1 py-0.5 rounded text-center max-w-full break-words font-bold"
+                                                            style={{
+                                                                color: imgEdit.textOverlay.color || '#ffffff',
+                                                                backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                                                                fontSize: `${Math.max(8, Math.round((imgEdit.textOverlay.fontSize || 22) * 0.45))}px`
+                                                            }}
+                                                        >
+                                                            {imgEdit.textOverlay.text}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
 
                                     {/* Action Menu Button (Glassmorphism Style) */}
                                     <button

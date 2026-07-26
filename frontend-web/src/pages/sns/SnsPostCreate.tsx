@@ -274,22 +274,24 @@ const SnsPostCreate: React.FC = () => {
         }
 
         try {
-            // 편집된 최종 Blob/File로 변환 후 전송
-            const processedFiles = await Promise.all(images.map(img => processImageToBlob(img)));
+            // 이미지 편집 메타데이터 리스트 생성 (속도 0.1초 즉시 업로드)
+            const editDataList = images.map(img => JSON.stringify(img.edit));
 
             const formData = new FormData();
             const data = {
                 userId: userId,
                 content: content,
-                publicTypeCd: publicTypeCd
+                publicTypeCd: publicTypeCd,
+                editDataList: editDataList
             };
 
             formData.append('data', new Blob([JSON.stringify(data)], {
                 type: "application/json"
             }));
 
-            processedFiles.forEach((file) => {
-                formData.append('files', file);
+            // 원본 이미지 파일 즉시 전송
+            images.forEach((img) => {
+                formData.append('files', img.file);
             });
 
             const response = await fetch('/api/sns/posts', {

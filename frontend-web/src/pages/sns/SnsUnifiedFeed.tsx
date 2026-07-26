@@ -12,10 +12,12 @@ interface FeedItem {
     shortsNo?: number;
     title?: string;
     videoPath?: string;
+    overlayData?: string;
     // Post fields
     postId?: number;
     contentPreview?: string;
     imagePaths?: string[];
+    editDataList?: string[];
     // Common fields
     userId: string;
     userNickNm: string;
@@ -561,20 +563,69 @@ const ShortsVideoItem: React.FC<{
         }
     }, [isIntersecting, item.shortsNo, currentUserId, onViewRecord]);
 
+    let overlayInfo: any = null;
+    if (item.overlayData) {
+        try {
+            overlayInfo = JSON.parse(item.overlayData);
+        } catch (e) {}
+    }
+
+    const filterCss = overlayInfo?.filter ? (
+        overlayInfo.filter === 'blur' ? 'blur(3px)' :
+        overlayInfo.filter === 'bright' ? 'brightness(1.25)' :
+        overlayInfo.filter === 'dark' ? 'brightness(0.75)' :
+        overlayInfo.filter === 'grayscale' ? 'grayscale(1)' :
+        overlayInfo.filter === 'sepia' ? 'sepia(0.8)' :
+        overlayInfo.filter === 'warm' ? 'sepia(0.3) brightness(1.05) saturate(1.2)' :
+        overlayInfo.filter === 'cool' ? 'hue-rotate(30deg) brightness(1.05) saturate(0.9)' : 'none'
+    ) : 'none';
+
+    const handleVideoTimeUpdate = () => {
+        if (videoRef.current && overlayInfo?.startTime !== undefined && overlayInfo?.endTime) {
+            const start = overlayInfo.startTime;
+            const end = overlayInfo.endTime;
+            if (videoRef.current.currentTime < start || videoRef.current.currentTime >= end) {
+                videoRef.current.currentTime = start;
+            }
+        }
+    };
+
     return (
         <div className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
             <video
                 ref={videoRef}
                 src={item.videoPath}
                 className="w-full h-full object-cover bg-black"
+                style={{ filter: filterCss }}
                 loop
                 playsInline
+                onTimeUpdate={handleVideoTimeUpdate}
                 onClick={(e) => {
                     const v = e.currentTarget;
                     if (v.paused) v.play();
                     else v.pause();
                 }}
             />
+
+            {/* 자막 메타데이터 라이브 오버레이 */}
+            {overlayInfo?.textOverlay?.text && (
+                <div 
+                    className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
+                    style={{ top: `${overlayInfo.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                >
+                    <span 
+                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90%] break-words drop-shadow-md"
+                        style={{
+                            color: overlayInfo.textOverlay.color || '#ffffff',
+                            backgroundColor: overlayInfo.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                            fontSize: `${overlayInfo.textOverlay.fontSize || 22}px`
+                        }}
+                    >
+                        {overlayInfo.textOverlay.text}
+                    </span>
+                </div>
+            )}
+
             {/* Bottom Info Overlay */}
             <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12 text-white">
                 <div className="flex items-center gap-3 mb-3">
@@ -637,11 +688,55 @@ const PostFeedItem: React.FC<{
                 className="relative w-full aspect-[4/5] bg-black flex overflow-x-scroll snap-x snap-mandatory scrollbar-none"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-                {post.imagePaths?.map((path, idx) => (
-                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center">
-                        <img src={path} alt={`post-${idx}`} className="w-full h-full object-cover" />
-                    </div>
-                ))}
+                {post.imagePaths?.map((path, idx) => {
+                    let imgEdit: any = null;
+                    if (post.editDataList && post.editDataList[idx]) {
+                        try {
+                            imgEdit = JSON.parse(post.editDataList[idx]);
+                        } catch (e) {}
+                    }
+
+                    const filterCss = imgEdit?.filter ? (
+                        imgEdit.filter === 'blur' ? 'blur(3px)' :
+                        imgEdit.filter === 'bright' ? 'brightness(1.25)' :
+                        imgEdit.filter === 'dark' ? 'brightness(0.75)' :
+                        imgEdit.filter === 'grayscale' ? 'grayscale(1)' :
+                        imgEdit.filter === 'sepia' ? 'sepia(0.8)' :
+                        imgEdit.filter === 'warm' ? 'sepia(0.3) brightness(1.05) saturate(1.2)' :
+                        imgEdit.filter === 'cool' ? 'hue-rotate(30deg) brightness(1.05) saturate(0.9)' : 'none'
+                    ) : 'none';
+
+                    const rotation = imgEdit?.rotation || 0;
+                    const flipH = imgEdit?.flipH || false;
+
+                    return (
+                        <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center relative overflow-hidden bg-black">
+                            <div 
+                                className="w-full h-full flex items-center justify-center transition-transform duration-200"
+                                style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
+                            >
+                                <img src={path} alt={`post-${idx}`} className="w-full h-full object-cover" style={{ filter: filterCss }} />
+                            </div>
+                            {imgEdit?.textOverlay?.text && (
+                                <div 
+                                    className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
+                                    style={{ top: `${imgEdit.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                                >
+                                    <span 
+                                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90%] break-words drop-shadow-md"
+                                        style={{
+                                            color: imgEdit.textOverlay.color || '#ffffff',
+                                            backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                                            fontSize: `${imgEdit.textOverlay.fontSize || 22}px`
+                                        }}
+                                    >
+                                        {imgEdit.textOverlay.text}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
                 
                 {post.imagePaths && post.imagePaths.length > 1 && (
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">

@@ -22,6 +22,9 @@ public class PostAttachment {
     @Column(name = "post_stat_cd", nullable = false, length = 20)
     private String postStatCd;
 
+    @Column(name = "edit_data", columnDefinition = "TEXT")
+    private String editData;
+
     @Column(name = "ins_dtime", nullable = false, length = 14)
     private String insDtime;
 

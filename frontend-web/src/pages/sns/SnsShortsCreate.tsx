@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaTimes, FaVideo, FaMagic, FaFont, FaCut, FaPlay, FaPause } from 'react-icons/fa';
+import { FaChevronLeft, FaTimes, FaVideo, FaMagic, FaFont, FaCut, FaPlay } from 'react-icons/fa';
 import CommonModal from '../../components/common/CommonModal';
 
 interface TextOverlay {
@@ -135,124 +135,6 @@ const SnsShortsCreate: React.FC = () => {
         }
     };
 
-    // Canvas + MediaRecorder 비디오 합성 렌더링
-    const processVideoToBlob = async (): Promise<{ blob: Blob, durationSec: number }> => {
-        const trimDuration = Math.max(1, Math.round(endTime - startTime));
-
-        // 편집사항이 없고 전체 구간이면 원본 사용
-        if (filter === 'none' && !textOverlay.text.trim() && startTime === 0 && (totalDuration === 0 || Math.abs(endTime - totalDuration) < 0.5)) {
-            return { blob: videoFile!, durationSec: totalDuration || trimDuration };
-        }
-
-        return new Promise((resolve) => {
-            const video = document.createElement('video');
-            video.src = videoPreviewUrl;
-            video.muted = true;
-            video.playsInline = true;
-
-            video.onloadedmetadata = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth || 720;
-                canvas.height = video.videoHeight || 1280;
-                const ctx = canvas.getContext('2d');
-                
-                if (!ctx || !window.MediaRecorder) {
-                    resolve({ blob: videoFile!, durationSec: trimDuration });
-                    return;
-                }
-
-                let mimeType = 'video/webm;codecs=vp9';
-                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
-                if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
-
-                const stream = canvas.captureStream(30);
-                let mediaRecorder: MediaRecorder;
-                try {
-                    mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-                } catch (e) {
-                    resolve({ blob: videoFile!, durationSec: trimDuration });
-                    return;
-                }
-
-                const chunks: Blob[] = [];
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunks.push(e.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const finalBlob = new Blob(chunks, { type: mediaRecorder.mimeType || 'video/mp4' });
-                    resolve({ blob: finalBlob, durationSec: trimDuration });
-                };
-
-                const filterObj = FILTER_OPTIONS.find(f => f.id === filter);
-                const filterCss = filterObj?.filterCss || 'none';
-
-                video.currentTime = startTime;
-                mediaRecorder.start();
-
-                let animId: number;
-                const drawFrame = () => {
-                    if (video.currentTime >= endTime || video.ended || video.paused) {
-                        video.pause();
-                        if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-                        cancelAnimationFrame(animId);
-                        return;
-                    }
-
-                    ctx.save();
-                    ctx.filter = filterCss;
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    ctx.restore();
-
-                    // 자막
-                    if (textOverlay.text.trim()) {
-                        ctx.save();
-                        const fontSize = Math.max(24, Math.round(canvas.width * (textOverlay.fontSize / 350)));
-                        ctx.font = `bold ${fontSize}px Pretendard, sans-serif`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-
-                        const posX = canvas.width / 2;
-                        const posY = (canvas.height * textOverlay.posY) / 100;
-
-                        if (textOverlay.bgColor && textOverlay.bgColor !== 'transparent') {
-                            const metrics = ctx.measureText(textOverlay.text);
-                            const padX = fontSize * 0.5;
-                            const padY = fontSize * 0.25;
-                            ctx.fillStyle = textOverlay.bgColor;
-                            ctx.beginPath();
-                            ctx.roundRect(
-                                posX - metrics.width / 2 - padX,
-                                posY - fontSize / 2 - padY,
-                                metrics.width + padX * 2,
-                                fontSize + padY * 2,
-                                8
-                            );
-                            ctx.fill();
-                        }
-
-                        ctx.fillStyle = textOverlay.color || '#ffffff';
-                        ctx.fillText(textOverlay.text, posX, posY);
-                        ctx.restore();
-                    }
-
-                    if (mediaRecorder.state === 'recording') {
-                        animId = requestAnimationFrame(drawFrame);
-                    }
-                };
-
-                video.onplay = () => {
-                    drawFrame();
-                };
-
-                video.play().catch(() => {
-                    resolve({ blob: videoFile!, durationSec: trimDuration });
-                });
-            };
-
-            video.onerror = () => resolve({ blob: videoFile!, durationSec: trimDuration });
-        });
-    };
 
     const handleNext = () => {
         if (!videoFile) {
@@ -282,21 +164,27 @@ const SnsShortsCreate: React.FC = () => {
         }
 
         try {
-            const { blob: finalVideoBlob, durationSec } = await processVideoToBlob();
+            const durationSec = Math.max(1, Math.round(endTime - startTime));
+            
+            // 메타데이터 준비 (속도 0.1초 즉시 업로드)
+            const overlayDataObj = {
+                filter,
+                textOverlay,
+                startTime,
+                endTime
+            };
 
             const formData = new FormData();
             const data = {
                 userId: userId,
                 title: title,
                 duration: durationSec,
-                publicTypeCd: publicTypeCd
+                publicTypeCd: publicTypeCd,
+                overlayData: JSON.stringify(overlayDataObj)
             };
 
             formData.append('data', new Blob([JSON.stringify(data)], { type: "application/json" }));
-            
-            // 처리된 비디오 파일명 명시
-            const videoFileName = videoFile?.name ? videoFile.name.replace(/\.[^/.]+$/, "") + "_edited.mp4" : "shorts.mp4";
-            formData.append('video', finalVideoBlob, videoFileName);
+            formData.append('video', videoFile!);
 
             const response = await fetch('/api/sns/shorts', {
                 method: 'POST',
