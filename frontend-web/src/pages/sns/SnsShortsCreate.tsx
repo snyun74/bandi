@@ -46,7 +46,7 @@ const SnsShortsCreate: React.FC = () => {
         };
         fetchCommonCodes();
     }, []);
-    
+
     // 비디오 상태 및 편집 상태
     const [videoFile, setVideoFile] = useState<File | null>(null);
     const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
@@ -163,9 +163,16 @@ const SnsShortsCreate: React.FC = () => {
             return;
         }
 
+        // 최종 저장 시점에 파일 사이즈 재확인 (50MB 제한)
+        if (videoFile && videoFile.size > 50 * 1024 * 1024) {
+            showAlert("동영상 크기가 너무 큽니다 (최대 50MB). 더 짧거나 작은 영상을 선택해주세요.");
+            setIsProcessing(false);
+            return;
+        }
+
         try {
             const durationSec = Math.max(1, Math.round(endTime - startTime));
-            
+
             // 메타데이터 준비 (속도 0.1초 즉시 업로드)
             const overlayDataObj = {
                 filter,
@@ -214,8 +221,8 @@ const SnsShortsCreate: React.FC = () => {
         <div className="flex flex-col h-full bg-white font-['Pretendard'] overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-white z-20 border-b border-gray-100 shadow-sm">
-                <button 
-                    onClick={() => step === 0 ? navigate(-1) : setStep(0)} 
+                <button
+                    onClick={() => step === 0 ? navigate(-1) : setStep(0)}
                     className="text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
                     <FaChevronLeft size={18} />
@@ -223,8 +230,8 @@ const SnsShortsCreate: React.FC = () => {
                 <h1 className="text-[15px] font-bold text-gray-800">
                     {step === 0 ? '쇼츠 편집 및 만들기' : '게시 정보 입력'}
                 </h1>
-                <button 
-                    onClick={step === 0 ? handleNext : handleSubmit} 
+                <button
+                    onClick={step === 0 ? handleNext : handleSubmit}
                     disabled={isProcessing}
                     className="text-blue-500 font-bold text-[15px] px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                 >
@@ -240,9 +247,9 @@ const SnsShortsCreate: React.FC = () => {
                         <div className="w-full bg-gray-900 relative aspect-[9/16] max-h-[55vh] flex flex-col items-center justify-center overflow-hidden shadow-inner">
                             {videoPreviewUrl ? (
                                 <div className="relative w-full h-full flex items-center justify-center bg-black">
-                                    <video 
+                                    <video
                                         ref={videoRef}
-                                        src={videoPreviewUrl} 
+                                        src={videoPreviewUrl}
                                         autoPlay
                                         loop
                                         playsInline
@@ -262,7 +269,7 @@ const SnsShortsCreate: React.FC = () => {
 
                                     {/* 재생/일시정지 오버레이 버튼 */}
                                     {!isPlaying && (
-                                        <div 
+                                        <div
                                             onClick={togglePlay}
                                             className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer z-10"
                                         >
@@ -274,11 +281,11 @@ const SnsShortsCreate: React.FC = () => {
 
                                     {/* 자막 라이브 프리뷰 */}
                                     {textOverlay.text && (
-                                        <div 
+                                        <div
                                             className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
                                             style={{ top: `${textOverlay.posY}%`, transform: 'translateY(-50%)' }}
                                         >
-                                            <span 
+                                            <span
                                                 className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90%] break-words"
                                                 style={{
                                                     color: textOverlay.color,
@@ -295,7 +302,7 @@ const SnsShortsCreate: React.FC = () => {
                                         구간: {selectedDuration}초 ({startTime}초 ~ {endTime}초)
                                     </div>
 
-                                    <button 
+                                    <button
                                         onClick={removeVideo}
                                         className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-all z-20"
                                     >
@@ -303,7 +310,7 @@ const SnsShortsCreate: React.FC = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <div 
+                                <div
                                     className="flex flex-col items-center justify-center text-gray-400 gap-3 cursor-pointer w-full h-full hover:bg-gray-800 transition-colors"
                                     onClick={() => videoInputRef.current?.click()}
                                 >
@@ -316,10 +323,10 @@ const SnsShortsCreate: React.FC = () => {
                                     </div>
                                 </div>
                             )}
-                            <input 
-                                type="file" 
-                                accept="video/*" 
-                                className="hidden" 
+                            <input
+                                type="file"
+                                accept="video/*"
+                                className="hidden"
                                 ref={videoInputRef}
                                 onChange={handleVideoChange}
                             />
@@ -330,19 +337,19 @@ const SnsShortsCreate: React.FC = () => {
                             <div className="flex-1 bg-white flex flex-col border-t border-gray-100">
                                 {/* 탭 선택 버튼 */}
                                 <div className="flex border-b border-gray-100 bg-gray-50 text-[13px] font-bold text-gray-500">
-                                    <button 
+                                    <button
                                         onClick={() => setActiveTab('filter')}
                                         className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'filter' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
                                     >
                                         <FaMagic size={14} /> 필터
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setActiveTab('text')}
                                         className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'text' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
                                     >
                                         <FaFont size={14} /> 자막/글쓰기
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setActiveTab('trim')}
                                         className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'trim' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
                                     >
@@ -363,8 +370,8 @@ const SnsShortsCreate: React.FC = () => {
                                                         className={`flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer`}
                                                     >
                                                         <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 bg-black flex items-center justify-center transition-all ${filter === f.id ? 'border-blue-500 ring-2 ring-blue-100 scale-105' : 'border-gray-200'}`}>
-                                                            <video 
-                                                                src={videoPreviewUrl} 
+                                                            <video
+                                                                src={videoPreviewUrl}
                                                                 className="w-full h-full object-cover pointer-events-none"
                                                                 style={{ filter: f.filterCss }}
                                                             />
@@ -382,7 +389,7 @@ const SnsShortsCreate: React.FC = () => {
                                         <div className="space-y-4">
                                             <div>
                                                 <label className="text-[12px] font-bold text-gray-500 block mb-1">자막 입력</label>
-                                                <input 
+                                                <input
                                                     type="text"
                                                     placeholder="쇼츠에 표시할 자막 문구 추가..."
                                                     value={textOverlay.text}
@@ -409,7 +416,7 @@ const SnsShortsCreate: React.FC = () => {
 
                                                     <div>
                                                         <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
-                                                        <input 
+                                                        <input
                                                             type="range"
                                                             min="10"
                                                             max="90"
@@ -436,7 +443,7 @@ const SnsShortsCreate: React.FC = () => {
                                                         <span>시작 시간</span>
                                                         <span>{startTime}초</span>
                                                     </div>
-                                                    <input 
+                                                    <input
                                                         type="range"
                                                         min="0"
                                                         max={Math.max(0, endTime - 1)}
@@ -455,7 +462,7 @@ const SnsShortsCreate: React.FC = () => {
                                                         <span>종료 시간</span>
                                                         <span>{endTime}초</span>
                                                     </div>
-                                                    <input 
+                                                    <input
                                                         type="range"
                                                         min={startTime + 1}
                                                         max={totalDuration || 60}
@@ -480,17 +487,17 @@ const SnsShortsCreate: React.FC = () => {
                         {/* 썸네일 미리보기 섹션 */}
                         <div className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
                             <div className="w-24 aspect-[9/16] bg-black rounded-lg overflow-hidden flex-shrink-0 shadow-md relative">
-                                <video 
-                                    src={videoPreviewUrl} 
+                                <video
+                                    src={videoPreviewUrl}
                                     className="w-full h-full object-cover"
                                     style={{ filter: filterObj?.filterCss || 'none' }}
                                 />
                                 {textOverlay.text && (
-                                    <div 
+                                    <div
                                         className="absolute inset-x-1 flex justify-center pointer-events-none"
                                         style={{ top: `${textOverlay.posY}%`, transform: 'translateY(-50%)' }}
                                     >
-                                        <span 
+                                        <span
                                             className="px-1 py-0.5 rounded text-[8px] font-bold truncate max-w-full"
                                             style={{ color: textOverlay.color, backgroundColor: textOverlay.bgColor }}
                                         >
@@ -503,7 +510,7 @@ const SnsShortsCreate: React.FC = () => {
                                 <span className="text-[12px] text-gray-400 font-medium mb-1">편집 완료된 영상</span>
                                 <span className="text-[14px] text-gray-700 font-bold truncate">동영상 {selectedDuration}초</span>
                                 {filter !== 'none' && <span className="text-[11px] text-blue-500 font-medium">필터: {filterObj?.label}</span>}
-                                <button 
+                                <button
                                     onClick={() => setStep(0)}
                                     className="mt-2 text-blue-500 text-[12px] font-medium self-start hover:underline"
                                 >
