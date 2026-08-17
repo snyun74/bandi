@@ -174,12 +174,13 @@ const Membersador: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const showAlert = (message: string, title: string = '알림') => {
+    const showAlert = (message: string, title: string = '알림', onConfirm?: () => void) => {
         setCommonModal({
             isOpen: true,
             type: 'alert',
             title,
-            message
+            message,
+            onConfirm
         });
     };
 
@@ -221,6 +222,13 @@ const Membersador: React.FC = () => {
         loadPublicData();
     }, []);
 
+    // Common code lookup for Activity Field (BD900)
+    const getFieldNm = (fieldCodeOrNm?: string | null) => {
+        if (!fieldCodeOrNm) return '보컬';
+        const found = fieldCodes.find(c => c.commDtlCd === fieldCodeOrNm || c.commDtlNm === fieldCodeOrNm);
+        return found ? found.commDtlNm : fieldCodeOrNm;
+    };
+
     // Course application status lookup
     const getApplicationForCourse = (courseNo: number) => {
         return myApplications.find(a => a.courseNo === courseNo);
@@ -259,6 +267,87 @@ const Membersador: React.FC = () => {
         }
     };
 
+    // 1강 즉시 재생 헬퍼
+    const playFirstLessonOrDetail = async (courseNo: number) => {
+        try {
+            const res = await fetch(`/api/ambassador/public/courses/${courseNo}`);
+            if (res.ok) {
+                const detail: CourseDetailData = await res.json();
+                setSelectedCourseDetail(detail);
+
+                // 승인된 차시 중 영상이 있는 첫번째 차시 찾기
+                const firstVideoLesson = detail.lessons?.find((l: LessonItem) => l.lessonStatCd === 'A' && l.videoUrl);
+                if (firstVideoLesson && firstVideoLesson.videoUrl) {
+                    setVideoModal({
+                        isOpen: true,
+                        title: `[${firstVideoLesson.lessonSeq}강] ${firstVideoLesson.lessonTitle}`,
+                        url: firstVideoLesson.videoUrl.startsWith('http') ? firstVideoLesson.videoUrl : `/uploads${firstVideoLesson.videoUrl}`
+                    });
+                } else if (detail.course.movUrl) {
+                    setVideoModal({
+                        isOpen: true,
+                        title: `[샘플영상] ${detail.course.courseTitle}`,
+                        url: detail.course.movUrl.startsWith('http') ? detail.course.movUrl : `/uploads${detail.course.movUrl}`
+                    });
+                } else {
+                    // 영상이 등록되어 있지 않은 경우 커리큘럼 모달 오픈
+                    setIsDetailModalOpen(true);
+                }
+            }
+        } catch (e) {
+            console.error('강의 재생 로드 실패:', e);
+        }
+    };
+
+    // 무료/유료 강의 클릭 시 즉시 수강/신청 플로우
+    const handleStartCourse = async (course: CourseItem) => {
+        if (!currentUserId) {
+            showAlert('로그인 후 이용하실 수 있습니다.');
+            return;
+        }
+
+        const isOwner = String(course.userId) === String(currentUserId);
+        const app = getApplicationForCourse(course.courseNo);
+        const isApproved = isOwner || app?.appStatCd === 'A';
+
+        // 본인이 개설한 강좌인 경우 신청 API 호출 없이 바로 1강 재생
+        if (isOwner) {
+            await playFirstLessonOrDetail(course.courseNo);
+            return;
+        }
+
+        if (course.eduTypeFg === 'F') {
+            // 1. 무료 강의: 미등록 시 백그라운드 자동 신청(자동 승인) 후 1강 즉시 재생
+            if (!isApproved) {
+                try {
+                    const res = await fetch(`/api/ambassador/public/courses/${course.courseNo}/apply?userId=${currentUserId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ appMemo: '무료강의 자동수강' })
+                    });
+                    if (res.ok) {
+                        const appRes = await fetch(`/api/ambassador/public/my-applications?userId=${currentUserId}`);
+                        if (appRes.ok) {
+                            const appData = await appRes.json();
+                            setMyApplications(appData || []);
+                        }
+                    }
+                } catch (e) {
+                    console.error('무료강의 자동등록 실패:', e);
+                }
+            }
+
+            await playFirstLessonOrDetail(course.courseNo);
+        } else {
+            // 2. 유료 강의: 이미 승인되어 있으면 즉시 재생, 아니면 결제/신청 모달 팝업
+            if (isApproved) {
+                await playFirstLessonOrDetail(course.courseNo);
+            } else {
+                handleOpenApplyModal(course);
+            }
+        }
+    };
+
     // Open Apply Modal
     const handleOpenApplyModal = (course: CourseItem) => {
         if (!currentUserId) {
@@ -272,8 +361,8 @@ const Membersador: React.FC = () => {
         }
 
         const app = getApplicationForCourse(course.courseNo);
-        if (app && (app.appStatCd === 'R' || app.appStatCd === 'A')) {
-            showAlert(app.appStatCd === 'A' ? '이미 수강 승인된 교육과정입니다.' : '현재 수강 신청 심사 중인 교육과정입니다.');
+        if (app && app.appStatCd === 'A') {
+            showAlert('이미 수강 승인된 교육과정입니다.');
             return;
         }
 
@@ -282,7 +371,7 @@ const Membersador: React.FC = () => {
         setIsApplyModalOpen(true);
     };
 
-    // Submit Course Application
+    // Submit Course Application (자동 승인 처리)
     const handleSubmitApply = async () => {
         if (!applyTargetCourse || !currentUserId) return;
 
@@ -295,10 +384,15 @@ const Membersador: React.FC = () => {
             });
 
             if (res.ok) {
+                const targetCourseNo = applyTargetCourse.courseNo;
+                const targetCourseTitle = applyTargetCourse.courseTitle;
                 setIsApplyModalOpen(false);
                 showAlert(
-                    `[${applyTargetCourse.courseTitle}] 수강 신청이 성공적으로 접수되었습니다!\n\n엠버서더(강사)에게 신청 알림이 전달되었으며, 확인 후 승인 처리가 진행됩니다.`,
-                    '수강 신청 완료'
+                    `[${targetCourseTitle}] 수강 신청 및 결제가 완료되었습니다!\n바로 강의를 수강하실 수 있습니다.`,
+                    '수강 신청 완료',
+                    () => {
+                        playFirstLessonOrDetail(targetCourseNo);
+                    }
                 );
                 // Refresh my applications
                 const appRes = await fetch(`/api/ambassador/public/my-applications?userId=${currentUserId}`);
@@ -371,16 +465,16 @@ const Membersador: React.FC = () => {
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 gap-3 sm:gap-4 pb-6">
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6 pb-6">
                             {filteredAmbassadors.map((amb) => {
                                 return (
                                     <div
                                         key={amb.userId}
                                         onClick={() => handleSelectAmbassador(amb)}
-                                        className="group cursor-pointer bg-white rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-[#00B2D2]/40 transition-all flex flex-col p-2.5 sm:p-3 text-left active:scale-[0.98]"
+                                        className="group cursor-pointer flex flex-col text-left active:scale-[0.98] transition-transform"
                                     >
                                         {/* 1. Profile Image with default fallback */}
-                                        <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-100 shadow-2xs">
+                                        <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-100">
                                             {amb.profileImg ? (
                                                 <img
                                                     src={amb.profileImg.startsWith('http') ? amb.profileImg : `/uploads${amb.profileImg}`}
@@ -389,11 +483,11 @@ const Membersador: React.FC = () => {
                                                 />
                                             ) : (
                                                 /* Default Profile Image */
-                                                <div className="w-full h-full bg-gradient-to-br from-slate-100 via-indigo-50/50 to-sky-100 flex flex-col items-center justify-center text-slate-400 p-3">
-                                                    <div className="w-12 h-12 rounded-full bg-white shadow-2xs flex items-center justify-center text-[#00B2D2] text-xl font-black mb-1 border border-slate-100">
+                                                <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center text-slate-400 p-3">
+                                                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-600 text-lg font-bold mb-1 shadow-xs">
                                                         {amb.userNickNm?.slice(0, 1) || 'B'}
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-slate-500">BANDI 엠버서더</span>
+                                                    <span className="text-[10px] font-medium text-slate-400">BANDI 엠버서더</span>
                                                 </div>
                                             )}
 
@@ -405,69 +499,22 @@ const Membersador: React.FC = () => {
                                             )}
                                         </div>
 
-                                        {/* 2. Nickname & Activity Field */}
-                                        <div className="mt-2.5 flex items-center justify-between gap-1 min-w-0">
-                                            <span className="font-bold text-slate-900 text-xs sm:text-sm truncate group-hover:text-[#00B2D2] transition-colors">
+                                        {/* 2. Nickname & Activity Field (닉네임과 동일한 색상 및 우측 정렬) */}
+                                        <div className="mt-2 flex items-center justify-between gap-1.5 min-w-0">
+                                            <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
                                                 {amb.userNickNm || amb.userNm}
                                             </span>
-                                            {amb.activityFieldNm && (
-                                                <span className="px-1.5 py-0.5 bg-[#00B2D2]/10 text-[#008CA6] text-[10px] font-bold rounded-md shrink-0 border border-[#00B2D2]/20">
-                                                    {amb.activityFieldNm}
+                                            {(amb.activityFieldNm || amb.activityField) && (
+                                                <span className="font-bold text-slate-900 text-xs sm:text-sm shrink-0">
+                                                    {getFieldNm(amb.activityFieldNm || amb.activityField)}
                                                 </span>
                                             )}
                                         </div>
 
                                         {/* 3. Introduction & Activity Plan (Line Clamped) */}
-                                        <p className="text-[11px] sm:text-xs text-slate-600 line-clamp-2 leading-relaxed mt-1 flex-1">
+                                        <p className="text-[11px] sm:text-xs text-slate-500 line-clamp-2 leading-relaxed mt-0.5">
                                             {amb.introContent || '자기소개 및 활동계획이 준비 중입니다.'}
                                         </p>
-
-                                        {/* 4. Portfolio & YouTube / SNS Links (Shown only if present) */}
-                                        {(amb.snsUrl || amb.portfolioUrl) && (
-                                            <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-100 flex-wrap">
-                                                {amb.snsUrl && (
-                                                    <a
-                                                        href={amb.snsUrl.startsWith('http') ? amb.snsUrl : `https://${amb.snsUrl}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[10px] text-slate-600 transition-colors"
-                                                        title="유튜브 / SNS 링크"
-                                                    >
-                                                        {amb.snsUrl.includes('youtube') || amb.snsUrl.includes('youtu.be') ? (
-                                                            <>
-                                                                <FaYoutube className="text-red-500 w-3 h-3 shrink-0" />
-                                                                <span className="font-medium truncate max-w-[55px]">유튜브</span>
-                                                            </>
-                                                        ) : amb.snsUrl.includes('instagram') ? (
-                                                            <>
-                                                                <FaInstagram className="text-pink-500 w-3 h-3 shrink-0" />
-                                                                <span className="font-medium truncate max-w-[55px]">SNS</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <FaExternalLinkAlt className="text-slate-400 w-2.5 h-2.5 shrink-0" />
-                                                                <span className="font-medium truncate max-w-[55px]">SNS</span>
-                                                            </>
-                                                        )}
-                                                    </a>
-                                                )}
-
-                                                {amb.portfolioUrl && (
-                                                    <a
-                                                        href={amb.portfolioUrl.startsWith('http') ? amb.portfolioUrl : `https://${amb.portfolioUrl}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-[10px] text-slate-600 transition-colors"
-                                                        title="포트폴리오 링크"
-                                                    >
-                                                        <FaExternalLinkAlt className="text-[#00B2D2] w-2.5 h-2.5 shrink-0" />
-                                                        <span className="font-medium truncate max-w-[55px]">포트폴리오</span>
-                                                    </a>
-                                                )}
-                                            </div>
-                                        )}
                                     </div>
                                 );
                             })}
@@ -490,87 +537,84 @@ const Membersador: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Ambassador Profile Card */}
-                    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-4 sm:p-5 mb-5">
-                        <div className="flex items-start gap-3.5">
+                    {/* Ambassador Profile Slim Header (네임택 1/3 슬림화) */}
+                    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs px-3.5 py-2.5 mb-4">
+                        <div className="flex items-center gap-3">
                             {/* Avatar */}
-                            <div className="relative shrink-0">
-                                <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-amber-400 bg-slate-100 shadow-2xs">
-                                    {selectedAmbassador.profileImg ? (
-                                        <img
-                                            src={selectedAmbassador.profileImg.startsWith('http') ? selectedAmbassador.profileImg : `/uploads${selectedAmbassador.profileImg}`}
-                                            alt={selectedAmbassador.userNickNm}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00B2D2] to-[#0284C7] text-white font-bold text-xl">
-                                            {selectedAmbassador.userNickNm?.slice(0, 1)}
-                                        </div>
-                                    )}
-                                </div>
+                            <div className="w-11 h-11 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+                                {selectedAmbassador.profileImg ? (
+                                    <img
+                                        src={selectedAmbassador.profileImg.startsWith('http') ? selectedAmbassador.profileImg : `/uploads${selectedAmbassador.profileImg}`}
+                                        alt={selectedAmbassador.userNickNm}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-[#00B2D2] text-white font-bold text-sm">
+                                        {selectedAmbassador.userNickNm?.slice(0, 1)}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Ambassador Info */}
+                            {/* Info */}
                             <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 flex-wrap mb-1">
-                                    <span className="text-base sm:text-lg font-bold text-slate-900">
-                                        {selectedAmbassador.userNickNm}
-                                    </span>
-                                    {selectedAmbassador.activityFieldNm && (
-                                        <span className="px-2 py-0.5 bg-[#00B2D2]/10 text-[#008CA6] border border-[#00B2D2]/25 text-[11px] font-semibold rounded-md">
-                                            {selectedAmbassador.activityFieldNm}
+                                <div className="flex items-center justify-between gap-1.5">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="text-sm font-bold text-slate-900 truncate">
+                                            {selectedAmbassador.userNickNm}
                                         </span>
-                                    )}
-                                    <span className="flex items-center gap-1 text-amber-500 text-xs font-bold">
-                                        <FaStar className="w-3 h-3 fill-amber-400" />
-                                        {selectedAmbassador.avgRating > 0 ? selectedAmbassador.avgRating.toFixed(1) : '5.0'}
-                                        <span className="text-slate-400 font-normal text-[11px]">({selectedAmbassador.totalEvaluations})</span>
-                                    </span>
+                                        {selectedAmbassador.activityFieldNm && (
+                                            <span className="text-xs text-slate-500 font-normal shrink-0">
+                                                · {selectedAmbassador.activityFieldNm}
+                                            </span>
+                                        )}
+                                        <span className="flex items-center gap-0.5 text-amber-500 text-[11px] font-bold shrink-0 ml-1">
+                                            <FaStar className="w-2.5 h-2.5 fill-amber-400" />
+                                            {selectedAmbassador.avgRating > 0 ? selectedAmbassador.avgRating.toFixed(1) : '5.0'}
+                                        </span>
+                                    </div>
+
+                                    {/* Social & Portfolio Icons */}
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {selectedAmbassador.snsUrl && (
+                                            <a
+                                                href={selectedAmbassador.snsUrl.startsWith('http') ? selectedAmbassador.snsUrl : `https://${selectedAmbassador.snsUrl}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                                                title="유튜브 / SNS"
+                                            >
+                                                {selectedAmbassador.snsUrl.includes('youtube') || selectedAmbassador.snsUrl.includes('youtu.be') ? (
+                                                    <FaYoutube className="w-3.5 h-3.5 text-red-500" />
+                                                ) : selectedAmbassador.snsUrl.includes('instagram') ? (
+                                                    <FaInstagram className="w-3.5 h-3.5 text-pink-500" />
+                                                ) : (
+                                                    <FaExternalLinkAlt className="w-3 h-3 text-slate-400" />
+                                                )}
+                                            </a>
+                                        )}
+                                        {selectedAmbassador.portfolioUrl && (
+                                            <a
+                                                href={selectedAmbassador.portfolioUrl.startsWith('http') ? selectedAmbassador.portfolioUrl : `https://${selectedAmbassador.portfolioUrl}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-1 text-slate-400 hover:text-[#00B2D2] transition-colors"
+                                                title="포트폴리오"
+                                            >
+                                                <FaExternalLinkAlt className="w-3 h-3" />
+                                            </a>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {selectedAmbassador.introContent && (
-                                    <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-2">
-                                        {selectedAmbassador.introContent}
-                                    </p>
-                                )}
-
-                                {/* Social Links & Stats */}
-                                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500">
-                                    <span>
-                                        강좌 <strong className="text-slate-800 font-bold">{selectedAmbassador.courses?.length || 0}</strong>개 · 총 <strong className="text-slate-800 font-bold">{selectedAmbassador.totalLessons || 0}</strong>강
-                                    </span>
-
-                                    {(selectedAmbassador.snsUrl || selectedAmbassador.portfolioUrl) && (
-                                        <div className="flex items-center gap-1.5">
-                                            {selectedAmbassador.snsUrl && (
-                                                <a
-                                                    href={selectedAmbassador.snsUrl.startsWith('http') ? selectedAmbassador.snsUrl : `https://${selectedAmbassador.snsUrl}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="w-6 h-6 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-md flex items-center justify-center border border-slate-200/80 transition-colors"
-                                                    title="SNS 링크"
-                                                >
-                                                    {selectedAmbassador.snsUrl.includes('youtube') || selectedAmbassador.snsUrl.includes('youtu.be') ? (
-                                                        <FaYoutube className="w-3 h-3 text-red-500" />
-                                                    ) : selectedAmbassador.snsUrl.includes('instagram') ? (
-                                                        <FaInstagram className="w-3 h-3 text-pink-500" />
-                                                    ) : (
-                                                        <FaExternalLinkAlt className="w-2.5 h-2.5" />
-                                                    )}
-                                                </a>
-                                            )}
-                                            {selectedAmbassador.portfolioUrl && (
-                                                <a
-                                                    href={selectedAmbassador.portfolioUrl.startsWith('http') ? selectedAmbassador.portfolioUrl : `https://${selectedAmbassador.portfolioUrl}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="w-6 h-6 bg-slate-50 hover:bg-slate-100 text-slate-500 hover:text-slate-800 rounded-md flex items-center justify-center border border-slate-200/80 transition-colors"
-                                                    title="포트폴리오 링크"
-                                                >
-                                                    <FaExternalLinkAlt className="w-2.5 h-2.5" />
-                                                </a>
-                                            )}
-                                        </div>
+                                <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                    <span>강좌 <strong className="text-slate-700 font-semibold">{selectedAmbassador.courses?.length || 0}</strong>개</span>
+                                    <span>·</span>
+                                    <span>총 <strong className="text-slate-700 font-semibold">{selectedAmbassador.totalLessons || 0}</strong>강</span>
+                                    {selectedAmbassador.introContent && (
+                                        <>
+                                            <span>·</span>
+                                            <span className="truncate text-slate-500 max-w-[140px] sm:max-w-[260px]">{selectedAmbassador.introContent}</span>
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -598,19 +642,17 @@ const Membersador: React.FC = () => {
                         <div className="space-y-4">
                             {selectedAmbassador.courses.map((course) => {
                                 const application = getApplicationForCourse(course.courseNo);
-                                const isApplied = !!application;
                                 const isApproved = application?.appStatCd === 'A';
-                                const isPending = application?.appStatCd === 'R';
 
                                 return (
                                     <div
                                         key={course.courseNo}
                                         className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-[#00B2D2]/50 hover:shadow-md transition-all flex flex-col sm:flex-row overflow-hidden group"
                                     >
-                                        {/* Thumbnail */}
+                                        {/* Thumbnail (클릭 시 수강 시작) */}
                                         <div
                                             className="relative aspect-video sm:w-52 bg-slate-900 cursor-pointer overflow-hidden shrink-0"
-                                            onClick={() => handleOpenCourseDetail(course.courseNo)}
+                                            onClick={() => handleStartCourse(course)}
                                         >
                                             {course.imgUrl ? (
                                                 <img
@@ -636,6 +678,11 @@ const Membersador: React.FC = () => {
                                                         ₩{course.courseAmt?.toLocaleString()}
                                                     </span>
                                                 )}
+                                                {isApproved && (
+                                                    <span className="px-2 py-0.5 bg-sky-500 text-white text-[10px] font-black rounded-md shadow-md">
+                                                        수강중
+                                                    </span>
+                                                )}
                                             </div>
 
                                             {/* Sample Video Button */}
@@ -659,7 +706,10 @@ const Membersador: React.FC = () => {
 
                                         {/* Content & Actions */}
                                         <div className="p-4 flex-1 flex flex-col justify-between">
-                                            <div>
+                                            <div
+                                                className="cursor-pointer"
+                                                onClick={() => handleStartCourse(course)}
+                                            >
                                                 <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
                                                     <span className="flex items-center gap-1 font-semibold text-slate-600">
                                                         <FaLayerGroup className="w-3 h-3 text-[#00B2D2]" />
@@ -672,8 +722,7 @@ const Membersador: React.FC = () => {
                                                 </div>
 
                                                 <h3
-                                                    onClick={() => handleOpenCourseDetail(course.courseNo)}
-                                                    className="text-sm font-bold text-slate-900 group-hover:text-[#00B2D2] transition-colors line-clamp-1 cursor-pointer mb-1"
+                                                    className="text-sm font-bold text-slate-900 group-hover:text-[#00B2D2] transition-colors line-clamp-1 mb-1"
                                                 >
                                                     {course.courseTitle}
                                                 </h3>
@@ -682,37 +731,15 @@ const Membersador: React.FC = () => {
                                                 </p>
                                             </div>
 
-                                            {/* Actions */}
-                                            <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
+                                            {/* Actions (수강신청 버튼 제거 -> 강의 커리큘럼 버튼 전체 너비 확장) */}
+                                            <div className="pt-3 border-t border-slate-100 flex items-center">
                                                 <button
                                                     onClick={() => handleOpenCourseDetail(course.courseNo)}
-                                                    className="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors text-center"
+                                                    className="w-full py-2 px-4 bg-slate-100 hover:bg-[#00B2D2] hover:text-white text-slate-700 text-xs font-bold rounded-xl transition-all text-center flex items-center justify-center gap-1.5 shadow-2xs"
                                                 >
-                                                    강의 커리큘럼
+                                                    <FaBook className="w-3 h-3 opacity-70" />
+                                                    강의 커리큘럼 보기
                                                 </button>
-
-                                                {isApplied ? (
-                                                    <button
-                                                        disabled
-                                                        className={`py-2 px-3.5 text-xs font-bold rounded-xl flex items-center gap-1 shrink-0 ${
-                                                            isApproved
-                                                                ? 'bg-emerald-100 text-emerald-700'
-                                                                : isPending
-                                                                ? 'bg-amber-100 text-amber-700'
-                                                                : 'bg-slate-100 text-slate-500'
-                                                        }`}
-                                                    >
-                                                        <FaCheckCircle className="w-3 h-3" />
-                                                        {isApproved ? '수강중' : isPending ? '심사대기' : '신청됨'}
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleOpenApplyModal(course)}
-                                                        className="py-2 px-3.5 bg-[#00B2D2] hover:bg-[#0096B3] text-white text-xs font-bold rounded-xl shadow-sm transition-all shrink-0 active:scale-95"
-                                                    >
-                                                        수강 신청
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -731,7 +758,7 @@ const Membersador: React.FC = () => {
                         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-2 min-w-0">
                                 <span className="px-2 py-0.5 bg-[#00B2D2]/20 border border-[#00B2D2]/40 text-[#38BDF8] text-[10px] font-bold rounded-full shrink-0">
-                                    {selectedCourseDetail.ambassador.activityFieldNm || '음악 교육'}
+                                    {getFieldNm(selectedCourseDetail.ambassador.activityFieldNm || selectedCourseDetail.ambassador.activityField)}
                                 </span>
                                 <h3 className="text-sm sm:text-base font-bold truncate">
                                     {selectedCourseDetail.course.courseTitle}
@@ -747,112 +774,26 @@ const Membersador: React.FC = () => {
 
                         {/* Modal Body Scroll Area */}
                         <div className="p-6 overflow-y-auto space-y-6 flex-1">
-                            {/* Media Preview & Sticky CTA Bar */}
-                            <div className="relative rounded-2xl overflow-hidden bg-slate-900 shadow-md">
-                                {selectedCourseDetail.course.imgUrl ? (
-                                    <img
-                                        src={selectedCourseDetail.course.imgUrl.startsWith('http') ? selectedCourseDetail.course.imgUrl : `/uploads${selectedCourseDetail.course.imgUrl}`}
-                                        alt={selectedCourseDetail.course.courseTitle}
-                                        className="w-full aspect-video object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full aspect-video bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-                                        <FaBook className="w-12 h-12 text-[#00B2D2] mb-2" />
-                                        <span className="text-sm font-semibold text-slate-300">{selectedCourseDetail.course.courseTitle}</span>
-                                    </div>
-                                )}
-
-                                {/* Overlay Video Button */}
-                                {selectedCourseDetail.course.movUrl && (
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                        <button
-                                            onClick={() => {
-                                                setVideoModal({
-                                                    isOpen: true,
-                                                    title: `[샘플영상] ${selectedCourseDetail.course.courseTitle}`,
-                                                    url: selectedCourseDetail.course.movUrl!.startsWith('http') ? selectedCourseDetail.course.movUrl! : `/uploads${selectedCourseDetail.course.movUrl}`
-                                                });
-                                            }}
-                                            className="px-5 py-2.5 bg-[#00B2D2] hover:bg-[#0096B3] text-white font-bold rounded-2xl flex items-center gap-2 shadow-xl hover:scale-105 transition-all text-sm"
-                                        >
-                                            <FaPlay className="w-3.5 h-3.5" />
-                                            샘플 영상 재생하기
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Pricing & CTA Card */}
-                            <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-slate-700">
-                                <div>
-                                    <div className="text-xs text-slate-400 font-medium mb-0.5">수강료 안내</div>
-                                    <div className="text-xl sm:text-2xl font-black text-amber-300">
-                                        {selectedCourseDetail.course.eduTypeFg === 'F' ? (
-                                            <span className="text-emerald-400">무료 강좌</span>
-                                        ) : (
-                                            `₩ ${selectedCourseDetail.course.courseAmt?.toLocaleString()} 원`
-                                        )}
-                                    </div>
-                                </div>
-
-                                {(() => {
-                                    const app = getApplicationForCourse(selectedCourseDetail.course.courseNo);
-                                    if (app) {
-                                        return (
-                                            <div className={`py-3 px-6 rounded-xl font-bold text-sm text-center flex items-center justify-center gap-2 ${
-                                                app.appStatCd === 'A'
-                                                    ? 'bg-emerald-500 text-white'
-                                                    : app.appStatCd === 'R'
-                                                    ? 'bg-amber-500 text-white'
-                                                    : 'bg-slate-700 text-slate-300'
-                                            }`}>
-                                                <FaCheckCircle />
-                                                {app.appStatCd === 'A' ? '수강 승인 완료 (수강중)' : app.appStatCd === 'R' ? '수강 신청 심사중' : '신청 내역 확인'}
-                                            </div>
-                                        );
-                                    }
-
-                                    return (
-                                        <button
-                                            onClick={() => {
-                                                setIsDetailModalOpen(false);
-                                                handleOpenApplyModal(selectedCourseDetail.course);
-                                            }}
-                                            className="py-3 px-6 bg-gradient-to-r from-[#00B2D2] to-[#0284C7] hover:from-[#0096B3] hover:to-[#0369A1] text-white font-extrabold rounded-xl shadow-lg shadow-[#00B2D2]/30 hover:scale-102 active:scale-98 transition-all text-sm text-center flex items-center justify-center gap-2"
-                                        >
-                                            <FaGraduationCap className="w-4 h-4" />
-                                            수강 신청하기
-                                        </button>
-                                    );
-                                })()}
-                            </div>
-
-                            {/* Instructor Mini Card */}
-                            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3.5">
-                                <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-700 border border-amber-400 shrink-0">
-                                    {selectedCourseDetail.ambassador.profileImg ? (
-                                        <img
-                                            src={selectedCourseDetail.ambassador.profileImg.startsWith('http') ? selectedCourseDetail.ambassador.profileImg : `/uploads${selectedCourseDetail.ambassador.profileImg}`}
-                                            alt={selectedCourseDetail.ambassador.userNickNm}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-white font-bold bg-indigo-600">
-                                            {selectedCourseDetail.ambassador.userNickNm.slice(0, 1)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="font-bold text-sm text-slate-900">{selectedCourseDetail.ambassador.userNickNm}</span>
-                                        <span className="text-[11px] text-[#00B2D2] font-semibold">{selectedCourseDetail.ambassador.activityFieldNm}</span>
-                                    </div>
-                                    <p className="text-xs text-slate-500 line-clamp-1">{selectedCourseDetail.ambassador.introContent || '프로 엠버서더 강사'}</p>
-                                </div>
-                            </div>
-
-                            {/* Course Description */}
+                            {/* 4. 강좌 유형 뱃지 & 교육과정 소개 */}
                             <div>
+                                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                    {selectedCourseDetail.course.eduTypeFg === 'F' ? (
+                                        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200">
+                                            무료 강좌
+                                        </span>
+                                    ) : (
+                                        <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg border border-amber-200">
+                                            유료 강좌 · ₩ {selectedCourseDetail.course.courseAmt?.toLocaleString()}원
+                                        </span>
+                                    )}
+                                    <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">
+                                        활동분야 : {getFieldNm(selectedCourseDetail.ambassador.activityFieldNm || selectedCourseDetail.ambassador.activityField)}
+                                    </span>
+                                    <span className="text-xs text-slate-400 font-medium ml-auto">
+                                        총 {selectedCourseDetail.lessons.length}강
+                                    </span>
+                                </div>
+
                                 <h4 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                                     <FaInfoCircle className="text-[#00B2D2]" />
                                     교육과정 소개
@@ -877,40 +818,76 @@ const Membersador: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="space-y-2.5">
-                                        {selectedCourseDetail.lessons.map((lesson, idx) => (
-                                            <div
-                                                key={lesson.lessonNo}
-                                                className="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-2xs hover:border-slate-300 transition-all flex items-center gap-3.5"
-                                            >
-                                                {/* Seq badge */}
-                                                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 font-black text-xs flex items-center justify-center shrink-0">
-                                                    {lesson.lessonSeq || (idx + 1)}
-                                                </div>
+                                        {selectedCourseDetail.lessons.map((lesson, idx) => {
+                                            const isOwner = selectedCourseDetail.course.userId === currentUserId;
+                                            const app = getApplicationForCourse(selectedCourseDetail.course.courseNo);
+                                            const isApproved = isOwner || app?.appStatCd === 'A';
+                                            const isPaid = selectedCourseDetail.course.eduTypeFg === 'P';
 
-                                                {/* Lesson info */}
-                                                <div className="flex-1 min-w-0">
-                                                    <h5 className="text-xs sm:text-sm font-bold text-slate-900 truncate mb-0.5">
-                                                        {lesson.lessonTitle}
-                                                    </h5>
-                                                    {lesson.lessonDesc && (
-                                                        <p className="text-[11px] text-slate-500 line-clamp-1 mb-1">{lesson.lessonDesc}</p>
-                                                    )}
-                                                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                                        <span className="flex items-center gap-1">
-                                                            <FaClock className="w-2.5 h-2.5" />
-                                                            {formatDuration(lesson.durationSec)}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span className="text-emerald-600 font-semibold">본강의 동영상 탑재</span>
+                                            return (
+                                                <div
+                                                    key={lesson.lessonNo}
+                                                    onClick={() => {
+                                                        // 유료 강의이고 아직 미승인(미결제) 상태인 경우 영상 재생 차단 -> 신청/결제 모달 오픈
+                                                        if (isPaid && !isApproved) {
+                                                            showAlert(
+                                                                '유료 강좌입니다. 수강 신청 및 결제 완료 후 본 강의를 시청하실 수 있습니다.',
+                                                                '수강 신청 안내',
+                                                                () => {
+                                                                    setIsDetailModalOpen(false);
+                                                                    handleOpenApplyModal(selectedCourseDetail.course);
+                                                                }
+                                                            );
+                                                            return;
+                                                        }
+
+                                                        if (!lesson.videoUrl) {
+                                                            showAlert('해당 강의의 영상 자료가 등록되어 있지 않습니다.');
+                                                            return;
+                                                        }
+
+                                                        setVideoModal({
+                                                            isOpen: true,
+                                                            title: `[${lesson.lessonSeq || (idx + 1)}강] ${lesson.lessonTitle}`,
+                                                            url: lesson.videoUrl.startsWith('http') ? lesson.videoUrl : `/uploads${lesson.videoUrl}`
+                                                        });
+                                                    }}
+                                                    className="p-3.5 bg-white border border-slate-200 rounded-2xl shadow-2xs hover:border-[#00B2D2] hover:bg-sky-50/20 transition-all flex items-center gap-3.5 cursor-pointer group/lesson"
+                                                >
+                                                    {/* Seq badge */}
+                                                    <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover/lesson:bg-[#00B2D2] group-hover/lesson:text-white text-slate-700 font-black text-xs flex items-center justify-center shrink-0 transition-colors">
+                                                        {lesson.lessonSeq || (idx + 1)}
+                                                    </div>
+
+                                                    {/* Lesson info */}
+                                                    <div className="flex-1 min-w-0">
+                                                        <h5 className="text-xs sm:text-sm font-bold text-slate-900 group-hover/lesson:text-[#00B2D2] truncate mb-0.5 transition-colors">
+                                                            {lesson.lessonTitle}
+                                                        </h5>
+                                                        {lesson.lessonDesc && (
+                                                            <p className="text-[11px] text-slate-500 line-clamp-1 mb-1">{lesson.lessonDesc}</p>
+                                                        )}
+                                                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                                            <span className="flex items-center gap-1">
+                                                                <FaClock className="w-2.5 h-2.5" />
+                                                                {formatDuration(lesson.durationSec)}
+                                                            </span>
+                                                            <span>•</span>
+                                                            {isPaid && !isApproved ? (
+                                                                <span className="text-amber-600 font-semibold">결제 후 시청 가능</span>
+                                                            ) : (
+                                                                <span className="text-[#00BDF8] font-bold">강의 시청하기</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Lesson Play Icon */}
+                                                    <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 group-hover/lesson:bg-[#00B2D2] text-slate-400 group-hover/lesson:text-white flex items-center justify-center transition-all shadow-xs">
+                                                        <FaPlay className="w-2.5 h-2.5 ml-0.5" />
                                                     </div>
                                                 </div>
-
-                                                {/* Lesson Icon */}
-                                                <div className="shrink-0 p-2 text-slate-400">
-                                                    <FaVideo className="w-4 h-4 text-slate-400" />
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -1064,8 +1041,10 @@ const Membersador: React.FC = () => {
                             <video
                                 src={videoModal.url}
                                 controls
+                                controlsList="nodownload"
+                                onContextMenu={(e) => e.preventDefault()}
                                 autoPlay
-                                className="w-full h-full object-contain"
+                                className="w-full h-full object-contain select-none"
                             />
                         </div>
                     </div>

@@ -655,26 +655,54 @@ public class AmbassadorService {
         }
 
         if (course.getUserId().equals(userId)) {
-            throw new RuntimeException("본인이 개설한 교육과정에는 수강 신청할 수 없습니다.");
+            // 본인이 개설한 강좌인 경우에도 'A'(승인완료) 상태로 등록/반환
+            List<BnEduApplication> existing = applicationRepository.findByCourseNoAndUserId(courseNo, userId);
+            if (!existing.isEmpty()) {
+                BnEduApplication app = existing.get(0);
+                if (!"A".equals(app.getAppStatCd())) {
+                    app.setAppStatCd("A");
+                    app.setUpdDtime(nowDtime());
+                    app.setUpdId(userId);
+                    return applicationRepository.save(app);
+                }
+                return app;
+            }
+            BnEduApplication ownerApp = BnEduApplication.builder()
+                    .courseNo(courseNo)
+                    .userId(userId)
+                    .paymentAmt(0)
+                    .paymentStatFg("F")
+                    .appStatCd("A") // 즉시 승인
+                    .insDtime(nowDtime())
+                    .insId(userId)
+                    .build();
+            return applicationRepository.save(ownerApp);
         }
 
-        // 중복 신청 방지 (승인대기 또는 승인완료 상태인 경우)
+        // 이미 신청된 내역이 있는지 확인 (있으면 그대로 반환하여 멱등성 보장)
         List<BnEduApplication> existing = applicationRepository.findByCourseNoAndUserId(courseNo, userId);
-        boolean hasActive = existing.stream().anyMatch(a -> "R".equals(a.getAppStatCd()) || "A".equals(a.getAppStatCd()));
-        if (hasActive) {
-            throw new RuntimeException("이미 수강 신청하였거나 수강 중인 교육과정입니다.");
+        if (!existing.isEmpty()) {
+            BnEduApplication app = existing.get(0);
+            if (!"A".equals(app.getAppStatCd())) {
+                app.setAppStatCd("A");
+                app.setUpdDtime(nowDtime());
+                app.setUpdId(userId);
+                return applicationRepository.save(app);
+            }
+            return app;
         }
 
         String now = nowDtime();
         boolean isPaid = "P".equals(course.getEduTypeFg());
 
+        // 무조건 결제완료/무상 및 승인완료('A') 처리 (무료: F/A, 유료: P/A)
         BnEduApplication app = BnEduApplication.builder()
                 .courseNo(courseNo)
                 .userId(userId)
-                .paymentAmt(isPaid ? course.getCourseAmt() : 0)
+                .paymentAmt(isPaid ? (course.getCourseAmt() != null ? course.getCourseAmt() : 0) : 0)
                 .paymentPgKey(null)
-                .paymentStatFg(isPaid ? "R" : "F") // R: 결제대기, F: 무상
-                .appStatCd("R") // R: 승인대기
+                .paymentStatFg(isPaid ? "P" : "F") // P: 결제완료, F: 무상
+                .appStatCd("A")                    // A: 승인완료 (즉시 자동 승인)
                 .appRejectBigo(dto != null ? dto.getAppMemo() : null)
                 .insDtime(now)
                 .insId(userId)
@@ -682,25 +710,7 @@ public class AmbassadorService {
                 .updId(userId)
                 .build();
 
-        BnEduApplication saved = applicationRepository.save(app);
-
-        // 푸시 발송: 해당 엠버서더(강사)에게 수강 신청 알림 전송
-        try {
-            User applicant = userRepository.findByUserId(userId);
-            String applicantName = applicant != null ? (applicant.getUserNickNm() != null && !applicant.getUserNickNm().isEmpty() ? applicant.getUserNickNm() : applicant.getUserNm()) : userId;
-            pushService.sendPush(
-                    course.getUserId(),
-                    "새로운 교육 수강 신청",
-                    applicantName + "님이 [" + course.getCourseTitle() + "] 교육과정을 신청했습니다. 확인 및 승인 부탁드립니다.",
-                    "/main/ambassador/manage",
-                    "EDU_APPLY_REQ",
-                    "AMBASSADOR"
-            );
-        } catch (Exception e) {
-            log.error("엠버서더 수강 신청 푸시 알림 발송 실패: ", e);
-        }
-
-        return saved;
+        return applicationRepository.save(app);
     }
 
     @Transactional(readOnly = true)

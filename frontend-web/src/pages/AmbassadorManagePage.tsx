@@ -1627,8 +1627,10 @@ const AmbassadorManagePage: React.FC = () => {
                             <video
                                 src={videoPlayerModal.videoUrl}
                                 controls
+                                controlsList="nodownload"
+                                onContextMenu={(e) => e.preventDefault()}
                                 autoPlay
-                                className="w-full max-h-[65vh] object-contain rounded-2xl"
+                                className="w-full max-h-[65vh] object-contain rounded-2xl select-none"
                             />
                         </div>
                         <div className="flex justify-between items-center pt-1 text-xs">
