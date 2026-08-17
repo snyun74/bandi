@@ -17,8 +17,8 @@ public class AdminPartnerController {
     private final AdminPartnerService adminPartnerService;
 
     @GetMapping
-    public ResponseEntity<List<BnPartner>> getPendingPartners() {
-        return ResponseEntity.ok(adminPartnerService.getPendingPartners());
+    public ResponseEntity<List<BnPartner>> getPartners() {
+        return ResponseEntity.ok(adminPartnerService.getPartnersForAdmin());
     }
 
     @PutMapping("/{partnerNo}/status")

@@ -44,6 +44,10 @@ import MyProfile from './pages/MyProfile';
 import MyScrapList from './pages/MyScrapList';
 import MyPostList from './pages/MyPostList';
 import JamScheduleCapture from './pages/JamScheduleCapture';
+import JamStudioList from './pages/JamStudioList';
+import JamStudioDetail from './pages/JamStudioDetail';
+import JamRoomBook from './pages/JamRoomBook';
+import JamRoomConfirm from './pages/JamRoomConfirm';
 import JamVoteDetail from './pages/JamVoteDetail';
 import JamVoteStatus from './pages/JamVoteStatus';
 import JamVoteList from './pages/JamVoteList';
@@ -54,13 +58,17 @@ import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
 import AdminQaPage from './pages/AdminQaPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminNoticeManagement from './pages/AdminNoticeManagement';
+import AmbassadorApplyPage from './pages/AmbassadorApplyPage';
+import AmbassadorManagePage from './pages/AmbassadorManagePage';
 import AdminReportBlockPage from './pages/AdminReportBlockPage';
 import AdminJamManagement from './pages/AdminJamManagement';
 import GatheringManagement from './pages/GatheringManagement';
 import GatheringMatchResult from './pages/GatheringMatchResult';
 import ApplyPartnerPage from './pages/ApplyPartnerPage';
+import PartnerInfoPage from './pages/PartnerInfoPage';
 import PartnerManagePage from './pages/PartnerManagePage';
 import AdminPartnerApprovalPage from './pages/AdminPartnerApprovalPage';
+import AdminAmbassadorPage from './pages/AdminAmbassadorPage';
 import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
@@ -179,8 +187,12 @@ function App() {
             <Route path="admin/report-block" element={<AdminReportBlockPage />} />
             <Route path="admin/jams" element={<AdminJamManagement />} />
             <Route path="admin/partner-approval" element={<AdminPartnerApprovalPage />} />
+            <Route path="admin/ambassadors" element={<AdminAmbassadorPage />} />
             <Route path="partner/apply" element={<ApplyPartnerPage />} />
+            <Route path="partner/info" element={<PartnerInfoPage />} />
             <Route path="partner/manage" element={<PartnerManagePage />} />
+            <Route path="ambassador/apply" element={<AmbassadorApplyPage />} />
+            <Route path="ambassador/manage" element={<AmbassadorManagePage />} />
             <Route path="profile/scraps" element={<MyScrapList />} />
             <Route path="profile/posts" element={<MyPostList />} />
             <Route path="profile/post/create" element={<SnsPostCreate />} />
@@ -234,6 +246,10 @@ function App() {
             <Route path="board/write/:boardTypeFg" element={<BoardWrite />} />
             <Route path="board/detail/:boardNo" element={<BoardDetail />} />
             <Route path="jam/schedule/:jamId" element={<JamScheduleCapture />} />
+            <Route path="jam/reservation/studios" element={<JamStudioList />} />
+            <Route path="jam/reservation/studios/:studioNo" element={<JamStudioDetail />} />
+            <Route path="jam/reservation/studios/:studioNo/rooms/:roomNo/book" element={<JamRoomBook />} />
+            <Route path="jam/reservation/studios/:studioNo/rooms/:roomNo/confirm" element={<JamRoomConfirm />} />
           </Route>
 
           {/* Full Screen Feeds (Outside MainLayout to hide Header/Footer) */}

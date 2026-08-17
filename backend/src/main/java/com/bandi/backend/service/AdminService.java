@@ -2,9 +2,11 @@ package com.bandi.backend.service;
 
 import com.bandi.backend.dto.AdBannerDto;
 import com.bandi.backend.dto.AdminClanApprovalDto;
+import com.bandi.backend.dto.UploadFileResultDto;
 import com.bandi.backend.entity.cm.CmAdBanner;
 import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.entity.clan.ClanGroup;
+import com.bandi.backend.enums.FileCategory;
 import com.bandi.backend.repository.CmAdBannerRepository;
 import com.bandi.backend.repository.CmAttachmentRepository;
 import com.bandi.backend.repository.ClanGroupRepository;
@@ -19,12 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,6 +40,7 @@ public class AdminService {
     private final BoardRepository boardRepository;
     private final ClanBoardRepository clanBoardRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     public List<AdBannerDto> getBanners() {
         return cmAdBannerRepository.findAllByOrderByInsDtimeDesc().stream()
@@ -101,50 +101,19 @@ public class AdminService {
 
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
-        try {
-            if (file != null && !file.isEmpty()) {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(userId);
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(userId);
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                banner.setAttachNo(savedAttachment.getAttachNo());
-            }
-
-            // Update Banner details
-            if (linkUrl != null) {
-                // Front에서 빈칸으로 보내면 삭제, 값이 있으면 저장
-                banner.setAdBannerLinkUrl(linkUrl.trim().isEmpty() ? null : linkUrl.trim());
-            }
-            banner.setUpdDtime(currentDateTime);
-            banner.setUpdId(userId);
-            cmAdBannerRepository.save(banner);
-
-        } catch (IOException e) {
-            log.error("Failed to upload banner file", e);
-            throw new RuntimeException("Banner file upload failed", e);
+        if (file != null && !file.isEmpty()) {
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.ADMIN, userId);
+            banner.setAttachNo(uploadResult.getAttachNo());
         }
+
+        // Update Banner details
+        if (linkUrl != null) {
+            // Front에서 빈칸으로 보내면 삭제, 값이 있으면 저장
+            banner.setAdBannerLinkUrl(linkUrl.trim().isEmpty() ? null : linkUrl.trim());
+        }
+        banner.setUpdDtime(currentDateTime);
+        banner.setUpdId(userId);
+        cmAdBannerRepository.save(banner);
     }
 
     // --- Clan Approval Management ---

@@ -6,8 +6,9 @@ interface PostItem {
     postId: number;
     userId: string;
     userNickNm: string;
-    contentPreview: string; // 사실상 본문 전체 (최대 50자였으나 DTO 수정으로 확인 필요)
+    contentPreview: string;
     imagePaths: string[];
+    editDataList?: string[];
     publicTypeCd: string;
     insDtime: string;
 }
@@ -122,21 +123,68 @@ const PostFeedItem: React.FC<{ post: PostItem }> = ({ post }) => {
                 className="relative w-full aspect-[4/5] bg-black flex overflow-x-scroll snap-x snap-mandatory scrollbar-none"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-                {post.imagePaths.map((path, idx) => (
-                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center">
-                        <img 
-                            src={path} 
-                            alt={`post-${idx}`} 
-                            className="w-full h-full object-contain" 
-                            style={{ 
-                                imageRendering: 'auto',
-                                WebkitBackfaceVisibility: 'hidden',
-                                backfaceVisibility: 'hidden',
-                                transform: 'translateZ(0)' // GPU 가속 유도
-                            }}
-                        />
-                    </div>
-                ))}
+                {post.imagePaths.map((path, idx) => {
+                    let imgEdit: any = null;
+                    if (post.editDataList && post.editDataList[idx]) {
+                        try {
+                            imgEdit = JSON.parse(post.editDataList[idx]);
+                        } catch (e) {}
+                    }
+                    const filterCss = imgEdit?.filter && imgEdit.filter !== 'none' ? (
+                        imgEdit.filter === 'blur' ? 'blur(3px)' :
+                        imgEdit.filter === 'bright' ? 'brightness(1.25)' :
+                        imgEdit.filter === 'dark' ? 'brightness(0.75)' :
+                        imgEdit.filter === 'grayscale' ? 'grayscale(1)' :
+                        imgEdit.filter === 'sepia' ? 'sepia(0.8)' :
+                        imgEdit.filter === 'warm' ? 'sepia(0.3) brightness(1.05) saturate(1.2)' :
+                        imgEdit.filter === 'cool' ? 'hue-rotate(30deg) brightness(1.05) saturate(0.9)' : 'none'
+                    ) : 'none';
+                    const rotation = imgEdit?.rotation || 0;
+                    const flipH = imgEdit?.flipH || false;
+
+                    return (
+                        <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center relative overflow-hidden bg-black">
+                            <div 
+                                className="w-full h-full flex items-center justify-center transition-transform duration-200"
+                                style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
+                            >
+                                <img 
+                                    src={path} 
+                                    alt={`post-${idx}`} 
+                                    className="w-full h-full object-contain" 
+                                    style={{ 
+                                        filter: filterCss,
+                                        imageRendering: 'auto',
+                                        WebkitBackfaceVisibility: 'hidden',
+                                        backfaceVisibility: 'hidden',
+                                        transform: 'translateZ(0)' // GPU 가속 유도
+                                    }}
+                                />
+                            </div>
+                            {imgEdit?.textOverlay?.text && (
+                                <div 
+                                    className="absolute flex justify-center pointer-events-none z-10"
+                                    style={{
+                                        top: `${imgEdit.textOverlay.posY || 50}%`,
+                                        left: `${imgEdit.textOverlay.posX || 50}%`,
+                                        transform: 'translate(-50%, -50%)'
+                                    }}
+                                >
+                                    <span 
+                                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
+                                        style={{
+                                            color: imgEdit.textOverlay.color || '#ffffff',
+                                            backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                                            fontSize: `${imgEdit.textOverlay.fontSize || 22}px`
+                                        }}
+                                    >
+                                        {imgEdit.textOverlay.text}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
 
                 {/* Left/Right Navigation Indicators (Optional visual hint) */}
                 {post.imagePaths.length > 1 && (

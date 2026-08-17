@@ -44,4 +44,7 @@ public class BnStudio {
 
     @Column(name = "upd_id", length = 20, nullable = false)
     private String updId;
+
+    @Column(name = "studio_type_cd", length = 2)
+    private String studioTypeCd;
 }

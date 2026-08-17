@@ -3,6 +3,8 @@ package com.bandi.backend.service;
 import com.bandi.backend.dto.ChatMessageDto;
 import com.bandi.backend.dto.ChatMessageCreateDto;
 import com.bandi.backend.dto.ChatRoomListDto;
+import com.bandi.backend.dto.UploadFileResultDto;
+import com.bandi.backend.enums.FileCategory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class ChatService {
 
   private final com.bandi.backend.repository.BandChatMessageRepository bandChatMessageRepository;
   private final com.bandi.backend.repository.CmGrpChatMessageRepository cmGrpChatMessageRepository;
+  private final FileStorageService fileStorageService;
 
   @org.springframework.beans.factory.annotation.Autowired
   private com.bandi.backend.service.PushService pushService;
@@ -1001,45 +1004,12 @@ public class ChatService {
       throw new RuntimeException("File is empty");
     }
 
-    String currentDateTime = java.time.LocalDateTime.now()
-        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.CHAT, userId);
 
-    try {
-      String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-      java.io.File dir = new java.io.File(uploadDir);
-      if (!dir.exists()) {
-        dir.mkdirs();
-      }
-
-      String originalFileName = file.getOriginalFilename();
-      String extension = "";
-      if (originalFileName != null && originalFileName.contains(".")) {
-        extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-      }
-      String savedFileName = java.util.UUID.randomUUID().toString() + extension;
-      java.io.File dest = new java.io.File(dir, savedFileName);
-      file.transferTo(dest);
-
-      com.bandi.backend.entity.common.CmAttachment attachment = new com.bandi.backend.entity.common.CmAttachment();
-      attachment.setFileName(originalFileName);
-      attachment.setFilePath("/api/common_images/" + savedFileName);
-      attachment.setFileSize(file.getSize());
-      attachment.setMimeType(file.getContentType());
-      attachment.setInsDtime(currentDateTime);
-      attachment.setInsId(userId);
-      attachment.setUpdDtime(currentDateTime);
-      attachment.setUpdId(userId);
-
-      com.bandi.backend.entity.common.CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-
-      return java.util.Map.of(
-          "attachNo", savedAttachment.getAttachNo(),
-          "filePath", savedAttachment.getFilePath(),
-          "fileName", savedAttachment.getFileName());
-
-    } catch (java.io.IOException e) {
-      throw new RuntimeException("Failed to store file", e);
-    }
+    return java.util.Map.of(
+        "attachNo", uploadResult.getAttachNo(),
+        "filePath", uploadResult.getRelativePath(),
+        "fileName", uploadResult.getOriginalName());
   }
 
   @Transactional

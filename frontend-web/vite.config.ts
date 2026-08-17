@@ -38,11 +38,43 @@ export default defineConfig({
         target: 'http://localhost:8084',
         changeOrigin: true,
       },
-      '/common_images': {
+      '/uploads': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/profile': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/board': {
         target: 'http://localhost:8084',
         changeOrigin: true,
       },
       '/shorts': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/sns': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/chat': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/clan': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/band': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/common_images': {
         target: 'http://localhost:8084',
         changeOrigin: true,
       },

@@ -9,6 +9,7 @@ interface TextOverlay {
     bgColor: string;
     fontSize: number;
     posY: number; // 10% ~ 90%
+    posX: number; // 10% ~ 90%
 }
 
 interface ImageEditState {
@@ -45,7 +46,8 @@ const DEFAULT_EDIT_STATE: ImageEditState = {
         color: '#ffffff',
         bgColor: 'rgba(0,0,0,0.5)',
         fontSize: 24,
-        posY: 50
+        posY: 50,
+        posX: 50
     }
 };
 
@@ -189,7 +191,7 @@ const SnsPostCreate: React.FC = () => {
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
 
-                    const posX = drawW / 2;
+                    const posX = (drawW * (textOverlay.posX ?? 50)) / 100;
                     const posY = (drawH * textOverlay.posY) / 100;
 
                     // 배경 박스
@@ -382,11 +384,15 @@ const SnsPostCreate: React.FC = () => {
                                     {/* 텍스트 오버레이 라이브 프리뷰 (회전과 독립적으로 위에 표시) */}
                                     {curEdit.textOverlay.text && (
                                         <div 
-                                            className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
-                                            style={{ top: `${curEdit.textOverlay.posY}%`, transform: 'translateY(-50%)' }}
+                                            className="absolute flex justify-center pointer-events-none z-10"
+                                            style={{
+                                                top: `${curEdit.textOverlay.posY}%`,
+                                                left: `${curEdit.textOverlay.posX ?? 50}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                            }}
                                         >
                                             <span 
-                                                className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90%] break-words"
+                                                className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90vw] break-words"
                                                 style={{
                                                     color: curEdit.textOverlay.color,
                                                     backgroundColor: curEdit.textOverlay.bgColor,
@@ -550,7 +556,7 @@ const SnsPostCreate: React.FC = () => {
                                             </div>
 
                                             {curEdit.textOverlay.text && (
-                                                <div className="grid grid-cols-2 gap-4 pt-1">
+                                                <div className="space-y-3 pt-1">
                                                     <div>
                                                         <label className="text-[12px] font-bold text-gray-500 block mb-1">글자 색상</label>
                                                         <div className="flex gap-2">
@@ -568,19 +574,35 @@ const SnsPostCreate: React.FC = () => {
                                                         </div>
                                                     </div>
 
-                                                    <div>
-                                                        <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
-                                                        <input 
-                                                            type="range"
-                                                            min="10"
-                                                            max="90"
-                                                            value={curEdit.textOverlay.posY}
-                                                            onChange={(e) => updateCurrentEdit(prev => ({
-                                                                ...prev,
-                                                                textOverlay: { ...prev.textOverlay, posY: Number(e.target.value) }
-                                                            }))}
-                                                            className="w-full accent-blue-500"
-                                                        />
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
+                                                            <input 
+                                                                type="range"
+                                                                min="10"
+                                                                max="90"
+                                                                value={curEdit.textOverlay.posY}
+                                                                onChange={(e) => updateCurrentEdit(prev => ({
+                                                                    ...prev,
+                                                                    textOverlay: { ...prev.textOverlay, posY: Number(e.target.value) }
+                                                                }))}
+                                                                className="w-full accent-blue-500"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (좌우)</label>
+                                                            <input 
+                                                                type="range"
+                                                                min="10"
+                                                                max="90"
+                                                                value={curEdit.textOverlay.posX ?? 50}
+                                                                onChange={(e) => updateCurrentEdit(prev => ({
+                                                                    ...prev,
+                                                                    textOverlay: { ...prev.textOverlay, posX: Number(e.target.value) }
+                                                                }))}
+                                                                className="w-full accent-blue-500"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}

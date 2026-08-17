@@ -8,4 +8,6 @@ public interface BnReservationRepository extends JpaRepository<BnReservation, Lo
     List<BnReservation> findByRoomNoInOrderByInsDtimeDesc(List<Long> roomNos);
     List<BnReservation> findByUserIdOrderByInsDtimeDesc(String userId);
     List<BnReservation> findByRoomNoAndUseDateOrderBySttTimeAsc(Long roomNo, String useDate);
+    List<BnReservation> findByRoomNoAndUseDateStartingWithAndResvStatFgNotIn(Long roomNo, String yearMonthPrefix, List<String> excludeStats);
+    List<BnReservation> findByRoomNoAndUseDateStartingWith(Long roomNo, String yearMonthPrefix);
 }

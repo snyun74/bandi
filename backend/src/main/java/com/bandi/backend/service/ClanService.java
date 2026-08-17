@@ -1,9 +1,11 @@
 package com.bandi.backend.service;
 
 import com.bandi.backend.dto.ClanCreateDto;
+import com.bandi.backend.dto.UploadFileResultDto;
 import com.bandi.backend.entity.clan.ClanGroup;
 import com.bandi.backend.entity.clan.ClanUser;
 import com.bandi.backend.entity.clan.ClanBoardType;
+import com.bandi.backend.enums.FileCategory;
 import com.bandi.backend.repository.ClanBoardTypeRepository;
 import com.bandi.backend.repository.ClanGroupRepository;
 import com.bandi.backend.repository.ClanUserRepository;
@@ -16,11 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +35,7 @@ public class ClanService {
     private final ClanBoardTypeRepository clanBoardTypeRepository;
     private final com.bandi.backend.repository.ClanBoardRepository clanBoardRepository;
     private final com.bandi.backend.repository.ClanChatRoomRepository clanChatRoomRepository;
+    private final FileStorageService fileStorageService;
 
     private final UserRepository userRepository;
     // private final UserAccountRepository userAccountRepository;
@@ -54,38 +54,8 @@ public class ClanService {
 
         // 1. Save File & CmAttachment if file exists
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                attachNo = savedAttachment.getAttachNo();
-
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to store file", e);
-            }
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.CLAN, dto.getUserId());
+            attachNo = uploadResult.getAttachNo();
         }
 
         // 2. Save CN_GROUP
@@ -424,40 +394,8 @@ public class ClanService {
 
         // 1. Save File & CmAttachment if file exists
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                attachNo = savedAttachment.getAttachNo();
-                System.out.println("DEBUG: Attachment saved. attachNo=" + attachNo);
-
-            } catch (IOException e) {
-                System.err.println("ERROR: Failed to save file: " + e.getMessage());
-                throw new RuntimeException("Failed to store file", e);
-            }
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.CLAN, dto.getUserId());
+            attachNo = uploadResult.getAttachNo();
         }
 
         String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -715,38 +653,8 @@ public class ClanService {
 
         // 2. Update Image if provided
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                clan.setAttachNo(savedAttachment.getAttachNo());
-
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to store file", e);
-            }
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.CLAN, dto.getUserId());
+            clan.setAttachNo(uploadResult.getAttachNo());
         }
 
         // 3. Update Text Fields
@@ -806,49 +714,24 @@ public class ClanService {
         clanBoardRepository.save(board);
 
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists()) dir.mkdirs();
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.CLAN, dto.getUserId());
 
-                String originalFileName = file.getOriginalFilename();
-                String extension = (originalFileName != null && originalFileName.contains(".")) 
-                        ? originalFileName.substring(originalFileName.lastIndexOf(".")) : "";
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-
-                // Delete old attachments and create new ClanBoardAttachment
-                java.util.List<com.bandi.backend.entity.clan.ClanBoardAttachment> oldLinks = 
-                        clanBoardAttachmentRepository.findByCnBoardNoAndAttachStatCd(boardNo, "A");
-                if (!oldLinks.isEmpty()) {
-                    clanBoardAttachmentRepository.deleteAll(oldLinks);
-                }
-
-                com.bandi.backend.entity.clan.ClanBoardAttachment newLink = new com.bandi.backend.entity.clan.ClanBoardAttachment();
-                newLink.setCnBoardNo(boardNo);
-                newLink.setAttachNo(savedAttachment.getAttachNo());
-                newLink.setAttachStatCd("A");
-                newLink.setInsDtime(currentDateTime);
-                newLink.setInsId(dto.getUserId());
-                newLink.setUpdDtime(currentDateTime);
-                newLink.setUpdId(dto.getUserId());
-                clanBoardAttachmentRepository.save(newLink);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to update file", e);
+            // Delete old attachments and create new ClanBoardAttachment
+            java.util.List<com.bandi.backend.entity.clan.ClanBoardAttachment> oldLinks =
+                    clanBoardAttachmentRepository.findByCnBoardNoAndAttachStatCd(boardNo, "A");
+            if (!oldLinks.isEmpty()) {
+                clanBoardAttachmentRepository.deleteAll(oldLinks);
             }
+
+            com.bandi.backend.entity.clan.ClanBoardAttachment newLink = new com.bandi.backend.entity.clan.ClanBoardAttachment();
+            newLink.setCnBoardNo(boardNo);
+            newLink.setAttachNo(uploadResult.getAttachNo());
+            newLink.setAttachStatCd("A");
+            newLink.setInsDtime(currentDateTime);
+            newLink.setInsId(dto.getUserId());
+            newLink.setUpdDtime(currentDateTime);
+            newLink.setUpdId(dto.getUserId());
+            clanBoardAttachmentRepository.save(newLink);
         } else if (Boolean.TRUE.equals(dto.getDeleteFile())) {
             // Delete existing attachments if user explicitly requested deletion
             java.util.List<com.bandi.backend.entity.clan.ClanBoardAttachment> oldLinks = clanBoardAttachmentRepository.findByCnBoardNoAndAttachStatCd(boardNo, "A");

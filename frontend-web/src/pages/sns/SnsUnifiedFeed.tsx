@@ -599,6 +599,7 @@ const ShortsVideoItem: React.FC<{
                 style={{ filter: filterCss }}
                 loop
                 playsInline
+                {...({ 'webkit-playsinline': 'true' } as any)}
                 onTimeUpdate={handleVideoTimeUpdate}
                 onClick={(e) => {
                     const v = e.currentTarget;
@@ -610,11 +611,15 @@ const ShortsVideoItem: React.FC<{
             {/* 자막 메타데이터 라이브 오버레이 */}
             {overlayInfo?.textOverlay?.text && (
                 <div 
-                    className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
-                    style={{ top: `${overlayInfo.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                    className="absolute flex justify-center pointer-events-none z-10"
+                    style={{
+                        top: `${overlayInfo.textOverlay.posY || 50}%`,
+                        left: `${overlayInfo.textOverlay.posX || 50}%`,
+                        transform: 'translate(-50%, -50%)'
+                    }}
                 >
                     <span 
-                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90%] break-words drop-shadow-md"
+                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
                         style={{
                             color: overlayInfo.textOverlay.color || '#ffffff',
                             backgroundColor: overlayInfo.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
@@ -719,11 +724,15 @@ const PostFeedItem: React.FC<{
                             </div>
                             {imgEdit?.textOverlay?.text && (
                                 <div 
-                                    className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
-                                    style={{ top: `${imgEdit.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                                    className="absolute flex justify-center pointer-events-none z-10"
+                                    style={{
+                                        top: `${imgEdit.textOverlay.posY || 50}%`,
+                                        left: `${imgEdit.textOverlay.posX || 50}%`,
+                                        transform: 'translate(-50%, -50%)'
+                                    }}
                                 >
                                     <span 
-                                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90%] break-words drop-shadow-md"
+                                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
                                         style={{
                                             color: imgEdit.textOverlay.color || '#ffffff',
                                             backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',

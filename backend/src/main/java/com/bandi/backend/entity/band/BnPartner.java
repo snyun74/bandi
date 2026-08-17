@@ -36,6 +36,15 @@ public class BnPartner {
     @Column(name = "partner_stat_cd", length = 20, nullable = false)
     private String partnerStatCd;
 
+    @Column(name = "bank_nm", length = 100)
+    private String bankNm;
+
+    @Column(name = "account_no", length = 50)
+    private String accountNo;
+
+    @Column(name = "account_holder_nm", length = 100)
+    private String accountHolderNm;
+
     @Column(name = "ins_dtime", length = 14, nullable = false)
     private String insDtime;
 

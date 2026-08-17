@@ -40,6 +40,7 @@ const MyProfile: React.FC = () => {
     const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
     const [partnerStatus, setPartnerStatus] = useState<string | null>(null); // null: 미신청, REQ: 대기, APR: 승인, REJ: 반려
+    const [ambassadorStatus, setAmbassadorStatus] = useState<string | null>(null); // null: 미신청, R: 대기, A: 승인, J: 반려
     const userId = localStorage.getItem('userId');
 
     useEffect(() => {
@@ -169,7 +170,29 @@ const MyProfile: React.FC = () => {
                 setPartnerStatus(null);
             }
         };
+
+        const fetchAmbassadorStatus = async () => {
+            if (!userId) return;
+            try {
+                const res = await fetch(`/api/ambassador/status?userId=${userId}`);
+                if (res.ok) {
+                    const text = await res.text();
+                    if (text && text.trim().length > 0) {
+                        const data = JSON.parse(text);
+                        setAmbassadorStatus(data && data.applyStatCd ? data.applyStatCd : null);
+                    } else {
+                        setAmbassadorStatus(null);
+                    }
+                } else {
+                    setAmbassadorStatus(null);
+                }
+            } catch {
+                setAmbassadorStatus(null);
+            }
+        };
+
         fetchPartnerStatus();
+        fetchAmbassadorStatus();
     }, [userId]);
 
     useEffect(() => {
@@ -310,7 +333,7 @@ const MyProfile: React.FC = () => {
                     {isMenuOpen && (
                         <div
                             ref={menuRef}
-                            className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200"
+                            className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200"
                         >
                             <button
                                 onClick={() => { setIsMenuOpen(false); showAlert("작업 진행중입니다."); }}
@@ -344,14 +367,23 @@ const MyProfile: React.FC = () => {
                             <div className="mx-3 h-[1px] bg-gray-100"></div>
                             {/* 합주실 파트너 메뉴 */}
                             {partnerStatus === 'A' ? (
-                                <button
-                                    onClick={() => { setIsMenuOpen(false); navigate('/main/partner/manage'); }}
-                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                                >
-                                    <span className="text-gray-400">🎸</span>
-                                    <span>합주실관리</span>
-                                    <span className="ml-auto text-[10px] bg-green-100 text-green-600 font-bold px-1.5 py-0.5 rounded-full">승인</span>
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => { setIsMenuOpen(false); navigate('/main/partner/info'); }}
+                                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                    >
+                                        <span className="text-gray-400">🏢</span>
+                                        <span>입점사정보</span>
+                                    </button>
+                                    <button
+                                        onClick={() => { setIsMenuOpen(false); navigate('/main/partner/manage'); }}
+                                        className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                    >
+                                        <span className="text-gray-400">🎸</span>
+                                        <span>합주실관리</span>
+                                        <span className="ml-auto text-[10px] bg-green-100 text-green-600 font-bold px-1.5 py-0.5 rounded-full">승인</span>
+                                    </button>
+                                </>
                             ) : partnerStatus === 'R' ? (
                                 <button
                                     className="w-full px-4 py-3 text-left text-sm text-gray-400 flex items-center gap-3 cursor-default"
@@ -379,6 +411,36 @@ const MyProfile: React.FC = () => {
                                     <span>합주입점신청</span>
                                 </button>
                             )}
+                            <div className="mx-3 h-[1px] bg-gray-100"></div>
+
+                            {/* 엠버서더 메뉴 */}
+                            <button
+                                onClick={() => { setIsMenuOpen(false); navigate('/main/ambassador/apply'); }}
+                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors"
+                            >
+                                <span className="text-amber-500 shrink-0">🏅</span>
+                                <span className="whitespace-nowrap font-medium">엠버서더 신청</span>
+                                {ambassadorStatus === 'A' ? (
+                                    <span className="ml-auto text-[10px] bg-green-100 text-green-600 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">승인</span>
+                                ) : ambassadorStatus === 'R' ? (
+                                    <span className="ml-auto text-[10px] bg-yellow-100 text-yellow-600 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">심사중</span>
+                                ) : ambassadorStatus === 'J' ? (
+                                    <span className="ml-auto text-[10px] bg-red-100 text-red-500 font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">거절됨</span>
+                                ) : null}
+                            </button>
+
+                            {/* 엠버서더 승인(A)된 회원에게만 교육강의관리 메뉴 노출 */}
+                            {ambassadorStatus === 'A' && (
+                                <button
+                                    onClick={() => { setIsMenuOpen(false); navigate('/main/ambassador/manage'); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition-colors"
+                                >
+                                    <span className="text-[#00BDF8] shrink-0">📚</span>
+                                    <span className="whitespace-nowrap font-medium">교육강의관리</span>
+                                    <span className="ml-auto text-[10px] bg-[#00BDF8]/10 text-[#00BDF8] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">관리</span>
+                                </button>
+                            )}
+
                             <div className="mx-3 h-[1px] bg-gray-100"></div>
                             <button
                                 onClick={handleLogoutClick}
@@ -509,6 +571,7 @@ const MyProfile: React.FC = () => {
                                                         style={{ filter: filterCss }}
                                                         muted
                                                         playsInline
+                                                        {...({ 'webkit-playsinline': 'true' } as any)}
                                                         preload="metadata"
                                                     />
                                                 ) : (
@@ -518,8 +581,12 @@ const MyProfile: React.FC = () => {
                                                 )}
                                                 {overlayInfo?.textOverlay?.text && (
                                                     <div
-                                                        className="absolute left-0 right-0 px-1 flex justify-center pointer-events-none z-10"
-                                                        style={{ top: `${overlayInfo.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                                                        className="absolute flex justify-center pointer-events-none z-10"
+                                                        style={{
+                                                            top: `${overlayInfo.textOverlay.posY || 50}%`,
+                                                            left: `${overlayInfo.textOverlay.posX || 50}%`,
+                                                            transform: 'translate(-50%, -50%)'
+                                                        }}
                                                     >
                                                         <span
                                                             className="px-1 py-0.5 rounded text-center max-w-full break-words font-bold"
@@ -565,8 +632,12 @@ const MyProfile: React.FC = () => {
                                                 )}
                                                 {imgEdit?.textOverlay?.text && (
                                                     <div
-                                                        className="absolute left-0 right-0 px-1 flex justify-center pointer-events-none z-10"
-                                                        style={{ top: `${imgEdit.textOverlay.posY || 50}%`, transform: 'translateY(-50%)' }}
+                                                        className="absolute flex justify-center pointer-events-none z-10"
+                                                        style={{
+                                                            top: `${imgEdit.textOverlay.posY || 50}%`,
+                                                            left: `${imgEdit.textOverlay.posX || 50}%`,
+                                                            transform: 'translate(-50%, -50%)'
+                                                        }}
                                                     >
                                                         <span
                                                             className="px-1 py-0.5 rounded text-center max-w-full break-words font-bold"

@@ -671,8 +671,27 @@ const ClanJamDetail: React.FC = () => {
                         {/* Reservation */}
                         <div className="bg-white rounded-2xl p-4 shadow-sm">
                             <h3 className="text-[#003C48] font-bold text-sm mb-3">합주실 예약</h3>
-                            <button className="w-full bg-gray-200 text-gray-400 font-bold py-2.5 rounded-xl shadow-sm text-[14px] cursor-not-allowed" disabled>
-                                합주실 보러가기 (작업 진행중)
+                            <button
+                                onClick={() => {
+                                    if (!bandDetail.isConfirmed) {
+                                        showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                        return;
+                                    }
+                                    const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                                    if (!isMember) {
+                                        showAlert("합주 참여자만 이용할 수 있습니다.");
+                                        return;
+                                    }
+                                    sessionStorage.setItem('currentJamTitle', bandDetail.title || bandDetail.songTitle || '합주 모임');
+                                    sessionStorage.setItem('currentJamNo', String(bandDetail.id || jamId));
+                                    navigate('/main/jam/reservation/studios');
+                                }}
+                                className={`w-full font-bold py-2.5 rounded-xl shadow-sm text-[14px] transition-colors ${bandDetail.isConfirmed && bandDetail.roles.some(r => r.isCurrentUser)
+                                    ? 'bg-[#00BDF8] text-white hover:bg-[#00a8df]'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    }`}
+                            >
+                                합주실 보러가기
                             </button>
                         </div>
 

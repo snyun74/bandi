@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell, FaMusic, FaStore } from 'react-icons/fa';
+import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell, FaMusic, FaStore, FaMedal } from 'react-icons/fa';
 
 const AdminPage: React.FC = () => {
     const navigate = useNavigate();
@@ -10,6 +10,7 @@ const AdminPage: React.FC = () => {
         reportCount: 0
     });
     const [pendingPartnerCount, setPendingPartnerCount] = useState(0);
+    const [pendingAmbassadorCount, setPendingAmbassadorCount] = useState(0);
     const [userStats, setUserStats] = useState<{ total: number; male: number; female: number; other: number }>({
         total: 0,
         male: 0,
@@ -37,7 +38,14 @@ const AdminPage: React.FC = () => {
                 const partnerRes = await fetch('/api/admin/partners');
                 if (partnerRes.ok) {
                     const partnerData = await partnerRes.json();
-                    setPendingPartnerCount(partnerData.length);
+                    setPendingPartnerCount(partnerData.filter((p: any) => p.partnerStatCd === 'R').length);
+                }
+
+                // Fetch Pending Ambassador Count
+                const ambassadorRes = await fetch('/api/admin/ambassadors/pending-count');
+                if (ambassadorRes.ok) {
+                    const ambassadorData = await ambassadorRes.json();
+                    setPendingAmbassadorCount(ambassadorData.pendingCount || 0);
                 }
             } catch (error) {
                 console.error("Failed to fetch admin dashboard counts", error);
@@ -55,6 +63,7 @@ const AdminPage: React.FC = () => {
         { id: 'report-block', label: '신고/차단관리', icon: <FaUserShield size={24} />, path: '/main/admin/report-block', count: counts.reportCount },
         { id: 'jam-list', label: '합주목록', icon: <FaMusic size={24} />, path: '/main/admin/jams' },
         { id: 'partner-approval', label: '합주실입점승인', icon: <FaStore size={24} />, path: '/main/admin/partner-approval', count: pendingPartnerCount },
+        { id: 'ambassador-approval', label: '엠버서더승인관리', icon: <FaMedal size={24} className="text-amber-500" />, path: '/main/admin/ambassadors', count: pendingAmbassadorCount },
     ];
 
     return (

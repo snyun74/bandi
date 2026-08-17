@@ -4,6 +4,7 @@ import com.bandi.backend.dto.*;
 import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.entity.member.User;
 import com.bandi.backend.entity.sns.*;
+import com.bandi.backend.enums.FileCategory;
 import com.bandi.backend.repository.*;
 import com.bandi.backend.utils.FileStorageUtil;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class SnsService {
     private final CmAttachmentRepository cmAttachmentRepository;
     private final ShortsRepository shortsRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     private final PostLikeRepository postLikeRepository;
     private final PostViewRepository postViewRepository;
@@ -70,43 +72,19 @@ public class SnsService {
             MultipartFile file = files.get(i);
             if (file.isEmpty()) continue;
 
-            try {
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
+            com.bandi.backend.dto.UploadFileResultDto fileResult = fileStorageService.storeFile(file, FileCategory.SNS, dto.getUserId());
 
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-
-                PostAttachment postAttachment = new PostAttachment();
-                postAttachment.setPostId(savedPost.getPostId());
-                postAttachment.setAttachNo(savedAttachment.getAttachNo());
-                postAttachment.setPostStatCd("A");
-                postAttachment.setInsDtime(currentDateTime);
-                postAttachment.setUpdDtime(currentDateTime);
-                if (dto.getEditDataList() != null && i < dto.getEditDataList().size()) {
-                    postAttachment.setEditData(dto.getEditDataList().get(i));
-                }
-
-                postAttachmentRepository.save(postAttachment);
-
-            } catch (IOException e) {
-                throw new RuntimeException("게시물 이미지 업로드 중 오류가 발생했습니다.", e);
+            PostAttachment postAttachment = new PostAttachment();
+            postAttachment.setPostId(savedPost.getPostId());
+            postAttachment.setAttachNo(fileResult.getAttachNo());
+            postAttachment.setPostStatCd("A");
+            postAttachment.setInsDtime(currentDateTime);
+            postAttachment.setUpdDtime(currentDateTime);
+            if (dto.getEditDataList() != null && i < dto.getEditDataList().size()) {
+                postAttachment.setEditData(dto.getEditDataList().get(i));
             }
+
+            postAttachmentRepository.save(postAttachment);
         }
     }
 
@@ -261,81 +239,28 @@ public class SnsService {
 
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
-        try {
-            String shortsDirStr = FileStorageUtil.getShortsDir();
-            File shortsDir = new File(shortsDirStr);
-            if (!shortsDir.exists()) {
-                shortsDir.mkdirs();
-            }
+        com.bandi.backend.dto.UploadFileResultDto videoResult = fileStorageService.storeFile(videoFile, FileCategory.SHORTS, dto.getUserId());
 
-            String videoExt = "";
-            String videoOrigName = videoFile.getOriginalFilename();
-            if (videoOrigName != null && videoOrigName.contains(".")) {
-                videoExt = videoOrigName.substring(videoOrigName.lastIndexOf("."));
-            }
-            String videoSavedName = UUID.randomUUID().toString() + videoExt;
-            File videoDest = new File(shortsDir, videoSavedName);
-            videoFile.transferTo(videoDest);
-
-            CmAttachment videoAttach = new CmAttachment();
-            videoAttach.setFileName(videoOrigName);
-            videoAttach.setFilePath("/api/shorts/" + videoSavedName);
-            videoAttach.setFileSize(videoFile.getSize());
-            videoAttach.setMimeType(videoFile.getContentType());
-            videoAttach.setInsDtime(currentDateTime);
-            videoAttach.setInsId(dto.getUserId());
-            videoAttach.setUpdDtime(currentDateTime);
-            videoAttach.setUpdId(dto.getUserId());
-
-            CmAttachment savedVideoAttach = cmAttachmentRepository.save(videoAttach);
-
-            CmAttachment savedThumbAttach = null;
-            if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-                String uploadDir = FileStorageUtil.getUploadDir();
-                File thumbDir = new File(uploadDir);
-                if (!thumbDir.exists()) thumbDir.mkdirs();
-
-                String thumbExt = "";
-                String thumbOrigName = thumbnailFile.getOriginalFilename();
-                if (thumbOrigName != null && thumbOrigName.contains(".")) {
-                    thumbExt = thumbOrigName.substring(thumbOrigName.lastIndexOf("."));
-                }
-                String thumbSavedName = UUID.randomUUID().toString() + thumbExt;
-                File thumbDest = new File(thumbDir, thumbSavedName);
-                thumbnailFile.transferTo(thumbDest);
-
-                CmAttachment thumbAttach = new CmAttachment();
-                thumbAttach.setFileName(thumbOrigName);
-                thumbAttach.setFilePath("/api/common_images/" + thumbSavedName);
-                thumbAttach.setFileSize(thumbnailFile.getSize());
-                thumbAttach.setMimeType(thumbnailFile.getContentType());
-                thumbAttach.setInsDtime(currentDateTime);
-                thumbAttach.setInsId(dto.getUserId());
-                thumbAttach.setUpdDtime(currentDateTime);
-                thumbAttach.setUpdId(dto.getUserId());
-
-                savedThumbAttach = cmAttachmentRepository.save(thumbAttach);
-            }
-
-            Shorts shorts = new Shorts();
-            shorts.setUserId(dto.getUserId());
-            shorts.setTitle(dto.getTitle());
-            shorts.setDuration(dto.getDuration() != null ? dto.getDuration() : 0);
-            shorts.setVideoAttachNo(savedVideoAttach.getAttachNo());
-            if (savedThumbAttach != null) {
-                shorts.setThumbnailAttachNo(savedThumbAttach.getAttachNo());
-            }
-            shorts.setPublicTypeCd(dto.getPublicTypeCd());
-            shorts.setOverlayData(dto.getOverlayData());
-            shorts.setShortsStatCd("A");
-            shorts.setInsDtime(currentDateTime);
-            shorts.setUpdDtime(currentDateTime);
-
-            shortsRepository.save(shorts);
-
-        } catch (IOException e) {
-            throw new RuntimeException("쇼츠 파일 업로드 중 오류가 발생했습니다.", e);
+        com.bandi.backend.dto.UploadFileResultDto thumbResult = null;
+        if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+            thumbResult = fileStorageService.storeFile(thumbnailFile, FileCategory.SHORTS, dto.getUserId());
         }
+
+        Shorts shorts = new Shorts();
+        shorts.setUserId(dto.getUserId());
+        shorts.setTitle(dto.getTitle());
+        shorts.setDuration(dto.getDuration() != null ? dto.getDuration() : 0);
+        shorts.setVideoAttachNo(videoResult.getAttachNo());
+        if (thumbResult != null) {
+            shorts.setThumbnailAttachNo(thumbResult.getAttachNo());
+        }
+        shorts.setPublicTypeCd(dto.getPublicTypeCd());
+        shorts.setOverlayData(dto.getOverlayData());
+        shorts.setShortsStatCd("A");
+        shorts.setInsDtime(currentDateTime);
+        shorts.setUpdDtime(currentDateTime);
+
+        shortsRepository.save(shorts);
     }
 
     @Transactional

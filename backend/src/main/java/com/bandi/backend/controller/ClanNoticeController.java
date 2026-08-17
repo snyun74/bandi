@@ -18,6 +18,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.bandi.backend.service.FileStorageService;
+import com.bandi.backend.enums.FileCategory;
+import com.bandi.backend.dto.UploadFileResultDto;
+
 @RestController
 @RequestMapping("/api/clans")
 @RequiredArgsConstructor
@@ -28,17 +32,7 @@ public class ClanNoticeController {
         private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
         private final com.bandi.backend.repository.ClanNoticeAttachmentRepository clanNoticeAttachmentRepository;
         private final CmScrapRepository cmScrapRepository;
-        // Assuming ClanNoticeAttachmentRepository exists or needs to be created.
-        // I saw ClanNoticeAttachment.java in file search.
-        // I will check for ClanNoticeAttachmentRepository.java existence first?
-        // User said "Board" uses CN_BOARD_ATTACHMENT. Notice should use
-        // CN_NOTICE_ATTACHMENT?
-        // I saw `entity\clan\ClanNoticeAttachment.java` in search results.
-        // I will assume repository exists or I will create it.
-        // Let's assume it doesn't exist yet and just use CmAttachment for now, or check
-        // for it.
-        // Actually I should verify repository existence.
-        // But for now I will add CmAttachmentRepository.
+        private final FileStorageService fileStorageService;
 
         @GetMapping("/{clanId}/notices")
         public ResponseEntity<List<ClanNoticeDto>> getClanNotices(
@@ -83,38 +77,8 @@ public class ClanNoticeController {
                 // 1. Save Attachment if exists
                 Long attachNo = null;
                 if (file != null && !file.isEmpty()) {
-                        try {
-                                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                                java.io.File dir = new java.io.File(uploadDir);
-                                if (!dir.exists())
-                                        dir.mkdirs();
-
-                                String originalFileName = file.getOriginalFilename();
-                                String extension = (originalFileName != null && originalFileName.contains("."))
-                                                ? originalFileName.substring(originalFileName.lastIndexOf("."))
-                                                : "";
-                                String savedFileName = java.util.UUID.randomUUID().toString() + extension;
-                                java.io.File dest = new java.io.File(dir, savedFileName);
-                                file.transferTo(dest);
-
-                                com.bandi.backend.entity.common.CmAttachment attachment = new com.bandi.backend.entity.common.CmAttachment();
-                                attachment.setFileName(originalFileName);
-                                attachment.setFilePath("/api/common_images/" + savedFileName);
-                                attachment.setFileSize(file.getSize());
-                                attachment.setMimeType(file.getContentType());
-                                attachment.setInsDtime(currentDateTime);
-                                attachment.setInsId(dto.getWriterUserId());
-                                attachment.setUpdDtime(currentDateTime);
-                                attachment.setUpdId(dto.getWriterUserId());
-
-                                com.bandi.backend.entity.common.CmAttachment savedAttachment = cmAttachmentRepository
-                                                .save(attachment);
-                                attachNo = savedAttachment.getAttachNo();
-
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                                return ResponseEntity.badRequest().body("File upload failed: " + e.getMessage());
-                        }
+                        UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.CLAN, dto.getWriterUserId());
+                        attachNo = uploadResult.getAttachNo();
                 }
 
                 ClanNotice notice = new ClanNotice();

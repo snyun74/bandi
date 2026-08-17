@@ -8,4 +8,5 @@ import java.util.List;
 public interface BnPartnerRepository extends JpaRepository<BnPartner, Long> {
     Optional<BnPartner> findFirstByUserIdOrderByInsDtimeDesc(String userId);
     List<BnPartner> findByPartnerStatCdOrderByInsDtimeDesc(String partnerStatCd);
+    List<BnPartner> findByPartnerStatCdIn(List<String> partnerStatCds);
 }

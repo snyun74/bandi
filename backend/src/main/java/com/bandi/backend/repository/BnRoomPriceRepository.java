@@ -7,4 +7,5 @@ import java.util.List;
 public interface BnRoomPriceRepository extends JpaRepository<BnRoomPrice, Long> {
     List<BnRoomPrice> findByRoomNoOrderByDayOfWeekAscSttTimeAsc(Long roomNo);
     void deleteByRoomNo(Long roomNo);
+    long countByRoomNo(Long roomNo);
 }

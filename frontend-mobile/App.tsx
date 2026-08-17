@@ -249,6 +249,10 @@ function App(): React.JSX.Element {
         ref={webViewRef}
         source={{ uri: currentUrl }}
         style={{ flex: 1, display: webViewError ? 'none' : 'flex' }}
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
+        allowsFullscreenVideo={false}
+        webKitAllowsInlineMediaPlayback={true}
         onLoadStart={() => setIsLoading(true)}
         onLoadEnd={(e) => {
           const url = e.nativeEvent.url;

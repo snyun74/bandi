@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import BankAccountInputGroup from '../components/common/BankAccountInputGroup';
 
 const ApplyPartnerPage: React.FC = () => {
     const navigate = useNavigate();
@@ -13,6 +14,11 @@ const ApplyPartnerPage: React.FC = () => {
     const [bizMasterNm, setBizMasterNm] = useState('');
     const [bizTelNo, setBizTelNo] = useState('');
     const [bizHpNo, setBizHpNo] = useState('');
+
+    // 입금/정산 계좌 정보
+    const [bankNm, setBankNm] = useState('');
+    const [accountNo, setAccountNo] = useState('');
+    const [accountHolderNm, setAccountHolderNm] = useState('');
 
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
@@ -39,6 +45,18 @@ const ApplyPartnerPage: React.FC = () => {
         setBizRegNo(formatted);
     };
 
+    // 휴대전화번호 입력 핸들러: 숫자만 허용, 010-XXXX-XXXX 포맷 자동 적용
+    const handleBizHpNoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+        let formatted = digits;
+        if (digits.length > 7) {
+            formatted = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+        } else if (digits.length > 3) {
+            formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
+        }
+        setBizHpNo(formatted);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -48,12 +66,23 @@ const ApplyPartnerPage: React.FC = () => {
         }
 
         if (!bizRegNoRaw || !bizNm || !bizMasterNm) {
-            showModal('필수 정보를 모두 입력해주세요.');
+            showModal('필수 사업자 정보를 모두 입력해주세요.');
             return;
         }
 
         if (bizRegNoRaw.length !== 10) {
             showModal('사업자등록번호는 숫자 10자리를 입력해주세요.');
+            return;
+        }
+
+        if (!bizHpNo.trim()) {
+            showModal('휴대전화번호를 입력해주세요.');
+            return;
+        }
+
+        const cleanHp = bizHpNo.replace(/\D/g, '');
+        if (cleanHp.length < 10 || cleanHp.length > 11) {
+            showModal('휴대전화번호는 10~11자리 숫자로 올바르게 입력해주세요.');
             return;
         }
 
@@ -67,7 +96,10 @@ const ApplyPartnerPage: React.FC = () => {
                     bizNm,
                     bizMasterNm,
                     bizTelNo,
-                    bizHpNo
+                    bizHpNo,
+                    bankNm,
+                    accountNo,
+                    accountHolderNm
                 })
             });
 
@@ -162,15 +194,33 @@ const ApplyPartnerPage: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-[#003C48] mb-1.5">휴대전화번호</label>
+                            <label className="block text-xs font-bold text-[#003C48] mb-1.5">
+                                휴대전화번호 <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="tel"
+                                inputMode="numeric"
                                 value={bizHpNo}
-                                onChange={(e) => setBizHpNo(e.target.value)}
+                                onChange={handleBizHpNoChange}
                                 placeholder="예: 010-1234-5678"
+                                maxLength={13}
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm focus:outline-none focus:border-[#00BDF8] focus:bg-white transition-all text-gray-800"
+                                required
                             />
                         </div>
+
+                        {/* 입금 / 정산 계좌 정보 (모듈화 컴포넌트) */}
+                        <BankAccountInputGroup
+                            bankNm={bankNm}
+                            accountNo={accountNo}
+                            accountHolderNm={accountHolderNm}
+                            onChangeBankNm={setBankNm}
+                            onChangeAccountNo={setAccountNo}
+                            onChangeAccountHolderNm={setAccountHolderNm}
+                            required={false}
+                            title="입금 계좌 정보"
+                            description="정산금 입금 및 계좌 확인을 위한 은행 및 계좌번호를 입력해주세요."
+                        />
 
                         <button
                             type="submit"

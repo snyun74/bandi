@@ -20,8 +20,20 @@ public class AdminPartnerService {
     private final PushService pushService;
 
     @Transactional(readOnly = true)
-    public List<BnPartner> getPendingPartners() {
-        return partnerRepository.findByPartnerStatCdOrderByInsDtimeDesc("R");
+    public List<BnPartner> getPartnersForAdmin() {
+        List<BnPartner> list = partnerRepository.findByPartnerStatCdIn(List.of("R", "A"));
+        list.sort((o1, o2) -> {
+            boolean r1 = "R".equals(o1.getPartnerStatCd());
+            boolean r2 = "R".equals(o2.getPartnerStatCd());
+            if (r1 && !r2) return -1;
+            if (!r1 && r2) return 1;
+            String dtime1 = o1.getUpdDtime() != null ? o1.getUpdDtime() : o1.getInsDtime();
+            String dtime2 = o2.getUpdDtime() != null ? o2.getUpdDtime() : o2.getInsDtime();
+            if (dtime1 == null) dtime1 = "";
+            if (dtime2 == null) dtime2 = "";
+            return dtime2.compareTo(dtime1);
+        });
+        return list;
     }
 
     @Transactional

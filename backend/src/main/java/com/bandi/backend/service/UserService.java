@@ -33,6 +33,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.bandi.backend.enums.FileCategory;
+import com.bandi.backend.dto.UploadFileResultDto;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -40,11 +43,12 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final UserSessionSkillRepository userSessionSkillRepository;
     private final CmAttachmentRepository cmAttachmentRepository;
     private final CommDetailRepository commDetailRepository;
+    private final UserSessionSkillRepository userSessionSkillRepository;
     private final BnEvaluationResultRepository bnEvaluationResultRepository;
     private final CmScrapRepository cmScrapRepository;
+    private final FileStorageService fileStorageService;
 
     public UserProfileDto getUserProfile(String userId) {
         User user = userRepository.findByUserId(userId);
@@ -134,38 +138,8 @@ public class UserService {
 
         // 2. Handle File Upload
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists())
-                    dir.mkdirs();
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                user.setAttachNo(savedAttachment.getAttachNo());
-
-            } catch (IOException e) {
-                log.error("Failed to upload file", e);
-                throw new RuntimeException("File upload failed", e);
-            }
+            UploadFileResultDto profileResult = fileStorageService.storeFile(file, FileCategory.PROFILE, dto.getUserId());
+            user.setAttachNo(profileResult.getAttachNo());
         }
 
         // 3. Handle Skills

@@ -16,6 +16,9 @@ Status: EXISTS
  - Column: ins_id | Type: varchar(20) | Nullable: NO
  - Column: upd_dtime | Type: varchar(14) | Nullable: NO
  - Column: upd_id | Type: varchar(20) | Nullable: NO
+ - Column: bank_nm | Type: varchar(50) | Nullable: YES
+ - Column: account_no | Type: varchar(50) | Nullable: YES
+ - Column: account_holder_nm | Type: varchar(50) | Nullable: YES
 --------------------------------------------------
 
 Table: bn_studio
@@ -30,6 +33,8 @@ Status: EXISTS
  - Column: ins_id | Type: varchar(20) | Nullable: NO
  - Column: upd_dtime | Type: varchar(14) | Nullable: NO
  - Column: upd_id | Type: varchar(20) | Nullable: NO
+ - Column: zipcode | Type: varchar(20) | Nullable: YES
+ - Column: studio_type_cd | Type: varchar(2) | Nullable: YES
 --------------------------------------------------
 
 Table: bn_room
@@ -80,5 +85,6 @@ Status: EXISTS
  - Column: ins_id | Type: varchar(20) | Nullable: NO
  - Column: upd_dtime | Type: varchar(14) | Nullable: NO
  - Column: upd_id | Type: varchar(20) | Nullable: NO
+ - Column: bn_no | Type: int8(19) | Nullable: YES
 --------------------------------------------------
 ==================================================

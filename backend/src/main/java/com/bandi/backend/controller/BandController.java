@@ -13,14 +13,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bandi.backend.service.FileStorageService;
+import com.bandi.backend.enums.FileCategory;
+import com.bandi.backend.dto.UploadFileResultDto;
+
 @RestController
 @RequestMapping("/api/bands")
 @RequiredArgsConstructor
 public class BandController {
 
     private final BandService bandService;
-
     private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
+    private final FileStorageService fileStorageService;
 
     @GetMapping
     public ResponseEntity<java.util.List<com.bandi.backend.dto.ClanJamListDto>> getBandList(
@@ -43,39 +47,8 @@ public class BandController {
 
         // Handle File Upload
         if (file != null && !file.isEmpty()) {
-            try {
-                String currentDateTime = java.time.LocalDateTime.now()
-                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                java.io.File dir = new java.io.File(uploadDir);
-                if (!dir.exists())
-                    dir.mkdirs();
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = (originalFileName != null && originalFileName.contains("."))
-                        ? originalFileName.substring(originalFileName.lastIndexOf("."))
-                        : "";
-                String savedFileName = java.util.UUID.randomUUID().toString() + extension;
-                java.io.File dest = new java.io.File(dir, savedFileName);
-                file.transferTo(dest);
-
-                com.bandi.backend.entity.common.CmAttachment attachment = new com.bandi.backend.entity.common.CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                com.bandi.backend.entity.common.CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                dto.setAttachNo(savedAttachment.getAttachNo());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                return ResponseEntity.badRequest().build(); // Or handle error
-            }
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.BAND, dto.getUserId());
+            dto.setAttachNo(uploadResult.getAttachNo());
         }
 
         Long bnNo = bandService.createBand(dto);
@@ -144,39 +117,8 @@ public class BandController {
 
         // Handle File Upload
         if (file != null && !file.isEmpty()) {
-            try {
-                String currentDateTime = java.time.LocalDateTime.now()
-                        .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                java.io.File dir = new java.io.File(uploadDir);
-                if (!dir.exists())
-                    dir.mkdirs();
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = (originalFileName != null && originalFileName.contains("."))
-                        ? originalFileName.substring(originalFileName.lastIndexOf("."))
-                        : "";
-                String savedFileName = java.util.UUID.randomUUID().toString() + extension;
-                java.io.File dest = new java.io.File(dir, savedFileName);
-                file.transferTo(dest);
-
-                com.bandi.backend.entity.common.CmAttachment attachment = new com.bandi.backend.entity.common.CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                com.bandi.backend.entity.common.CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                dto.setAttachNo(savedAttachment.getAttachNo());
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                return ResponseEntity.badRequest().body("파일 업로드 실패: " + e.getMessage());
-            }
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.BAND, dto.getUserId());
+            dto.setAttachNo(uploadResult.getAttachNo());
         }
 
         try {

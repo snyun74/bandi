@@ -9,6 +9,7 @@ interface TextOverlay {
     bgColor: string;
     fontSize: number;
     posY: number; // 10% ~ 90%
+    posX: number; // 10% ~ 90%
 }
 
 const FILTER_OPTIONS = [
@@ -59,7 +60,8 @@ const SnsShortsCreate: React.FC = () => {
         color: '#ffffff',
         bgColor: 'rgba(0,0,0,0.5)',
         fontSize: 24,
-        posY: 50
+        posY: 50,
+        posX: 50
     });
 
     const [isPlaying, setIsPlaying] = useState<boolean>(true);
@@ -92,7 +94,7 @@ const SnsShortsCreate: React.FC = () => {
             setVideoPreviewUrl(URL.createObjectURL(file));
             // 초기화
             setFilter('none');
-            setTextOverlay({ text: '', color: '#ffffff', bgColor: 'rgba(0,0,0,0.5)', fontSize: 24, posY: 50 });
+            setTextOverlay({ text: '', color: '#ffffff', bgColor: 'rgba(0,0,0,0.5)', fontSize: 24, posY: 50, posX: 50 });
         }
     };
 
@@ -282,11 +284,15 @@ const SnsShortsCreate: React.FC = () => {
                                     {/* 자막 라이브 프리뷰 */}
                                     {textOverlay.text && (
                                         <div
-                                            className="absolute left-0 right-0 px-4 flex justify-center pointer-events-none z-10"
-                                            style={{ top: `${textOverlay.posY}%`, transform: 'translateY(-50%)' }}
+                                            className="absolute flex justify-center pointer-events-none z-10"
+                                            style={{
+                                                top: `${textOverlay.posY}%`,
+                                                left: `${textOverlay.posX}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                            }}
                                         >
                                             <span
-                                                className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90%] break-words"
+                                                className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90vw] break-words"
                                                 style={{
                                                     color: textOverlay.color,
                                                     backgroundColor: textOverlay.bgColor,
@@ -399,7 +405,7 @@ const SnsShortsCreate: React.FC = () => {
                                             </div>
 
                                             {textOverlay.text && (
-                                                <div className="grid grid-cols-2 gap-4 pt-1">
+                                                <div className="space-y-3 pt-1">
                                                     <div>
                                                         <label className="text-[12px] font-bold text-gray-500 block mb-1">글자 색상</label>
                                                         <div className="flex gap-2">
@@ -414,16 +420,29 @@ const SnsShortsCreate: React.FC = () => {
                                                         </div>
                                                     </div>
 
-                                                    <div>
-                                                        <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
-                                                        <input
-                                                            type="range"
-                                                            min="10"
-                                                            max="90"
-                                                            value={textOverlay.posY}
-                                                            onChange={(e) => setTextOverlay(prev => ({ ...prev, posY: Number(e.target.value) }))}
-                                                            className="w-full accent-blue-500"
-                                                        />
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
+                                                            <input
+                                                                type="range"
+                                                                min="10"
+                                                                max="90"
+                                                                value={textOverlay.posY}
+                                                                onChange={(e) => setTextOverlay(prev => ({ ...prev, posY: Number(e.target.value) }))}
+                                                                className="w-full accent-blue-500"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (좌우)</label>
+                                                            <input
+                                                                type="range"
+                                                                min="10"
+                                                                max="90"
+                                                                value={textOverlay.posX ?? 50}
+                                                                onChange={(e) => setTextOverlay(prev => ({ ...prev, posX: Number(e.target.value) }))}
+                                                                className="w-full accent-blue-500"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
@@ -494,8 +513,12 @@ const SnsShortsCreate: React.FC = () => {
                                 />
                                 {textOverlay.text && (
                                     <div
-                                        className="absolute inset-x-1 flex justify-center pointer-events-none"
-                                        style={{ top: `${textOverlay.posY}%`, transform: 'translateY(-50%)' }}
+                                        className="absolute flex justify-center pointer-events-none"
+                                        style={{
+                                            top: `${textOverlay.posY}%`,
+                                            left: `${textOverlay.posX ?? 50}%`,
+                                            transform: 'translate(-50%, -50%)'
+                                        }}
                                     >
                                         <span
                                             className="px-1 py-0.5 rounded text-[8px] font-bold truncate max-w-full"

@@ -18,6 +18,9 @@ public class BnReservation {
     @Column(name = "room_no", nullable = false)
     private Long roomNo;
 
+    @Column(name = "bn_no")
+    private Long bnNo;
+
     @Column(name = "user_id", length = 20, nullable = false)
     private String userId;
 

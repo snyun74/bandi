@@ -22,6 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
+import com.bandi.backend.enums.FileCategory;
+import com.bandi.backend.dto.UploadFileResultDto;
+
 @Service
 @RequiredArgsConstructor
 public class BoardService {
@@ -36,6 +39,7 @@ public class BoardService {
     private final CmReportRepository cmReportRepository;
     private final CmBlockRepository cmBlockRepository;
     private final com.bandi.backend.repository.UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     @Transactional(readOnly = true)
     public Page<CommunityBoardListDto> getBoardList(String boardTypeFg, int page, int size, String userId) {
@@ -62,39 +66,8 @@ public class BoardService {
 
         // 1. Save File & CmAttachment if file exists
         if (file != null && !file.isEmpty()) {
-            try {
-                // Use the same upload directory as ClanService
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-
-                String originalFileName = file.getOriginalFilename();
-                String extension = "";
-                if (originalFileName != null && originalFileName.contains(".")) {
-                    extension = originalFileName.substring(originalFileName.lastIndexOf("."));
-                }
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-                attachNo = savedAttachment.getAttachNo();
-
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to store file", e);
-            }
+            UploadFileResultDto fileResult = fileStorageService.storeFile(file, FileCategory.BOARD, dto.getUserId());
+            attachNo = fileResult.getAttachNo();
         }
 
         Board board = new Board();
@@ -346,50 +319,23 @@ public class BoardService {
 
         // Handle file update
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = com.bandi.backend.utils.FileStorageUtil.getUploadDir();
-                File dir = new File(uploadDir);
-                if (!dir.exists())
-                    dir.mkdirs();
+            UploadFileResultDto uploadResult = fileStorageService.storeFile(file, FileCategory.BOARD, dto.getUserId());
 
-                String originalFileName = file.getOriginalFilename();
-                String extension = (originalFileName != null && originalFileName.contains("."))
-                        ? originalFileName.substring(originalFileName.lastIndexOf("."))
-                        : "";
-                String savedFileName = UUID.randomUUID().toString() + extension;
-                File dest = new File(dir, savedFileName);
-                file.transferTo(dest);
-
-                CmAttachment attachment = new CmAttachment();
-                attachment.setFileName(originalFileName);
-                attachment.setFilePath("/api/common_images/" + savedFileName);
-                attachment.setFileSize(file.getSize());
-                attachment.setMimeType(file.getContentType());
-                attachment.setInsDtime(currentDateTime);
-                attachment.setInsId(dto.getUserId());
-                attachment.setUpdDtime(currentDateTime);
-                attachment.setUpdId(dto.getUserId());
-
-                CmAttachment savedAttachment = cmAttachmentRepository.save(attachment);
-
-                // Delete old attachments and create new BoardAttachment
-                List<BoardAttachment> oldLinks = boardAttachmentRepository.findByBoardNo(boardNo);
-                if (!oldLinks.isEmpty()) {
-                    boardAttachmentRepository.deleteAll(oldLinks);
-                }
-
-                BoardAttachment newLink = new BoardAttachment();
-                newLink.setBoardNo(boardNo);
-                newLink.setAttachNo(savedAttachment.getAttachNo());
-                newLink.setAttachStatCd("A");
-                newLink.setInsDtime(currentDateTime);
-                newLink.setInsId(dto.getUserId());
-                newLink.setUpdDtime(currentDateTime);
-                newLink.setUpdId(dto.getUserId());
-                boardAttachmentRepository.save(newLink);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to update file", e);
+            // Delete old attachments and create new BoardAttachment
+            List<BoardAttachment> oldLinks = boardAttachmentRepository.findByBoardNo(boardNo);
+            if (!oldLinks.isEmpty()) {
+                boardAttachmentRepository.deleteAll(oldLinks);
             }
+
+            BoardAttachment newLink = new BoardAttachment();
+            newLink.setBoardNo(boardNo);
+            newLink.setAttachNo(uploadResult.getAttachNo());
+            newLink.setAttachStatCd("A");
+            newLink.setInsDtime(currentDateTime);
+            newLink.setInsId(dto.getUserId());
+            newLink.setUpdDtime(currentDateTime);
+            newLink.setUpdId(dto.getUserId());
+            boardAttachmentRepository.save(newLink);
         } else if (Boolean.TRUE.equals(dto.getDeleteFile())) {
             List<BoardAttachment> oldLinks = boardAttachmentRepository.findByBoardNo(boardNo);
             if (!oldLinks.isEmpty()) {
