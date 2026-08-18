@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface BnUserRepository extends JpaRepository<BnUser, BnUserId> {
     java.util.List<BnUser> findByBnNo(Long bnNo);
+    java.util.List<BnUser> findByBnUserId(String bnUserId);
 }

@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.io.File;
 import java.io.IOException;
@@ -57,6 +58,77 @@ public class BoardService {
     public Page<CommunityBoardListDto> getRecentBoardList(int page, int size, String userId) {
         Pageable pageable = PageRequest.of(page, size);
         return boardRepository.findRecentBoardList(userId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.bandi.backend.dto.BandiTalkPostDto> getBandiTalkPosts() {
+        List<Board> freePosts = boardRepository.findTopByBoardType("0", PageRequest.of(0, 1));
+        List<Board> begPosts = boardRepository.findTopByBoardType("1", PageRequest.of(0, 1));
+
+        java.util.Set<Long> addedIds = new java.util.HashSet<>();
+        List<Board> selectedBoards = new ArrayList<>();
+
+        if (freePosts != null && !freePosts.isEmpty()) {
+            selectedBoards.add(freePosts.get(0));
+            addedIds.add(freePosts.get(0).getBoardNo());
+        }
+        if (begPosts != null && !begPosts.isEmpty()) {
+            if (!addedIds.contains(begPosts.get(0).getBoardNo())) {
+                selectedBoards.add(begPosts.get(0));
+                addedIds.add(begPosts.get(0).getBoardNo());
+            }
+        }
+
+        // 2건 미만일 경우 최신 활성 글 중에서 채움
+        if (selectedBoards.size() < 2) {
+            List<Board> recent = boardRepository.findTopRecent(PageRequest.of(0, 5));
+            if (recent != null) {
+                for (Board b : recent) {
+                    if (!addedIds.contains(b.getBoardNo())) {
+                        selectedBoards.add(b);
+                        addedIds.add(b.getBoardNo());
+                        if (selectedBoards.size() >= 2) break;
+                    }
+                }
+            }
+        }
+
+        List<com.bandi.backend.dto.BandiTalkPostDto> result = new ArrayList<>();
+        for (Board b : selectedBoards) {
+            long likeCnt = boardLikeRepository.countByBoardNo(b.getBoardNo());
+            long commentCnt = boardDetailRepository.countByBoardNo(b.getBoardNo());
+
+            String userNickNm = "익명";
+            String profileImg = null;
+            if (!"Y".equals(b.getMaskingYn()) && b.getWriterUserId() != null) {
+                com.bandi.backend.entity.member.User user = userRepository.findById(b.getWriterUserId()).orElse(null);
+                if (user != null) {
+                    userNickNm = user.getUserNickNm() != null ? user.getUserNickNm() : "사용자";
+                    if (user.getAttachNo() != null) {
+                        com.bandi.backend.entity.common.CmAttachment att = cmAttachmentRepository.findById(user.getAttachNo()).orElse(null);
+                        if (att != null) {
+                            profileImg = att.getFilePath();
+                        }
+                    }
+                }
+            }
+
+            result.add(com.bandi.backend.dto.BandiTalkPostDto.builder()
+                    .boardNo(b.getBoardNo())
+                    .boardTypeFg(b.getBoardTypeFg())
+                    .title(b.getTitle())
+                    .content(b.getContent())
+                    .regDate(b.getInsDtime())
+                    .writerUserId(b.getWriterUserId())
+                    .userNickNm(userNickNm)
+                    .profileImg(profileImg)
+                    .maskingYn(b.getMaskingYn())
+                    .likeCnt(likeCnt)
+                    .commentCnt(commentCnt)
+                    .build());
+        }
+
+        return result;
     }
 
     @Transactional

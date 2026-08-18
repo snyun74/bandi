@@ -28,6 +28,10 @@ public class BandService {
     private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
     private final com.bandi.backend.repository.BandChatRoomRepository bandChatRoomRepository;
     private final ChatService chatService;
+    private final com.bandi.backend.repository.BnReservationRepository bnReservationRepository;
+    private final com.bandi.backend.repository.BnStudioRepository bnStudioRepository;
+    private final com.bandi.backend.repository.BnRoomRepository bnRoomRepository;
+    private final com.bandi.backend.repository.BandScheduleRepository bandScheduleRepository;
 
     @Transactional
     public Long createBand(BandCreateRequestDto dto) {
@@ -1199,5 +1203,238 @@ public class BandService {
         }
 
         bnRsvSessionRepository.delete(rsv);
+    }
+
+    public java.util.List<com.bandi.backend.dto.UpcomingScheduleDto> getMyUpcomingSchedules(String userId) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        String todayStr = java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String currentDateTimeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
+        java.time.LocalDate today = java.time.LocalDate.now();
+
+        // 1. Find all user's jams (including clan jams & free jams)
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 100);
+        org.springframework.data.domain.Page<com.bandi.backend.repository.projection.MyJamProjection> myJamsPage =
+                bnGroupRepository.findMyJams(userId, null, pageable);
+
+        if (myJamsPage == null || myJamsPage.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        java.util.List<com.bandi.backend.repository.projection.MyJamProjection> myJams = (myJamsPage != null) ? myJamsPage.getContent() : java.util.Collections.emptyList();
+        java.util.Map<Long, com.bandi.backend.repository.projection.MyJamProjection> jamMap = new java.util.HashMap<>();
+        java.util.List<Long> bnNos = new java.util.ArrayList<>();
+
+        for (com.bandi.backend.repository.projection.MyJamProjection pj : myJams) {
+            if (pj.getBnNo() != null) {
+                jamMap.put(pj.getBnNo(), pj);
+                bnNos.add(pj.getBnNo());
+            }
+        }
+
+        java.util.Map<String, com.bandi.backend.dto.UpcomingScheduleDto> dateGroupMap = new java.util.HashMap<>();
+
+        // 2. Check Studio Reservations (사용자 합주방 예약 + 사용자 본인 예약 모두 수집)
+        java.util.List<com.bandi.backend.entity.band.BnReservation> reservations = new java.util.ArrayList<>();
+        if (!bnNos.isEmpty()) {
+            java.util.List<com.bandi.backend.entity.band.BnReservation> bandResvs = bnReservationRepository.findByBnNoIn(bnNos);
+            if (bandResvs != null) {
+                reservations.addAll(bandResvs);
+            }
+        }
+        java.util.List<com.bandi.backend.entity.band.BnReservation> userResvs = bnReservationRepository.findByUserIdOrderByInsDtimeDesc(userId);
+        if (userResvs != null) {
+            for (com.bandi.backend.entity.band.BnReservation ur : userResvs) {
+                if (reservations.stream().noneMatch(r -> r.getResvNo().equals(ur.getResvNo()))) {
+                    reservations.add(ur);
+                }
+            }
+        }
+
+        for (com.bandi.backend.entity.band.BnReservation resv : reservations) {
+            if (resv.getUseDate() == null) {
+                continue;
+            }
+
+            // 현재 시간보다 이미 지난 예약 건은 제외 (오늘 남은 시간대 + 내일/모레/미래 모든 날짜 포함)
+            String resvDateTime = resv.getUseDate() + (resv.getSttTime() != null && resv.getSttTime().length() >= 4 ? resv.getSttTime().substring(0, 4) : "2359");
+            if (resvDateTime.compareTo(currentDateTimeStr) < 0) {
+                continue;
+            }
+
+            // 취소, 거절 상태 제외
+            if ("CAN".equalsIgnoreCase(resv.getResvStatFg()) || "C".equalsIgnoreCase(resv.getResvStatFg()) || "REJ".equalsIgnoreCase(resv.getResvStatFg())) {
+                continue;
+            }
+
+            com.bandi.backend.repository.projection.MyJamProjection jam = resv.getBnNo() != null ? jamMap.get(resv.getBnNo()) : null;
+
+            // Studio & Room info
+            String studioName = "합주실";
+            if (resv.getRoomNo() != null) {
+                com.bandi.backend.entity.band.BnRoom room = bnRoomRepository.findById(resv.getRoomNo()).orElse(null);
+                if (room != null) {
+                    com.bandi.backend.entity.band.BnStudio studio = bnStudioRepository.findById(room.getStudioNo()).orElse(null);
+                    if (studio != null) {
+                        studioName = studio.getStudioNm() + " " + (room.getRoomNm() != null ? room.getRoomNm() : "");
+                    } else {
+                        studioName = room.getRoomNm() != null ? room.getRoomNm() : "합주실";
+                    }
+                }
+            }
+
+            // Participant count
+            int pCount = 1;
+            if (resv.getBnNo() != null) {
+                java.util.List<BnSession> sessions = bnSessionRepository.findByBnNo(resv.getBnNo());
+                if (sessions != null) {
+                    int count = 0;
+                    for (BnSession s : sessions) {
+                        if (s.getBnSessionJoinUserId() != null && !s.getBnSessionJoinUserId().isEmpty()) {
+                            count++;
+                        }
+                    }
+                    if (count > 0) pCount = count;
+                }
+            }
+
+            String dDay = calculateDDay(today, resv.getUseDate());
+            String dateStr = formatScheduleDateStr(resv.getUseDate(), resv.getSttTime(), resv.getEndTime());
+
+            String jamTitle = jam != null ? jam.getBnNm() : studioName.trim();
+            String songTitle = jam != null ? jam.getBnSongNm() : "";
+            String artist = jam != null ? jam.getBnSingerNm() : "";
+            String isClan = (jam != null && "CLAN".equals(jam.getBnType())) ? "Y" : "N";
+            Long jamId = jam != null ? jam.getBnNo() : (resv.getBnNo() != null ? resv.getBnNo() : 0L);
+
+            com.bandi.backend.dto.UpcomingScheduleDto dto = com.bandi.backend.dto.UpcomingScheduleDto.builder()
+                    .type("RESERVATION")
+                    .jamId(jamId)
+                    .jamTitle(jamTitle)
+                    .songTitle(songTitle)
+                    .artist(artist)
+                    .dDay(dDay)
+                    .dateStr(dateStr)
+                    .studioName(studioName.trim())
+                    .statusLabel("예약 확정")
+                    .participantCount(pCount)
+                    .targetDate(resvDateTime)
+                    .isClan(isClan)
+                    .build();
+
+            String key = (resv.getBnNo() != null ? resv.getBnNo() : resv.getResvNo()) + "_" + resv.getUseDate();
+            dateGroupMap.put(key, dto);
+        }
+
+        // 3. Check Band Schedules
+        for (Long bnNo : bnNos) {
+            java.util.List<com.bandi.backend.entity.band.BandSchedule> schList = bandScheduleRepository.findByBnNo(bnNo);
+            if (schList != null) {
+                for (com.bandi.backend.entity.band.BandSchedule sch : schList) {
+                    if (sch.getBnSchSttDate() == null) {
+                        continue;
+                    }
+
+                    // 현재 시간보다 이미 지난 일정 건은 제외
+                    String schDateTime = sch.getBnSchSttDate() + (sch.getBnSchSttTime() != null && sch.getBnSchSttTime().length() >= 4 ? sch.getBnSchSttTime().substring(0, 4) : "2359");
+                    if (schDateTime.compareTo(currentDateTimeStr) < 0) {
+                        continue;
+                    }
+
+                    if ("D".equals(sch.getBnSchStatCd()) || "C".equals(sch.getBnSchStatCd())) {
+                        continue;
+                    }
+
+                    String key = bnNo + "_" + sch.getBnSchSttDate();
+                    // Reservation has priority over Schedule on the same date!
+                    if (dateGroupMap.containsKey(key)) {
+                        continue;
+                    }
+
+                    com.bandi.backend.repository.projection.MyJamProjection jam = jamMap.get(bnNo);
+                    if (jam == null) continue;
+
+                    java.util.List<BnSession> sessions = bnSessionRepository.findByBnNo(bnNo);
+                    int pCount = 0;
+                    if (sessions != null) {
+                        for (BnSession s : sessions) {
+                            if (s.getBnSessionJoinUserId() != null && !s.getBnSessionJoinUserId().isEmpty()) {
+                                pCount++;
+                            }
+                        }
+                    }
+                    if (pCount == 0) pCount = 1;
+
+                    String dDay = calculateDDay(today, sch.getBnSchSttDate());
+                    String dateStr = formatScheduleDateStr(sch.getBnSchSttDate(), sch.getBnSchSttTime(), sch.getBnSchEndTime());
+                    String studioName = (sch.getBnSchTitle() != null && !sch.getBnSchTitle().isEmpty())
+                            ? sch.getBnSchTitle() : "합주실 일정";
+
+                    com.bandi.backend.dto.UpcomingScheduleDto dto = com.bandi.backend.dto.UpcomingScheduleDto.builder()
+                            .type("SCHEDULE")
+                            .jamId(jam.getBnNo())
+                            .jamTitle(jam.getBnNm())
+                            .songTitle(jam.getBnSongNm())
+                            .artist(jam.getBnSingerNm())
+                            .dDay(dDay)
+                            .dateStr(dateStr)
+                            .studioName(studioName.trim())
+                            .statusLabel("일정 조율 완료")
+                            .participantCount(pCount)
+                            .targetDate(sch.getBnSchSttDate() + (sch.getBnSchSttTime() != null ? sch.getBnSchSttTime() : "0000"))
+                            .isClan("CLAN".equals(jam.getBnType()) ? "Y" : "N")
+                            .build();
+
+                    dateGroupMap.put(key, dto);
+                }
+            }
+        }
+
+        java.util.List<com.bandi.backend.dto.UpcomingScheduleDto> results = new java.util.ArrayList<>(dateGroupMap.values());
+        results.sort(java.util.Comparator.comparing(com.bandi.backend.dto.UpcomingScheduleDto::getTargetDate));
+
+        return results;
+    }
+
+    private String calculateDDay(java.time.LocalDate today, String targetDateStr) {
+        try {
+            java.time.LocalDate targetDate = java.time.LocalDate.parse(targetDateStr, DateTimeFormatter.ofPattern("yyyyMMdd"));
+            long days = java.time.temporal.ChronoUnit.DAYS.between(today, targetDate);
+            if (days == 0) return "D-DAY";
+            if (days > 0) return "D-" + days;
+            return "D+" + Math.abs(days);
+        } catch (Exception e) {
+            return "D-0";
+        }
+    }
+
+    private String formatScheduleDateStr(String dateStr, String sttTime, String endTime) {
+        try {
+            if (dateStr == null || dateStr.length() < 8) return dateStr != null ? dateStr : "";
+            java.time.LocalDate date = java.time.LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String[] dayNames = {"월", "화", "수", "목", "금", "토", "일"};
+            String dayName = dayNames[date.getDayOfWeek().getValue() - 1];
+
+            String timeFormatted = "";
+            if (sttTime != null && sttTime.length() >= 4) {
+                int sttH = Integer.parseInt(sttTime.substring(0, 2));
+                int sttM = Integer.parseInt(sttTime.substring(2, 4));
+                String sttStr = String.format("%02d:%02d", sttH, sttM);
+
+                if (endTime != null && endTime.length() >= 4) {
+                    int endH = Integer.parseInt(endTime.substring(0, 2));
+                    int endM = Integer.parseInt(endTime.substring(2, 4));
+                    timeFormatted = String.format(" %s ~ %02d:%02d", sttStr, endH, endM);
+                } else {
+                    timeFormatted = String.format(" %s", sttStr);
+                }
+            }
+
+            return String.format("%d월 %d일 (%s)%s", date.getMonthValue(), date.getDayOfMonth(), dayName, timeFormatted);
+        } catch (Exception e) {
+            return dateStr;
+        }
     }
 }

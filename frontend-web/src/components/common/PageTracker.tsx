@@ -10,6 +10,7 @@ const PageTracker = () => {
     const location = useLocation();
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         if (analytics) {
             logEvent(analytics, 'page_view', {
                 page_path: location.pathname,

@@ -69,6 +69,8 @@ import PartnerInfoPage from './pages/PartnerInfoPage';
 import PartnerManagePage from './pages/PartnerManagePage';
 import AdminPartnerApprovalPage from './pages/AdminPartnerApprovalPage';
 import AdminAmbassadorPage from './pages/AdminAmbassadorPage';
+import NoticeListPage from './pages/NoticeListPage';
+import NoticeDetailPage from './pages/NoticeDetailPage';
 import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
@@ -197,6 +199,8 @@ function App() {
             <Route path="profile/posts" element={<MyPostList />} />
             <Route path="profile/post/create" element={<SnsPostCreate />} />
             <Route path="profile/shorts/create" element={<SnsShortsCreate />} />
+            <Route path="notices" element={<NoticeListPage />} />
+            <Route path="notices/:noticeNo" element={<NoticeDetailPage />} />
             <Route path="customer-center" element={<CustomerCenterPage />} />
             <Route path="freejam" element={<FreeJam />} />
             <Route path="explore" element={<SnsExplore />} />

@@ -38,6 +38,11 @@ public class BoardController {
         return ResponseEntity.ok(boardService.getRecentBoardList(page, size, safeUserId));
     }
 
+    @GetMapping("/bandi-talk")
+    public ResponseEntity<?> getBandiTalkPosts() {
+        return ResponseEntity.ok(boardService.getBandiTalkPosts());
+    }
+
     @PostMapping(value = "/posts", consumes = { "multipart/form-data" })
     public ResponseEntity<?> createBoardPost(
             @RequestPart("data") com.bandi.backend.dto.CommunityBoardCreateDto dto,

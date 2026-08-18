@@ -71,4 +71,10 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
                         "AND (:userId = '' OR b.writerUserId NOT IN (SELECT cb.blockUserId FROM CmBlock cb WHERE cb.userId = :userId)) " +
                         "ORDER BY b.insDtime DESC")
         Page<CommunityBoardListDto> findRecentBoardList(@Param("userId") String userId, Pageable pageable);
+
+        @Query("SELECT b FROM Board b WHERE b.boardTypeFg = :boardTypeFg AND (b.boardStatCd = 'A' OR b.boardStatCd IS NULL) ORDER BY b.boardNo DESC")
+        List<Board> findTopByBoardType(@Param("boardTypeFg") String boardTypeFg, Pageable pageable);
+
+        @Query("SELECT b FROM Board b WHERE (b.boardStatCd = 'A' OR b.boardStatCd IS NULL) ORDER BY b.boardNo DESC")
+        List<Board> findTopRecent(Pageable pageable);
 }

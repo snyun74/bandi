@@ -10,4 +10,6 @@ import java.util.List;
 public interface BoardDetailRepository extends JpaRepository<BoardDetail, Long> {
 
     List<BoardDetail> findByBoardNoOrderByInsDtimeAsc(Long boardNo);
+
+    long countByBoardNo(Long boardNo);
 }

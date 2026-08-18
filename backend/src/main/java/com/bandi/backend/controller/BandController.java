@@ -258,4 +258,13 @@ public class BandController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/my-upcoming-schedules")
+    public ResponseEntity<?> getMyUpcomingSchedules(@RequestParam String userId) {
+        try {
+            return ResponseEntity.ok(bandService.getMyUpcomingSchedules(userId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("다가오는 일정 조회 실패: " + e.getMessage());
+        }
+    }
 }
