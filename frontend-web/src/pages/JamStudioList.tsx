@@ -73,19 +73,6 @@ const JamStudioList: React.FC = () => {
         if (selectedFilter === '공연장' && studio.studioTypeCd !== 'H') {
             return false;
         }
-        if (selectedFilter === '홍대') {
-            const isHongdaeRegion = 
-                studio.studioNm.includes('홍대') || 
-                (studio.address && (
-                    studio.address.includes('홍대') || 
-                    studio.address.includes('서교동') || 
-                    studio.address.includes('동교동') || 
-                    studio.address.includes('합정') || 
-                    studio.address.includes('상수') || 
-                    studio.address.includes('마포구')
-                ));
-            if (!isHongdaeRegion) return false;
-        }
 
         // 2. 텍스트 검색 필터링
         const matchesSearch = 
@@ -141,7 +128,7 @@ const JamStudioList: React.FC = () => {
 
                 {/* Filter Chips */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                    {['연습실', '공연장', '홍대'].map((filter) => {
+                    {['연습실', '공연장'].map((filter) => {
                         const isActive = selectedFilter === filter;
                         return (
                             <button
