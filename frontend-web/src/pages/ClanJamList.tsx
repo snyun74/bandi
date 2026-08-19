@@ -672,8 +672,8 @@ const ClanJamList: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* 세션 목록 (가로 스크롤 가능, 6개 초과 시 자연스러운 스와이프 - 클릭 시 토글 액션) */}
-                                    <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-1">
+                                    {/* 세션 목록 (간격을 줄여 6개 세션이 모바일에서도 스크롤 없이 노출 - 클릭 시 토글 액션) */}
+                                    <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-1">
                                         {room.roles.map((role, idx) => {
                                             const isUserJoined = !!role.isCurrentUser;
                                             const isUserReserved = Boolean(role.isCurrentUserReserved || (currentUserNickNm && role.reservedUsers?.includes(currentUserNickNm)));
@@ -697,7 +697,7 @@ const ClanJamList: React.FC = () => {
                                                     }
                                                 >
                                                     {/* 악기 박스: 내가 참여(파랑), 내가 예약(주황), 타인 참여(차콜), 공석(파란테두리) */}
-                                                    <div className={`w-[46px] h-[43px] rounded-[10px] flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                                    <div className={`w-[43px] sm:w-[46px] h-[41px] sm:h-[43px] rounded-[10px] flex flex-col items-center justify-center gap-0.5 transition-all ${
                                                         isUserJoined
                                                             ? 'bg-[#00BDF8] text-white shadow-xs'
                                                             : isUserReserved
@@ -707,7 +707,7 @@ const ClanJamList: React.FC = () => {
                                                                     : 'bg-[#2C373C] text-white shadow-xs'
                                                     }`}>
                                                         {renderInstrumentIcon(role.part, "w-3.5 h-3.5")}
-                                                        <span className="text-[10px] font-medium leading-none truncate max-w-[40px]">
+                                                        <span className="text-[10px] font-medium leading-none truncate max-w-[38px] sm:max-w-[40px]">
                                                             {role.part}
                                                         </span>
                                                     </div>
