@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JamEvaluationModal from "../components/common/JamEvaluationModal";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import NoticePopup from "../components/notice/NoticePopup";
 import DefaultProfile from "../components/common/DefaultProfile";
-import { FaHeart, FaComment, FaChevronRight, FaPen, FaSearch, FaBullhorn } from 'react-icons/fa';
-import { HiPlus } from 'react-icons/hi';
+import { FaHeart, FaComment, FaChevronRight, FaPen } from 'react-icons/fa';
+import iconJamCreate from '../assets/group4.png';
+import iconJamSearch from '../assets/solar_music-notes-bold.png';
+import iconNotice from '../assets/group3.png';
+import iconCreate from '../assets/mynaui_file-plus-solid.png';
 
 interface UpcomingSchedule {
     type: string;
@@ -64,6 +67,94 @@ export default function HomePage() {
     const [pendingEvaluation, setPendingEvaluation] = useState<any>(null);
     const [profileIncomplete, setProfileIncomplete] = useState(false);
     const [activeNotices, setActiveNotices] = useState<any[]>([]);
+
+    // 내 클랜 터치/마우스 스와이프 핸들러
+    const clanTouchStartX = useRef<number | null>(null);
+    const clanTouchEndX = useRef<number | null>(null);
+    const isClanMoved = useRef(false);
+
+    const handleClanPrev = () => {
+        if (myClans.length <= 1) return;
+        setCurrentClanIndex((prev) => (prev === 0 ? myClans.length - 1 : prev - 1));
+    };
+
+    const handleClanNext = () => {
+        if (myClans.length <= 1) return;
+        setCurrentClanIndex((prev) => (prev + 1) % myClans.length);
+    };
+
+    const onClanTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        clanTouchStartX.current = clientX;
+        clanTouchEndX.current = clientX;
+        isClanMoved.current = false;
+    };
+
+    const onClanTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+        if (clanTouchStartX.current === null) return;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        clanTouchEndX.current = clientX;
+        if (Math.abs(clientX - clanTouchStartX.current) > 10) {
+            isClanMoved.current = true;
+        }
+    };
+
+    const onClanTouchEnd = () => {
+        if (clanTouchStartX.current !== null && clanTouchEndX.current !== null) {
+            const distance = clanTouchStartX.current - clanTouchEndX.current;
+            if (distance > 35) {
+                handleClanNext();
+            } else if (distance < -35) {
+                handleClanPrev();
+            }
+        }
+        clanTouchStartX.current = null;
+        clanTouchEndX.current = null;
+    };
+
+    // 내 합주 터치/마우스 스와이프 핸들러
+    const jamTouchStartX = useRef<number | null>(null);
+    const jamTouchEndX = useRef<number | null>(null);
+    const isJamMoved = useRef(false);
+
+    const handleJamPrev = () => {
+        if (myJams.length <= 1) return;
+        setCurrentJamIndex((prev) => (prev === 0 ? myJams.length - 1 : prev - 1));
+    };
+
+    const handleJamNext = () => {
+        if (myJams.length <= 1) return;
+        setCurrentJamIndex((prev) => (prev + 1) % myJams.length);
+    };
+
+    const onJamTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        jamTouchStartX.current = clientX;
+        jamTouchEndX.current = clientX;
+        isJamMoved.current = false;
+    };
+
+    const onJamTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+        if (jamTouchStartX.current === null) return;
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        jamTouchEndX.current = clientX;
+        if (Math.abs(clientX - jamTouchStartX.current) > 10) {
+            isJamMoved.current = true;
+        }
+    };
+
+    const onJamTouchEnd = () => {
+        if (jamTouchStartX.current !== null && jamTouchEndX.current !== null) {
+            const distance = jamTouchStartX.current - jamTouchEndX.current;
+            if (distance > 35) {
+                handleJamNext();
+            } else if (distance < -35) {
+                handleJamPrev();
+            }
+        }
+        jamTouchStartX.current = null;
+        jamTouchEndX.current = null;
+    };
 
     useEffect(() => {
         fetchMainBanner();
@@ -176,32 +267,7 @@ export default function HomePage() {
         }
     };
 
-    // 클랜 3초 자동 회전
-    useEffect(() => {
-        if (myClans.length <= 1) return;
-        const interval = setInterval(() => {
-            setCurrentClanIndex(prev => (prev + 1) % myClans.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [myClans]);
 
-    // 합주 3초 자동 회전
-    useEffect(() => {
-        if (myJams.length <= 1) return;
-        const interval = setInterval(() => {
-            setCurrentJamIndex(prev => (prev + 1) % myJams.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [myJams]);
-
-    // 다가오는 예약 다중 건일 경우 4초 자동 회전
-    useEffect(() => {
-        if (upcomingSchedules.length <= 1) return;
-        const interval = setInterval(() => {
-            setCurrentUpcomingIndex(prev => (prev + 1) % upcomingSchedules.length);
-        }, 4000);
-        return () => clearInterval(interval);
-    }, [upcomingSchedules]);
 
     // 기존 평가/프로필 검사
     const checkPendingEvaluation = async () => {
@@ -311,42 +377,42 @@ export default function HomePage() {
             </section>
 
             {/* ========================================================================= */}
-            {/* 메인 컨텐츠 영역 (배너 위로 부드럽게 스크롤) */}
+            {/* 메인 컨텐츠 영역 (배너 위로 부드럽게 스크롤 및 완벽 반응형) */}
             {/* ========================================================================= */}
             <div className="relative z-10 bg-[#F7F9FC] rounded-t-3xl pt-5 pb-24 shadow-[0_-10px_20px_rgba(0,0,0,0.04)]">
-                <div className="max-w-md mx-auto px-4 space-y-6">
+                <div className="w-full max-w-lg mx-auto px-4 space-y-6">
 
                     {/* ========================================================================= */}
-                    {/* 1 영역. 다가오는 예약 (캡처와 글자 위치, 색감 100% 동일 구현) */}
+                    {/* 1 영역. 다가오는 예약 (피그마 100% 픽셀 퍼펙트) */}
                     {/* ========================================================================= */}
                     {currentUpcoming && (
                         <section className="animate-fadeIn">
-                            <h2 className="text-[18px] font-bold text-[#111827] mb-3 tracking-tight">
+                            <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114] mb-3">
                                 다가오는 예약
                             </h2>
 
                             {/* 예약 카드 */}
-                            <div className="bg-white rounded-[24px] p-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100/90 relative transition-all duration-300">
+                            <div className="bg-white rounded-[12px] p-4 border border-[#ECECEC] shadow-[0px_4px_10px_rgba(0,0,0,0.06)] relative transition-all duration-300">
                                 
-                                {/* 상단: [D-6] 뱃지 + 합주방명 및 하위 상세 정보 (들여쓰기 정렬) */}
-                                <div className="flex items-start gap-2.5">
+                                {/* 상단: [D-6] 뱃지 + 합주방명 및 하위 상세 정보 */}
+                                <div className="flex items-start gap-2">
                                     {/* D-Day 다크 캡슐 뱃지 */}
-                                    <span className="bg-[#2A2E37] text-white text-[12px] font-extrabold px-3 py-0.5 rounded-full shrink-0 tracking-wider mt-0.5 shadow-xs">
+                                    <span className="bg-[#2F2F31] text-white text-[12px] font-bold leading-[16px] px-[9px] py-[2px] rounded-full shrink-0 mt-0.5">
                                         {currentUpcoming.dDay}
                                     </span>
 
                                     {/* 합주방명 및 하단 텍스트들 */}
-                                    <div className="flex-1 min-w-0 space-y-1">
-                                        <h3 className="text-[16px] font-bold text-[#1E2024] truncate leading-tight">
+                                    <div className="flex-1 min-w-0 space-y-1.5">
+                                        <h3 className="text-[16px] font-bold leading-[22px] text-[#2F2F31] truncate">
                                             {currentUpcoming.jamTitle}
                                         </h3>
-                                        <p className="text-[13px] font-medium text-[#7E8B9B] leading-snug">
+                                        <p className="text-[12px] font-semibold leading-[14px] text-[#8E9196]">
                                             {currentUpcoming.dateStr}
                                         </p>
-                                        <p className="text-[13px] font-medium text-[#7E8B9B] leading-snug">
-                                            {currentUpcoming.studioName || '합주실'}
+                                        <p className="text-[12px] font-semibold leading-[14px] text-[#8E9196]">
+                                            {currentUpcoming.studioName || '홍대 사운드랩'}
                                         </p>
-                                        <p className="text-[13px] font-bold text-[#00BDF8] leading-snug">
+                                        <p className="text-[12px] font-bold leading-[16px] text-[#1591DC]">
                                             {currentUpcoming.statusLabel} · {currentUpcoming.participantCount}명 참석
                                         </p>
                                     </div>
@@ -361,7 +427,7 @@ export default function HomePage() {
                                             navigate(`/main/jam/room/${currentUpcoming.jamId}`);
                                         }
                                     }}
-                                    className="w-full bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-[0.99] text-white font-bold py-3.5 rounded-full text-[15px] shadow-sm transition-all text-center block mt-5"
+                                    className="w-full h-[46px] bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-[0.99] text-[#FEFEFE] font-bold text-[14px] leading-[20px] rounded-[24px] shadow-sm transition-all flex items-center justify-center mt-4 cursor-pointer"
                                 >
                                     합주 내용 보기
                                 </button>
@@ -369,15 +435,15 @@ export default function HomePage() {
 
                             {/* 여러 건일 경우 페이지네이션 인디케이터 닷 */}
                             {upcomingSchedules.length > 1 && (
-                                <div className="flex justify-center items-center gap-1.5 mt-3">
+                                <div className="flex justify-center items-center gap-2 mt-3">
                                     {upcomingSchedules.map((_, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setCurrentUpcomingIndex(idx)}
-                                            className={`transition-all duration-300 rounded-full ${
+                                            className={`transition-all duration-300 rounded-full cursor-pointer ${
                                                 idx === (currentUpcomingIndex % upcomingSchedules.length)
-                                                    ? 'w-2 h-2 bg-[#00BDF8]'
-                                                    : 'w-1.5 h-1.5 bg-[#E2E8F0]'
+                                                    ? 'w-[8px] h-[8px] bg-[#00BDF8]'
+                                                    : 'w-[6px] h-[6px] bg-[#E5E5E5]'
                                             }`}
                                             aria-label={`예약 ${idx + 1}번`}
                                         />
@@ -395,12 +461,12 @@ export default function HomePage() {
                             {/* 1. 합주 만들기 */}
                             <div
                                 onClick={() => navigate('/main/jam/create')}
-                                className="bg-white rounded-2xl p-3 py-3.5 flex flex-col items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center bg-[#E6F8FE] text-[#00BDF8] group-hover:scale-105 transition-transform">
-                                    <span className="font-black text-lg italic leading-none font-serif text-[#00BDF8]">B</span>
+                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconJamCreate} alt="합주 만들기" className="w-[28px] h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[11.5px] font-bold text-gray-700 text-center tracking-tight">
+                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
                                     합주 만들기
                                 </span>
                             </div>
@@ -408,12 +474,12 @@ export default function HomePage() {
                             {/* 2. 합주 찾기 */}
                             <div
                                 onClick={() => navigate('/main/jam')}
-                                className="bg-white rounded-2xl p-3 py-3.5 flex flex-col items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center bg-[#E6F8FE] text-[#00BDF8] group-hover:scale-105 transition-transform">
-                                    <FaSearch size={15} />
+                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconJamSearch} alt="합주 찾기" className="w-[28px] h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[11.5px] font-bold text-gray-700 text-center tracking-tight">
+                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
                                     합주 찾기
                                 </span>
                             </div>
@@ -421,12 +487,12 @@ export default function HomePage() {
                             {/* 3. 공지사항 */}
                             <div
                                 onClick={() => navigate('/main/notices')}
-                                className="bg-white rounded-2xl p-3 py-3.5 flex flex-col items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center bg-[#E6F8FE] text-[#00BDF8] group-hover:scale-105 transition-transform">
-                                    <FaBullhorn size={15} />
+                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconNotice} alt="공지사항" className="w-[28px] h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[11.5px] font-bold text-gray-700 text-center tracking-tight">
+                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
                                     공지사항
                                 </span>
                             </div>
@@ -434,14 +500,12 @@ export default function HomePage() {
                             {/* 4. 만들기 (쇼츠 & 게시물 등록 모달) */}
                             <div
                                 onClick={() => setIsCreateMenuOpen(true)}
-                                className="bg-white rounded-2xl p-3 py-3.5 flex flex-col items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-9 h-9 rounded-full flex items-center justify-center bg-[#E6F8FE] text-[#00BDF8] group-hover:scale-105 transition-transform">
-                                    <div className="w-4 h-4 border-2 border-[#00BDF8] rounded-[4px] flex items-center justify-center">
-                                        <HiPlus size={10} className="stroke-[2.5]" />
-                                    </div>
+                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconCreate} alt="만들기" className="w-[28px] h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[11.5px] font-bold text-gray-700 text-center tracking-tight">
+                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
                                     만들기
                                 </span>
                             </div>
@@ -449,19 +513,19 @@ export default function HomePage() {
                     </section>
 
                     {/* ========================================================================= */}
-                    {/* 3 영역. 내 클랜 & 내 합주 (2열 나란히 구성) */}
+                    {/* 3 영역. 내 클랜 & 내 합주 (좌우 스와이프 제스처 및 클릭 이동 지원) */}
                     {/* ========================================================================= */}
-                    <section className="grid grid-cols-2 gap-3.5">
+                    <section className="grid grid-cols-2 gap-3">
                         {/* [좌측] 내 클랜 */}
                         <div className="flex flex-col">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="w-1 h-3.5 bg-[#00BDF8] rounded-full inline-block"></span>
-                                    <h3 className="font-bold text-[14px] text-gray-900">내 클랜</h3>
+                                    <span className="w-[5px] h-[14px] bg-[#00BDF8] rounded-[10px] inline-block"></span>
+                                    <h3 className="font-bold text-[18px] leading-[26px] text-[#0B1114]">내 클랜</h3>
                                 </div>
                                 <button
                                     onClick={() => navigate('/main/clan/my')}
-                                    className="text-gray-400 text-xs hover:text-[#00BDF8] cursor-pointer"
+                                    className="text-[#737373] text-[13px] leading-[16px] hover:text-[#00BDF8] cursor-pointer"
                                 >
                                     더보기
                                 </button>
@@ -469,37 +533,53 @@ export default function HomePage() {
 
                             {currentClan ? (
                                 <div
-                                    onClick={() => navigate(`/main/clan/detail/${currentClan.cnNo}`)}
-                                    className="cursor-pointer group flex flex-col"
+                                    onTouchStart={onClanTouchStart}
+                                    onTouchMove={onClanTouchMove}
+                                    onTouchEnd={onClanTouchEnd}
+                                    onMouseDown={onClanTouchStart}
+                                    onMouseMove={onClanTouchMove}
+                                    onMouseUp={onClanTouchEnd}
+                                    onClick={() => {
+                                        if (isClanMoved.current) return;
+                                        navigate(`/main/clan/detail/${currentClan.cnNo}`);
+                                    }}
+                                    className="cursor-pointer select-none group flex flex-col touch-pan-y active:scale-[0.99] transition-transform"
                                 >
-                                    <div className="w-full aspect-square rounded-[20px] overflow-hidden bg-gray-100 shadow-sm border border-gray-100/60 relative flex items-center justify-center">
+                                    <div className="w-full aspect-square rounded-[10px] overflow-hidden bg-gray-100 shadow-[1px_1px_5px_rgba(0,0,0,0.25)] relative flex items-center justify-center">
                                         {currentClan.attachFilePath ? (
                                             <img
                                                 src={currentClan.attachFilePath}
                                                 alt={currentClan.cnNm}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
                                                 onError={(e) => {
                                                     (e.target as HTMLElement).style.display = 'none';
                                                 }}
                                             />
                                         ) : (
-                                            <DefaultProfile type="clan" iconSize={36} className="w-full h-full" />
+                                            <DefaultProfile type="clan" iconSize={36} className="w-full h-full pointer-events-none" />
+                                        )}
+
+                                        {/* 여러 개일 때 스와이프 안내 인디케이터 */}
+                                        {myClans.length > 1 && (
+                                            <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
+                                                {currentClanIndex + 1}/{myClans.length}
+                                            </div>
                                         )}
                                     </div>
-                                    <h4 className="font-bold text-[14px] text-gray-900 truncate mt-2 leading-tight">
+                                    <h4 className="font-bold text-[18px] leading-[26px] text-[#0B1114] truncate mt-2">
                                         {currentClan.cnNm}
                                     </h4>
-                                    <p className="text-[11.5px] text-gray-500 truncate mt-0.5">
+                                    <p className="text-[13px] text-[#737373] truncate mt-0.5">
                                         {currentClan.cnDesc || '클랜 소개'}
                                     </p>
                                 </div>
                             ) : (
                                 <div
                                     onClick={() => navigate('/main/clan')}
-                                    className="w-full aspect-square rounded-[20px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all shadow-2xs"
+                                    className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
                                     <p className="text-xs text-gray-400 font-medium">가입된 클랜이 없습니다.</p>
-                                    <span className="text-[11px] text-[#00BDF8] font-bold mt-1">클랜 찾기</span>
+                                    <span className="text-[12px] text-[#00BDF8] font-bold mt-1">클랜 찾기</span>
                                 </div>
                             )}
                         </div>
@@ -508,12 +588,12 @@ export default function HomePage() {
                         <div className="flex flex-col">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-1.5">
-                                    <span className="w-1 h-3.5 bg-[#00BDF8] rounded-full inline-block"></span>
-                                    <h3 className="font-bold text-[14px] text-gray-900">내 합주</h3>
+                                    <span className="w-[5px] h-[14px] bg-[#00BDF8] rounded-[10px] inline-block"></span>
+                                    <h3 className="font-bold text-[18px] leading-[26px] text-[#0B1114]">내 합주</h3>
                                 </div>
                                 <button
                                     onClick={() => navigate('/main/jam/my')}
-                                    className="text-gray-400 text-xs hover:text-[#00BDF8] cursor-pointer"
+                                    className="text-[#737373] text-[13px] leading-[16px] hover:text-[#00BDF8] cursor-pointer"
                                 >
                                     더보기
                                 </button>
@@ -521,43 +601,57 @@ export default function HomePage() {
 
                             {currentJam ? (
                                 <div
+                                    onTouchStart={onJamTouchStart}
+                                    onTouchMove={onJamTouchMove}
+                                    onTouchEnd={onJamTouchEnd}
+                                    onMouseDown={onJamTouchStart}
+                                    onMouseMove={onJamTouchMove}
+                                    onMouseUp={onJamTouchEnd}
                                     onClick={() => {
+                                        if (isJamMoved.current) return;
                                         if (currentJam.bnType === 'CLAN') {
                                             navigate(`/main/clan/jam/room/${currentJam.bnNo}`);
                                         } else {
                                             navigate(`/main/jam/room/${currentJam.bnNo}`);
                                         }
                                     }}
-                                    className="cursor-pointer group flex flex-col"
+                                    className="cursor-pointer select-none group flex flex-col touch-pan-y active:scale-[0.99] transition-transform"
                                 >
-                                    <div className="w-full aspect-square rounded-[20px] overflow-hidden bg-gray-100 shadow-sm border border-gray-100/60 relative flex items-center justify-center">
+                                    <div className="w-full aspect-square rounded-[10px] overflow-hidden bg-gray-100 shadow-[1px_1px_5px_rgba(0,0,0,0.25)] relative flex items-center justify-center">
                                         {currentJam.bnImg ? (
                                             <img
                                                 src={currentJam.bnImg}
                                                 alt={currentJam.bnNm}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
                                                 onError={(e) => {
                                                     (e.target as HTMLElement).style.display = 'none';
                                                 }}
                                             />
                                         ) : (
-                                            <DefaultProfile type="jam" iconSize={36} className="w-full h-full" />
+                                            <DefaultProfile type="jam" iconSize={36} className="w-full h-full pointer-events-none" />
+                                        )}
+
+                                        {/* 여러 개일 때 스와이프 안내 인디케이터 */}
+                                        {myJams.length > 1 && (
+                                            <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
+                                                {currentJamIndex + 1}/{myJams.length}
+                                            </div>
                                         )}
                                     </div>
-                                    <h4 className="font-bold text-[14px] text-gray-900 truncate mt-2 leading-tight">
+                                    <h4 className="font-bold text-[18px] leading-[26px] text-[#0B1114] truncate mt-2">
                                         {currentJam.bnNm}
                                     </h4>
-                                    <p className="text-[11.5px] text-gray-500 truncate mt-0.5">
+                                    <p className="text-[13px] text-[#737373] truncate mt-0.5">
                                         {currentJam.bnSongNm ? `${currentJam.bnSongNm} - ${currentJam.bnSingerNm}` : '합주곡 정보 없음'}
                                     </p>
                                 </div>
                             ) : (
                                 <div
                                     onClick={() => navigate('/main/jam')}
-                                    className="w-full aspect-square rounded-[20px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all shadow-2xs"
+                                    className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
                                     <p className="text-xs text-gray-400 font-medium">참여 중인 합주가 없습니다.</p>
-                                    <span className="text-[11px] text-[#00BDF8] font-bold mt-1">합주방 둘러보기</span>
+                                    <span className="text-[12px] text-[#00BDF8] font-bold mt-1">합주방 둘러보기</span>
                                 </div>
                             )}
                         </div>
@@ -567,11 +661,11 @@ export default function HomePage() {
                     {/* 4 영역. 밴드 합주의 모든 이야기 실시간 밴디톡 */}
                     {/* ========================================================================= */}
                     <section className="pt-2">
-                        <div className="mb-3.5">
-                            <p className="text-[15px] font-bold text-gray-900 leading-tight tracking-tight">
+                        <div className="mb-3">
+                            <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
                                 밴드 합주의 모든 이야기
-                            </p>
-                            <h2 className="text-[18px] font-extrabold text-gray-900 leading-tight tracking-tight">
+                            </h2>
+                            <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
                                 실시간 밴디톡
                             </h2>
                         </div>
@@ -579,7 +673,7 @@ export default function HomePage() {
                         {/* 피드 카드 목록 */}
                         <div className="space-y-3">
                             {bandiTalkPosts.length === 0 ? (
-                                <div className="bg-white rounded-2xl p-6 text-center text-gray-400 text-xs shadow-sm border border-gray-100">
+                                <div className="bg-white rounded-[12px] p-6 text-center text-gray-400 text-xs border border-[#ECECEC]">
                                     아직 등록된 게시글이 없습니다.
                                 </div>
                             ) : (
@@ -587,32 +681,32 @@ export default function HomePage() {
                                     <div
                                         key={post.boardNo}
                                         onClick={() => navigate(`/main/board/detail/${post.boardNo}`)}
-                                        className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 cursor-pointer hover:border-gray-200 transition-all space-y-2"
+                                        className="bg-white rounded-[12px] p-[16px_20px] border border-[#ECECEC] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] cursor-pointer hover:border-gray-300 transition-all space-y-3"
                                     >
                                         {/* 상단: 카테고리 뱃지 + 제목 + 작성일 */}
                                         <div className="flex items-center justify-between gap-2">
-                                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                                <span className="text-[#00BDF8] text-[12px] font-bold shrink-0">
-                                                    {post.boardTypeFg === '1' ? '초보자 게시판' : '자유 게시판'}
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                <span className="text-[#0098CC] text-[12px] font-bold leading-[14px] shrink-0">
+                                                    {post.boardTypeFg === '1' ? '초보자게시판' : '자유게시판'}
                                                 </span>
-                                                <h4 className="text-[13px] font-bold text-gray-900 truncate">
+                                                <h4 className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
                                                     {post.title}
                                                 </h4>
                                             </div>
-                                            <span className="text-[11px] text-gray-400 shrink-0 font-medium">
+                                            <span className="text-[10px] font-semibold leading-[14px] text-[#737373] shrink-0">
                                                 {formatShortDate(post.regDate)}
                                             </span>
                                         </div>
 
                                         {/* 본문 미리보기 (2줄 말줄임) */}
-                                        <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed whitespace-pre-wrap font-normal">
+                                        <p className="text-[14px] font-medium leading-[22px] text-[#55575B] line-clamp-2 whitespace-pre-wrap">
                                             {post.content}
                                         </p>
 
                                         {/* 하단: 작성자 프로필 + 좋아요/댓글 수 */}
-                                        <div className="flex items-center justify-between pt-1.5">
+                                        <div className="flex items-center justify-between pt-1">
                                             <div className="flex items-center gap-1.5">
-                                                <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
+                                                <div className="w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
                                                     {post.maskingYn !== 'Y' && post.profileImg ? (
                                                         <img
                                                             src={post.profileImg}
@@ -623,21 +717,21 @@ export default function HomePage() {
                                                             }}
                                                         />
                                                     ) : (
-                                                        <DefaultProfile type="user" iconSize={10} className="w-full h-full" />
+                                                        <DefaultProfile type="user" iconSize={12} className="w-full h-full" />
                                                     )}
                                                 </div>
-                                                <span className="text-[12px] text-gray-700 font-medium">
+                                                <span className="text-[14px] font-semibold leading-[18px] text-[#2F2F31]">
                                                     {post.maskingYn === 'Y' ? '익명' : (post.userNickNm || '익명')}
                                                 </span>
                                             </div>
 
-                                            <div className="flex items-center gap-3 text-[11px]">
-                                                <span className="flex items-center gap-1 text-red-500 font-semibold">
-                                                    <FaHeart size={10} className="text-red-500" />
+                                            <div className="flex items-center gap-3">
+                                                <span className="flex items-center gap-1 text-[12px] font-bold text-[#E40004]">
+                                                    <FaHeart size={11} className="text-[#E40004]" />
                                                     {post.likeCnt || 0}
                                                 </span>
-                                                <span className="flex items-center gap-1 text-gray-400 font-medium">
-                                                    <FaComment size={10} className="text-gray-300" />
+                                                <span className="flex items-center gap-1 text-[12px] font-bold text-[#8E9196]">
+                                                    <FaComment size={11} className="text-[#D9D9DB]" />
                                                     {post.commentCnt || 0}
                                                 </span>
                                             </div>
@@ -650,10 +744,10 @@ export default function HomePage() {
                         {/* 밴디톡 전체보기 링크 */}
                         <div
                             onClick={() => navigate('/main/board')}
-                            className="flex items-center justify-center gap-1.5 py-4 text-[13px] font-semibold text-gray-700 cursor-pointer hover:text-[#00BDF8] transition-colors"
+                            className="flex items-center justify-center gap-1 py-4 text-[13px] font-medium leading-[20px] text-[#525252] cursor-pointer hover:text-[#00BDF8] transition-colors"
                         >
-                            <span>밴디톡 전체보기</span>
-                            <FaChevronRight size={10} className="text-gray-400" />
+                            <span>전체보기</span>
+                            <FaChevronRight size={10} className="text-[#737373]" />
                         </div>
                     </section>
                 </div>
@@ -671,7 +765,7 @@ export default function HomePage() {
             </button>
 
             {/* ========================================================================= */}
-            {/* 2 영역 '만들기' 선택 바텀시트 / 모달 */}
+            {/* 2 영역 '만들기' 선택 바텀시트 / 모달 (피그마 캡처 디자인 100% 일치) */}
             {/* ========================================================================= */}
             {isCreateMenuOpen && (
                 <div
@@ -679,39 +773,37 @@ export default function HomePage() {
                     onClick={() => setIsCreateMenuOpen(false)}
                 >
                     <div
-                        className="bg-white w-full max-w-md rounded-t-3xl p-6 space-y-4 shadow-2xl animate-slideUp"
+                        className="bg-white w-full max-w-lg rounded-t-[24px] p-6 pb-8 space-y-4 shadow-2xl animate-slideUp"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-2" />
-                        <h3 className="text-base font-bold text-gray-900 text-center">만들기</h3>
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                            <button
-                                onClick={() => {
-                                    setIsCreateMenuOpen(false);
-                                    navigate('/main/profile/post/create');
-                                }}
-                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 hover:bg-cyan-50 border border-gray-100 hover:border-[#00BDF8]/40 transition-all"
-                            >
-                                <span className="text-2xl mb-1">📝</span>
-                                <span className="text-sm font-bold text-gray-800">게시물 만들기</span>
-                            </button>
+                        <h3 className="text-[18px] font-bold leading-[26px] text-[#0B1114] text-center mb-4">
+                            새 콘텐츠 만들기
+                        </h3>
+                        
+                        <div className="space-y-3">
                             <button
                                 onClick={() => {
                                     setIsCreateMenuOpen(false);
                                     navigate('/main/profile/shorts/create');
                                 }}
-                                className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 hover:bg-cyan-50 border border-gray-100 hover:border-[#00BDF8]/40 transition-all"
+                                className="w-full py-3.5 rounded-full border-2 border-[#00BDF8] text-[#00BDF8] font-bold text-[15px] leading-tight hover:bg-[#E6F8FE] active:scale-[0.99] transition-all cursor-pointer text-center block"
                             >
-                                <span className="text-2xl mb-1">🎬</span>
-                                <span className="text-sm font-bold text-gray-800">쇼츠 만들기</span>
+                                영상 촬영·업로드
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsCreateMenuOpen(false);
+                                    navigate('/main/profile/post/create');
+                                }}
+                                className="w-full py-3.5 rounded-full border-2 border-[#00BDF8] text-[#00BDF8] font-bold text-[15px] leading-tight hover:bg-[#E6F8FE] active:scale-[0.99] transition-all cursor-pointer text-center block"
+                            >
+                                게시글 작성
                             </button>
                         </div>
-                        <button
-                            onClick={() => setIsCreateMenuOpen(false)}
-                            className="w-full py-3 text-sm font-bold text-gray-500 hover:text-gray-800 text-center"
-                        >
-                            닫기
-                        </button>
+
+                        <p className="text-center text-[12px] text-[#8E9196] font-medium pt-2">
+                            만들고 싶은 콘텐츠 유형을 선택해주세요.
+                        </p>
                     </div>
                 </div>
             )}
