@@ -169,6 +169,9 @@ public class BandService {
                         .map(rsv -> getUserNickname(rsv.getBnSessionRsvUserId()))
                         .collect(java.util.stream.Collectors.toList());
 
+                boolean isCurrentUserReserved = reservations.stream()
+                        .anyMatch(rsv -> userId != null && userId.equals(rsv.getBnSessionRsvUserId()));
+
                 roleDtos.add(com.bandi.backend.dto.ClanJamListDto.JamRoleDto.builder()
                         .sessionNo(session.getBnSessionNo())
                         .sessionTypeCd(session.getBnSessionTypeCd())
@@ -176,6 +179,7 @@ public class BandService {
                         .user(userNick)
                         .status(status)
                         .isCurrentUser(isCurrentUser)
+                        .isCurrentUserReserved(isCurrentUserReserved)
                         .reservedCount(reservations.size())
                         .reservedUsers(reservedUserNicks)
                         .offImgUrl(offImg)
@@ -190,12 +194,20 @@ public class BandService {
                             role.getSessionTypeCd(), 999))
                     .thenComparing(com.bandi.backend.dto.ClanJamListDto.JamRoleDto::getSessionTypeCd));
 
+            String attachFilePath = null;
+            if (group.getAttachNo() != null) {
+                attachFilePath = cmAttachmentRepository.findById(group.getAttachNo())
+                        .map(com.bandi.backend.entity.common.CmAttachment::getFilePath)
+                        .orElse(null);
+            }
+
             result.add(com.bandi.backend.dto.ClanJamListDto.builder()
                     .id(group.getBnNo())
                     .title(group.getBnNm())
                     .songTitle(group.getBnSongNm())
                     .artist(group.getBnSingerNm())
                     .description(group.getBnDesc())
+                    .attachFilePath(attachFilePath)
                     .isSecret("Y".equals(group.getBnPasswdFg()))
                     .isMember(isMember)
                     .isConfirmed("Y".equals(group.getBnConfFg()))
@@ -251,27 +263,12 @@ public class BandService {
         // throw new RuntimeException("이미 이 합주에 참여 중입니다.");
         // }
 
-        // 1. Insert BN_USER
-        BnUser user = new BnUser();
-        user.setBnNo(dto.getBnNo());
-        user.setBnUserId(dto.getUserId());
-        user.setBnRoleCd("NORL");
-        user.setBnJoinDate(currentDate);
-        user.setBnUserStatCd("A");
-        user.setInsDtime(currentDateTime);
-        user.setInsId(dto.getUserId());
-        user.setUpdDtime(currentDateTime);
-        user.setUpdId(dto.getUserId());
-
-        bnUserRepository.save(user);
-
-        // 2. Update BN_SESSION
-        // Filter by Session No directly if provided, or by Type + BnNo
+        // 1. Check and Update BN_SESSION first (Strict concurrency check)
         BnSession session = null;
         if (dto.getSessionNo() != null) {
             session = bnSessionRepository.findById(dto.getSessionNo()).orElse(null);
         } else {
-            // Fallback if sessionNo not provided (though it should be)
+            // Fallback if sessionNo not provided (search by Type + BnNo)
             java.util.List<BnSession> sessions = bnSessionRepository.findAll();
             for (BnSession s : sessions) {
                 if (s.getBnNo().equals(dto.getBnNo()) && s.getBnSessionTypeCd().equals(dto.getSessionTypeCd())) {
@@ -281,13 +278,38 @@ public class BandService {
             }
         }
 
-        if (session != null) {
-            session.setBnSessionJoinUserId(dto.getUserId());
-            session.setUpdDtime(currentDateTime);
-            session.setUpdId(dto.getUserId());
-            bnSessionRepository.save(session);
-        } else {
+        if (session == null) {
             throw new RuntimeException("세션 정보를 찾을 수 없습니다.");
+        }
+
+        // Concurrency Check: Verify if session is already taken by another user
+        if (session.getBnSessionJoinUserId() != null && !session.getBnSessionJoinUserId().isEmpty()) {
+            if (dto.getUserId().equals(session.getBnSessionJoinUserId())) {
+                throw new RuntimeException("이미 해당 세션에 참여 중입니다.");
+            } else {
+                throw new RuntimeException("이미 다른 사용자가 먼저 참여한 세션입니다. (새로고침 후 대기 예약을 이용해주세요)");
+            }
+        }
+
+        session.setBnSessionJoinUserId(dto.getUserId());
+        session.setUpdDtime(currentDateTime);
+        session.setUpdId(dto.getUserId());
+        bnSessionRepository.save(session);
+
+        // 2. Insert BN_USER only if not already registered in this band
+        com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(dto.getBnNo(), dto.getUserId());
+        if (!bnUserRepository.existsById(bnUserId)) {
+            BnUser user = new BnUser();
+            user.setBnNo(dto.getBnNo());
+            user.setBnUserId(dto.getUserId());
+            user.setBnRoleCd("NORL");
+            user.setBnJoinDate(currentDate);
+            user.setBnUserStatCd("A");
+            user.setInsDtime(currentDateTime);
+            user.setInsId(dto.getUserId());
+            user.setUpdDtime(currentDateTime);
+            user.setUpdId(dto.getUserId());
+            bnUserRepository.save(user);
         }
 
         updateBandLeader(dto.getBnNo());

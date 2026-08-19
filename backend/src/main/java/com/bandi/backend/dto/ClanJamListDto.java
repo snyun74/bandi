@@ -23,6 +23,7 @@ public class ClanJamListDto {
     @JsonProperty("status")
     private String status;
     private String description;
+    private String attachFilePath;
     private List<JamRoleDto> roles;
     private boolean isFull; // For sorting convenience
 
@@ -38,6 +39,8 @@ public class ClanJamListDto {
         private int reservedCount; // Logic for this might need to be defined, for now 0
         @JsonProperty("isCurrentUser")
         private boolean isCurrentUser;
+        @JsonProperty("isCurrentUserReserved")
+        private boolean isCurrentUserReserved;
         @JsonProperty("isBandLeader")
         private boolean isBandLeader;
         private String userId;
