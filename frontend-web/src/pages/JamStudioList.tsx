@@ -57,11 +57,24 @@ const JamStudioList: React.FC = () => {
     // 스튜디오 목록이 로드되면 각 지점 주소로 지하철 정보 비동기 조회
     useEffect(() => {
         if (studios.length === 0) return;
-        studios.forEach(async (studio) => {
-            if (!studio.address) return;
-            const info = await getNearbySubway(studio.address);
-            setSubwayMap(prev => new Map(prev).set(studio.studioNo, info));
-        });
+        
+        const loadSubwayInfo = async () => {
+            const results = await Promise.all(
+                studios.map(async (studio) => {
+                    if (!studio.address) return { studioNo: studio.studioNo, info: null };
+                    const info = await getNearbySubway(studio.address);
+                    return { studioNo: studio.studioNo, info };
+                })
+            );
+            
+            const newMap = new Map<number, SubwayInfo | null>();
+            results.forEach(item => {
+                newMap.set(item.studioNo, item.info);
+            });
+            setSubwayMap(newMap);
+        };
+
+        loadSubwayInfo();
     }, [studios]);
 
     // 검색어 및 필터 필터링

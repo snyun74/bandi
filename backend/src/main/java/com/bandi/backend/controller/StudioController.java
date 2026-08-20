@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/studios")
 @RequiredArgsConstructor
@@ -24,7 +27,7 @@ public class StudioController {
 
     private final PartnerService partnerService;
 
-    @Value("${kakao.client-id}")
+    @Value("${kakao.client-id:b7b74bba84f701122fa1bacf9697f578}")
     private String kakaoRestApiKey;
 
     @GetMapping("/active")
@@ -48,6 +51,7 @@ public class StudioController {
     @SuppressWarnings("unchecked")
     @GetMapping("/subway")
     public ResponseEntity<Map<String, Object>> getNearbySubway(@RequestParam String address) {
+        log.info("Subway lookup request for address: {}", address);
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
@@ -67,6 +71,7 @@ public class StudioController {
             if (docs != null && !docs.isEmpty()) {
                 lat = String.valueOf(docs.get(0).get("y"));
                 lng = String.valueOf(docs.get(0).get("x"));
+                log.info("Found coords by address: lat={}, lng={}", lat, lng);
             } else {
                 // Step 1-Fallback: 아파트명/건물명이 포함되어 주소 검색이 안될 경우 키워드 검색으로 좌표 조회
                 String keywordUrl = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encodedAddress;
@@ -76,10 +81,12 @@ public class StudioController {
                 if (kwDocs != null && !kwDocs.isEmpty()) {
                     lat = String.valueOf(kwDocs.get(0).get("y"));
                     lng = String.valueOf(kwDocs.get(0).get("x"));
+                    log.info("Found coords by keyword fallback: lat={}, lng={}", lat, lng);
                 }
             }
 
             if (lat == null || lng == null) {
+                log.warn("No coordinates found for address: {}", address);
                 return ResponseEntity.ok(Map.of());
             }
 
@@ -92,7 +99,10 @@ public class StudioController {
             if (subwayBody == null) return ResponseEntity.ok(Map.of());
 
             List<Map<String, Object>> stations = (List<Map<String, Object>>) subwayBody.get("documents");
-            if (stations == null || stations.isEmpty()) return ResponseEntity.ok(Map.of());
+            if (stations == null || stations.isEmpty()) {
+                log.warn("No subway stations found near lat={}, lng={}", lat, lng);
+                return ResponseEntity.ok(Map.of());
+            }
 
             // 1순위 가장 가까운 지하철역
             Map<String, Object> nearest = stations.get(0);
@@ -103,9 +113,11 @@ public class StudioController {
             result.put("station", nearest.get("place_name"));
             result.put("minutes", minutes);
             result.put("distance", distanceM);
+            log.info("Subway lookup success: station={}, distance={}m, minutes={}", nearest.get("place_name"), distanceM, minutes);
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
+            log.error("Subway lookup failed with error for address {}: ", address, e);
             return ResponseEntity.ok(Map.of());
         }
     }

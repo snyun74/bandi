@@ -32,6 +32,10 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     com.bandi.backend: DEBUG
 
+kakao:
+  client-id: b7b74bba84f701122fa1bacf9697f578
+  redirect-uri: http://127.0.0.1:5173/auth/kakao/callback
+
 ---
 spring:
   config:
