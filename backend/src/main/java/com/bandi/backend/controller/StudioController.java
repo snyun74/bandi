@@ -54,23 +54,38 @@ public class StudioController {
             headers.set("Authorization", "KakaoAK " + kakaoRestApiKey);
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            // Step 1: 주소 → 좌표
+            String lat = null;
+            String lng = null;
+
+            // Step 1: 카카오 주소 검색으로 좌표 조회
             String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
             String geoUrl = "https://dapi.kakao.com/v2/local/search/address.json?query=" + encodedAddress;
-
             ResponseEntity<Map> geoResponse = restTemplate.exchange(geoUrl, HttpMethod.GET, entity, Map.class);
             Map geoBody = geoResponse.getBody();
-            if (geoBody == null) return ResponseEntity.ok(Map.of());
+            List<Map<String, Object>> docs = geoBody != null ? (List<Map<String, Object>>) geoBody.get("documents") : null;
 
-            List<Map<String, Object>> docs = (List<Map<String, Object>>) geoBody.get("documents");
-            if (docs == null || docs.isEmpty()) return ResponseEntity.ok(Map.of());
+            if (docs != null && !docs.isEmpty()) {
+                lat = String.valueOf(docs.get(0).get("y"));
+                lng = String.valueOf(docs.get(0).get("x"));
+            } else {
+                // Step 1-Fallback: 아파트명/건물명이 포함되어 주소 검색이 안될 경우 키워드 검색으로 좌표 조회
+                String keywordUrl = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encodedAddress;
+                ResponseEntity<Map> kwResponse = restTemplate.exchange(keywordUrl, HttpMethod.GET, entity, Map.class);
+                Map kwBody = kwResponse.getBody();
+                List<Map<String, Object>> kwDocs = kwBody != null ? (List<Map<String, Object>>) kwBody.get("documents") : null;
+                if (kwDocs != null && !kwDocs.isEmpty()) {
+                    lat = String.valueOf(kwDocs.get(0).get("y"));
+                    lng = String.valueOf(kwDocs.get(0).get("x"));
+                }
+            }
 
-            String lat = String.valueOf(docs.get(0).get("y"));
-            String lng = String.valueOf(docs.get(0).get("x"));
+            if (lat == null || lng == null) {
+                return ResponseEntity.ok(Map.of());
+            }
 
-            // Step 2: 좌표 → 반경 500m 이내 지하철역 (카테고리 코드 SW8)
+            // Step 2: 좌표 → 반경 5km(5000m) 이내 가장 가까운 지하철역 검색 (카테고리 코드 SW8, 최단거리순 정렬)
             String subwayUrl = "https://dapi.kakao.com/v2/local/search/category.json"
-                    + "?category_group_code=SW8&x=" + lng + "&y=" + lat + "&radius=500&sort=distance";
+                    + "?category_group_code=SW8&x=" + lng + "&y=" + lat + "&radius=5000&sort=distance";
 
             ResponseEntity<Map> subwayResponse = restTemplate.exchange(subwayUrl, HttpMethod.GET, entity, Map.class);
             Map subwayBody = subwayResponse.getBody();
@@ -79,9 +94,10 @@ public class StudioController {
             List<Map<String, Object>> stations = (List<Map<String, Object>>) subwayBody.get("documents");
             if (stations == null || stations.isEmpty()) return ResponseEntity.ok(Map.of());
 
+            // 1순위 가장 가까운 지하철역
             Map<String, Object> nearest = stations.get(0);
             int distanceM = Integer.parseInt(String.valueOf(nearest.get("distance")));
-            int minutes = Math.max(1, (int) Math.ceil(distanceM / 80.0));
+            int minutes = Math.max(1, (int) Math.round(distanceM / 67.0)); // 분당 약 67m (성인 평균 보행 속도 4km/h 기준)
 
             Map<String, Object> result = new HashMap<>();
             result.put("station", nearest.get("place_name"));
@@ -118,8 +134,10 @@ public class StudioController {
             @RequestBody com.bandi.backend.entity.band.BnReservation reservation) {
         try {
             reservation.setRoomNo(roomNo);
-            String actualUserId = userId != null ? userId : (reservation.getUserId() != null ? reservation.getUserId() : "anonymous");
-            com.bandi.backend.entity.band.BnReservation created = partnerService.createReservation(reservation, actualUserId);
+            String actualUserId = userId != null ? userId
+                    : (reservation.getUserId() != null ? reservation.getUserId() : "anonymous");
+            com.bandi.backend.entity.band.BnReservation created = partnerService.createReservation(reservation,
+                    actualUserId);
             return ResponseEntity.ok(created);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(Map.of("message", e.getMessage()));
