@@ -341,7 +341,7 @@ const SignupPage: React.FC = () => {
                 </div>
             </CommonModal>
 
-            <div className="min-h-screen bg-white flex flex-col font-['Pretendard']">
+            <div className="min-h-screen bg-white flex flex-col pt-safe font-['Pretendard']">
                 <div className="flex-1 w-full max-w-sm mx-auto px-4 py-8 flex flex-col">
                     <div className="text-center mb-6">
                         <h1 className="text-[14px] text-[#003C48] font-bold tracking-wide">

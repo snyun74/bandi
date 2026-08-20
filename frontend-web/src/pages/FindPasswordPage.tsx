@@ -116,7 +116,7 @@ const FindPasswordPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white flex flex-col items-center font-['Pretendard']">
+        <div className="min-h-screen bg-white flex flex-col items-center pt-safe px-4 pb-10 font-['Pretendard']">
             <CommonModal
                 isOpen={modal.isOpen}
                 type="alert"
@@ -174,15 +174,15 @@ const FindPasswordPage: React.FC = () => {
             )}
 
             {/* Header Navigation */}
-            <div className="w-full max-w-sm p-4 mt-2 flex justify-end gap-4 text-sm text-gray-700 font-medium">
-                <button onClick={() => navigate('/')} className="hover:text-[#00BDF8]">로그인</button>
-                <button onClick={() => navigate('/signup')} className="hover:text-[#00BDF8]">회원가입</button>
+            <div className="w-full max-w-sm pt-4 pb-2 sm:pt-6 flex justify-end gap-4 text-sm text-gray-700 font-medium">
+                <button onClick={() => navigate('/')} className="hover:text-[#00BDF8] transition-colors">로그인</button>
+                <button onClick={() => navigate('/signup')} className="hover:text-[#00BDF8] transition-colors">회원가입</button>
             </div>
 
-            <div className="w-full max-w-sm px-4 mt-4 flex flex-col items-center">
+            <div className="w-full max-w-sm px-4 pt-16 sm:pt-20 flex flex-col items-center">
                 {/* Logo Section */}
-                <div className="flex flex-col items-center mb-8">
-                    <img src="/images/main_title.png" alt="Bandicon" className="w-64 mb-2" />
+                <div className="flex flex-col items-center mb-6">
+                    <img src="/images/main_title.png" alt="Bandicon" className="w-48 mb-2 object-contain" />
                 </div>
 
                 {/* Find Password Card */}

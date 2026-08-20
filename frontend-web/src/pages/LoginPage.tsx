@@ -97,62 +97,56 @@ const LoginPage: React.FC = () => {
                 onCancel={closeModal}
             />
 
-            <div className="min-h-screen bg-white flex flex-col items-center">
-                {/* Header Navigation */}
-                <div className="w-full max-w-md p-2 flex justify-end gap-4 text-sm text-gray-600 font-medium">
-                    <button onClick={() => navigate('/signup')} className="hover:text-black">회원가입</button>
-                </div>
-
-                <div className="w-full max-w-md px-6 mt-1">
+            <div className="min-h-screen bg-white flex flex-col items-center justify-start pt-safe px-4 pb-8 font-['Pretendard']">
+                <div className="w-full max-w-md px-2 sm:px-4 pt-20 sm:pt-28">
                     {/* Logo Section */}
-                    <div className="flex flex-col items-center mb-0">
-                        <img src="/images/main_title.png" alt="Bandicon" className="w-[300px] mb-6" />
+                    <div className="flex flex-col items-center mb-6">
+                        <img src="/images/main_title.png" alt="Bandicon" className="w-[170px] sm:w-[200px] h-auto object-contain" />
                     </div>
 
                     {/* Login Card */}
-                    <div className="bg-white rounded-3xl p-1 shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-100">
-                        <div className="p-5">
-                            <h2 className="text-xl font-bold text-center text-slate-700 mb-5 mt-1">로그인</h2>
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_4px_25px_rgba(0,0,0,0.06)] border border-gray-100">
+                        <h2 className="text-xl font-bold text-center text-slate-700 mb-6">로그인</h2>
 
-                            <form onSubmit={handleSubmit} className="space-y-3">
-                                <div className="space-y-1">
-                                    <label className="text-sm font-medium text-slate-700 pl-1">아이디</label>
-                                    <input
-                                        type="text"
-                                        value={id}
-                                        onChange={(e) => setId(e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
-                                        placeholder=""
-                                    />
-                                </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-slate-700 pl-1">아이디</label>
+                                <input
+                                    type="text"
+                                    value={id}
+                                    onChange={(e) => setId(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-transparent focus:border-[#00B2FF] focus:bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#00B2FF]/20 outline-none transition-all"
+                                    placeholder="아이디를 입력하세요"
+                                />
+                            </div>
 
-                                <div className="space-y-1">
-                                    <label className="text-sm font-medium text-slate-700 pl-1">비밀번호</label>
-                                    <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
-                                        placeholder=""
-                                    />
-                                </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-slate-700 pl-1">비밀번호</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 bg-slate-50 border border-transparent focus:border-[#00B2FF] focus:bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#00B2FF]/20 outline-none transition-all"
+                                    placeholder="비밀번호를 입력하세요"
+                                />
+                            </div>
 
-                                <button
-                                    type="submit"
-                                    className="w-full py-3 bg-[#00B2FF] text-white rounded-xl font-bold text-lg mt-2 hover:bg-[#009CE0] transition-colors shadow-sm"
-                                >
-                                    로그인
-                                </button>
-                            </form>
-
-                            {/* 다른 로그인 (소셜 로그인 활성화 시 함께 애플 로그인 추가 필요하므로 임시 주석 혹은 삭제) */}
-                        </div>
+                            <button
+                                type="submit"
+                                className="w-full py-3.5 bg-[#00B2FF] text-white rounded-xl font-bold text-base mt-2 hover:bg-[#009CE0] active:scale-[0.99] transition-all shadow-md shadow-[#00B2FF]/20"
+                            >
+                                로그인
+                            </button>
+                        </form>
                     </div>
 
                     {/* Footer Links */}
-                    <div className="flex justify-end gap-4 mt-3 text-xs text-gray-500 pr-2">
-                        <button onClick={() => navigate('/find-id')} className="hover:text-gray-800">아이디 찾기</button>
-                        <button onClick={() => navigate('/find-password')} className="hover:text-gray-800">비밀번호 찾기</button>
+                    <div className="flex justify-center items-center gap-3 mt-5 text-xs text-gray-500 font-medium">
+                        <button onClick={() => navigate('/find-id')} className="hover:text-gray-800 transition-colors">아이디 찾기</button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={() => navigate('/find-password')} className="hover:text-gray-800 transition-colors">비밀번호 찾기</button>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={() => navigate('/signup')} className="text-[#00B2FF] font-semibold hover:underline transition-colors">회원가입</button>
                     </div>
                 </div>
             </div>

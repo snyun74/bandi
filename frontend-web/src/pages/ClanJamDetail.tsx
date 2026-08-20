@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit, FaUsers } from 'react-icons/fa';
 import DefaultProfile from '../components/common/DefaultProfile';
 import { GiGrandPiano } from "react-icons/gi";
 import SectionTitle from '../components/common/SectionTitle';
@@ -19,6 +19,15 @@ interface JamRole {
     onImgUrl1?: string;
     onImgUrl2?: string;
     reservedCount?: number;
+}
+
+interface ScheduleDto {
+    bnSchNo?: number;
+    bnNo?: number;
+    title?: string;
+    startDate?: string;
+    startTime?: string;
+    userId?: string;
 }
 
 interface BandDetail {
@@ -41,7 +50,9 @@ const ClanJamDetail: React.FC = () => {
     const { jamId } = useParams<{ jamId: string }>();
     const userId = localStorage.getItem('userId');
     const [bandDetail, setBandDetail] = useState<BandDetail | null>(null);
+    const [schedules, setSchedules] = useState<ScheduleDto[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState<boolean>(false);
 
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
@@ -169,6 +180,19 @@ const ClanJamDetail: React.FC = () => {
         }
     };
 
+    const fetchSchedules = async () => {
+        if (!jamId) return;
+        try {
+            const response = await fetch(`/api/bands/${jamId}/schedules`);
+            if (response.ok) {
+                const data = await response.json();
+                setSchedules(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch schedules", error);
+        }
+    };
+
     useEffect(() => {
         const fetchBandDetail = async () => {
             if (!jamId || !userId) return;
@@ -198,6 +222,7 @@ const ClanJamDetail: React.FC = () => {
             }
         };
         fetchBandDetail();
+        fetchSchedules();
     }, [jamId, userId, navigate]);
 
     const getFallbackIcon = (part: string, bgUrl?: string) => {
@@ -537,9 +562,9 @@ const ClanJamDetail: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                {/* Session Status */}
+                {/* 1. 모집 세션 (Session Status) */}
                 <section>
-                    <SectionTitle className="mb-3">세션 현황</SectionTitle>
+                    <h2 className="text-[18px] font-bold text-[#0B1114] mb-3">모집 세션</h2>
                     <div className="bg-white rounded-2xl p-4 shadow-sm grid grid-cols-3 gap-3">
                         {(() => {
                             let occupiedCounter = 0;
@@ -629,81 +654,147 @@ const ClanJamDetail: React.FC = () => {
                                                 </span>
                                             )}
                                         </div>
-
-
                                     </div>
                                 );
                             });
                         })()}
-                        {/* Empty slots filler to match grid if needed, or just let CSS grid handle it */}
                     </div>
                 </section>
 
-                {/* Additional Features */}
-                <section>
-                    <SectionTitle className="mb-3">추가 기능</SectionTitle>
-                    <div className="space-y-3">
-                        {/* Schedule */}
-                        <div className="bg-white rounded-2xl p-4 shadow-sm">
-                            <h3 className="text-[#003C48] font-bold text-sm mb-3">합주 일정 조율</h3>
-                            <button
-                                onClick={() => {
-                                    if (!bandDetail.isConfirmed) {
-                                        showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
-                                        return;
-                                    }
-                                    const isMember = bandDetail.roles.some(r => r.isCurrentUser);
-                                    if (!isMember) {
-                                        showAlert("합주 참여자만 이용할 수 있습니다.");
-                                        return;
-                                    }
-                                    navigate(`/main/jam/schedule/${jamId}`);
-                                }}
-                                className={`w-full font-bold py-2.5 rounded-xl shadow-sm text-[14px] transition-colors ${bandDetail.isConfirmed && bandDetail.roles.some(r => r.isCurrentUser)
-                                    ? 'bg-[#00BDF8] text-white'
-                                    : 'bg-gray-200 text-gray-400'
-                                    }`}
-                            >
-                                캘린더 보러가기
-                            </button>
-                        </div>
+                {/* 2. 일정 조율 카드 (일정 조율 내용이 있을 때만 표시) */}
+                {(() => {
+                    const occupiedMembers = bandDetail.roles.filter(r => r.status === 'occupied');
+                    const totalOccupied = occupiedMembers.length;
+                    const scheduledUserIds = Array.from(new Set(schedules.map(s => s.userId).filter(Boolean)));
+                    const availableCount = scheduledUserIds.length;
+                    const unresponsiveCount = Math.max(0, totalOccupied - availableCount);
+                    const hasSchedules = schedules.length > 0;
 
-                        {/* Reservation */}
-                        <div className="bg-white rounded-2xl p-4 shadow-sm">
-                            <h3 className="text-[#003C48] font-bold text-sm mb-3">합주실 예약</h3>
-                            <button
-                                onClick={() => {
-                                    if (!bandDetail.isConfirmed) {
-                                        showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
-                                        return;
-                                    }
-                                    const isMember = bandDetail.roles.some(r => r.isCurrentUser);
-                                    if (!isMember) {
-                                        showAlert("합주 참여자만 이용할 수 있습니다.");
-                                        return;
-                                    }
-                                    sessionStorage.setItem('currentJamTitle', bandDetail.title || bandDetail.songTitle || '합주 모임');
-                                    sessionStorage.setItem('currentJamNo', String(bandDetail.id || jamId));
-                                    navigate('/main/jam/reservation/studios');
-                                }}
-                                className={`w-full font-bold py-2.5 rounded-xl shadow-sm text-[14px] transition-colors ${bandDetail.isConfirmed && bandDetail.roles.some(r => r.isCurrentUser)
-                                    ? 'bg-[#00BDF8] text-white hover:bg-[#00a8df]'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    }`}
-                            >
-                                합주실 보러가기
-                            </button>
-                        </div>
+                    if (!hasSchedules) return null;
 
-                        {/* Concert */}
-                        <div className="bg-white rounded-2xl p-4 shadow-sm">
-                            <h3 className="text-[#003C48] font-bold text-sm mb-3">밴디콘 정기공연</h3>
-                            <button className="w-full bg-gray-200 text-gray-400 font-bold py-2.5 rounded-xl shadow-sm text-[14px] cursor-not-allowed" disabled>
-                                밴디콘서트 신청하기 (작업 진행중)
+                    return (
+                        <div
+                            onClick={() => {
+                                if (!bandDetail.isConfirmed) {
+                                    showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                    return;
+                                }
+                                navigate(`/main/jam/schedule/${jamId}`);
+                            }}
+                            className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 cursor-pointer hover:border-[#00BDF8] transition-all flex flex-col gap-1"
+                        >
+                            <h3 className="text-[16px] font-semibold text-[#0B1114]">일정 조율</h3>
+                            <p className="text-[14px] text-[#525252] font-normal">
+                                참여 가능 {availableCount}명 · 미응답 {unresponsiveCount}명
+                            </p>
+                        </div>
+                    );
+                })()}
+
+                {/* 3. 참여자 요약 & 멤버 보기 */}
+                {(() => {
+                    const occupiedMembers = bandDetail.roles.filter(r => r.status === 'occupied');
+                    const totalOccupied = occupiedMembers.length;
+                    const firstMemberNick = occupiedMembers[0]?.user || '';
+                    const remainingMembersCount = totalOccupied > 1 ? totalOccupied - 1 : 0;
+
+                    return (
+                        <div className="bg-[#EFF2F2] rounded-xl px-4 py-3 flex items-center justify-between shadow-xs">
+                            {/* Left: Avatars & Text */}
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="flex items-center -space-x-1.5 shrink-0">
+                                    {occupiedMembers.slice(0, 3).map((m, idx) => (
+                                        <div
+                                            key={idx}
+                                            className="w-6 h-6 rounded-full bg-[#2C2C2C] text-[#F5F5F5] text-[11px] font-bold flex items-center justify-center border-2 border-white shadow-xs select-none"
+                                        >
+                                            {(m.user || '?').charAt(0).toUpperCase()}
+                                        </div>
+                                    ))}
+                                    {totalOccupied === 0 && (
+                                        <div className="w-6 h-6 rounded-full bg-gray-300 border-2 border-white" />
+                                    )}
+                                </div>
+                                <span className="text-[14px] font-medium text-[#525252] truncate">
+                                    {totalOccupied === 0
+                                        ? '참여 인원 없음'
+                                        : totalOccupied === 1
+                                        ? `${firstMemberNick} 참여 중`
+                                        : `${firstMemberNick} 외 ${remainingMembersCount}명 참여 중`}
+                                </span>
+                            </div>
+
+                            {/* Right: View Members Button */}
+                            <button
+                                onClick={() => setIsMembersModalOpen(true)}
+                                className="flex items-center gap-1 text-[12px] font-bold text-[#0098CC] hover:text-[#00BDF8] shrink-0 ml-2 py-1 px-1.5 rounded-lg hover:bg-white/60 transition-colors"
+                            >
+                                <FaUsers size={14} className="opacity-90" />
+                                <span>멤버 보기</span>
                             </button>
                         </div>
+                    );
+                })()}
+
+                {/* 4. 추가 기능 (Additional Features) */}
+                <div className="space-y-4 pt-1">
+                    {/* Feature Card 1: 합주 일정 조율 */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">합주 일정 조율</h3>
+                        <button
+                            onClick={() => {
+                                if (!bandDetail.isConfirmed) {
+                                    showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                    return;
+                                }
+                                const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                                if (!isMember) {
+                                    showAlert("합주 참여자만 이용할 수 있습니다.");
+                                    return;
+                                }
+                                navigate(`/main/jam/schedule/${jamId}`);
+                            }}
+                            className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
+                        >
+                            캘린더 보러가기
+                        </button>
                     </div>
-                </section>
+
+                    {/* Feature Card 2: 합주실 예약 */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">합주실 예약</h3>
+                        <button
+                            onClick={() => {
+                                if (!bandDetail.isConfirmed) {
+                                    showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                    return;
+                                }
+                                const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                                if (!isMember) {
+                                    showAlert("합주 참여자만 이용할 수 있습니다.");
+                                    return;
+                                }
+                                sessionStorage.setItem('currentJamTitle', bandDetail.title || bandDetail.songTitle || '합주 모임');
+                                sessionStorage.setItem('currentJamNo', String(bandDetail.id || jamId));
+                                navigate('/main/jam/reservation/studios');
+                            }}
+                            className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
+                        >
+                            합주실 보러가기
+                        </button>
+                    </div>
+
+                    {/* Feature Card 3: 밴디콘 정기공연 */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">밴디콘 정기공연</h3>
+                        <button
+                            onClick={() => showAlert("밴디콘 정기공연 신청 기능은 준비 중입니다.")}
+                            className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
+                        >
+                            밴디콘서트 신청하기
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Footer - End/Delete Jam */}
@@ -741,6 +832,65 @@ const ClanJamDetail: React.FC = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={closeModal}
             />
+
+            {/* 참여 멤버 보기 팝업 모달 */}
+            {isMembersModalOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-fade-in-up border border-gray-100">
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+                            <h2 className="text-base font-bold text-[#0B1114] flex items-center gap-2">
+                                <FaUsers className="text-[#00BDF8]" />
+                                <span>참여 멤버 목록</span>
+                            </h2>
+                            <span className="text-xs font-semibold text-[#0098CC] bg-[#00BDF8]/10 px-2 py-0.5 rounded-full">
+                                {bandDetail.roles.filter(r => r.status === 'occupied').length}명 참여 중
+                            </span>
+                        </div>
+
+                        {bandDetail.roles.filter(r => r.status === 'occupied').length === 0 ? (
+                            <p className="text-center text-gray-400 text-sm py-6">참여 중인 멤버가 없습니다.</p>
+                        ) : (
+                            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                                {bandDetail.roles.filter(r => r.status === 'occupied').map((role, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="flex items-center justify-between p-3 rounded-2xl bg-gray-50/80 border border-gray-100 hover:bg-gray-100/70 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-9 h-9 rounded-full bg-[#2C2C2C] text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs">
+                                                {(role.user || '?').charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-sm font-bold text-[#0B1114] truncate">
+                                                        {role.user}
+                                                    </span>
+                                                    {role.isBandLeader && (
+                                                        <span className="flex items-center gap-0.5 text-[10px] font-bold text-yellow-600 bg-yellow-100 px-1.5 py-0.2 rounded-md">
+                                                            <FaCrown size={9} />
+                                                            방장
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs text-[#0098CC] font-medium block mt-0.5">
+                                                    {role.part}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => setIsMembersModalOpen(false)}
+                            className="mt-5 w-full bg-gray-100 text-gray-700 hover:bg-gray-200 font-bold py-3 rounded-xl text-sm transition-colors"
+                        >
+                            닫기
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* 개별 세션 예약자 목록 팝업 */}
             {rsvModal.isOpen && (
