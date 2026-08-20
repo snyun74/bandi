@@ -61,27 +61,42 @@ public class StudioController {
             String lat = null;
             String lng = null;
 
-            // Step 1: 카카오 주소 검색으로 좌표 조회
-            String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8);
-            String geoUrl = "https://dapi.kakao.com/v2/local/search/address.json?query=" + encodedAddress;
-            ResponseEntity<Map> geoResponse = restTemplate.exchange(geoUrl, HttpMethod.GET, entity, Map.class);
-            Map geoBody = geoResponse.getBody();
-            List<Map<String, Object>> docs = geoBody != null ? (List<Map<String, Object>>) geoBody.get("documents") : null;
+            // Step 1: 원본 주소부터 상세주소 토큰을 뒤에서부터 하나씩 제거하며 주소 검색 (예: "서울 도봉구 해등로 21 301-605" -> "서울 도봉구 해등로 21")
+            String[] tokens = address.trim().split("\\s+");
+            for (int len = tokens.length; len >= 2; len--) {
+                String candidate = String.join(" ", java.util.Arrays.copyOfRange(tokens, 0, len));
+                String enc = URLEncoder.encode(candidate, StandardCharsets.UTF_8).replace("+", "%20");
+                try {
+                    java.net.URI geoUri = java.net.URI.create("https://dapi.kakao.com/v2/local/search/address.json?query=" + enc);
+                    ResponseEntity<Map> geoResponse = restTemplate.exchange(geoUri, HttpMethod.GET, entity, Map.class);
+                    Map geoBody = geoResponse.getBody();
+                    List<Map<String, Object>> docs = geoBody != null ? (List<Map<String, Object>>) geoBody.get("documents") : null;
+                    if (docs != null && !docs.isEmpty()) {
+                        lat = String.valueOf(docs.get(0).get("y"));
+                        lng = String.valueOf(docs.get(0).get("x"));
+                        log.info("Found coords by address candidate '{}': lat={}, lng={}", candidate, lat, lng);
+                        break;
+                    }
+                } catch (Exception e) {
+                    log.warn("Address search error for candidate '{}': {}", candidate, e.getMessage());
+                }
+            }
 
-            if (docs != null && !docs.isEmpty()) {
-                lat = String.valueOf(docs.get(0).get("y"));
-                lng = String.valueOf(docs.get(0).get("x"));
-                log.info("Found coords by address: lat={}, lng={}", lat, lng);
-            } else {
-                // Step 1-Fallback: 아파트명/건물명이 포함되어 주소 검색이 안될 경우 키워드 검색으로 좌표 조회
-                String keywordUrl = "https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encodedAddress;
-                ResponseEntity<Map> kwResponse = restTemplate.exchange(keywordUrl, HttpMethod.GET, entity, Map.class);
-                Map kwBody = kwResponse.getBody();
-                List<Map<String, Object>> kwDocs = kwBody != null ? (List<Map<String, Object>>) kwBody.get("documents") : null;
-                if (kwDocs != null && !kwDocs.isEmpty()) {
-                    lat = String.valueOf(kwDocs.get(0).get("y"));
-                    lng = String.valueOf(kwDocs.get(0).get("x"));
-                    log.info("Found coords by keyword fallback: lat={}, lng={}", lat, lng);
+            // Step 1-Fallback: 주소 검색으로 안 나오는 특수 건물명의 경우 키워드 검색으로 재시도
+            if (lat == null || lng == null) {
+                String encodedAddress = URLEncoder.encode(address, StandardCharsets.UTF_8).replace("+", "%20");
+                try {
+                    java.net.URI keywordUri = java.net.URI.create("https://dapi.kakao.com/v2/local/search/keyword.json?query=" + encodedAddress);
+                    ResponseEntity<Map> kwResponse = restTemplate.exchange(keywordUri, HttpMethod.GET, entity, Map.class);
+                    Map kwBody = kwResponse.getBody();
+                    List<Map<String, Object>> kwDocs = kwBody != null ? (List<Map<String, Object>>) kwBody.get("documents") : null;
+                    if (kwDocs != null && !kwDocs.isEmpty()) {
+                        lat = String.valueOf(kwDocs.get(0).get("y"));
+                        lng = String.valueOf(kwDocs.get(0).get("x"));
+                        log.info("Found coords by keyword fallback: lat={}, lng={}", lat, lng);
+                    }
+                } catch (Exception e) {
+                    log.warn("Keyword search error for address '{}': {}", address, e.getMessage());
                 }
             }
 
@@ -91,10 +106,10 @@ public class StudioController {
             }
 
             // Step 2: 좌표 → 반경 5km(5000m) 이내 가장 가까운 지하철역 검색 (카테고리 코드 SW8, 최단거리순 정렬)
-            String subwayUrl = "https://dapi.kakao.com/v2/local/search/category.json"
-                    + "?category_group_code=SW8&x=" + lng + "&y=" + lat + "&radius=5000&sort=distance";
+            java.net.URI subwayUri = java.net.URI.create("https://dapi.kakao.com/v2/local/search/category.json?category_group_code=SW8&x="
+                    + lng + "&y=" + lat + "&radius=5000&sort=distance");
 
-            ResponseEntity<Map> subwayResponse = restTemplate.exchange(subwayUrl, HttpMethod.GET, entity, Map.class);
+            ResponseEntity<Map> subwayResponse = restTemplate.exchange(subwayUri, HttpMethod.GET, entity, Map.class);
             Map subwayBody = subwayResponse.getBody();
             if (subwayBody == null) return ResponseEntity.ok(Map.of());
 
