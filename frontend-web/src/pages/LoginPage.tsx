@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
                                     type="text"
                                     value={id}
                                     onChange={(e) => setId(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-transparent focus:border-[#00B2FF] focus:bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#00B2FF]/20 outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-transparent focus:border-[#00B2FF] focus:bg-white rounded-xl text-[16px] focus:ring-2 focus:ring-[#00B2FF]/20 outline-none transition-all"
                                     placeholder="아이디를 입력하세요"
                                 />
                             </div>
@@ -126,7 +126,7 @@ const LoginPage: React.FC = () => {
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-transparent focus:border-[#00B2FF] focus:bg-white rounded-xl text-sm focus:ring-2 focus:ring-[#00B2FF]/20 outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-transparent focus:border-[#00B2FF] focus:bg-white rounded-xl text-[16px] focus:ring-2 focus:ring-[#00B2FF]/20 outline-none transition-all"
                                     placeholder="비밀번호를 입력하세요"
                                 />
                             </div>
