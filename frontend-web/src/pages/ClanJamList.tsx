@@ -672,8 +672,8 @@ const ClanJamList: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* 세션 목록 (간격을 줄여 6개 세션이 모바일에서도 스크롤 없이 노출 - 클릭 시 토글 액션) */}
-                                    <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 no-scrollbar pt-1">
+                                    {/* 세션 목록 (4글자 세션명 및 상태 라벨도 줄바꿈 없이 깔끔하게 표시) */}
+                                    <div className="flex items-center gap-1 min-[380px]:gap-1.5 sm:gap-2 overflow-x-auto pb-1 no-scrollbar pt-1">
                                         {room.roles.map((role, idx) => {
                                             const isUserJoined = !!role.isCurrentUser;
                                             const isUserReserved = Boolean(role.isCurrentUserReserved || (currentUserNickNm && role.reservedUsers?.includes(currentUserNickNm)));
@@ -697,7 +697,7 @@ const ClanJamList: React.FC = () => {
                                                     }
                                                 >
                                                     {/* 악기 박스: 내가 참여(파랑), 내가 예약(주황), 타인 참여(차콜), 공석(파란테두리) */}
-                                                    <div className={`w-[43px] sm:w-[46px] h-[41px] sm:h-[43px] rounded-[10px] flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                                    <div className={`w-[45px] min-[380px]:w-[48px] sm:w-[50px] h-[42px] min-[380px]:h-[44px] rounded-[10px] px-0.5 flex flex-col items-center justify-center gap-0.5 transition-all ${
                                                         isUserJoined
                                                             ? 'bg-[#00BDF8] text-white shadow-xs'
                                                             : isUserReserved
@@ -707,13 +707,13 @@ const ClanJamList: React.FC = () => {
                                                                     : 'bg-[#2C373C] text-white shadow-xs'
                                                     }`}>
                                                         {renderInstrumentIcon(role.part, "w-3.5 h-3.5")}
-                                                        <span className="text-[10px] font-medium leading-none truncate max-w-[38px] sm:max-w-[40px]">
+                                                        <span className="text-[9.5px] min-[380px]:text-[10px] font-medium leading-none whitespace-nowrap tracking-tighter truncate max-w-[42px] min-[380px]:max-w-[46px] text-center">
                                                             {role.part}
                                                         </span>
                                                     </div>
 
                                                     {/* 하단 상태 라벨 */}
-                                                    <span className={`text-[10px] font-bold text-center leading-tight ${
+                                                    <span className={`text-[9.5px] min-[380px]:text-[10px] font-bold text-center leading-tight whitespace-nowrap tracking-tighter ${
                                                         isUserJoined
                                                             ? 'text-[#00BDF8]'
                                                             : isUserReserved

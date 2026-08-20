@@ -160,29 +160,61 @@ const PartnerManagePage: React.FC = () => {
         setModalOpen(true);
     };
 
-    // Daum 우편번호 검색 핸들러
+    // Daum 우편번호 검색 모달 상태
+    const [isPostcodeOpen, setIsPostcodeOpen] = useState(false);
+    const postcodeContainerRef = React.useRef<HTMLDivElement>(null);
+
+    // Daum 우편번호 스크립트 동적 로드 및 임베드 실행
     const handleAddressSearch = () => {
-        if (!(window as any).daum?.Postcode) {
-            showModal('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
-            return;
-        }
-        new (window as any).daum.Postcode({
-            oncomplete: (data: any) => {
-                const fullAddress = data.roadAddress || data.jibunAddress;
-                setZipcode(data.zonecode);
-                setAddress(fullAddress);
-                setAddressDetail('');
-            },
-            theme: {
-                bgColor: '#003C48',
-                searchBgColor: '#00BDF8',
-                contentBgColor: '#ffffff',
-                pageBgColor: '#f8f9fa',
-                textColor: '#333333',
-                queryTextColor: '#003C48',
-            }
-        }).open();
+        setIsPostcodeOpen(true);
     };
+
+    useEffect(() => {
+        if (!isPostcodeOpen || !postcodeContainerRef.current) return;
+
+        const renderPostcode = () => {
+            if (!(window as any).daum?.Postcode) {
+                showModal('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.');
+                setIsPostcodeOpen(false);
+                return;
+            }
+
+            // 기존 내용 초기화
+            if (postcodeContainerRef.current) {
+                postcodeContainerRef.current.innerHTML = '';
+            }
+
+            new (window as any).daum.Postcode({
+                oncomplete: (data: any) => {
+                    const fullAddress = data.roadAddress || data.jibunAddress;
+                    setZipcode(data.zonecode);
+                    setAddress(fullAddress);
+                    setAddressDetail('');
+                    setIsPostcodeOpen(false);
+                },
+                width: '100%',
+                height: '100%',
+                theme: {
+                    bgColor: '#003C48',
+                    searchBgColor: '#00BDF8',
+                    contentBgColor: '#ffffff',
+                    pageBgColor: '#f8f9fa',
+                    textColor: '#333333',
+                    queryTextColor: '#003C48',
+                }
+            }).embed(postcodeContainerRef.current);
+        };
+
+        if (!(window as any).daum?.Postcode) {
+            const script = document.createElement('script');
+            script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+            script.async = true;
+            script.onload = () => renderPostcode();
+            document.head.appendChild(script);
+        } else {
+            renderPostcode();
+        }
+    }, [isPostcodeOpen]);
 
     const loadPartnerStatus = async () => {
         if (!userId) return;
@@ -883,18 +915,18 @@ const PartnerManagePage: React.FC = () => {
                                 </div>
                                 {/* 주소 검색 */}
                                 <div className="flex flex-col gap-2">
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2 w-full">
                                         <input
                                             type="text"
                                             value={zipcode}
                                             readOnly
                                             placeholder="우편번호"
-                                            className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs text-gray-600 cursor-default"
+                                            className="w-24 sm:w-28 shrink-0 px-2.5 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs text-gray-600 text-center cursor-default font-medium"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleAddressSearch}
-                                            className="shrink-0 px-4 py-2.5 bg-[#00BDF8] text-white text-xs font-bold rounded-xl hover:bg-[#009fd4] active:scale-95 transition-all whitespace-nowrap"
+                                            className="flex-1 py-2.5 px-3 bg-[#00BDF8] text-white text-xs font-bold rounded-xl hover:bg-[#009fd4] active:scale-95 transition-all text-center truncate shadow-xs"
                                         >
                                             🔍 주소 검색
                                         </button>
@@ -1467,6 +1499,30 @@ const PartnerManagePage: React.FC = () => {
                             <button onClick={() => { if (selectedResvNo) { handleReservationAction(selectedResvNo, 'REJ', rejectReason); setRejectModalOpen(false); } }} className="flex-1 bg-[#FF6B6B] text-white py-2 rounded-xl text-xs font-bold">반려</button>
                             <button onClick={() => setRejectModalOpen(false)} className="flex-1 bg-gray-100 text-gray-500 py-2 rounded-xl text-xs font-bold">취소</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Daum 우편번호 검색 인앱 레이어 모달 (모바일/PC 완벽 호환) */}
+            {isPostcodeOpen && (
+                <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fade-in">
+                    <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col border border-gray-100">
+                        <div className="flex justify-between items-center px-5 py-3.5 border-b border-gray-100 bg-white">
+                            <h3 className="text-sm font-bold text-[#003C48] flex items-center gap-2">
+                                <span>🔍</span> 주소 검색
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsPostcodeOpen(false)}
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                <FaTimes size={16} />
+                            </button>
+                        </div>
+                        <div
+                            ref={postcodeContainerRef}
+                            className="w-full h-[450px] sm:h-[500px] overflow-hidden"
+                        />
                     </div>
                 </div>
             )}

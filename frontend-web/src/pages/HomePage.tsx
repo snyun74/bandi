@@ -457,16 +457,16 @@ export default function HomePage() {
                     {/* 2 영역. 4개 퀵 아이콘 그리드 */}
                     {/* ========================================================================= */}
                     <section>
-                        <div className="grid grid-cols-4 gap-2.5">
+                        <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
                             {/* 1. 합주 만들기 */}
                             <div
                                 onClick={() => navigate('/main/jam/create')}
-                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
-                                    <img src={iconJamCreate} alt="합주 만들기" className="w-[28px] h-[28px] object-contain" />
+                                <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconJamCreate} alt="합주 만들기" className="w-[26px] h-[26px] min-[380px]:w-[28px] min-[380px]:h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
+                                <span className="text-[11px] min-[380px]:text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tighter min-[380px]:tracking-tight whitespace-nowrap">
                                     합주 만들기
                                 </span>
                             </div>
@@ -474,12 +474,12 @@ export default function HomePage() {
                             {/* 2. 합주 찾기 */}
                             <div
                                 onClick={() => navigate('/main/jam')}
-                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
-                                    <img src={iconJamSearch} alt="합주 찾기" className="w-[28px] h-[28px] object-contain" />
+                                <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconJamSearch} alt="합주 찾기" className="w-[26px] h-[26px] min-[380px]:w-[28px] min-[380px]:h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
+                                <span className="text-[11px] min-[380px]:text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tighter min-[380px]:tracking-tight whitespace-nowrap">
                                     합주 찾기
                                 </span>
                             </div>
@@ -487,12 +487,12 @@ export default function HomePage() {
                             {/* 3. 공지사항 */}
                             <div
                                 onClick={() => navigate('/main/notices')}
-                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
-                                    <img src={iconNotice} alt="공지사항" className="w-[28px] h-[28px] object-contain" />
+                                <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconNotice} alt="공지사항" className="w-[26px] h-[26px] min-[380px]:w-[28px] min-[380px]:h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
+                                <span className="text-[11px] min-[380px]:text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tighter min-[380px]:tracking-tight whitespace-nowrap">
                                     공지사항
                                 </span>
                             </div>
@@ -500,12 +500,12 @@ export default function HomePage() {
                             {/* 4. 만들기 (쇼츠 & 게시물 등록 모달) */}
                             <div
                                 onClick={() => setIsCreateMenuOpen(true)}
-                                className="bg-white rounded-[15px] p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
+                                className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
-                                <div className="w-[35px] h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
-                                    <img src={iconCreate} alt="만들기" className="w-[28px] h-[28px] object-contain" />
+                                <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <img src={iconCreate} alt="만들기" className="w-[26px] h-[26px] min-[380px]:w-[28px] min-[380px]:h-[28px] object-contain" />
                                 </div>
-                                <span className="text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tight">
+                                <span className="text-[11px] min-[380px]:text-[12px] font-semibold leading-[18px] text-[#525252] text-center tracking-tighter min-[380px]:tracking-tight whitespace-nowrap">
                                     만들기
                                 </span>
                             </div>
