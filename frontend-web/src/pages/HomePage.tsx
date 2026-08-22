@@ -43,6 +43,19 @@ export default function HomePage() {
     const navigate = useNavigate();
     const userId = localStorage.getItem("userId") || "";
 
+    const requireAuth = (callback: () => void, customMsg?: { title?: string; description?: string }) => {
+        if (!userId) {
+            window.dispatchEvent(new CustomEvent('open-auth-modal', {
+                detail: {
+                    title: customMsg?.title || '로그인이 필요한 서비스예요 🎵',
+                    description: customMsg?.description || '밴디에서 다양한 합주에 참여하고\n음악 친구들과 실시간으로 소통해 보세요!'
+                }
+            }));
+            return;
+        }
+        callback();
+    };
+
     // 메인 광고/배너 상태
     const [mainBanner, setMainBanner] = useState<{ url: string; isVideo: boolean; linkUrl: string | null } | null>(null);
     const [isBannerLoading, setIsBannerLoading] = useState(true);
@@ -343,43 +356,72 @@ export default function HomePage() {
         <div className="flex flex-col pb-4 relative min-h-screen bg-[#F7F9FC] font-['Pretendard'] text-gray-900 selection:bg-[#00BDF8] selection:text-white">
             
             {/* ========================================================================= */}
-            {/* 메인 광고 배너 영역 (16:9 비율 유지) */}
+            {/* 메인 광고 배너 영역 (헤더 바로 밑에 1mm도 미동 없는 완전 고정 Fixed) */}
             {/* ========================================================================= */}
-            <section className="sticky top-[60px] z-0 w-full aspect-[16/9] bg-[#003C48] overflow-hidden flex items-center justify-center">
-                {isBannerLoading ? (
-                    <div className="w-full h-full bg-gray-200 animate-pulse" />
-                ) : mainBanner ? (
-                    mainBanner.linkUrl ? (
-                        <a
-                            href={mainBanner.linkUrl.startsWith('http') ? mainBanner.linkUrl : `http://${mainBanner.linkUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full h-full"
-                        >
-                            {mainBanner.isVideo ? (
-                                <video src={mainBanner.url} autoPlay loop muted playsInline className="w-full h-full object-cover cursor-pointer" />
-                            ) : (
-                                <img src={mainBanner.url} alt="Main Banner" className="w-full h-full object-cover cursor-pointer" />
-                            )}
-                        </a>
+            <div className="fixed top-[calc(var(--header-height)+var(--safe-top))] left-0 right-0 z-0 w-full flex justify-center pointer-events-auto">
+                <section className="w-full max-w-lg aspect-[16/9] bg-[#003C48] overflow-hidden select-none flex items-center justify-center transform-gpu">
+                    {isBannerLoading ? (
+                        <div className="w-full h-full bg-slate-800 animate-pulse" />
+                    ) : mainBanner ? (
+                        mainBanner.linkUrl ? (
+                            <a
+                                href={mainBanner.linkUrl.startsWith('http') ? mainBanner.linkUrl : `http://${mainBanner.linkUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full h-full block"
+                            >
+                                {mainBanner.isVideo ? (
+                                    <video 
+                                        src={mainBanner.url} 
+                                        autoPlay 
+                                        loop 
+                                        muted 
+                                        playsInline 
+                                        className="w-full h-full object-cover cursor-pointer transition-opacity duration-300" 
+                                    />
+                                ) : (
+                                    <img 
+                                        src={mainBanner.url} 
+                                        alt="Main Banner" 
+                                        className="w-full h-full object-cover cursor-pointer transition-opacity duration-300" 
+                                    />
+                                )}
+                            </a>
+                        ) : (
+                            <div className="w-full h-full">
+                                {mainBanner.isVideo ? (
+                                    <video 
+                                        src={mainBanner.url} 
+                                        autoPlay 
+                                        loop 
+                                        muted 
+                                        playsInline 
+                                        className="w-full h-full object-cover transition-opacity duration-300" 
+                                    />
+                                ) : (
+                                    <img 
+                                        src={mainBanner.url} 
+                                        alt="Main Banner" 
+                                        className="w-full h-full object-cover transition-opacity duration-300" 
+                                    />
+                                )}
+                            </div>
+                        )
                     ) : (
-                        <div className="w-full h-full">
-                            {mainBanner.isVideo ? (
-                                <video src={mainBanner.url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-                            ) : (
-                                <img src={mainBanner.url} alt="Main Banner" className="w-full h-full object-cover" />
-                            )}
-                        </div>
-                    )
-                ) : (
-                    <img src="/images/main_logo.png" alt="Default Main Banner" className="w-full h-full object-cover" />
-                )}
-            </section>
+                        <img src="/images/main_logo.png" alt="Default Main Banner" className="w-full h-full object-cover" />
+                    )}
+                </section>
+            </div>
 
             {/* ========================================================================= */}
-            {/* 메인 컨텐츠 영역 (배너 위로 부드럽게 스크롤 및 완벽 반응형) */}
+            {/* 초기 100% 온전 노출을 위한 플레이스홀더 스페이서 */}
             {/* ========================================================================= */}
-            <div className="relative z-10 bg-[#F7F9FC] rounded-t-3xl pt-5 pb-24 shadow-[0_-10px_20px_rgba(0,0,0,0.04)]">
+            <div className="w-full max-w-lg mx-auto aspect-[16/9] pointer-events-none invisible select-none" aria-hidden="true" />
+
+            {/* ========================================================================= */}
+            {/* 메인 컨텐츠 영역 (고정된 광고 위를 부드럽게 덮고 올라가는 구조) */}
+            {/* ========================================================================= */}
+            <div className="relative z-10 bg-[#F7F9FC] rounded-t-[28px] pt-6 pb-24 shadow-[0_-12px_32px_rgba(0,0,0,0.08)] min-h-screen">
                 <div className="w-full max-w-lg mx-auto px-4 space-y-6">
 
                     {/* ========================================================================= */}
@@ -460,7 +502,10 @@ export default function HomePage() {
                         <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
                             {/* 1. 합주 만들기 */}
                             <div
-                                onClick={() => navigate('/main/jam/create')}
+                                onClick={() => requireAuth(() => navigate('/main/jam/create'), {
+                                    title: '합주를 직접 개설해 보세요! 🎸',
+                                    description: '합주방을 만들고 멤버를 모집하려면\n로그인이 필요합니다.'
+                                })}
                                 className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
                                 <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -473,7 +518,10 @@ export default function HomePage() {
 
                             {/* 2. 합주 찾기 */}
                             <div
-                                onClick={() => navigate('/main/jam')}
+                                onClick={() => requireAuth(() => navigate('/main/jam'), {
+                                    title: '합주방을 둘러보세요! 🎵',
+                                    description: '합주방 목록 및 상세 정보를 보시려면\n로그인이 필요합니다.'
+                                })}
                                 className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
                                 <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -486,7 +534,10 @@ export default function HomePage() {
 
                             {/* 3. 공지사항 */}
                             <div
-                                onClick={() => navigate('/main/notices')}
+                                onClick={() => requireAuth(() => navigate('/main/notices'), {
+                                    title: '공지사항을 확인해 보세요! 📢',
+                                    description: '공지사항 목록 및 상세 내용을 보시려면\n로그인이 필요합니다.'
+                                })}
                                 className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
                                 <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -499,7 +550,10 @@ export default function HomePage() {
 
                             {/* 4. 만들기 (쇼츠 & 게시물 등록 모달) */}
                             <div
-                                onClick={() => setIsCreateMenuOpen(true)}
+                                onClick={() => requireAuth(() => setIsCreateMenuOpen(true), {
+                                    title: '새로운 콘텐츠를 만들어 보세요! 🎥',
+                                    description: '영상이나 게시글을 등록하려면\n로그인이 필요합니다.'
+                                })}
                                 className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
                                 <div className="w-[32px] h-[32px] min-[380px]:w-[35px] min-[380px]:h-[35px] flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -524,7 +578,7 @@ export default function HomePage() {
                                     <h3 className="font-bold text-[18px] leading-[26px] text-[#0B1114]">내 클랜</h3>
                                 </div>
                                 <button
-                                    onClick={() => navigate('/main/clan/my')}
+                                    onClick={() => requireAuth(() => navigate('/main/clan/my'))}
                                     className="text-[#737373] text-[13px] leading-[16px] hover:text-[#00BDF8] cursor-pointer"
                                 >
                                     더보기
@@ -575,11 +629,18 @@ export default function HomePage() {
                                 </div>
                             ) : (
                                 <div
-                                    onClick={() => navigate('/main/clan')}
+                                    onClick={() => requireAuth(() => navigate('/main/clan'), {
+                                        title: '클랜에 참여해 보세요! 👥',
+                                        description: '다양한 밴드 클랜 활동을 하려면\n로그인이 필요합니다.'
+                                    })}
                                     className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
-                                    <p className="text-xs text-gray-400 font-medium">가입된 클랜이 없습니다.</p>
-                                    <span className="text-[12px] text-[#00BDF8] font-bold mt-1">클랜 찾기</span>
+                                    <p className="text-xs text-gray-400 font-medium">
+                                        {userId ? '가입된 클랜이 없습니다.' : '로그인하고 클랜을 확인해 보세요'}
+                                    </p>
+                                    <span className="text-[12px] text-[#00BDF8] font-bold mt-1">
+                                        {userId ? '클랜 찾기' : '로그인하기'}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -592,7 +653,7 @@ export default function HomePage() {
                                     <h3 className="font-bold text-[18px] leading-[26px] text-[#0B1114]">내 합주</h3>
                                 </div>
                                 <button
-                                    onClick={() => navigate('/main/jam/my')}
+                                    onClick={() => requireAuth(() => navigate('/main/jam/my'))}
                                     className="text-[#737373] text-[13px] leading-[16px] hover:text-[#00BDF8] cursor-pointer"
                                 >
                                     더보기
@@ -647,11 +708,18 @@ export default function HomePage() {
                                 </div>
                             ) : (
                                 <div
-                                    onClick={() => navigate('/main/jam')}
+                                    onClick={() => requireAuth(() => navigate('/main/jam'), {
+                                        title: '합주에 참여해 보세요! 🎸',
+                                        description: '내 합주 일정을 확인하고 참여하려면\n로그인이 필요합니다.'
+                                    })}
                                     className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
-                                    <p className="text-xs text-gray-400 font-medium">참여 중인 합주가 없습니다.</p>
-                                    <span className="text-[12px] text-[#00BDF8] font-bold mt-1">합주방 둘러보기</span>
+                                    <p className="text-xs text-gray-400 font-medium">
+                                        {userId ? '참여 중인 합주가 없습니다.' : '로그인하고 내 합주를 확인해 보세요'}
+                                    </p>
+                                    <span className="text-[12px] text-[#00BDF8] font-bold mt-1">
+                                        {userId ? '합주방 둘러보기' : '로그인하기'}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -680,7 +748,10 @@ export default function HomePage() {
                                 bandiTalkPosts.map((post) => (
                                     <div
                                         key={post.boardNo}
-                                        onClick={() => navigate(`/main/board/detail/${post.boardNo}`)}
+                                        onClick={() => requireAuth(() => navigate(`/main/board/detail/${post.boardNo}`), {
+                                            title: '밴디톡 이야기를 더 자세히 확인해 보세요! 💬',
+                                            description: '게시글 상세 내용과 댓글을 확인하려면\n로그인이 필요합니다.'
+                                        })}
                                         className="bg-white rounded-[12px] p-[16px_20px] border border-[#ECECEC] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] cursor-pointer hover:border-gray-300 transition-all space-y-3"
                                     >
                                         {/* 상단: 카테고리 뱃지 + 제목 + 작성일 */}
@@ -743,7 +814,10 @@ export default function HomePage() {
 
                         {/* 밴디톡 전체보기 링크 */}
                         <div
-                            onClick={() => navigate('/main/board')}
+                            onClick={() => requireAuth(() => navigate('/main/board'), {
+                                title: '밴디톡 전체보기를 이용해 보세요! 📝',
+                                description: '커뮤니티 게시판을 보시려면\n로그인이 필요합니다.'
+                            })}
                             className="flex items-center justify-center gap-1 py-4 text-[13px] font-medium leading-[20px] text-[#525252] cursor-pointer hover:text-[#00BDF8] transition-colors"
                         >
                             <span>전체보기</span>
@@ -757,7 +831,10 @@ export default function HomePage() {
             {/* 우하단 플로팅 글쓰기 FAB 버튼 (자유게시판 글쓰기 이동) */}
             {/* ========================================================================= */}
             <button
-                onClick={() => navigate('/main/board/write/0')}
+                onClick={() => requireAuth(() => navigate('/main/board/write/0'), {
+                    title: '밴디톡에 글을 남겨보세요! ✍️',
+                    description: '자유롭게 소통하고 질문하려면\n로그인이 필요합니다.'
+                })}
                 className="fixed bottom-[calc(var(--nav-offset)+20px)] right-4 md:right-[max(1.25rem,calc((100vw-480px)/2+1.25rem))] w-[48px] h-[48px] rounded-full bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white shadow-lg flex items-center justify-center transition-all z-20"
                 aria-label="글쓰기"
             >
@@ -788,7 +865,7 @@ export default function HomePage() {
                                 }}
                                 className="w-full py-3.5 rounded-full border-2 border-[#00BDF8] text-[#00BDF8] font-bold text-[15px] leading-tight hover:bg-[#E6F8FE] active:scale-[0.99] transition-all cursor-pointer text-center block"
                             >
-                                영상 촬영·업로드
+                                릴스 만들기 (동영상)
                             </button>
                             <button
                                 onClick={() => {
@@ -797,7 +874,7 @@ export default function HomePage() {
                                 }}
                                 className="w-full py-3.5 rounded-full border-2 border-[#00BDF8] text-[#00BDF8] font-bold text-[15px] leading-tight hover:bg-[#E6F8FE] active:scale-[0.99] transition-all cursor-pointer text-center block"
                             >
-                                게시글 작성
+                                게시물 만들기 (사진/동영상)
                             </button>
                         </div>
 

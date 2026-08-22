@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes, FaPlay } from 'react-icons/fa';
 import { BsPersonCircle, BsChatSquare, BsDoorOpen, BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../components/common/CommonModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
@@ -518,7 +518,7 @@ const MyProfile: React.FC = () => {
                         className="flex-1 bg-[#F8F9FA] text-[#003C48] font-bold py-2.5 rounded-xl text-[13px] border border-gray-200 flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors shadow-sm"
                     >
                         <span className="text-base">🎬</span>
-                        <span>쇼츠 만들기</span>
+                        <span>릴스 만들기</span>
                     </button>
                     <button
                         onClick={() => navigate('/main/profile/post/create')}
@@ -616,21 +616,38 @@ const MyProfile: React.FC = () => {
                                         ) : 'none';
                                         const rotation = imgEdit?.rotation || 0;
                                         const flipH = imgEdit?.flipH || false;
+                                        const isVideoThumb = item.thumbnailPath ? /\.(mp4|mov|webm|ogg|m4v|avi|mkv)(\?.*)?$/i.test(item.thumbnailPath) : false;
+
                                         return (
                                             <>
                                                 {item.thumbnailPath ? (
-                                                    <div
-                                                        className="w-full h-full"
-                                                        style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
-                                                    >
-                                                        <img src={item.thumbnailPath} alt="post" className="w-full h-full object-cover" style={{ filter: filterCss }} />
-                                                    </div>
+                                                    isVideoThumb ? (
+                                                        <div className="w-full h-full relative bg-gray-900 flex items-center justify-center">
+                                                            <video
+                                                                src={`${item.thumbnailPath}#t=0.1`}
+                                                                className="w-full h-full object-cover"
+                                                                muted
+                                                                playsInline
+                                                                preload="metadata"
+                                                            />
+                                                            <div className="absolute top-1.5 right-1.5 bg-black/60 text-white p-1 rounded-md text-[9px] flex items-center gap-1 backdrop-blur-xs pointer-events-none">
+                                                                <FaPlay size={8} />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div
+                                                            className="w-full h-full"
+                                                            style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
+                                                        >
+                                                            <img src={item.thumbnailPath} alt="post" className="w-full h-full object-cover" style={{ filter: filterCss }} />
+                                                        </div>
+                                                    )
                                                 ) : (
                                                     <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center bg-gray-100">
                                                         <span className="text-[10px] text-gray-500 line-clamp-3">{item.contentPreview}</span>
                                                     </div>
                                                 )}
-                                                {imgEdit?.textOverlay?.text && (
+                                                {imgEdit?.textOverlay?.text && !isVideoThumb && (
                                                     <div
                                                         className="absolute flex justify-center pointer-events-none z-10"
                                                         style={{

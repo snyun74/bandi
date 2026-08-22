@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaThumbsUp, FaThumbsDown, FaComment, FaEye } from 'react-icons/fa';
+import { FaChevronLeft, FaHeart, FaCommentDots, FaEye } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../../components/common/CommonModal';
 import SnsCommentModal from '../../components/sns/SnsCommentModal';
@@ -314,39 +314,25 @@ const SnsUnifiedFeed: React.FC = () => {
                                 />
                             )}
                             
-                            {/* Right Action Bar (YouTube Shorts Style) */}
-                            <div className="absolute right-4 bottom-28 z-40 flex flex-col items-center gap-5 text-white">
-                                {/* Thumbs Up Button */}
+                            {/* Right Action Bar (SNS & YouTube Shorts Style) */}
+                            <div className="absolute right-3.5 bottom-24 z-40 flex flex-col items-center gap-3.5 text-white">
+                                {/* Heart (Like) Button */}
                                 <button
                                     onClick={() => handleLikeToggle(item.type, targetId, 'L')}
                                     className="flex flex-col items-center group"
                                 >
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-md ${
                                         item.userAction === 'L'
-                                            ? 'bg-emerald-500 text-black border-emerald-400 shadow-emerald-500/40'
+                                            ? 'bg-red-500/20 text-[#FF2D55] border-[#FF2D55]/50 shadow-red-500/30'
                                             : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
                                     }`}>
-                                        <FaThumbsUp size={20} className={item.userAction === 'L' ? 'scale-110' : ''} />
+                                        <FaHeart 
+                                            size={18} 
+                                            className={item.userAction === 'L' ? 'scale-110 text-[#FF2D55] drop-shadow-[0_0_6px_rgba(255,45,85,0.6)]' : 'text-white'} 
+                                        />
                                     </div>
-                                    <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                    <span className="text-[11px] font-semibold mt-1 drop-shadow-md">
                                         {item.likeCount || 0}
-                                    </span>
-                                </button>
-
-                                {/* Thumbs Down Button */}
-                                <button
-                                    onClick={() => handleLikeToggle(item.type, targetId, 'D')}
-                                    className="flex flex-col items-center group"
-                                >
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
-                                        item.userAction === 'D'
-                                            ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/40'
-                                            : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
-                                    }`}>
-                                        <FaThumbsDown size={20} className={item.userAction === 'D' ? 'scale-110' : ''} />
-                                    </div>
-                                    <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
-                                        {item.dislikeCount || 0}
                                     </span>
                                 </button>
 
@@ -359,20 +345,20 @@ const SnsUnifiedFeed: React.FC = () => {
                                     })}
                                     className="flex flex-col items-center group"
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-lg">
-                                        <FaComment size={20} />
+                                    <div className="w-10 h-10 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-md">
+                                        <FaCommentDots size={18} />
                                     </div>
-                                    <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                    <span className="text-[11px] font-semibold mt-1 drop-shadow-md">
                                         {item.commentCount || 0}
                                     </span>
                                 </button>
 
                                 {/* View Count Indicator */}
                                 <div className="flex flex-col items-center">
-                                    <div className="w-10 h-10 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
-                                        <FaEye size={17} />
+                                    <div className="w-8 h-8 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
+                                        <FaEye size={14} />
                                     </div>
-                                    <span className="text-[11px] font-medium text-zinc-300 mt-1 drop-shadow-md">
+                                    <span className="text-[10px] font-medium text-zinc-300 mt-1 drop-shadow-md">
                                         {item.viewCount || 0}
                                     </span>
                                 </div>
@@ -642,7 +628,7 @@ const ShortsVideoItem: React.FC<{
                         className="border-white/40"
                     />
                     <span className="font-bold text-[15px] drop-shadow-md">@{item.userNickNm || item.userId}</span>
-                    <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">🎬 Shorts</span>
+                    <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">🎬 Reels</span>
                 </div>
                 <div className="w-full">
                     <h3 className="text-[15px] leading-[1.4] line-clamp-3 font-medium drop-shadow-md">{item.title}</h3>
@@ -658,13 +644,16 @@ const PostFeedItem: React.FC<{
     onViewRecord: (newCount: number) => void;
 }> = ({ post, onViewRecord }) => {
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
+    const [isIntersecting, setIsIntersecting] = useState(false);
     const itemRef = useRef<HTMLDivElement>(null);
+    const videoRefs = useRef<{ [key: number]: HTMLVideoElement | null }>({});
     const hasViewBeenRecorded = useRef(false);
     const currentUserId = localStorage.getItem('userId');
 
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
+                setIsIntersecting(entry.isIntersecting);
                 if (entry.isIntersecting && !hasViewBeenRecorded.current && post.postId) {
                     hasViewBeenRecorded.current = true;
                     fetch(`/api/sns/posts/${post.postId}/view?userId=${currentUserId || ''}`, { method: 'POST' })
@@ -680,6 +669,29 @@ const PostFeedItem: React.FC<{
         return () => observer.disconnect();
     }, [post.postId, currentUserId, onViewRecord]);
 
+    // 화면 진입 및 슬라이드 변경 시 동영상 자동 재생/일시정지 제어
+    useEffect(() => {
+        post.imagePaths?.forEach((path, idx) => {
+            const video = videoRefs.current[idx];
+            if (!video) return;
+
+            const isCurrent = isIntersecting && idx === currentImgIndex;
+            if (isCurrent) {
+                video.currentTime = 0;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        // 브라우저 정책으로 소리 있는 자동재생 차단 시 muted로 자동재생
+                        video.muted = true;
+                        video.play().catch(() => {});
+                    });
+                }
+            } else {
+                video.pause();
+            }
+        });
+    }, [isIntersecting, currentImgIndex, post.imagePaths]);
+
     const handleXScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollLeft, clientWidth } = e.currentTarget;
         const index = Math.round(scrollLeft / clientWidth);
@@ -694,6 +706,8 @@ const PostFeedItem: React.FC<{
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {post.imagePaths?.map((path, idx) => {
+                    const isVideo = path ? /\.(mp4|mov|webm|ogg|m4v|avi|mkv)(\?.*)?$/i.test(path) : false;
+
                     let imgEdit: any = null;
                     if (post.editDataList && post.editDataList[idx]) {
                         try {
@@ -716,32 +730,51 @@ const PostFeedItem: React.FC<{
 
                     return (
                         <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center relative overflow-hidden bg-black">
-                            <div 
-                                className="w-full h-full flex items-center justify-center transition-transform duration-200"
-                                style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
-                            >
-                                <img src={path} alt={`post-${idx}`} className="w-full h-full object-cover" style={{ filter: filterCss }} />
-                            </div>
-                            {imgEdit?.textOverlay?.text && (
-                                <div 
-                                    className="absolute flex justify-center pointer-events-none z-10"
-                                    style={{
-                                        top: `${imgEdit.textOverlay.posY || 50}%`,
-                                        left: `${imgEdit.textOverlay.posX || 50}%`,
-                                        transform: 'translate(-50%, -50%)'
+                            {isVideo ? (
+                                <video
+                                    ref={(el) => { videoRefs.current[idx] = el; }}
+                                    src={path}
+                                    controls
+                                    playsInline
+                                    loop
+                                    {...({ 'webkit-playsinline': 'true' } as any)}
+                                    className="w-full h-full object-contain bg-black cursor-pointer"
+                                    onClick={(e) => {
+                                        const v = e.currentTarget;
+                                        if (v.paused) v.play();
+                                        else v.pause();
                                     }}
-                                >
-                                    <span 
-                                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
-                                        style={{
-                                            color: imgEdit.textOverlay.color || '#ffffff',
-                                            backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
-                                            fontSize: `${imgEdit.textOverlay.fontSize || 22}px`
-                                        }}
+                                />
+                            ) : (
+                                <>
+                                    <div 
+                                        className="w-full h-full flex items-center justify-center transition-transform duration-200"
+                                        style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
                                     >
-                                        {imgEdit.textOverlay.text}
-                                    </span>
-                                </div>
+                                        <img src={path} alt={`post-${idx}`} className="w-full h-full object-contain" style={{ filter: filterCss }} />
+                                    </div>
+                                    {imgEdit?.textOverlay?.text && (
+                                        <div 
+                                            className="absolute flex justify-center pointer-events-none z-10"
+                                            style={{
+                                                top: `${imgEdit.textOverlay.posY || 50}%`,
+                                                left: `${imgEdit.textOverlay.posX || 50}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                            }}
+                                        >
+                                            <span 
+                                                className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
+                                                style={{
+                                                    color: imgEdit.textOverlay.color || '#ffffff',
+                                                    backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                                                    fontSize: `${imgEdit.textOverlay.fontSize || 22}px`
+                                                }}
+                                            >
+                                                {imgEdit.textOverlay.text}
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     );

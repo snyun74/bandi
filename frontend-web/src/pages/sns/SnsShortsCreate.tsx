@@ -140,7 +140,7 @@ const SnsShortsCreate: React.FC = () => {
 
     const handleNext = () => {
         if (!videoFile) {
-            showAlert("쇼츠 동영상을 등록해주세요.");
+            showAlert("릴스 동영상을 등록해주세요.");
             return;
         }
         setStep(1);
@@ -151,7 +151,7 @@ const SnsShortsCreate: React.FC = () => {
             showAlert("공개 설정을 선택해주세요.");
             return;
         }
-        setConfirmMessage("쇼츠를 등록하시겠습니까?");
+        setConfirmMessage("릴스를 등록하시겠습니까?");
         setIsConfirmOpen(true);
     };
 
@@ -201,7 +201,7 @@ const SnsShortsCreate: React.FC = () => {
             });
 
             if (response.ok) {
-                showAlert("쇼츠가 성공적으로 등록되었습니다.");
+                showAlert("릴스가 성공적으로 등록되었습니다.");
                 setTimeout(() => {
                     navigate('/main/profile');
                 }, 1500);
@@ -210,7 +210,7 @@ const SnsShortsCreate: React.FC = () => {
                 showAlert(`업로드 실패: ${errorText}`);
             }
         } catch (error) {
-            showAlert("쇼츠 등록 중 오류가 발생했습니다.");
+            showAlert("릴스 등록 중 오류가 발생했습니다.");
         } finally {
             setIsProcessing(false);
         }
@@ -230,7 +230,7 @@ const SnsShortsCreate: React.FC = () => {
                     <FaChevronLeft size={18} />
                 </button>
                 <h1 className="text-[15px] font-bold text-gray-800">
-                    {step === 0 ? '쇼츠 편집 및 만들기' : '게시 정보 입력'}
+                    {step === 0 ? '릴스 편집 및 만들기' : '게시 정보 입력'}
                 </h1>
                 <button
                     onClick={step === 0 ? handleNext : handleSubmit}
@@ -397,7 +397,7 @@ const SnsShortsCreate: React.FC = () => {
                                                 <label className="text-[12px] font-bold text-gray-500 block mb-1">자막 입력</label>
                                                 <input
                                                     type="text"
-                                                    placeholder="쇼츠에 표시할 자막 문구 추가..."
+                                                    placeholder="릴스에 표시할 자막 문구 추가..."
                                                     value={textOverlay.text}
                                                     onChange={(e) => setTextOverlay(prev => ({ ...prev, text: e.target.value }))}
                                                     className="w-full px-3 py-2 text-[14px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"

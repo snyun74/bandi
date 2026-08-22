@@ -9,7 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -21,19 +24,50 @@ public class AdminPartnerService {
 
     @Transactional(readOnly = true)
     public List<BnPartner> getPartnersForAdmin() {
-        List<BnPartner> list = partnerRepository.findByPartnerStatCdIn(List.of("R", "A"));
-        list.sort((o1, o2) -> {
-            boolean r1 = "R".equals(o1.getPartnerStatCd());
-            boolean r2 = "R".equals(o2.getPartnerStatCd());
-            if (r1 && !r2) return -1;
-            if (!r1 && r2) return 1;
-            String dtime1 = o1.getUpdDtime() != null ? o1.getUpdDtime() : o1.getInsDtime();
-            String dtime2 = o2.getUpdDtime() != null ? o2.getUpdDtime() : o2.getInsDtime();
-            if (dtime1 == null) dtime1 = "";
-            if (dtime2 == null) dtime2 = "";
+        // R, A, B 상태를 포함한 전체 파트너 신청 목록 조회
+        List<BnPartner> allList = partnerRepository.findAll();
+        if (allList == null || allList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 최신 생성순(partnerNo 역순)으로 정렬
+        allList.sort((o1, o2) -> {
+            Long p1 = o1.getPartnerNo() != null ? o1.getPartnerNo() : 0L;
+            Long p2 = o2.getPartnerNo() != null ? o2.getPartnerNo() : 0L;
+            return p2.compareTo(p1);
+        });
+
+        // 사업자번호(bizRegNo) 기준 최신 1건만 취합 (동일 사업자번호 중복 신청 시 최신 상태 1개만 노출)
+        Map<String, BnPartner> latestByBizRegNo = new LinkedHashMap<>();
+        for (BnPartner p : allList) {
+            String key = (p.getBizRegNo() != null && !p.getBizRegNo().isBlank()) 
+                    ? p.getBizRegNo().trim() 
+                    : ("ID_" + p.getPartnerNo());
+            latestByBizRegNo.putIfAbsent(key, p);
+        }
+
+        List<BnPartner> result = new ArrayList<>(latestByBizRegNo.values());
+
+        // 정렬: 심사대기('R') -> 승인완료('A') -> 심사거절('B') 순, 각각 최신 수정/신청일시 순
+        result.sort((o1, o2) -> {
+            int priority1 = getStatusPriority(o1.getPartnerStatCd());
+            int priority2 = getStatusPriority(o2.getPartnerStatCd());
+            if (priority1 != priority2) {
+                return Integer.compare(priority1, priority2);
+            }
+            String dtime1 = o1.getUpdDtime() != null ? o1.getUpdDtime() : (o1.getInsDtime() != null ? o1.getInsDtime() : "");
+            String dtime2 = o2.getUpdDtime() != null ? o2.getUpdDtime() : (o2.getInsDtime() != null ? o2.getInsDtime() : "");
             return dtime2.compareTo(dtime1);
         });
-        return list;
+
+        return result;
+    }
+
+    private int getStatusPriority(String statCd) {
+        if ("R".equals(statCd)) return 1;
+        if ("A".equals(statCd)) return 2;
+        if ("B".equals(statCd)) return 3;
+        return 4;
     }
 
     @Transactional

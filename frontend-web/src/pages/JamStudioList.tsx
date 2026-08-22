@@ -79,6 +79,11 @@ const JamStudioList: React.FC = () => {
 
     // 검색어 및 필터 필터링
     const filteredStudios = studios.filter(studio => {
+        // 0. 활성 상태('A')만 노출
+        if (studio.studioStatCd && studio.studioStatCd !== 'A') {
+            return false;
+        }
+
         // 1. 카테고리 필터 칩 필터링
         if (selectedFilter === '연습실' && studio.studioTypeCd !== 'S') {
             return false;
@@ -118,15 +123,18 @@ const JamStudioList: React.FC = () => {
         <div className="flex flex-col h-full bg-gray-50 font-['Pretendard']">
             {/* Header */}
             <div className="bg-white px-4 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10 w-full">
-                <button onClick={() => navigate(-1)} className="text-[#052c42] shrink-0">
-                    <FaChevronLeft size={20} />
-                </button>
-                <h1 className="text-lg font-bold text-[#052c42] text-center flex-1">공간 예약</h1>
-                <div className="w-5 h-5 shrink-0" /> {/* 좌우 균형 맞추기용 빈 공간 */}
+                <div className="max-w-2xl mx-auto w-full flex items-center justify-between">
+                    <button onClick={() => navigate(-1)} className="text-[#052c42] shrink-0 p-1 -ml-1">
+                        <FaChevronLeft size={20} />
+                    </button>
+                    <h1 className="text-lg font-bold text-[#052c42] text-center flex-1">공간 예약</h1>
+                    <div className="w-6 h-6 shrink-0" /> {/* 좌우 균형 맞추기용 빈 공간 */}
+                </div>
             </div>
 
             {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                <div className="max-w-2xl mx-auto w-full space-y-4">
                 {/* Search Bar */}
                 <div className="relative">
                     <input
@@ -258,6 +266,7 @@ const JamStudioList: React.FC = () => {
                             );
                         })
                     )}
+                </div>
                 </div>
             </div>
         </div>

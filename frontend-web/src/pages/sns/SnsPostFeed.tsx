@@ -106,7 +106,44 @@ const SnsPostFeed: React.FC = () => {
 
 const PostFeedItem: React.FC<{ post: PostItem }> = ({ post }) => {
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
+    const [isIntersecting, setIsIntersecting] = useState(false);
+    const itemRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const videoRefs = useRef<{ [key: number]: HTMLVideoElement | null }>({});
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsIntersecting(entry.isIntersecting);
+            },
+            { threshold: 0.6 }
+        );
+
+        if (itemRef.current) observer.observe(itemRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    // 화면 진입 및 슬라이드 변경 시 동영상 자동 재생/일시정지 제어
+    useEffect(() => {
+        post.imagePaths?.forEach((path, idx) => {
+            const video = videoRefs.current[idx];
+            if (!video) return;
+
+            const isCurrent = isIntersecting && idx === currentImgIndex;
+            if (isCurrent) {
+                video.currentTime = 0;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        video.muted = true;
+                        video.play().catch(() => {});
+                    });
+                }
+            } else {
+                video.pause();
+            }
+        });
+    }, [isIntersecting, currentImgIndex, post.imagePaths]);
 
     const handleXScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const { scrollLeft, clientWidth } = e.currentTarget;
@@ -115,7 +152,7 @@ const PostFeedItem: React.FC<{ post: PostItem }> = ({ post }) => {
     };
 
     return (
-        <div className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
+        <div ref={itemRef} className="h-screen w-full snap-start relative flex flex-col items-center justify-center bg-black overflow-hidden">
             {/* Horizontal Scroll Area (Images) */}
             <div 
                 ref={scrollRef}
@@ -142,45 +179,66 @@ const PostFeedItem: React.FC<{ post: PostItem }> = ({ post }) => {
                     const rotation = imgEdit?.rotation || 0;
                     const flipH = imgEdit?.flipH || false;
 
+                    const isVideo = path ? /\.(mp4|mov|webm|ogg|m4v|avi|mkv)(\?.*)?$/i.test(path) : false;
+
                     return (
                         <div key={idx} className="w-full h-full flex-shrink-0 snap-center snap-always flex items-center justify-center relative overflow-hidden bg-black">
-                            <div 
-                                className="w-full h-full flex items-center justify-center transition-transform duration-200"
-                                style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
-                            >
-                                <img 
-                                    src={path} 
-                                    alt={`post-${idx}`} 
-                                    className="w-full h-full object-contain" 
-                                    style={{ 
-                                        filter: filterCss,
-                                        imageRendering: 'auto',
-                                        WebkitBackfaceVisibility: 'hidden',
-                                        backfaceVisibility: 'hidden',
-                                        transform: 'translateZ(0)' // GPU 가속 유도
+                            {isVideo ? (
+                                <video
+                                    ref={(el) => { videoRefs.current[idx] = el; }}
+                                    src={path}
+                                    controls
+                                    playsInline
+                                    loop
+                                    {...({ 'webkit-playsinline': 'true' } as any)}
+                                    className="w-full h-full object-contain bg-black cursor-pointer"
+                                    onClick={(e) => {
+                                        const v = e.currentTarget;
+                                        if (v.paused) v.play();
+                                        else v.pause();
                                     }}
                                 />
-                            </div>
-                            {imgEdit?.textOverlay?.text && (
-                                <div 
-                                    className="absolute flex justify-center pointer-events-none z-10"
-                                    style={{
-                                        top: `${imgEdit.textOverlay.posY || 50}%`,
-                                        left: `${imgEdit.textOverlay.posX || 50}%`,
-                                        transform: 'translate(-50%, -50%)'
-                                    }}
-                                >
-                                    <span 
-                                        className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
-                                        style={{
-                                            color: imgEdit.textOverlay.color || '#ffffff',
-                                            backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
-                                            fontSize: `${imgEdit.textOverlay.fontSize || 22}px`
-                                        }}
+                            ) : (
+                                <>
+                                    <div 
+                                        className="w-full h-full flex items-center justify-center transition-transform duration-200"
+                                        style={{ transform: `rotate(${rotation}deg) scaleX(${flipH ? -1 : 1})` }}
                                     >
-                                        {imgEdit.textOverlay.text}
-                                    </span>
-                                </div>
+                                        <img 
+                                            src={path} 
+                                            alt={`post-${idx}`} 
+                                            className="w-full h-full object-contain" 
+                                            style={{ 
+                                                filter: filterCss,
+                                                imageRendering: 'auto',
+                                                WebkitBackfaceVisibility: 'hidden',
+                                                backfaceVisibility: 'hidden',
+                                                transform: 'translateZ(0)' // GPU 가속 유도
+                                            }}
+                                        />
+                                    </div>
+                                    {imgEdit?.textOverlay?.text && (
+                                        <div 
+                                            className="absolute flex justify-center pointer-events-none z-10"
+                                            style={{
+                                                top: `${imgEdit.textOverlay.posY || 50}%`,
+                                                left: `${imgEdit.textOverlay.posX || 50}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                            }}
+                                        >
+                                            <span 
+                                                className="px-3.5 py-2 rounded-xl font-bold shadow-xl text-center max-w-[90vw] break-words drop-shadow-md"
+                                                style={{
+                                                    color: imgEdit.textOverlay.color || '#ffffff',
+                                                    backgroundColor: imgEdit.textOverlay.bgColor || 'rgba(0,0,0,0.5)',
+                                                    fontSize: `${imgEdit.textOverlay.fontSize || 22}px`
+                                                }}
+                                            >
+                                                {imgEdit.textOverlay.text}
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                     );

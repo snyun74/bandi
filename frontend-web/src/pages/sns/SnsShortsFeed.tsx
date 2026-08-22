@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaThumbsUp, FaThumbsDown, FaComment, FaEye } from 'react-icons/fa';
+import { FaChevronLeft, FaHeart, FaCommentDots, FaEye } from 'react-icons/fa';
 import SnsCommentModal from '../../components/sns/SnsCommentModal';
 import UserAvatar from '../../components/common/UserAvatar';
 
@@ -161,38 +161,24 @@ const SnsShortsFeed: React.FC = () => {
                         />
 
                         {/* Right Action Bar */}
-                        <div className="absolute right-4 bottom-28 z-40 flex flex-col items-center gap-5 text-white">
-                            {/* Thumbs Up Button */}
+                        <div className="absolute right-3.5 bottom-24 z-40 flex flex-col items-center gap-3.5 text-white">
+                            {/* Heart (Like) Button */}
                             <button
                                 onClick={() => handleLikeToggle(item.shortsNo, 'L')}
                                 className="flex flex-col items-center group"
                             >
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-md ${
                                     item.userAction === 'L'
-                                        ? 'bg-emerald-500 text-black border-emerald-400 shadow-emerald-500/40'
+                                        ? 'bg-red-500/20 text-[#FF2D55] border-[#FF2D55]/50 shadow-red-500/30'
                                         : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
                                 }`}>
-                                    <FaThumbsUp size={20} className={item.userAction === 'L' ? 'scale-110' : ''} />
+                                    <FaHeart 
+                                        size={18} 
+                                        className={item.userAction === 'L' ? 'scale-110 text-[#FF2D55] drop-shadow-[0_0_6px_rgba(255,45,85,0.6)]' : 'text-white'} 
+                                    />
                                 </div>
-                                <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                <span className="text-[11px] font-semibold mt-1 drop-shadow-md">
                                     {item.likeCount || 0}
-                                </span>
-                            </button>
-
-                            {/* Thumbs Down Button */}
-                            <button
-                                onClick={() => handleLikeToggle(item.shortsNo, 'D')}
-                                className="flex flex-col items-center group"
-                            >
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-lg ${
-                                    item.userAction === 'D'
-                                        ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/40'
-                                        : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
-                                }`}>
-                                    <FaThumbsDown size={20} className={item.userAction === 'D' ? 'scale-110' : ''} />
-                                </div>
-                                <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
-                                    {item.dislikeCount || 0}
                                 </span>
                             </button>
 
@@ -204,20 +190,20 @@ const SnsShortsFeed: React.FC = () => {
                                 })}
                                 className="flex flex-col items-center group"
                             >
-                                <div className="w-12 h-12 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-lg">
-                                    <FaComment size={20} />
+                                <div className="w-10 h-10 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-md">
+                                    <FaCommentDots size={18} />
                                 </div>
-                                <span className="text-[12px] font-semibold mt-1 drop-shadow-md">
+                                <span className="text-[11px] font-semibold mt-1 drop-shadow-md">
                                     {item.commentCount || 0}
                                 </span>
                             </button>
 
                             {/* View Count Indicator */}
                             <div className="flex flex-col items-center">
-                                <div className="w-10 h-10 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
-                                    <FaEye size={17} />
+                                <div className="w-8 h-8 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
+                                    <FaEye size={14} />
                                 </div>
-                                <span className="text-[11px] font-medium text-zinc-300 mt-1 drop-shadow-md">
+                                <span className="text-[10px] font-medium text-zinc-300 mt-1 drop-shadow-md">
                                     {item.viewCount || 0}
                                 </span>
                             </div>

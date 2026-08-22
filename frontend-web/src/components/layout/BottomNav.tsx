@@ -14,6 +14,23 @@ const BottomNav: React.FC = () => {
         { id: 'membersador', label: '엠버서더', icon: Medal, path: '/main/membersador' },
     ];
 
+    const handleMenuClick = (path: string, label: string) => {
+        const userId = localStorage.getItem('userId');
+        const isHome = path === '/main/home' || path === '/main';
+
+        if (!userId && !isHome) {
+            window.dispatchEvent(new CustomEvent('open-auth-modal', {
+                detail: {
+                    title: `${label} 메뉴를 이용해 보세요! 🎵`,
+                    description: `${label} 및 커뮤니티 기능을 이용하려면\n로그인이 필요합니다.`
+                }
+            }));
+            return;
+        }
+
+        navigate(path);
+    };
+
     return (
         <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--nav-height)+var(--safe-bottom))] bg-white border-t border-gray-100 flex justify-around items-center px-2 z-50 pb-safe">
             {menuItems.map((item) => {
@@ -21,7 +38,7 @@ const BottomNav: React.FC = () => {
                 return (
                     <button
                         key={item.id}
-                        onClick={() => navigate(item.path)}
+                        onClick={() => handleMenuClick(item.path, item.label)}
                         className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive ? 'text-[#00B2D2]' : 'text-gray-400'}`}
                     >
                         <item.icon className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />

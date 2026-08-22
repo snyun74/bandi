@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaChevronLeft } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import { requestPermission } from "../utils/pushNotification";
 
@@ -97,8 +98,19 @@ const LoginPage: React.FC = () => {
                 onCancel={closeModal}
             />
 
-            <div className="min-h-screen bg-white flex flex-col items-center justify-start pt-safe px-4 pb-8 font-['Pretendard']">
-                <div className="w-full max-w-md px-2 sm:px-4 pt-20 sm:pt-28">
+            <div className="min-h-screen bg-white flex flex-col items-center justify-start pt-safe px-4 pb-8 font-['Pretendard'] relative">
+                {/* Top Bar with Back Button */}
+                <div className="w-full max-w-md pt-4 flex items-center justify-between">
+                    <button
+                        onClick={() => navigate('/main')}
+                        className="p-2 -ml-2 text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1 text-xs font-semibold"
+                    >
+                        <FaChevronLeft size={16} />
+                        <span>홈으로</span>
+                    </button>
+                </div>
+
+                <div className="w-full max-w-md px-2 sm:px-4 pt-12 sm:pt-16">
                     {/* Logo Section */}
                     <div className="flex flex-col items-center mb-6">
                         <img src="/images/main_title.png" alt="Bandicon" className="w-[170px] sm:w-[200px] h-auto object-contain" />

@@ -659,7 +659,15 @@ public class PartnerService {
     @Transactional(readOnly = true)
     public StudioDetailDto getStudioDetail(Long studioNo) {
         BnStudio studio = studioRepository.findById(studioNo).orElse(null);
-        if (studio == null) return null;
+        if (studio == null || !"A".equals(studio.getStudioStatCd())) return null;
+
+        BnPartner partner = null;
+        if (studio.getPartnerNo() != null) {
+            partner = partnerRepository.findById(studio.getPartnerNo()).orElse(null);
+        }
+        if (partner == null || !"A".equals(partner.getPartnerStatCd())) {
+            return null; // 입점사가 승인('A') 상태가 아니면 조회 불가
+        }
 
         // 지점 이미지 조회
         List<AttachmentDto> attachments = new ArrayList<>();
@@ -680,12 +688,15 @@ public class PartnerService {
             log.error("Failed to load attachments for studioNo: {}", studioNo, e);
         }
 
-        // 룸 목록 조회 (이미지 포함)
+        // 룸 목록 조회 (이미지 포함, 상태가 'A'인 룸만)
         List<RoomDto> roomDtos = new ArrayList<>();
         try {
             List<BnRoom> rooms = roomRepository.findByStudioNoOrderByInsDtimeDesc(studioNo);
             if (rooms != null) {
                 for (BnRoom room : rooms) {
+                    if (!"A".equals(room.getRoomStatCd())) {
+                        continue; // 상태가 'A'가 아닌 룸은 제외
+                    }
                     List<AttachmentDto> roomAttachments = new ArrayList<>();
                     try {
                         List<BnRoomAttachment> roomAttaches = roomAttachmentRepository.findByRoomNo(room.getRoomNo());
@@ -721,11 +732,6 @@ public class PartnerService {
             log.error("Failed to load rooms for studioNo: {}", studioNo, e);
         }
 
-        BnPartner partner = null;
-        if (studio.getPartnerNo() != null) {
-            partner = partnerRepository.findById(studio.getPartnerNo()).orElse(null);
-        }
-
         return StudioDetailDto.builder()
                 .studioNo(studio.getStudioNo())
                 .partnerNo(studio.getPartnerNo())
@@ -736,9 +742,9 @@ public class PartnerService {
                 .studioStatCd(studio.getStudioStatCd())
                 .studioTypeCd(studio.getStudioTypeCd())
                 .insDtime(studio.getInsDtime())
-                .bankNm(partner != null ? partner.getBankNm() : null)
-                .accountNo(partner != null ? partner.getAccountNo() : null)
-                .accountHolderNm(partner != null ? partner.getAccountHolderNm() : null)
+                .bankNm(partner.getBankNm())
+                .accountNo(partner.getAccountNo())
+                .accountHolderNm(partner.getAccountHolderNm())
                 .attachments(attachments)
                 .rooms(roomDtos)
                 .build();
@@ -746,11 +752,26 @@ public class PartnerService {
 
     @Transactional(readOnly = true)
     public List<StudioDto> getActiveStudiosWithDetails() {
+        // 1. 승인된 입점사('A') 목록 조회
+        List<BnPartner> activePartners = partnerRepository.findByPartnerStatCdOrderByInsDtimeDesc("A");
+        if (activePartners == null || activePartners.isEmpty()) {
+            return new ArrayList<>();
+        }
+        java.util.Set<Long> activePartnerNos = activePartners.stream()
+                .map(BnPartner::getPartnerNo)
+                .collect(Collectors.toSet());
+
+        // 2. 사용중인 지점('A') 목록 조회
         List<BnStudio> studios = studioRepository.findByStudioStatCdOrderByInsDtimeDesc("A");
         List<StudioDto> result = new ArrayList<>();
         if (studios == null) return result;
 
         for (BnStudio s : studios) {
+            // 입점사가 승인 상태('A')가 아니면 제외
+            if (s.getPartnerNo() == null || !activePartnerNos.contains(s.getPartnerNo())) {
+                continue;
+            }
+
             List<AttachmentDto> attachments = new ArrayList<>();
             try {
                 List<BnStudioAttachment> studioAttaches = studioAttachmentRepository.findByStudioNo(s.getStudioNo());
@@ -769,24 +790,30 @@ public class PartnerService {
                 log.error("Failed to load attachments for studioNo: {}", s.getStudioNo(), e);
             }
 
-            // 룸 최저가 및 요약 조회
+            // 룸 최저가 및 요약 조회 (상태가 'A'인 룸만 반영)
             Integer lowestPrice = null;
             String roomSummary = "";
             try {
                 List<BnRoom> rooms = roomRepository.findByStudioNoOrderByInsDtimeDesc(s.getStudioNo());
                 if (rooms != null && !rooms.isEmpty()) {
-                    lowestPrice = rooms.stream()
-                            .map(BnRoom::getHourBaseUprice)
-                            .filter(price -> price != null)
-                            .min(Integer::compare)
-                            .orElse(null);
-
-                    List<String> roomNames = rooms.stream()
-                            .map(BnRoom::getRoomNm)
-                            .filter(name -> name != null && !name.isBlank())
+                    List<BnRoom> activeRooms = rooms.stream()
+                            .filter(r -> "A".equals(r.getRoomStatCd()))
                             .collect(Collectors.toList());
-                    if (!roomNames.isEmpty()) {
-                        roomSummary = String.join(" · ", roomNames) + " 가능";
+
+                    if (!activeRooms.isEmpty()) {
+                        lowestPrice = activeRooms.stream()
+                                .map(BnRoom::getHourBaseUprice)
+                                .filter(price -> price != null)
+                                .min(Integer::compare)
+                                .orElse(null);
+
+                        List<String> roomNames = activeRooms.stream()
+                                .map(BnRoom::getRoomNm)
+                                .filter(name -> name != null && !name.isBlank())
+                                .collect(Collectors.toList());
+                        if (!roomNames.isEmpty()) {
+                            roomSummary = String.join(" · ", roomNames) + " 가능";
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -833,6 +860,23 @@ public class PartnerService {
 
     @Transactional
     public BnReservation createReservation(BnReservation resv, String userId) {
+        // 룸, 지점, 파트너 상태값 'A' 검증
+        BnRoom room = roomRepository.findById(resv.getRoomNo())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 룸입니다."));
+        if (!"A".equals(room.getRoomStatCd())) {
+            throw new IllegalStateException("현재 이용할 수 없는 룸입니다.");
+        }
+        BnStudio studio = studioRepository.findById(room.getStudioNo())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 합주실 지점입니다."));
+        if (!"A".equals(studio.getStudioStatCd())) {
+            throw new IllegalStateException("현재 이용할 수 없는 합주실 지점입니다.");
+        }
+        BnPartner partner = partnerRepository.findById(studio.getPartnerNo())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 입점사입니다."));
+        if (!"A".equals(partner.getPartnerStatCd())) {
+            throw new IllegalStateException("승인되지 않은 합주실 입점사입니다.");
+        }
+
         String cleanDate = resv.getUseDate() != null ? resv.getUseDate().replaceAll("[^0-9]", "") : "";
         String cleanStt = resv.getSttTime() != null ? resv.getSttTime().replaceAll("[^0-9]", "") : "";
         String cleanEnd = resv.getEndTime() != null ? resv.getEndTime().replaceAll("[^0-9]", "") : "";
@@ -892,23 +936,14 @@ public class PartnerService {
 
         // 파트너에게 예약 알림 발송
         try {
-            BnRoom room = roomRepository.findById(resv.getRoomNo()).orElse(null);
-            if (room != null) {
-                BnStudio studio = studioRepository.findById(room.getStudioNo()).orElse(null);
-                if (studio != null) {
-                    BnPartner partner = partnerRepository.findById(studio.getPartnerNo()).orElse(null);
-                    if (partner != null) {
-                        pushService.sendPush(
-                            partner.getUserId(),
-                            "새 예약 신청 알림",
-                            studio.getStudioNm() + " - " + room.getRoomNm() + " 예약 신청이 접수되었습니다.",
-                            "/main/partner/manage",
-                            "RESV_REQ",
-                            "RESERVATION"
-                        );
-                    }
-                }
-            }
+            pushService.sendPush(
+                partner.getUserId(),
+                "새 예약 신청 알림",
+                studio.getStudioNm() + " - " + room.getRoomNm() + " 예약 신청이 접수되었습니다.",
+                "/main/partner/manage",
+                "RESV_REQ",
+                "RESERVATION"
+            );
         } catch (Exception e) {
             log.error("Failed to send reservation request push to partner", e);
         }
@@ -985,9 +1020,17 @@ public class PartnerService {
     @Transactional(readOnly = true)
     public RoomScheduleDto getRoomSchedule(Long roomNo, String yearMonth) {
         BnRoom room = roomRepository.findById(roomNo).orElse(null);
-        if (room == null) return null;
+        if (room == null || !"A".equals(room.getRoomStatCd())) return null;
 
         BnStudio studio = studioRepository.findById(room.getStudioNo()).orElse(null);
+        if (studio == null || !"A".equals(studio.getStudioStatCd())) return null;
+
+        BnPartner partner = null;
+        if (studio.getPartnerNo() != null) {
+            partner = partnerRepository.findById(studio.getPartnerNo()).orElse(null);
+        }
+        if (partner == null || !"A".equals(partner.getPartnerStatCd())) return null;
+
         List<BnRoomPrice> prices = roomPriceRepository.findByRoomNoOrderByDayOfWeekAscSttTimeAsc(roomNo);
         
         List<String> excludeStats = List.of("CAN", "REJ");
@@ -995,22 +1038,17 @@ public class PartnerService {
                 ? reservationRepository.findByRoomNoAndUseDateStartingWithAndResvStatFgNotIn(roomNo, yearMonth, excludeStats)
                 : reservationRepository.findByRoomNoAndUseDateStartingWith(roomNo, "");
 
-        BnPartner partner = null;
-        if (studio != null && studio.getPartnerNo() != null) {
-            partner = partnerRepository.findById(studio.getPartnerNo()).orElse(null);
-        }
-
         return RoomScheduleDto.builder()
                 .roomNo(room.getRoomNo())
                 .studioNo(room.getStudioNo())
                 .roomNm(room.getRoomNm())
-                .studioNm(studio != null ? studio.getStudioNm() : "")
+                .studioNm(studio.getStudioNm())
                 .hourBaseUprice(room.getHourBaseUprice())
                 .capacityCnt(room.getCapacityCnt())
                 .equipmentInfo(room.getEquipmentInfo())
-                .bankNm(partner != null ? partner.getBankNm() : null)
-                .accountNo(partner != null ? partner.getAccountNo() : null)
-                .accountHolderNm(partner != null ? partner.getAccountHolderNm() : null)
+                .bankNm(partner.getBankNm())
+                .accountNo(partner.getAccountNo())
+                .accountHolderNm(partner.getAccountHolderNm())
                 .prices(prices)
                 .reservations(reservations)
                 .build();

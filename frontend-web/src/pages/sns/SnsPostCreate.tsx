@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaTimes, FaPlus, FaImage, FaFont, FaRedo, FaExchangeAlt, FaMagic } from 'react-icons/fa';
+import { FaChevronLeft, FaTimes, FaPlus, FaImage, FaFont, FaRedo, FaExchangeAlt, FaMagic, FaVideo, FaPlay } from 'react-icons/fa';
 import CommonModal from '../../components/common/CommonModal';
 
 interface TextOverlay {
@@ -19,9 +19,10 @@ interface ImageEditState {
     textOverlay: TextOverlay;
 }
 
-interface PreviewImage {
+interface PreviewMedia {
     file: File;
     previewUrl: string;
+    isVideo: boolean;
     editedPreviewUrl?: string;
     edit: ImageEditState;
 }
@@ -53,7 +54,7 @@ const DEFAULT_EDIT_STATE: ImageEditState = {
 
 const SnsPostCreate: React.FC = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(0); // 0: 이미지 선택/편집, 1: 정보 입력
+    const [step, setStep] = useState(0); // 0: 미디어 선택/편집, 1: 정보 입력
     const [content, setContent] = useState('');
     const [publicTypeCd, setPublicTypeCd] = useState('A'); // BD007 디폴트 전체공개(A)
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
@@ -76,8 +77,8 @@ const SnsPostCreate: React.FC = () => {
         fetchCommonCodes();
     }, []);
     
-    // 이미지 처리 상태
-    const [images, setImages] = useState<PreviewImage[]>([]);
+    // 미디어 (사진 + 동영상) 처리 상태
+    const [images, setImages] = useState<PreviewMedia[]>([]);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,19 +94,23 @@ const SnsPostCreate: React.FC = () => {
         setIsAlertOpen(true);
     };
 
-    // 이미지 다중 선택 처리
+    // 사진 및 동영상 다중 선택 처리
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             const filesArray = Array.from(e.target.files);
             
-            const newPreviewImages: PreviewImage[] = filesArray.map(file => ({
-                file,
-                previewUrl: URL.createObjectURL(file),
-                edit: JSON.parse(JSON.stringify(DEFAULT_EDIT_STATE))
-            }));
+            const newPreviewMedia: PreviewMedia[] = filesArray.map(file => {
+                const isVideo = file.type.startsWith('video/');
+                return {
+                    file,
+                    previewUrl: URL.createObjectURL(file),
+                    isVideo,
+                    edit: JSON.parse(JSON.stringify(DEFAULT_EDIT_STATE))
+                };
+            });
 
             setImages(prev => {
-                const updated = [...prev, ...newPreviewImages];
+                const updated = [...prev, ...newPreviewMedia];
                 setCurrentSlide(prev.length);
                 return updated;
             });
@@ -137,6 +142,7 @@ const SnsPostCreate: React.FC = () => {
             if (prev.length === 0 || !prev[currentSlide]) return prev;
             const updated = [...prev];
             const currentImg = updated[currentSlide];
+            if (currentImg.isVideo) return prev; // 동영상은 캔버스 편집 제외
             updated[currentSlide] = {
                 ...currentImg,
                 edit: updater(currentImg.edit)
@@ -145,8 +151,12 @@ const SnsPostCreate: React.FC = () => {
         });
     };
 
-    // Canvas 기반 이미지 합성 함수
-    const processImageToBlob = async (imgItem: PreviewImage): Promise<File> => {
+    // Canvas 기반 이미지 합성 함수 (동영상일 경우 원본 즉시 반환)
+    const processImageToBlob = async (imgItem: PreviewMedia): Promise<File> => {
+        if (imgItem.isVideo) {
+            return imgItem.file;
+        }
+
         return new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = 'anonymous';
@@ -232,13 +242,16 @@ const SnsPostCreate: React.FC = () => {
 
     const handleNext = async () => {
         if (images.length === 0) {
-            showAlert("이미지를 1개 이상 추가해주세요.");
+            showAlert("사진 또는 동영상을 1개 이상 추가해주세요.");
             return;
         }
         setIsProcessing(true);
         // Step 1 미리보기를 위해 편집된 캔버스 이미지 생성
         try {
             const updatedImages = await Promise.all(images.map(async (img) => {
+                if (img.isVideo) {
+                    return img;
+                }
                 const processedFile = await processImageToBlob(img);
                 const editedUrl = URL.createObjectURL(processedFile);
                 return {
@@ -346,7 +359,7 @@ const SnsPostCreate: React.FC = () => {
                     <FaChevronLeft size={18} />
                 </button>
                 <h1 className="text-[15px] font-bold text-gray-800">
-                    {step === 0 ? '사진 편집 및 등록' : '정보 입력'}
+                    {step === 0 ? '게시물 미디어 편집 및 선택' : '게시 정보 입력'}
                 </h1>
                 <button 
                     onClick={step === 0 ? handleNext : handleSubmit} 
@@ -359,49 +372,68 @@ const SnsPostCreate: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto">
                 {step === 0 ? (
-                    /* 1단계: 이미지 프리뷰 & 편집 툴바 */
+                    /* 1단계: 미디어 프리뷰 & 편집 툴바 */
                     <div className="flex flex-col min-h-full">
-                        {/* 이미지 프리뷰 영역 */}
+                        {/* 미디어 프리뷰 영역 */}
                         <div className="w-full bg-gray-900 relative aspect-[4/5] flex flex-col items-center justify-center overflow-hidden">
                             {images.length > 0 ? (
                                 <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black">
-                                    <div 
-                                        className="relative w-full h-full flex items-center justify-center transition-transform duration-200"
-                                        style={{
-                                            transform: `rotate(${curEdit.rotation}deg) scaleX(${curEdit.flipH ? -1 : 1})`
-                                        }}
-                                    >
-                                        <img 
-                                            src={curImg.previewUrl} 
-                                            alt={`preview-${currentSlide}`} 
-                                            className="w-full h-full object-contain"
-                                            style={{
-                                                filter: filterObj?.filterCss || 'none'
-                                            }}
-                                        />
-                                    </div>
-
-                                    {/* 텍스트 오버레이 라이브 프리뷰 (회전과 독립적으로 위에 표시) */}
-                                    {curEdit.textOverlay.text && (
-                                        <div 
-                                            className="absolute flex justify-center pointer-events-none z-10"
-                                            style={{
-                                                top: `${curEdit.textOverlay.posY}%`,
-                                                left: `${curEdit.textOverlay.posX ?? 50}%`,
-                                                transform: 'translate(-50%, -50%)'
-                                            }}
-                                        >
-                                            <span 
-                                                className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90vw] break-words"
+                                    {curImg.isVideo ? (
+                                        /* 동영상 프리뷰 */
+                                        <div className="relative w-full h-full flex items-center justify-center bg-black">
+                                            <video 
+                                                src={curImg.previewUrl} 
+                                                controls 
+                                                playsInline 
+                                                className="w-full h-full object-contain"
+                                            />
+                                            <div className="absolute top-3 left-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 backdrop-blur-xs pointer-events-none z-10">
+                                                <FaVideo size={11} className="text-red-400" />
+                                                <span>동영상</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* 사진 프리뷰 */
+                                        <>
+                                            <div 
+                                                className="relative w-full h-full flex items-center justify-center transition-transform duration-200"
                                                 style={{
-                                                    color: curEdit.textOverlay.color,
-                                                    backgroundColor: curEdit.textOverlay.bgColor,
-                                                    fontSize: `${curEdit.textOverlay.fontSize}px`
+                                                    transform: `rotate(${curEdit.rotation}deg) scaleX(${curEdit.flipH ? -1 : 1})`
                                                 }}
                                             >
-                                                {curEdit.textOverlay.text}
-                                            </span>
-                                        </div>
+                                                <img 
+                                                    src={curImg.previewUrl} 
+                                                    alt={`preview-${currentSlide}`} 
+                                                    className="w-full h-full object-contain"
+                                                    style={{
+                                                        filter: filterObj?.filterCss || 'none'
+                                                    }}
+                                                />
+                                            </div>
+
+                                            {/* 텍스트 오버레이 라이브 프리뷰 (회전과 독립적으로 위에 표시) */}
+                                            {curEdit.textOverlay.text && (
+                                                <div 
+                                                    className="absolute flex justify-center pointer-events-none z-10"
+                                                    style={{
+                                                        top: `${curEdit.textOverlay.posY}%`,
+                                                        left: `${curEdit.textOverlay.posX ?? 50}%`,
+                                                        transform: 'translate(-50%, -50%)'
+                                                    }}
+                                                >
+                                                    <span 
+                                                        className="px-3 py-1.5 rounded-lg font-bold shadow-md text-center max-w-[90vw] break-words"
+                                                        style={{
+                                                            color: curEdit.textOverlay.color,
+                                                            backgroundColor: curEdit.textOverlay.bgColor,
+                                                            fontSize: `${curEdit.textOverlay.fontSize}px`
+                                                        }}
+                                                    >
+                                                        {curEdit.textOverlay.text}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* 삭제 버튼 */}
@@ -415,7 +447,7 @@ const SnsPostCreate: React.FC = () => {
                                     {/* 슬라이더 컨트롤 */}
                                     {images.length > 1 && (
                                         <>
-                                            <div className="absolute bottom-3 w-full flex justify-center gap-1.5 z-20">
+                                            <div className="absolute bottom-3 w-full flex justify-center gap-1.5 z-20 pointer-events-none">
                                                 {images.map((_, idx) => (
                                                     <div 
                                                         key={idx} 
@@ -447,16 +479,17 @@ const SnsPostCreate: React.FC = () => {
                                     className="flex flex-col items-center justify-center text-gray-400 gap-3 cursor-pointer w-full h-full hover:bg-gray-800 transition-colors"
                                     onClick={() => fileInputRef.current?.click()}
                                 >
-                                    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center shadow-md">
-                                        <FaImage size={24} className="text-gray-300" />
+                                    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center shadow-md gap-1">
+                                        <FaImage size={20} className="text-gray-300" />
+                                        <FaVideo size={18} className="text-gray-300" />
                                     </div>
-                                    <span className="text-sm font-medium text-gray-300">사진을 선택해주세요 (필수)</span>
+                                    <span className="text-sm font-medium text-gray-300">사진 또는 동영상을 선택해주세요 (필수)</span>
                                 </div>
                             )}
 
                             <input 
                                 type="file" 
-                                accept="image/*" 
+                                accept="image/*,video/*" 
                                 multiple 
                                 className="hidden" 
                                 ref={fileInputRef}
@@ -464,16 +497,25 @@ const SnsPostCreate: React.FC = () => {
                             />
                         </div>
 
-                        {/* 이미지 썸네일 바 */}
+                        {/* 미디어 썸네일 바 */}
                         {images.length > 0 && (
                             <div className="flex gap-2 px-4 py-2 overflow-x-auto border-b border-gray-100 bg-gray-50 shadow-inner">
                                 {images.map((img, idx) => (
                                     <div 
                                         key={idx} 
                                         onClick={() => setCurrentSlide(idx)}
-                                        className={`relative flex-shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 cursor-pointer transition-all ${idx === currentSlide ? 'border-blue-500 scale-95 shadow-md' : 'border-transparent opacity-60'}`}
+                                        className={`relative flex-shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 cursor-pointer transition-all bg-black ${idx === currentSlide ? 'border-blue-500 scale-95 shadow-md' : 'border-transparent opacity-60'}`}
                                     >
-                                        <img src={img.previewUrl} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                                        {img.isVideo ? (
+                                            <div className="w-full h-full flex items-center justify-center relative bg-gray-900">
+                                                <video src={img.previewUrl} className="w-full h-full object-cover pointer-events-none" />
+                                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                                    <FaPlay size={10} className="text-white" />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <img src={img.previewUrl} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                                        )}
                                     </div>
                                 ))}
                                 <div 
@@ -488,153 +530,169 @@ const SnsPostCreate: React.FC = () => {
                         {/* 편집 컨트롤 영역 */}
                         {images.length > 0 && (
                             <div className="flex-1 bg-white flex flex-col border-t border-gray-100">
-                                {/* 탭 선택 버튼 */}
-                                <div className="flex border-b border-gray-100 bg-gray-50 text-[13px] font-bold text-gray-500">
-                                    <button 
-                                        onClick={() => setActiveTab('filter')}
-                                        className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'filter' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
-                                    >
-                                        <FaMagic size={14} /> 필터
-                                    </button>
-                                    <button 
-                                        onClick={() => setActiveTab('text')}
-                                        className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'text' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
-                                    >
-                                        <FaFont size={14} /> 텍스트
-                                    </button>
-                                    <button 
-                                        onClick={() => setActiveTab('transform')}
-                                        className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'transform' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
-                                    >
-                                        <FaRedo size={14} /> 변형
-                                    </button>
-                                </div>
-
-                                {/* 탭별 상세 편집 도구 */}
-                                <div className="p-4 flex-1">
-                                    {activeTab === 'filter' && (
-                                        <div className="space-y-2">
-                                            <span className="text-[12px] font-bold text-gray-500">필터 선택</span>
-                                            <div className="flex gap-3 overflow-x-auto pb-2">
-                                                {FILTER_OPTIONS.map(f => (
-                                                    <button
-                                                        key={f.id}
-                                                        onClick={() => updateCurrentEdit(prev => ({ ...prev, filter: f.id }))}
-                                                        className={`flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer group`}
-                                                    >
-                                                        <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${curEdit.filter === f.id ? 'border-blue-500 ring-2 ring-blue-100 scale-105' : 'border-gray-200'}`}>
-                                                            <img 
-                                                                src={curImg.previewUrl} 
-                                                                alt={f.label} 
-                                                                className="w-full h-full object-cover"
-                                                                style={{ filter: f.filterCss }}
-                                                            />
-                                                        </div>
-                                                        <span className={`text-[11px] ${curEdit.filter === f.id ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
-                                                            {f.label}
-                                                        </span>
-                                                    </button>
-                                                ))}
-                                            </div>
+                                {curImg.isVideo ? (
+                                    /* 동영상 안내 탭 */
+                                    <div className="p-6 flex flex-col items-center justify-center text-center space-y-2 text-gray-500 flex-1">
+                                        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
+                                            <FaVideo size={20} />
                                         </div>
-                                    )}
+                                        <h4 className="font-bold text-[15px] text-gray-700">동영상 파일 선택됨</h4>
+                                        <p className="text-[13px] text-gray-400">
+                                            동영상은 원본 화질과 오디오를 유지하여 게시물에 함께 등록됩니다.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    /* 사진 편집 툴 */
+                                    <>
+                                        {/* 탭 선택 버튼 */}
+                                        <div className="flex border-b border-gray-100 bg-gray-50 text-[13px] font-bold text-gray-500">
+                                            <button 
+                                                onClick={() => setActiveTab('filter')}
+                                                className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'filter' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
+                                            >
+                                                <FaMagic size={14} /> 필터
+                                            </button>
+                                            <button 
+                                                onClick={() => setActiveTab('text')}
+                                                className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'text' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
+                                            >
+                                                <FaFont size={14} /> 텍스트
+                                            </button>
+                                            <button 
+                                                onClick={() => setActiveTab('transform')}
+                                                className={`flex-1 py-3 flex items-center justify-center gap-1.5 border-b-2 transition-all ${activeTab === 'transform' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent hover:text-gray-700'}`}
+                                            >
+                                                <FaRedo size={14} /> 변형
+                                            </button>
+                                        </div>
 
-                                    {activeTab === 'text' && (
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="text-[12px] font-bold text-gray-500 block mb-1">문구 입력</label>
-                                                <input 
-                                                    type="text"
-                                                    placeholder="사진에 표시할 텍스트 추가..."
-                                                    value={curEdit.textOverlay.text}
-                                                    onChange={(e) => updateCurrentEdit(prev => ({
-                                                        ...prev,
-                                                        textOverlay: { ...prev.textOverlay, text: e.target.value }
-                                                    }))}
-                                                    className="w-full px-3 py-2 text-[14px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"
-                                                />
-                                            </div>
-
-                                            {curEdit.textOverlay.text && (
-                                                <div className="space-y-3 pt-1">
-                                                    <div>
-                                                        <label className="text-[12px] font-bold text-gray-500 block mb-1">글자 색상</label>
-                                                        <div className="flex gap-2">
-                                                            {['#ffffff', '#000000', '#ff4d4f', '#ffc53d', '#52c41a', '#1890ff', '#722ed1'].map(c => (
-                                                                <button
-                                                                    key={c}
-                                                                    onClick={() => updateCurrentEdit(prev => ({
-                                                                        ...prev,
-                                                                        textOverlay: { ...prev.textOverlay, color: c }
-                                                                    }))}
-                                                                    className={`w-6 h-6 rounded-full border border-gray-300 transition-transform ${curEdit.textOverlay.color === c ? 'scale-125 ring-2 ring-blue-400' : ''}`}
-                                                                    style={{ backgroundColor: c }}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
-                                                            <input 
-                                                                type="range"
-                                                                min="10"
-                                                                max="90"
-                                                                value={curEdit.textOverlay.posY}
-                                                                onChange={(e) => updateCurrentEdit(prev => ({
-                                                                    ...prev,
-                                                                    textOverlay: { ...prev.textOverlay, posY: Number(e.target.value) }
-                                                                }))}
-                                                                className="w-full accent-blue-500"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (좌우)</label>
-                                                            <input 
-                                                                type="range"
-                                                                min="10"
-                                                                max="90"
-                                                                value={curEdit.textOverlay.posX ?? 50}
-                                                                onChange={(e) => updateCurrentEdit(prev => ({
-                                                                    ...prev,
-                                                                    textOverlay: { ...prev.textOverlay, posX: Number(e.target.value) }
-                                                                }))}
-                                                                className="w-full accent-blue-500"
-                                                            />
-                                                        </div>
+                                        {/* 탭별 상세 편집 도구 */}
+                                        <div className="p-4 flex-1">
+                                            {activeTab === 'filter' && (
+                                                <div className="space-y-2">
+                                                    <span className="text-[12px] font-bold text-gray-500">필터 선택</span>
+                                                    <div className="flex gap-3 overflow-x-auto pb-2">
+                                                        {FILTER_OPTIONS.map(f => (
+                                                            <button
+                                                                key={f.id}
+                                                                onClick={() => updateCurrentEdit(prev => ({ ...prev, filter: f.id }))}
+                                                                className={`flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer group`}
+                                                            >
+                                                                <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${curEdit.filter === f.id ? 'border-blue-500 ring-2 ring-blue-100 scale-105' : 'border-gray-200'}`}>
+                                                                    <img 
+                                                                        src={curImg.previewUrl} 
+                                                                        alt={f.label} 
+                                                                        className="w-full h-full object-cover"
+                                                                        style={{ filter: f.filterCss }}
+                                                                    />
+                                                                </div>
+                                                                <span className={`text-[11px] ${curEdit.filter === f.id ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
+                                                                    {f.label}
+                                                                </span>
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
-                                        </div>
-                                    )}
 
-                                    {activeTab === 'transform' && (
-                                        <div className="flex gap-4 items-center justify-center py-3">
-                                            <button
-                                                onClick={() => updateCurrentEdit(prev => ({
-                                                    ...prev,
-                                                    rotation: (prev.rotation + 90) % 360
-                                                }))}
-                                                className="flex flex-col items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-700 font-medium text-[13px] transition-all"
-                                            >
-                                                <FaRedo size={18} className="text-blue-500" />
-                                                <span>90° 회전</span>
-                                            </button>
+                                            {activeTab === 'text' && (
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="text-[12px] font-bold text-gray-500 block mb-1">문구 입력</label>
+                                                        <input 
+                                                            type="text"
+                                                            placeholder="사진에 표시할 텍스트 추가..."
+                                                            value={curEdit.textOverlay.text}
+                                                            onChange={(e) => updateCurrentEdit(prev => ({
+                                                                ...prev,
+                                                                textOverlay: { ...prev.textOverlay, text: e.target.value }
+                                                            }))}
+                                                            className="w-full px-3 py-2 text-[14px] bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500"
+                                                        />
+                                                    </div>
 
-                                            <button
-                                                onClick={() => updateCurrentEdit(prev => ({
-                                                    ...prev,
-                                                    flipH: !prev.flipH
-                                                }))}
-                                                className="flex flex-col items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-700 font-medium text-[13px] transition-all"
-                                            >
-                                                <FaExchangeAlt size={18} className="text-blue-500" />
-                                                <span>좌우 반전</span>
-                                            </button>
+                                                    {curEdit.textOverlay.text && (
+                                                        <div className="space-y-3 pt-1">
+                                                            <div>
+                                                                <label className="text-[12px] font-bold text-gray-500 block mb-1">글자 색상</label>
+                                                                <div className="flex gap-2">
+                                                                    {['#ffffff', '#000000', '#ff4d4f', '#ffc53d', '#52c41a', '#1890ff', '#722ed1'].map(c => (
+                                                                        <button
+                                                                            key={c}
+                                                                            onClick={() => updateCurrentEdit(prev => ({
+                                                                                ...prev,
+                                                                                textOverlay: { ...prev.textOverlay, color: c }
+                                                                            }))}
+                                                                            className={`w-6 h-6 rounded-full border border-gray-300 transition-transform ${curEdit.textOverlay.color === c ? 'scale-125 ring-2 ring-blue-400' : ''}`}
+                                                                            style={{ backgroundColor: c }}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (상하)</label>
+                                                                    <input 
+                                                                        type="range"
+                                                                        min="10"
+                                                                        max="90"
+                                                                        value={curEdit.textOverlay.posY}
+                                                                        onChange={(e) => updateCurrentEdit(prev => ({
+                                                                            ...prev,
+                                                                            textOverlay: { ...prev.textOverlay, posY: Number(e.target.value) }
+                                                                        }))}
+                                                                        className="w-full accent-blue-500"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[12px] font-bold text-gray-500 block mb-1">위치 (좌우)</label>
+                                                                    <input 
+                                                                        type="range"
+                                                                        min="10"
+                                                                        max="90"
+                                                                        value={curEdit.textOverlay.posX ?? 50}
+                                                                        onChange={(e) => updateCurrentEdit(prev => ({
+                                                                            ...prev,
+                                                                            textOverlay: { ...prev.textOverlay, posX: Number(e.target.value) }
+                                                                        }))}
+                                                                        className="w-full accent-blue-500"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {activeTab === 'transform' && (
+                                                <div className="flex gap-4 items-center justify-center py-3">
+                                                    <button
+                                                        onClick={() => updateCurrentEdit(prev => ({
+                                                            ...prev,
+                                                            rotation: (prev.rotation + 90) % 360
+                                                        }))}
+                                                        className="flex flex-col items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-700 font-medium text-[13px] transition-all"
+                                                    >
+                                                        <FaRedo size={18} className="text-blue-500" />
+                                                        <span>90° 회전</span>
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => updateCurrentEdit(prev => ({
+                                                            ...prev,
+                                                            flipH: !prev.flipH
+                                                        }))}
+                                                        className="flex flex-col items-center gap-2 px-5 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 text-gray-700 font-medium text-[13px] transition-all"
+                                                    >
+                                                        <FaExchangeAlt size={18} className="text-blue-500" />
+                                                        <span>좌우 반전</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -642,11 +700,20 @@ const SnsPostCreate: React.FC = () => {
                     /* 2단계: 상세 정보 입력 */
                     <div className="px-4 py-6 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="space-y-2">
-                            <label className="text-[14px] font-bold text-gray-700 ml-1">편집 완료된 이미지</label>
+                            <label className="text-[14px] font-bold text-gray-700 ml-1">선택된 미디어 (사진/동영상)</label>
                             <div className="flex gap-2 overflow-x-auto pb-2">
                                 {images.map((img, idx) => (
-                                    <div key={idx} className="w-20 aspect-[4/5] rounded-xl overflow-hidden shadow-md flex-shrink-0 border border-gray-100 bg-black">
-                                        <img src={img.editedPreviewUrl || img.previewUrl} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                                    <div key={idx} className="w-20 aspect-[4/5] rounded-xl overflow-hidden shadow-md flex-shrink-0 border border-gray-100 bg-black relative">
+                                        {img.isVideo ? (
+                                            <div className="w-full h-full flex items-center justify-center relative">
+                                                <video src={img.previewUrl} className="w-full h-full object-cover pointer-events-none" />
+                                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                                    <FaPlay size={14} className="text-white" />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <img src={img.editedPreviewUrl || img.previewUrl} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                                        )}
                                     </div>
                                 ))}
                             </div>
