@@ -9,16 +9,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BandScheduleDto {
-    private Long bnSchNo;
+public class ConfirmedScheduleDto {
+    private Long schNo;
     private Long bnNo;
     private String title;
     private String content;
-    private String startDate; // YYYYMMDD
-    private String startTime; // HHMM
+    private String sttDate; // YYYYMMDD
+    private String sttTime; // HHMM or HHMMSS
     private String endDate; // YYYYMMDD
-    private String endTime; // HHMM
+    private String endTime; // HHMM or HHMMSS
     private String allDayYn; // Y/N
-    private String userId; // For Insert/Update
-    private String userNickNm; // 유저 닉네임
+    private String statCd; // A
+    private String userId; // 등록자
 }

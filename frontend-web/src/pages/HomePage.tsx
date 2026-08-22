@@ -635,11 +635,11 @@ export default function HomePage() {
                                     })}
                                     className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
-                                    <p className="text-xs text-gray-400 font-medium">
-                                        {userId ? '가입된 클랜이 없습니다.' : '로그인하고 클랜을 확인해 보세요'}
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        {userId ? '가입된 클랜이 없습니다.' : '클랜을 찾아보세요!'}
                                     </p>
                                     <span className="text-[12px] text-[#00BDF8] font-bold mt-1">
-                                        {userId ? '클랜 찾기' : '로그인하기'}
+                                        {userId ? '클랜 찾기' : '클랜 둘러보기'}
                                     </span>
                                 </div>
                             )}
@@ -714,11 +714,11 @@ export default function HomePage() {
                                     })}
                                     className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
-                                    <p className="text-xs text-gray-400 font-medium">
-                                        {userId ? '참여 중인 합주가 없습니다.' : '로그인하고 내 합주를 확인해 보세요'}
+                                    <p className="text-xs text-gray-500 font-medium leading-tight">
+                                        {userId ? '참여 중인 합주가 없습니다.' : '내가 원하는 곡으로 합주해보세요!'}
                                     </p>
                                     <span className="text-[12px] text-[#00BDF8] font-bold mt-1">
-                                        {userId ? '합주방 둘러보기' : '로그인하기'}
+                                        {userId ? '합주방 둘러보기' : '합주방 둘러보기'}
                                     </span>
                                 </div>
                             )}

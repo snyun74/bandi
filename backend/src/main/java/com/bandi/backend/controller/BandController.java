@@ -173,6 +173,16 @@ public class BandController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/schedule/batch")
+    public ResponseEntity<?> savePlanScheduleBatch(@RequestBody com.bandi.backend.dto.PlanScheduleBatchDto dto) {
+        try {
+            bandService.savePlanScheduleBatch(dto);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("일정 저장 실패: " + e.getMessage());
+        }
+    }
+
     @org.springframework.web.bind.annotation.DeleteMapping("/schedule")
     public ResponseEntity<Void> deleteSchedule(@RequestParam Long bnNo, @RequestParam String userId,
             @RequestParam String date) {
@@ -186,6 +196,45 @@ public class BandController {
             return ResponseEntity.ok(bandService.getSchedules(bnNo));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("일정 조회 실패: " + e.getMessage());
+        }
+    }
+
+    // =========================================================
+    // 최종 합주 일정 확정 (BN_SCHEDULE) API
+    // =========================================================
+
+    @PostMapping("/{bnNo}/confirmed-schedules")
+    public ResponseEntity<?> createConfirmedSchedule(
+            @PathVariable Long bnNo,
+            @RequestBody com.bandi.backend.dto.ConfirmedScheduleDto dto) {
+        try {
+            dto.setBnNo(bnNo);
+            bandService.createConfirmedSchedule(dto);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{bnNo}/confirmed-schedules")
+    public ResponseEntity<?> getConfirmedSchedules(@PathVariable Long bnNo) {
+        try {
+            return ResponseEntity.ok(bandService.getConfirmedSchedules(bnNo));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{bnNo}/confirmed-schedules/{schNo}")
+    public ResponseEntity<?> deleteConfirmedSchedule(
+            @PathVariable Long bnNo,
+            @PathVariable Long schNo,
+            @RequestParam String userId) {
+        try {
+            bandService.deleteConfirmedSchedule(bnNo, schNo, userId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

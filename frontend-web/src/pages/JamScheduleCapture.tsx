@@ -1,30 +1,105 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaPen } from 'react-icons/fa';
-import DefaultProfile from '../components/common/DefaultProfile';
-import { GiGrandPiano } from "react-icons/gi";
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import { FaChevronLeft, FaChevronRight, FaTrashAlt } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
-import './JamScheduleCapture.css';
 
 interface ScheduleDto {
     bnSchNo: number;
     bnNo: number;
     title: string;
     startDate: string; // YYYYMMDD
-    startTime: string; // HHMM
+    startTime: string; // HHMM00
     endDate: string;
     endTime: string;
     userId: string;
+    userNickNm?: string;
+}
+
+interface ConfirmedScheduleDto {
+    schNo: number;
+    bnNo: number;
+    title: string;
+    content?: string;
+    sttDate: string; // YYYYMMDD
+    sttTime: string; // HHMM or HHMMSS
+    endDate: string; // YYYYMMDD
+    endTime: string; // HHMM or HHMMSS
+    allDayYn?: string;
+    statCd?: string;
+    userId?: string;
+}
+
+interface BandRole {
+    sessionNo?: number;
+    sessionTypeCd?: string;
+    part?: string;
+    user?: string;
+    userId?: string;
+    status?: string;
+}
+
+interface BandInfo {
+    id?: number;
+    title: string;
+    artist: string;
+    imgUrl?: string;
+    isLeader?: boolean;
+    canManage?: boolean;
+    roles: BandRole[];
 }
 
 const JamScheduleCapture: React.FC = () => {
     const navigate = useNavigate();
     const { jamId } = useParams<{ jamId: string }>();
-    const userId = localStorage.getItem('userId');
-    const [date, setDate] = useState<Date>(new Date());
+    const userId = localStorage.getItem('userId') || '';
 
+    // 모드 탭: 'INPUT' (가능시간 조회/입력) | 'STATUS' (조율 현황)
+    const [activeTab, setActiveTab] = useState<'INPUT' | 'STATUS'>('INPUT');
+
+    // 일정 시간 조회 모드 vs 수정 모드 (기본: 조회 모드)
+    const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+    // 원본 저장된 내 슬롯 (취소용 백업)
+    const [savedSlotsBackup, setSavedSlotsBackup] = useState<Set<string>>(new Set());
+
+    // 합주 정보 및 참여자 세션
+    const [bandInfo, setBandInfo] = useState<BandInfo>({
+        title: "합주실",
+        artist: "아티스트",
+        roles: []
+    });
+
+    // 전체 조율 스케줄 목록
+    const [schedules, setSchedules] = useState<ScheduleDto[]>([]);
+
+    // 최종 확정된 합주 일정 목록 (BN_SCHEDULE)
+    const [confirmedSchedules, setConfirmedSchedules] = useState<ConfirmedScheduleDto[]>([]);
+
+    // 탭 1 기준 날짜 (기본 오늘)
+    const [currentBaseDate, setCurrentBaseDate] = useState<Date>(new Date());
+
+    // 탭 2 캘린더 월 기준 날짜
+    const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
+    // 탭 2 선택된 일자 ('YYYYMMDD')
+    const [selectedMatchDate, setSelectedMatchDate] = useState<string>('');
+
+    // 탭 2 선택된 확정 시간 슬롯 목록 (연속된 시간대)
+    const [selectedConfirmedHours, setSelectedConfirmedHours] = useState<number[]>([]);
+
+    // 탭 2 확정 합주일정 제목 입력
+    const [scheduleTitle, setScheduleTitle] = useState<string>('');
+
+    // 내가 선택한 시간 슬롯: Set of "YYYYMMDD_HH00"
+    const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
+
+    // 하단 참여 현황에 표시할 선택된 시간 슬롯 (기본: 오늘 19:00 또는 첫 번째 슬롯)
+    const [focusedSlot, setFocusedSlot] = useState<{ date: string; hour: number }>({
+        date: '',
+        hour: 19
+    });
+
+    // 모달 상태
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         type: 'alert' | 'confirm';
@@ -50,37 +125,101 @@ const JamScheduleCapture: React.FC = () => {
         });
     };
 
-    const [schedules, setSchedules] = useState<ScheduleDto[]>([]);
-    const [selectedTimeSlots, setSelectedTimeSlots] = useState<number[]>([]);
+    // 시간대 정의: 08:00 ~ 22:00 (15시간대)
+    const timeHours = Array.from({ length: 15 }, (_, i) => i + 8); // 8, 9, ..., 22
 
-    const [bandInfo, setBandInfo] = useState<{
-        title: string;
-        artist: string;
-        imgUrl: string;
-        roles: any[]; // Add roles to state
-    }>({
-        title: "",
-        artist: "",
-        imgUrl: "",
-        roles: []
-    });
+    // 주간 일자 계산 (일요일 시작 7일)
+    const getWeekDays = (base: Date) => {
+        const d = new Date(base);
+        const dayOfWeek = d.getDay(); // 0(일) ~ 6(토)
+        const diff = d.getDate() - dayOfWeek;
+        const sunday = new Date(d.setDate(diff));
 
+        const week = [];
+        for (let i = 0; i < 7; i++) {
+            const next = new Date(sunday);
+            next.setDate(sunday.getDate() + i);
+            week.push(next);
+        }
+        return week;
+    };
+
+    const weekDays = getWeekDays(currentBaseDate);
+
+    const formatDateToYMD = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}${m}${day}`;
+    };
+
+    const formatShortDate = (d: Date) => {
+        const m = d.getMonth() + 1;
+        const day = d.getDate();
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const name = dayNames[d.getDay()];
+        return {
+            dateStr: `${m}/${day}`,
+            dayName: name
+        };
+    };
+
+    // 주차 변경 핸들러 (탭 1)
+    const handlePrevWeek = () => {
+        const next = new Date(currentBaseDate);
+        next.setDate(currentBaseDate.getDate() - 7);
+        setCurrentBaseDate(next);
+    };
+
+    const handleNextWeek = () => {
+        const next = new Date(currentBaseDate);
+        next.setDate(currentBaseDate.getDate() + 7);
+        setCurrentBaseDate(next);
+    };
+
+    // 월 변경 핸들러 (탭 2)
+    const handlePrevMonth = () => {
+        const next = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+        setCalendarMonth(next);
+    };
+
+    const handleNextMonth = () => {
+        const next = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+        setCalendarMonth(next);
+    };
+
+    // 데이터 조회
     useEffect(() => {
+        if (!jamId) return;
         fetchBandInfo();
         fetchSchedules();
-    }, [jamId, date]);
+        fetchConfirmedSchedules();
+    }, [jamId]);
+
+    // 초기 포커스 슬롯 설정
+    useEffect(() => {
+        if (weekDays.length > 0 && !focusedSlot.date) {
+            setFocusedSlot({
+                date: formatDateToYMD(weekDays[0]),
+                hour: 19
+            });
+        }
+    }, [currentBaseDate]);
 
     const fetchBandInfo = async () => {
-        if (!jamId || !userId) return;
+        if (!jamId) return;
         try {
             const response = await fetch(`/api/bands/${jamId}?userId=${userId}`);
             if (response.ok) {
                 const data = await response.json();
                 setBandInfo({
+                    id: data.id,
                     title: data.title || "합주실",
                     artist: data.artist || "아티스트",
                     imgUrl: data.imgUrl,
-                    roles: data.roles || [] // Store roles
+                    isLeader: data.isLeader,
+                    canManage: data.canManage,
+                    roles: data.roles || []
                 });
             }
         } catch (error) {
@@ -93,453 +232,1060 @@ const JamScheduleCapture: React.FC = () => {
         try {
             const response = await fetch(`/api/bands/${jamId}/schedules`);
             if (response.ok) {
-                const data = await response.json();
+                const data: ScheduleDto[] = await response.json();
                 setSchedules(data);
+
+                // 내 기존 선택 슬롯 불러오기
+                const mySlots = new Set<string>();
+                data.filter(s => s.userId === userId).forEach(s => {
+                    const hour = parseInt(s.startTime.substring(0, 2), 10);
+                    const slotKey = `${s.startDate}_${String(hour).padStart(2, '0')}00`;
+                    mySlots.add(slotKey);
+                });
+                setSelectedSlots(mySlots);
+                setSavedSlotsBackup(new Set(mySlots));
             }
         } catch (error) {
             console.error("Failed to fetch schedules", error);
         }
     };
 
-    const showParticipants = (hour: number) => {
-        const targetDate = getFormattedDate(date);
-        const relevantSchedules = schedules.filter(s => {
-            if (s.startDate !== targetDate) return false;
-            const startH = parseInt(s.startTime.substring(0, 2));
-            let endH = parseInt(s.endTime.substring(0, 2));
-            const endM = parseInt(s.endTime.substring(2, 4));
-            if (endM >= 50) endH += 1;
-            return hour >= startH && hour < endH;
-        });
-
-        const participantIds = Array.from(new Set(relevantSchedules.map(s => s.userId).filter(Boolean)));
-        
-        if (participantIds.length === 0) {
-            showAlert(`${String(hour).padStart(2, '0')}:00 시간대에 참여 중인 멤버가 없습니다.`);
-            return;
+    const fetchConfirmedSchedules = async () => {
+        if (!jamId) return;
+        try {
+            const response = await fetch(`/api/bands/${jamId}/confirmed-schedules`);
+            if (response.ok) {
+                const data: ConfirmedScheduleDto[] = await response.json();
+                setConfirmedSchedules(data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch confirmed schedules", error);
         }
-
-        const details = participantIds.map(uid => {
-            const member = bandInfo.roles.find(r => r.userId === uid);
-            const name = member?.user || '익명';
-            const part = member?.part || '미정';
-            return `- [${part}] ${name}`;
-        }).join('\n');
-
-        showAlert(`[${String(hour).padStart(2, '0')}:00 참여 인원]\n\n${details}`);
     };
 
-    const isDragging = React.useRef(false);
-    const lastToggledHour = React.useRef<number | null>(null);
-    const initialSelectionState = React.useRef<boolean>(true); // true = selecting, false = deselecting
-    const justTouched = React.useRef(false); // 터치 후 합성 mousedown 이중 발생 방지
+    // --- 드래그 / 클릭 다중 선택 로직 (탭 1) ---
+    const isDragging = useRef(false);
+    const initialAction = useRef<'select' | 'deselect'>('select');
+    const justTouched = useRef(false);
+    const gridContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Global mouse up handler to end dragging safely
         const handleGlobalMouseUp = () => {
             isDragging.current = false;
-            lastToggledHour.current = null;
+        };
+        const handleGlobalTouchEnd = () => {
+            isDragging.current = false;
         };
         window.addEventListener('mouseup', handleGlobalMouseUp);
-        return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('touchend', handleGlobalTouchEnd);
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalMouseUp);
+            window.removeEventListener('touchend', handleGlobalTouchEnd);
+        };
     }, []);
 
-    const handleDateChange = (newDate: any) => {
-        setDate(newDate);
-        setSelectedTimeSlots([]); // Clear selection on date change
-    };
+    // 모바일/터치 드래그 시 브라우저 전체 스크롤 완전 차단 (passive: false)
+    useEffect(() => {
+        const el = gridContainerRef.current;
+        if (!el) return;
 
-    const toggleTimeSlot = (hour: number, forceState?: boolean) => {
-        setSelectedTimeSlots(prev => {
-            const isSelected = prev.includes(hour);
-            let shouldSelect = !isSelected;
-
-            if (forceState !== undefined) {
-                shouldSelect = forceState;
-            }
-
-            if (shouldSelect && !isSelected) {
-                return [...prev, hour];
-            } else if (!shouldSelect && isSelected) {
-                return prev.filter(h => h !== hour);
-            }
-            return prev;
-        });
-    };
-
-    // --- Mouse Handlers (Desktop) ---
-    const onMouseDown = (hour: number, e: React.MouseEvent) => {
-        // 터치 이벤트 직후 합성 mousedown이 중복 발생하는 경우 무시
-        if (justTouched.current) return;
-
-        isDragging.current = true;
-        lastToggledHour.current = hour;
-
-        // Determine initial action based on the first clicked slot
-        const isCurrentlySelected = selectedTimeSlots.includes(hour);
-        initialSelectionState.current = !isCurrentlySelected;
-
-        toggleTimeSlot(hour, initialSelectionState.current);
-    };
-
-    const onMouseEnter = (hour: number) => {
-        if (!isDragging.current) return;
-        if (lastToggledHour.current === hour) return;
-
-        lastToggledHour.current = hour;
-        toggleTimeSlot(hour, initialSelectionState.current);
-    };
-
-    // --- Touch Handlers (Mobile) ---
-    const onTouchStart = (hour: number, e: React.TouchEvent) => {
-        // 터치 후 500ms 동안 합성 mousedown 무시하도록 플래그 설정
-        justTouched.current = true;
-        setTimeout(() => { justTouched.current = false; }, 500);
-
-        isDragging.current = true;
-        lastToggledHour.current = hour;
-
-        const isCurrentlySelected = selectedTimeSlots.includes(hour);
-        initialSelectionState.current = !isCurrentlySelected;
-
-        toggleTimeSlot(hour, initialSelectionState.current);
-    };
-
-    const onTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging.current) return;
-
-        // Prevent scrolling while dragging slots
-        // Note: verify if passive listener issues occur, usually strictly handled in useEffect if needed.
-        // But for React synthetic events, we might need CSS touch-action: none on the container.
-
-        const touch = e.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-
-        if (target) {
-            const slotElement = target.closest('[data-hour]');
-            if (slotElement) {
-                const hourStr = slotElement.getAttribute('data-hour');
-                if (hourStr) {
-                    const hour = parseInt(hourStr, 10);
-                    if (lastToggledHour.current !== hour) {
-                        lastToggledHour.current = hour;
-                        toggleTimeSlot(hour, initialSelectionState.current);
+        const onTouchMoveNative = (e: TouchEvent) => {
+            if (isEditMode && isDragging.current) {
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (target) {
+                    const cell = target.closest('[data-slot-key]');
+                    if (cell) {
+                        const date = cell.getAttribute('data-date');
+                        const hour = cell.getAttribute('data-hour');
+                        if (date && hour) {
+                            toggleSlot(date, parseInt(hour, 10), initialAction.current);
+                        }
                     }
                 }
             }
-        }
-    };
-
-    const onTouchEnd = () => {
-        isDragging.current = false;
-        lastToggledHour.current = null;
-    };
-
-    const getFormattedDate = (d: Date) => {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}${month}${day}`;
-    };
-
-    const handleConfirm = async () => {
-        if (selectedTimeSlots.length === 0) {
-            showAlert("시간을 선택해주세요.");
-            return;
-        }
-        if (!userId || !jamId) {
-            showAlert("사용자 정보 또는 잼 ID가 없습니다.");
-            return;
-        }
-
-        const targetDate = getFormattedDate(date);
-
-        // Group into contiguous blocks
-        const sortedSlots = [...selectedTimeSlots].sort((a, b) => a - b);
-        const ranges: { start: number, end: number }[] = [];
-        let currentStart = sortedSlots[0];
-        let currentEnd = sortedSlots[0];
-
-        for (let i = 1; i < sortedSlots.length; i++) {
-            if (sortedSlots[i] === currentEnd + 1) {
-                currentEnd = sortedSlots[i];
-            } else {
-                ranges.push({ start: currentStart, end: currentEnd });
-                currentStart = sortedSlots[i];
-                currentEnd = sortedSlots[i];
-            }
-        }
-        ranges.push({ start: currentStart, end: currentEnd });
-
-        // Save each range
-        try {
-            for (const range of ranges) {
-                const startStr = String(range.start).padStart(2, '0') + "0000";
-                const endStr = String(range.end).padStart(2, '0') + "5900";
-
-                await fetch('/api/bands/schedule', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        bnNo: jamId,
-                        title: "합주조율",
-                        content: "합주내용",
-                        startDate: targetDate,
-                        startTime: startStr,
-                        endDate: targetDate,
-                        endTime: endStr,
-                        allDayYn: 'P',
-                        userId: userId
-                    })
-                });
-            }
-            showAlert("일정이 확정되었습니다.");
-            setSelectedTimeSlots([]);
-            fetchSchedules(); // Refresh schedules after successful save
-        } catch (error) {
-            console.error("Failed to save schedule", error);
-            showAlert("저장에 실패했습니다.");
-        }
-    };
-
-    const getIconComponent = (type: string, idx: number) => {
-        const className = "text-white text-[6px]";
-        switch (type) {
-            case 'vocal': return <FaMicrophone key={idx} className={className} />;
-            case 'guitar': return <FaGuitar key={idx} className={className} />;
-            case 'bass': return <FaGuitar key={idx} className={className} />; 
-            case 'drum': return <FaDrum key={idx} className={className} />;
-            case 'keyboard': return <GiGrandPiano key={idx} className={className} />;
-            default: return <FaMicrophone key={idx} className={className} />;
-        }
-    };
-
-    const getUserIconType = (member: any) => {
-        const typeCd = (member.sessionTypeCd || '').toLowerCase();
-        const partName = (member.part || '').toLowerCase();
-
-        if (partName.includes('보컬') || partName.includes('vocal') || typeCd.includes('bd1001')) return 'vocal';
-        if (partName.includes('기타') || partName.includes('guitar') || typeCd.includes('bd1002')) return 'guitar';
-        if (partName.includes('베이스') || partName.includes('bass') || typeCd.includes('bd1003')) return 'bass';
-        if (partName.includes('드럼') || partName.includes('drum') || typeCd.includes('bd1004')) return 'drum';
-        if (partName.includes('키보드') || partName.includes('건반') || partName.includes('keyboard') || typeCd.includes('bd1005')) return 'keyboard';
-
-        return 'vocal'; // fallback
-    };
-
-    const getSlotStatus = (hour: number) => {
-        const targetDate = getFormattedDate(date);
-        const relevantSchedules = schedules.filter(s => {
-            if (s.startDate !== targetDate) return false;
-            const startH = parseInt(s.startTime.substring(0, 2));
-            let endH = parseInt(s.endTime.substring(0, 2));
-            const endM = parseInt(s.endTime.substring(2, 4));
-            if (endM >= 50) endH += 1;
-            return hour >= startH && hour < endH;
-        });
-
-        const participantIds = Array.from(new Set(relevantSchedules.map(s => s.userId).filter(Boolean)));
-        const icons = participantIds.map(uid => {
-            const member = bandInfo.roles.find(r => r.userId === uid);
-            if (member) return getUserIconType(member);
-            return 'vocal'; // Fallback
-        });
-
-        const totalMembers = bandInfo.roles.length;
-        const count = participantIds.length;
-        const isAll = totalMembers > 0 && count === totalMembers;
-
-        let color = 'bg-gray-100';
-        if (selectedTimeSlots.includes(hour)) {
-            color = 'bg-[#FF6B6B]'; 
-        } else if (count > 0) {
-            if (isAll) {
-                color = 'bg-[#2EE59D]'; 
-            } else {
-                switch (count) {
-                    case 1: color = 'bg-[#E1F5FE]'; break;
-                    case 2: color = 'bg-[#B3E5FC]'; break;
-                    case 3: color = 'bg-[#81D4FA]'; break;
-                    case 4: color = 'bg-[#4FC3F7]'; break;
-                    case 5: color = 'bg-[#03A9F4]'; break;
-                    case 6: default: color = 'bg-[#0288D1]'; break;
-                }
-            }
-        }
-        return { color, icons };
-    };
-
-    const handleCancel = async () => {
-        if (!userId || !jamId) return;
-        try {
-            const targetDate = getFormattedDate(date);
-            await fetch(`/api/bands/schedule?bnNo=${jamId}&userId=${userId}&date=${targetDate}`, {
-                method: 'DELETE'
-            });
-            showAlert("일정이 삭제되었습니다.");
-            setSelectedTimeSlots([]);
-            fetchSchedules();
-        } catch (error) {
-            console.error("Failed to delete schedule", error);
-            showAlert("삭제에 실패했습니다.");
-        }
-    };
-
-    const renderUnscheduledMembers = () => {
-        const targetDate = getFormattedDate(date);
-        const scheduledUserIds = new Set(
-            schedules
-                .filter(s => s.startDate === targetDate && s.userId)
-                .map(s => s.userId)
-        );
-        const unscheduledMembers = (bandInfo.roles || []).filter(r => !scheduledUserIds.has(r.userId));
-        if (unscheduledMembers.length === 0) return null;
-
-        return (
-            <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 font-bold">미참여 멤버</span>
-                <div className="flex -space-x-1">
-                    {unscheduledMembers.map((member, idx) => {
-                        const iconType = getUserIconType(member);
-                        return (
-                            <div key={idx} className="w-5 h-5 rounded-full bg-gray-300 border border-white flex items-center justify-center text-white text-[8px]">
-                                {getIconComponent(iconType, idx)}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-        );
-    };
-
-    const renderTimeGrid = () => {
-        const q1Slots = Array.from({ length: 6 }, (_, i) => i + 1);
-        const q2Slots = Array.from({ length: 6 }, (_, i) => i + 7);
-        const q3Slots = Array.from({ length: 6 }, (_, i) => i + 13);
-        const q4Slots = Array.from({ length: 6 }, (_, i) => i + 19);
-
-        const renderSlot = (hour: number) => {
-            const status = getSlotStatus(hour);
-            return (
-                <div key={hour} className="flex items-center w-full h-6 mb-[2px]">
-                    <span
-                        onClick={() => showParticipants(hour)}
-                        className="w-8 text-gray-400 text-xs font-bold mr-1 text-right select-none cursor-pointer hover:text-[#00BDF8] active:scale-95 transition-all flex-shrink-0"
-                    >
-                        {String(hour).padStart(2, '0')}:00
-                    </span>
-                    <div
-                        className="flex-1 flex items-center justify-center h-full cursor-pointer touch-none"
-                        data-hour={hour}
-                        onMouseDown={(e) => onMouseDown(hour, e)}
-                        onMouseEnter={() => onMouseEnter(hour)}
-                        onTouchStart={(e) => onTouchStart(hour, e)}
-                        onTouchMove={onTouchMove}
-                        onTouchEnd={onTouchEnd}
-                    >
-                        <div className={`w-full h-full rounded-sm ${status.color} transition-colors duration-200`} />
-                    </div>
-                </div>
-            );
         };
 
-        return (
-            <div className="grid grid-cols-4 gap-x-5 select-none w-full">
-                <div className="flex flex-col">
-                    {q1Slots.map(hour => renderSlot(hour))}
-                </div>
-                <div className="flex flex-col">
-                    {q2Slots.map(hour => renderSlot(hour))}
-                </div>
-                <div className="flex flex-col">
-                    {q3Slots.map(hour => renderSlot(hour))}
-                </div>
-                <div className="flex flex-col">
-                    {q4Slots.map(hour => renderSlot(hour))}
-                </div>
-            </div>
-        );
+        el.addEventListener('touchmove', onTouchMoveNative, { passive: false });
+        return () => {
+            el.removeEventListener('touchmove', onTouchMoveNative);
+        };
+    }, [isEditMode, weekDays, selectedSlots]);
+
+    const toggleSlot = (dateStr: string, hour: number, forceAction?: 'select' | 'deselect') => {
+        // 수정 모드가 아닐 때는 포커스(참여자 조회)만 변경하고 선택 슬롯은 건드리지 않음!
+        if (!isEditMode) {
+            setFocusedSlot({ date: dateStr, hour });
+            return;
+        }
+
+        const key = `${dateStr}_${String(hour).padStart(2, '0')}00`;
+        setSelectedSlots(prev => {
+            const next = new Set(prev);
+            const exists = next.has(key);
+            const action = forceAction || (exists ? 'deselect' : 'select');
+
+            if (action === 'select') {
+                next.add(key);
+            } else {
+                next.delete(key);
+            }
+            return next;
+        });
+
+        // 포커스 슬롯 갱신
+        setFocusedSlot({ date: dateStr, hour });
+    };
+
+    const handleCellMouseDown = (dateStr: string, hour: number, e: React.MouseEvent) => {
+        if (justTouched.current) return;
+
+        if (!isEditMode) {
+            // 조회 모드: 포커스만 변경
+            setFocusedSlot({ date: dateStr, hour });
+            return;
+        }
+
+        e.preventDefault();
+        isDragging.current = true;
+        const key = `${dateStr}_${String(hour).padStart(2, '0')}00`;
+        const isSelected = selectedSlots.has(key);
+        initialAction.current = isSelected ? 'deselect' : 'select';
+        toggleSlot(dateStr, hour, initialAction.current);
+    };
+
+    const handleCellMouseEnter = (dateStr: string, hour: number) => {
+        if (!isEditMode || !isDragging.current) return;
+        toggleSlot(dateStr, hour, initialAction.current);
+    };
+
+    const handleCellTouchStart = (dateStr: string, hour: number, e: React.TouchEvent) => {
+        justTouched.current = true;
+        setTimeout(() => { justTouched.current = false; }, 500);
+
+        if (!isEditMode) {
+            // 조회 모드: 포커스만 변경
+            setFocusedSlot({ date: dateStr, hour });
+            return;
+        }
+
+        isDragging.current = true;
+        const key = `${dateStr}_${String(hour).padStart(2, '0')}00`;
+        const isSelected = selectedSlots.has(key);
+        initialAction.current = isSelected ? 'deselect' : 'select';
+        toggleSlot(dateStr, hour, initialAction.current);
+    };
+
+    const handleTouchEnd = () => {
+        isDragging.current = false;
+    };
+
+    // 선택 요약 계산 (X개 날짜 · 총 Y시간 선택)
+    const getSelectionSummary = () => {
+        const dates = new Set<string>();
+        selectedSlots.forEach(k => {
+            const [d] = k.split('_');
+            dates.add(d);
+        });
+        const totalHours = selectedSlots.size;
+        if (totalHours === 0) return "선택된 시간 없음";
+        return `${dates.size}개 날짜 · 총 ${totalHours}시간 선택`;
+    };
+
+    // 특정 슬롯의 다른 참여자 수 및 참여자 목록 계산
+    const getSlotParticipants = (dateStr: string, hour: number) => {
+        const hourPrefix = String(hour).padStart(2, '0');
+        const matched = schedules.filter(s => {
+            if (s.startDate !== dateStr) return false;
+            const startH = s.startTime.substring(0, 2);
+            return startH === hourPrefix;
+        });
+
+        const userIds = Array.from(new Set(matched.map(s => s.userId).filter(Boolean)));
+        return {
+            count: userIds.length,
+            userIds
+        };
+    };
+
+    // 가능 시간 제출 저장 API 호출
+    const handleSubmitAvailability = async () => {
+        if (!userId) {
+            showAlert("로그인이 필요합니다.");
+            return;
+        }
+        if (!jamId) return;
+
+        const slots = Array.from(selectedSlots).map(k => {
+            const [date, time] = k.split('_');
+            return { date, time };
+        });
+
+        try {
+            const response = await fetch('/api/bands/schedule/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bnNo: Number(jamId),
+                    userId: userId,
+                    slots: slots
+                })
+            });
+
+            if (response.ok) {
+                showAlert("가능 시간이 성공적으로 저장되었습니다! 🎉");
+                setIsEditMode(false);
+                setSavedSlotsBackup(new Set(selectedSlots));
+                fetchSchedules();
+            } else {
+                const err = await response.text();
+                showAlert(`저장에 실패했습니다: ${err}`);
+            }
+        } catch (error) {
+            console.error("Failed to submit plan schedule", error);
+            showAlert("네트워크 오류로 저장에 실패했습니다.");
+        }
+    };
+
+    // 현재 포커스된 슬롯의 가능한 사람 / 불가능한 사람 계산
+    const calculatePeopleStatus = () => {
+        if (!focusedSlot.date) return { available: [], unavailable: [] };
+
+        const { userIds: availableIds } = getSlotParticipants(focusedSlot.date, focusedSlot.hour);
+        const availableSet = new Set(availableIds);
+
+        // 합주 세션에 참여 중인 멤버들 기준
+        const sessionMembers = bandInfo.roles
+            .filter(r => r.userId)
+            .map(r => ({
+                userId: r.userId!,
+                name: r.user || '멤버',
+                part: r.part || '세션'
+            }));
+
+        // 세션 목록에서 중복 제거
+        const uniqueMembersMap = new Map<string, { userId: string; name: string; part: string }>();
+        sessionMembers.forEach(m => {
+            if (!uniqueMembersMap.has(m.userId)) {
+                uniqueMembersMap.set(m.userId, m);
+            }
+        });
+
+        // 만약 세션 참여자 외에 스케줄을 등록한 유저가 있다면 추가
+        schedules.forEach(s => {
+            if (s.userId && !uniqueMembersMap.has(s.userId)) {
+                uniqueMembersMap.set(s.userId, {
+                    userId: s.userId,
+                    name: s.userNickNm || s.userId,
+                    part: '멤버'
+                });
+            }
+        });
+
+        const allMembers = Array.from(uniqueMembersMap.values());
+        const available = allMembers.filter(m => availableSet.has(m.userId));
+        const unavailable = allMembers.filter(m => !availableSet.has(m.userId));
+
+        return { available, unavailable };
+    };
+
+    const { available: availablePeople, unavailable: unavailablePeople } = calculatePeopleStatus();
+
+    // 포커스된 시간 라벨 포맷 (예: "7/27 19:00" 또는 "19:00")
+    const getFocusedSlotTitle = () => {
+        if (!focusedSlot.date) return `${String(focusedSlot.hour).padStart(2, '0')}:00`;
+        const m = parseInt(focusedSlot.date.substring(4, 6), 10);
+        const d = parseInt(focusedSlot.date.substring(6, 8), 10);
+        return `${m}/${d} ${String(focusedSlot.hour).padStart(2, '0')}:00`;
+    };
+
+    // =========================================================================
+    // 탭 2: 조율 현황 로직 (모든 세션 참여자 교집합 계산 및 최종 확정)
+    // =========================================================================
+
+    // 세션에 참여 중인 모든 멤버 아이디 목록
+    const sessionJoinedUserIds = Array.from(
+        new Set(bandInfo.roles.filter(r => r.userId).map(r => r.userId!))
+    );
+
+    // 특정 날짜에 모든 세션 참여자가 동시에 가능한 시간대 목록 계산
+    const getAllMatchingHoursForDate = (dateStr: string) => {
+        if (sessionJoinedUserIds.length === 0) return [];
+
+        const matchingHours: number[] = [];
+        timeHours.forEach(hour => {
+            const { userIds } = getSlotParticipants(dateStr, hour);
+            const isAllMatch = sessionJoinedUserIds.every(uid => userIds.includes(uid));
+            if (isAllMatch) {
+                matchingHours.push(hour);
+            }
+        });
+        return matchingHours;
+    };
+
+    // 모든 세션 참여자가 동시에 가능한 일자 목록(Set)
+    const getAllMatchingDatesSet = () => {
+        if (sessionJoinedUserIds.length === 0) return new Set<string>();
+
+        const dates = new Set<string>();
+        schedules.forEach(s => {
+            const d = s.startDate;
+            if (!dates.has(d)) {
+                const hours = getAllMatchingHoursForDate(d);
+                if (hours.length > 0) {
+                    dates.add(d);
+                }
+            }
+        });
+        return dates;
+    };
+
+    const allMatchingDatesSet = getAllMatchingDatesSet();
+
+    // 탭 2 캘린더 그리드 날짜 생성
+    const getCalendarDays = () => {
+        const year = calendarMonth.getFullYear();
+        const month = calendarMonth.getMonth();
+        const todayStr = formatDateToYMD(new Date());
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+
+        const startDayOfWeek = firstDayOfMonth.getDay(); // 0(일) ~ 6(토)
+        const totalDays = lastDayOfMonth.getDate();
+
+        const days = [];
+
+        // 이전 달 빈 칸
+        for (let i = 0; i < startDayOfWeek; i++) {
+            days.push(null);
+        }
+
+        // 현재 달 일자들
+        for (let d = 1; d <= totalDays; d++) {
+            const dateObj = new Date(year, month, d);
+            const dateStr = formatDateToYMD(dateObj);
+            const isMatch = allMatchingDatesSet.has(dateStr);
+            const isPast = dateStr < todayStr;
+            days.push({
+                day: d,
+                dateStr,
+                isMatch,
+                isPast
+            });
+        }
+
+        return days;
+    };
+
+    const calendarDays = getCalendarDays();
+
+    // 탭 2: 연속된 시간대 선택 핸들러
+    const handleToggleConfirmedHour = (hour: number) => {
+        setSelectedConfirmedHours(prev => {
+            if (prev.length === 0) {
+                return [hour];
+            }
+
+            if (prev.includes(hour)) {
+                // 이미 포함되어 있는 경우
+                if (prev.length === 1) {
+                    return [];
+                }
+                const min = Math.min(...prev);
+                const max = Math.max(...prev);
+                if (hour === min) {
+                    return prev.filter(h => h !== hour);
+                } else if (hour === max) {
+                    return prev.filter(h => h !== hour);
+                } else {
+                    // 중간을 해제하려고 하면 그 시간 하나만 새로 선택
+                    return [hour];
+                }
+            }
+
+            // 새로 추가하는 경우: 반드시 기존 선택의 min - 1 또는 max + 1 이어야 연속됨!
+            const min = Math.min(...prev);
+            const max = Math.max(...prev);
+
+            if (hour === min - 1 || hour === max + 1) {
+                const next = [...prev, hour].sort((a, b) => a - b);
+                return next;
+            } else {
+                // 연속되지 않은 떨어진 시간을 누르면 그 시간부터 새로 시작
+                return [hour];
+            }
+        });
+    };
+
+    // 탭 2: 합주 일정 최종 확정 저장 API 호출 (BN_SCHEDULE)
+    const handleConfirmScheduleSubmit = async () => {
+        if (!bandInfo.canManage && !bandInfo.isLeader) {
+            showAlert("합주 일정 최종 확정은 방장 및 클랜 간부만 가능합니다.");
+            return;
+        }
+
+        if (!selectedMatchDate) {
+            showAlert("캘린더에서 확정할 일자를 먼저 선택해주세요.");
+            return;
+        }
+
+        const todayStr = formatDateToYMD(new Date());
+        if (selectedMatchDate < todayStr) {
+            showAlert("오늘 이전의 지난 일자로는 합주 일정을 확정할 수 없습니다.\n오늘 이후의 일자를 선택해주세요.");
+            return;
+        }
+
+        if (selectedConfirmedHours.length === 0) {
+            showAlert("모두가 참석 가능한 시간대를 1개 이상 선택해주세요.");
+            return;
+        }
+
+        const sortedHours = [...selectedConfirmedHours].sort((a, b) => a - b);
+        const sttH = sortedHours[0];
+        const endH = sortedHours[sortedHours.length - 1] + 1; // 1시간 단위 종료시
+
+        const sttTime = String(sttH).padStart(2, '0') + "00";
+        const endTime = String(endH).padStart(2, '0') + "00";
+        const title = scheduleTitle.trim() ? scheduleTitle.trim() : `${bandInfo.title} 합주 일정`;
+
+        try {
+            const response = await fetch(`/api/bands/${jamId}/confirmed-schedules`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bnNo: Number(jamId),
+                    title: title,
+                    sttDate: selectedMatchDate,
+                    sttTime: sttTime,
+                    endDate: selectedMatchDate,
+                    endTime: endTime,
+                    userId: userId
+                })
+            });
+
+            if (response.ok) {
+                showAlert("합주 일정이 최종 확정되었습니다! 🎉\n홈 화면 다가오는 예약 및 일정에 반영됩니다.");
+                setSelectedConfirmedHours([]);
+                setScheduleTitle('');
+                fetchConfirmedSchedules();
+            } else {
+                const err = await response.text();
+                showAlert(`확정 저장에 실패했습니다: ${err}`);
+            }
+        } catch (error) {
+            console.error("Failed to confirm schedule", error);
+            showAlert("네트워크 오류로 저장에 실패했습니다.");
+        }
+    };
+
+    // 탭 2: 확정된 합주 일정 삭제 API 호출
+    const handleDeleteConfirmedSchedule = (schNo: number, title: string) => {
+        if (!bandInfo.canManage && !bandInfo.isLeader) {
+            showAlert("삭제 권한이 없습니다. (방장 또는 클랜 간부만 가능)");
+            return;
+        }
+
+        setModalConfig({
+            isOpen: true,
+            type: 'confirm',
+            message: `[${title}]\n확정된 합주 일정을 완전히 삭제하시겠습니까?`,
+            onConfirm: async () => {
+                closeModal();
+                try {
+                    const response = await fetch(`/api/bands/${jamId}/confirmed-schedules/${schNo}?userId=${userId}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        showAlert("확정 일정이 삭제되었습니다.");
+                        fetchConfirmedSchedules();
+                    } else {
+                        const err = await response.text();
+                        showAlert(`삭제 실패: ${err}`);
+                    }
+                } catch (error) {
+                    console.error("Failed to delete confirmed schedule", error);
+                    showAlert("네트워크 오류로 삭제에 실패했습니다.");
+                }
+            }
+        });
+    };
+
+    // 날짜 포맷 헬퍼 (YYYYMMDD -> YYYY.MM.DD (요일))
+    const formatDisplayDate = (dateStr: string) => {
+        if (!dateStr || dateStr.length < 8) return dateStr;
+        const y = dateStr.substring(0, 4);
+        const m = parseInt(dateStr.substring(4, 6), 10);
+        const d = parseInt(dateStr.substring(6, 8), 10);
+        const dateObj = new Date(parseInt(y, 10), m - 1, d);
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        const dayName = dayNames[dateObj.getDay()];
+        return `${y}.${m}.${d} (${dayName})`;
+    };
+
+    const formatDisplayTimeRange = (sttTime: string, endTime: string) => {
+        if (!sttTime || sttTime.length < 2) return "";
+        const stt = sttTime.substring(0, 2) + ":00";
+        const end = endTime && endTime.length >= 2 ? endTime.substring(0, 2) + ":00" : "";
+        return end ? `${stt} ~ ${end}` : stt;
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
-            {/* Header */}
-            <div className="px-4 py-3 flex items-center gap-3 sticky top-0 bg-white z-20 flex-shrink-0 border-b border-gray-50">
-                <button onClick={() => navigate(-1)} className="text-gray-600">
-                    <FaChevronLeft size={22} />
+        <div className="min-h-screen bg-[#FAFBFD] font-['Inter','Pretendard',sans-serif] text-[#0B1114] pb-16 selection:bg-[#00BDF8] selection:text-white">
+            {/* 상단 네비게이션 헤더 */}
+            <div className="max-w-[420px] mx-auto sticky top-0 z-30 bg-[#FAFBFD]/90 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200/60 active:scale-90 transition-all cursor-pointer"
+                >
+                    <FaChevronLeft size={18} />
                 </button>
-                <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
-                    {bandInfo.imgUrl ? (
-                        <img src={bandInfo.imgUrl} alt={bandInfo.title} className="w-full h-full object-cover" />
-                    ) : (
-                        <DefaultProfile type="jam" iconSize={16} />
-                    )}
+                <div className="flex flex-col items-center">
+                    <h1 className="text-[16px] font-bold text-[#0B1114] truncate max-w-[240px]">
+                        {bandInfo.title}
+                    </h1>
+                    <span className="text-[12px] text-gray-500 font-medium">
+                        {bandInfo.artist} · 일정 조율
+                    </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                    <h1 className="text-sm text-[#003C48] font-bold leading-tight truncate">{bandInfo.title}</h1>
-                    <p className="text-xs text-gray-500 truncate">: {bandInfo.artist}</p>
-                </div>
+                <div className="w-9" />
             </div>
 
-            {/* Content Container - Sequential flow for single screen fitness */}
-            <div className="flex-1 flex flex-col p-4 overflow-y-auto no-scrollbar">
-                {/* 1. Calendar Area */}
-                <div className="mb-4 bg-white flex-shrink-0">
-                    <Calendar
-                        onChange={handleDateChange}
-                        className="custom-calendar"
-                        value={date}
-                        formatDay={(_, date) => String(date.getDate())}
-                        calendarType="gregory"
-                        prev2Label={null}
-                        next2Label={null}
-                        tileClassName={({ date: tileDate }) => {
-                            const dStr = getFormattedDate(tileDate);
-                            const daySchedules = schedules.filter(s => s.startDate === dStr);
-                            const participantIds = Array.from(new Set(daySchedules.map(s => s.userId).filter(Boolean)));
-                            const totalMembers = bandInfo.roles.length;
+            <div className="max-w-[420px] mx-auto px-5 pt-4 flex flex-col gap-6">
 
-                            if (participantIds.length === 0) return '';
-                            if (totalMembers > 0 && participantIds.length === totalMembers) {
-                                return 'highlight-green';
-                            }
-                            return 'highlight-blue';
-                        }}
-                    />
+                {/* Section / Schedule Intro */}
+                <div className="flex flex-col gap-1">
+                    <h2 className="text-[20px] font-bold leading-[28px] text-[#0B1114]">
+                        {activeTab === 'INPUT'
+                            ? (isEditMode ? "가능한 날짜와 시간을 선택해주세요" : "합주 일정 가능시간 조회")
+                            : "모두가 가능한 시간을 확인해보세요"}
+                    </h2>
+                    <p className="text-[14px] leading-[22px] text-[#525252]">
+                        {activeTab === 'INPUT'
+                            ? (isEditMode
+                                ? "시간표를 드래그하거나 터치해 가능한 시간을 선택하세요."
+                                : "시간표를 터치하면 해당 시간의 참여자/불참자를 확인할 수 있어요.")
+                            : "날짜와 시간대를 선택하면 멤버별 가능 여부를 볼 수 있어요."}
+                    </p>
                 </div>
 
-                {/* 2. Time Grid Area */}
-                <div className="mb-6 flex-shrink-0">
-                    {renderTimeGrid()}
+                {/* Section / Schedule Mode Tabs */}
+                <div className="flex flex-row gap-2 h-[44px]">
+                    <button
+                        onClick={() => setActiveTab('INPUT')}
+                        className={`flex-1 h-[44px] rounded-[12px] font-bold text-[14px] flex items-center justify-center transition-all cursor-pointer ${
+                            activeTab === 'INPUT'
+                                ? 'bg-[#00BDF8] text-white shadow-[0_4px_12px_rgba(0,189,248,0.25)]'
+                                : 'bg-white border border-[#E5E5E5] text-[#525252] hover:bg-gray-50'
+                        }`}
+                    >
+                        {isEditMode ? "가능시간 수정" : "가능시간 입력"}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('STATUS')}
+                        className={`flex-1 h-[44px] rounded-[12px] font-bold text-[14px] flex items-center justify-center transition-all cursor-pointer ${
+                            activeTab === 'STATUS'
+                                ? 'bg-[#00BDF8] text-white shadow-[0_4px_12px_rgba(0,189,248,0.25)]'
+                                : 'bg-white border border-[#E5E5E5] text-[#525252] hover:bg-gray-50'
+                        }`}
+                    >
+                        조율 현황
+                    </button>
                 </div>
 
-                {/* 3. Action Area - Follows Grid naturally */}
-                <div className="pt-4 border-t border-gray-100 flex-shrink-0 pb-2">
-                    <div className="flex items-center justify-between">
-                        {/* Unscheduled Members (Left) */}
-                        <div className="flex items-center">
-                            {renderUnscheduledMembers()}
+                {activeTab === 'INPUT' ? (
+                    /* ========================================================================= */
+                    /* Tab 1. 가능시간 조회 & 입력 모드 */
+                    /* ========================================================================= */
+                    <>
+                        {/* Section / Availability Grid Section */}
+                        <div className="flex flex-col gap-3">
+                            {/* Availability Header */}
+                            <div className="flex flex-row justify-between items-center">
+                                <h3 className="text-[16px] font-semibold leading-[24px] text-[#0B1114]">
+                                    {isEditMode ? "가능한 시간 선택" : "일정 시간표"}
+                                </h3>
+                                <span className="text-[12px] font-medium text-[#0098CC]">
+                                    {getSelectionSummary()}
+                                </span>
+                            </div>
+
+                            {/* 주차 이동 바 */}
+                            <div className="flex items-center justify-between bg-white px-3 py-2 rounded-[10px] border border-[#E5E5E5] text-[13px] text-gray-700 font-medium">
+                                <button
+                                    onClick={handlePrevWeek}
+                                    className="p-1 hover:text-[#00BDF8] active:scale-90 transition-all cursor-pointer flex items-center gap-1"
+                                >
+                                    <FaChevronLeft size={12} />
+                                    <span>이전 주</span>
+                                </button>
+                                <span className="font-bold text-[#0B1114]">
+                                    {weekDays[0].getMonth() + 1}/{weekDays[0].getDate()} ~ {weekDays[6].getMonth() + 1}/{weekDays[6].getDate()}
+                                </span>
+                                <button
+                                    onClick={handleNextWeek}
+                                    className="p-1 hover:text-[#00BDF8] active:scale-90 transition-all cursor-pointer flex items-center gap-1"
+                                >
+                                    <span>다음 주</span>
+                                    <FaChevronRight size={12} />
+                                </button>
+                            </div>
+
+                            {/* Availability Grid Card (Figma 100% 픽셀 퍼펙트 테이블) */}
+                            <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-3 shadow-xs select-none">
+                                <div 
+                                    ref={gridContainerRef}
+                                    className="w-full overflow-x-auto select-none"
+                                >
+                                    <table className="w-full border-collapse text-center select-none">
+                                        {/* Date Columns Header */}
+                                        <thead>
+                                            <tr className="border-b border-[#E5E5E5]">
+                                                <th className="w-[44px] py-2 text-[12px] font-medium text-[#525252] bg-white sticky left-0 z-10 touch-pan-y">
+                                                    KST
+                                                </th>
+                                                {weekDays.map((d, idx) => {
+                                                    const { dateStr, dayName } = formatShortDate(d);
+                                                    const isSunday = d.getDay() === 0;
+                                                    const isSaturday = d.getDay() === 6;
+                                                    return (
+                                                        <th key={idx} className="min-w-[40px] py-1.5 px-0.5 text-center font-medium bg-white">
+                                                            <div className="text-[12px] text-[#0B1114] leading-tight font-semibold">
+                                                                {dateStr}
+                                                            </div>
+                                                            <div className={`text-[11px] leading-tight ${isSunday ? 'text-red-500' : isSaturday ? 'text-blue-500' : 'text-[#737373]'}`}>
+                                                                {dayName}
+                                                            </div>
+                                                        </th>
+                                                    );
+                                                })}
+                                            </tr>
+                                        </thead>
+
+                                        {/* Time Rows (08:00 ~ 22:00) */}
+                                        <tbody>
+                                            {timeHours.map((hour) => {
+                                                const hourLabel = `${String(hour).padStart(2, '0')}:00`;
+                                                return (
+                                                    <tr key={hour} className="border-b border-[#F0F0F0] last:border-b-0 h-[34px]">
+                                                        {/* 세로 시간 라벨 (이곳을 잡고 스크롤하면 부드럽게 화면 스크롤 가능) */}
+                                                        <td className="text-[11px] font-medium text-[#737373] bg-white sticky left-0 z-10 border-r border-[#F0F0F0] select-none touch-pan-y cursor-default">
+                                                            {hourLabel}
+                                                        </td>
+
+                                                        {/* 각 일자별 셀 (이곳을 드래그하면 일정 선택 동작) */}
+                                                        {weekDays.map((d, colIdx) => {
+                                                            const dateStr = formatDateToYMD(d);
+                                                            const slotKey = `${dateStr}_${String(hour).padStart(2, '0')}00`;
+                                                            const isMySelected = selectedSlots.has(slotKey);
+                                                            const { count } = getSlotParticipants(dateStr, hour);
+                                                            const isFocused = focusedSlot.date === dateStr && focusedSlot.hour === hour;
+
+                                                            // 히트맵 스타일
+                                                            let cellBg = 'bg-white';
+                                                            if (isMySelected) {
+                                                                cellBg = 'bg-[#D9F7FF]';
+                                                            } else if (count > 0) {
+                                                                if (count === 1) cellBg = 'bg-[#F0FBFF]';
+                                                                else if (count === 2) cellBg = 'bg-[#E1F7FF]';
+                                                                else cellBg = 'bg-[#BAE6FD]';
+                                                            }
+
+                                                            return (
+                                                                <td
+                                                                    key={colIdx}
+                                                                    data-slot-key={slotKey}
+                                                                    data-date={dateStr}
+                                                                    data-hour={hour}
+                                                                    onMouseDown={(e) => handleCellMouseDown(dateStr, hour, e)}
+                                                                    onMouseEnter={() => handleCellMouseEnter(dateStr, hour)}
+                                                                    onTouchStart={(e) => handleCellTouchStart(dateStr, hour, e)}
+                                                                    className={`p-0 h-[34px] cursor-pointer transition-colors border-r border-[#F0F0F0] last:border-r-0 relative select-none touch-none ${cellBg} ${
+                                                                        isFocused ? 'ring-2 ring-[#00BDF8] z-10' : ''
+                                                                    }`}
+                                                                    style={{ touchAction: 'none' }}
+                                                                >
+                                                                    <div className={`w-full h-full flex items-center justify-center select-none pointer-events-none ${
+                                                                        isMySelected ? 'border border-[#00BDF8] bg-[#D9F7FF]' : ''
+                                                                    }`} />
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Gesture Hint */}
+                            <p className="text-[12px] leading-[18px] text-[#525252]">
+                                {isEditMode
+                                    ? "드래그해서 여러 시간을 한 번에 선택할 수 있어요."
+                                    : "원하는 시간대를 터치하면 아래에서 참여/불참 멤버를 볼 수 있어요."}
+                            </p>
                         </div>
 
-                        {/* Action Buttons (Right) */}
-                        <div className="flex items-center gap-1.5">
+                        {/* Section / Schedule Actions (조회 모드 vs 수정/저장 모드 버튼) */}
+                        {!isEditMode ? (
                             <button
-                                onClick={handleCancel}
-                                className="bg-[#EFF1F3] text-gray-600 text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-gray-200 transition-colors"
+                                onClick={() => {
+                                    setSavedSlotsBackup(new Set(selectedSlots));
+                                    setIsEditMode(true);
+                                }}
+                                className="w-full h-[54px] bg-white border-2 border-[#00BDF8] hover:bg-[#00BDF8]/10 active:scale-[0.99] text-[#0098CC] text-[15px] font-bold rounded-[12px] flex items-center justify-center transition-all shadow-xs cursor-pointer"
                             >
-                                취소
+                                클릭하여 시간 선택
                             </button>
-                            <button
-                                onClick={handleConfirm}
-                                className="bg-[#FFEBEB] text-[#FF5252] text-[11px] font-bold px-3 py-1.5 rounded-full shadow-sm hover:bg-[#ffcccc] transition-colors flex items-center gap-1"
-                            >
-                                <span className="text-xs leading-none">✓</span> 시간 확정
-                            </button>
+                        ) : (
+                            <div className="flex flex-col gap-2 w-full">
+                                <button
+                                    onClick={handleSubmitAvailability}
+                                    className="w-full h-[54px] bg-[#00BDF8] hover:bg-[#00a8dc] active:scale-[0.99] text-white text-[15px] font-bold rounded-[12px] flex items-center justify-center transition-all shadow-[0_4px_14px_rgba(0,189,248,0.3)] cursor-pointer"
+                                >
+                                    일정 시간 저장
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSelectedSlots(new Set(savedSlotsBackup));
+                                        setIsEditMode(false);
+                                    }}
+                                    className="w-full py-1.5 text-center text-[13px] text-gray-500 hover:text-gray-700 underline cursor-pointer"
+                                >
+                                    수정 취소
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Section / People Availability (선택된 시간의 참여 현황) */}
+                        <div className="flex flex-col gap-3 pt-2">
+                            {/* People Availability Header */}
+                            <div className="flex flex-row justify-between items-center">
+                                <h3 className="text-[16px] font-bold leading-[24px] text-[#0B1114]">
+                                    {getFocusedSlotTitle()} 참여 현황
+                                </h3>
+                                <span className="text-[12px] text-gray-500">
+                                    세션 참여자 기준
+                                </span>
+                            </div>
+
+                            {/* People Availability Cards (좌: 가능한 사람 / 우: 불가능한 사람) */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Card / Available People */}
+                                <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-4 flex flex-col gap-3 min-h-[160px] shadow-xs">
+                                    <div className="flex flex-row justify-between items-center">
+                                        <h4 className="text-[15px] font-bold leading-[22px] text-[#1EB980]">
+                                            가능한 사람
+                                        </h4>
+                                        <span className="text-[12px] font-semibold text-[#1EB980]">
+                                            {availablePeople.length}명
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {availablePeople.length > 0 ? (
+                                            availablePeople.map((person, idx) => (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-[#1EB980] flex-shrink-0" />
+                                                    <span className="text-[13px] font-medium text-[#0B1114] truncate">
+                                                        {person.name}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <span className="text-[12px] text-gray-400 font-medium mt-2">
+                                                가능한 멤버가 없습니다
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Card / Unavailable People */}
+                                <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-4 flex flex-col gap-3 min-h-[160px] shadow-xs">
+                                    <div className="flex flex-row justify-between items-center">
+                                        <h4 className="text-[15px] font-bold leading-[22px] text-[#E45858]">
+                                            불가능한 사람
+                                        </h4>
+                                        <span className="text-[12px] font-semibold text-[#E45858]">
+                                            {unavailablePeople.length}명
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {unavailablePeople.length > 0 ? (
+                                            unavailablePeople.map((person, idx) => (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <span className="w-2 h-2 rounded-full bg-[#E45858] flex-shrink-0" />
+                                                    <span className="text-[13px] font-medium text-[#0B1114] truncate">
+                                                        {person.name}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <span className="text-[12px] text-gray-400 font-medium mt-2">
+                                                모든 멤버가 가능합니다! 🎉
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </>
+                ) : (
+                    /* ========================================================================= */
+                    /* Tab 2. 조율 현황 (모든 세션 참여자 교집합 캘린더 & 최종 일정 확정) */
+                    /* ========================================================================= */
+                    <div className="flex flex-col gap-5">
+
+                        {/* 1. 만날 날짜 섹션 헤더 (과거 일자는 제외하고 오늘 및 미래 일자만 카운트) */}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[16px] font-semibold text-[#0B1114]">
+                                    만날 날짜
+                                </h3>
+                                <span className="text-[12px] font-medium text-[#0098CC]">
+                                    {Array.from(allMatchingDatesSet).filter(d => d >= formatDateToYMD(new Date())).length}일 가능 (전원 참석)
+                                </span>
+                            </div>
+
+                            {/* 2. 월 네비게이션 */}
+                            <div className="flex items-center justify-between pt-1">
+                                <span className="text-[18px] font-bold text-[#0B1114]">
+                                    {calendarMonth.getFullYear()}년 {calendarMonth.getMonth() + 1}월
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={handlePrevMonth}
+                                        className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-90 transition-all cursor-pointer"
+                                    >
+                                        <FaChevronLeft size={12} />
+                                    </button>
+                                    <button
+                                        onClick={handleNextMonth}
+                                        className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:scale-90 transition-all cursor-pointer"
+                                    >
+                                        <FaChevronRight size={12} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 3. 캘린더 카드 (모든 세션 참여자가 동시에 가능한 날짜만 하이라이트) */}
+                            <div className="bg-white border border-[#E5E5E5] rounded-[16px] p-4 shadow-xs">
+                                <div className="grid grid-cols-7 gap-y-3 text-center">
+                                    {['일', '월', '화', '수', '목', '금', '토'].map((name, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={`text-[13px] font-medium pb-2 ${
+                                                idx === 0 ? 'text-red-500' : idx === 6 ? 'text-blue-500' : 'text-[#737373]'
+                                            }`}
+                                        >
+                                            {name}
+                                        </div>
+                                    ))}
+
+                                    {calendarDays.map((item, idx) => {
+                                        if (!item) {
+                                            return <div key={idx} className="h-9" />;
+                                        }
+
+                                        const isSelected = selectedMatchDate === item.dateStr;
+                                        const isMatch = item.isMatch;
+                                        const isPast = item.isPast;
+
+                                        return (
+                                            <div
+                                                key={idx}
+                                                onClick={() => {
+                                                    // 과거 일자도 팝업 없이 선택하여 목록 조회 가능
+                                                    setSelectedMatchDate(item.dateStr);
+                                                    setSelectedConfirmedHours([]); // 날짜 변경 시 시간 초기화
+                                                }}
+                                                className="h-9 flex items-center justify-center relative cursor-pointer"
+                                            >
+                                                {isMatch ? (
+                                                    <div
+                                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] transition-all ${
+                                                            isPast
+                                                                ? 'bg-gray-200 text-gray-400 font-normal line-through'
+                                                                : isSelected
+                                                                    ? 'bg-[#00BDF8] text-white font-bold ring-3 ring-[#00BDF8]/30 scale-105 shadow-sm'
+                                                                    : 'bg-[#00BDF8] text-white font-bold hover:opacity-90'
+                                                        }`}
+                                                    >
+                                                        {item.day}
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] transition-all ${
+                                                            isPast
+                                                                ? 'text-gray-300 line-through'
+                                                                : isSelected
+                                                                    ? 'border-2 border-[#00BDF8] text-[#00BDF8] font-bold'
+                                                                    : 'text-[#0B1114] hover:bg-gray-100'
+                                                        }`}
+                                                    >
+                                                        {item.day}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-[#737373] mt-0.5 px-1">
+                                <span>* 파란색 원: 전원 가능 날짜</span>
+                                <span>* 회색/취소선: 지난 일정</span>
+                            </div>
+                        </div>
+
+                        {/* 4. 선택된 일자의 [모든 세션 참여자가 참석 가능한 시간대] 선택 영역 */}
+                        {selectedMatchDate && (
+                            <div className="bg-white border border-[#E5E5E5] rounded-[16px] p-4 flex flex-col gap-3 shadow-xs animate-fadeIn">
+                                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                                    <h4 className="font-bold text-[15px] text-[#0B1114]">
+                                        {formatDisplayDate(selectedMatchDate)} 전원 가능 시간
+                                    </h4>
+                                    {selectedConfirmedHours.length > 0 && (
+                                        <span className="text-[12px] text-[#0098CC] font-semibold">
+                                            {selectedConfirmedHours.length}시간 선택됨
+                                        </span>
+                                    )}
+                                </div>
+
+                                {getAllMatchingHoursForDate(selectedMatchDate).length > 0 ? (
+                                    <>
+                                        {/* 한 라인에 3개씩 배치하는 깔끔하고 부드러운 시간대 버튼 */}
+                                        <div className="grid grid-cols-3 gap-2 pt-1">
+                                            {getAllMatchingHoursForDate(selectedMatchDate).map(hour => {
+                                                const isSelected = selectedConfirmedHours.includes(hour);
+                                                const isPastDate = selectedMatchDate < formatDateToYMD(new Date());
+                                                const startStr = `${String(hour).padStart(2, '0')}:00`;
+                                                const endStr = `${String(hour + 1).padStart(2, '0')}:00`;
+
+                                                return (
+                                                    <button
+                                                        key={hour}
+                                                        disabled={isPastDate}
+                                                        onClick={() => {
+                                                            if (!isPastDate) {
+                                                                handleToggleConfirmedHour(hour);
+                                                            }
+                                                        }}
+                                                        className={`h-[42px] rounded-[10px] text-[12px] flex items-center justify-center transition-all select-none ${
+                                                            isPastDate
+                                                                ? 'bg-[#F3F4F6] text-gray-400 cursor-default opacity-70'
+                                                                : isSelected
+                                                                    ? 'bg-[#E1F7FF] text-[#0098CC] font-bold ring-2 ring-[#00BDF8] shadow-xs cursor-pointer'
+                                                                    : 'bg-[#F3F4F6] hover:bg-[#EAECEF] text-[#4B5563] font-medium cursor-pointer'
+                                                        }`}
+                                                    >
+                                                        {startStr} ~ {endStr}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* 2줄 안내 문구 */}
+                                        <div className="text-[11px] text-[#737373] mt-1 space-y-0.5 leading-relaxed">
+                                            <p>* 합주일정은 반드시 연속된 시간대로 이어서 선택해야 합니다.</p>
+                                            <p className="text-[#8E8E93] pl-2">예) 08:00 ~ 09:00, 09:00 ~ 10:00</p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-[13px] text-gray-400 py-3 text-center">
+                                        해당 날짜에는 모든 세션 멤버가 동시에 겹치는 시간대가 없습니다.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 5. 합주 일정 제목 입력 & 최종 확정 버튼 (현재 및 미래 일자일 때만 노출) */}
+                        {selectedMatchDate && selectedMatchDate >= formatDateToYMD(new Date()) && (
+                            <div className="flex flex-col gap-2.5 animate-fadeIn">
+                                <input
+                                    type="text"
+                                    value={scheduleTitle}
+                                    onChange={(e) => setScheduleTitle(e.target.value)}
+                                    placeholder="간단한 일정 및 메모 (예: 1차 정기 합주)"
+                                    className="w-full h-[50px] border border-[#E5E5E5] rounded-[12px] px-4 text-[14px] bg-white placeholder:text-gray-400 focus:outline-none focus:border-[#00BDF8] transition-colors"
+                                />
+
+                                <button
+                                    onClick={handleConfirmScheduleSubmit}
+                                    disabled={!bandInfo.canManage && !bandInfo.isLeader}
+                                    className={`w-full h-[54px] rounded-[12px] font-bold text-[15px] flex items-center justify-center transition-all shadow-[0_4px_14px_rgba(0,189,248,0.3)] ${
+                                        bandInfo.canManage || bandInfo.isLeader
+                                            ? 'bg-[#00BDF8] hover:bg-[#00a8dc] text-white active:scale-[0.99] cursor-pointer'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {bandInfo.canManage || bandInfo.isLeader
+                                        ? "합주 일정 최종 확정하기"
+                                        : "방장 및 클랜 간부만 일정 확정 가능"}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* 6. 최종 확정된 합주 일정 목록 (BN_SCHEDULE) 및 삭제 */}
+                        <div className="flex flex-col gap-3 pt-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[16px] font-bold text-[#0B1114]">
+                                    최종 확정된 합주 일정
+                                </h3>
+                                <span className="text-[12px] text-gray-500 font-medium">
+                                    총 {confirmedSchedules.length}건
+                                </span>
+                            </div>
+
+                            {confirmedSchedules.length > 0 ? (
+                                <div className="flex flex-col gap-2.5">
+                                    {confirmedSchedules.map((item) => (
+                                        <div
+                                            key={item.schNo}
+                                            className="bg-white border border-[#E5E5E5] rounded-[12px] p-4 flex items-center justify-between shadow-xs"
+                                        >
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="bg-[#EBF9FF] text-[#0098CC] text-[11px] font-bold px-2 py-0.5 rounded-full">
+                                                        확정
+                                                    </span>
+                                                    <span className="font-bold text-[14px] text-[#0B1114]">
+                                                        {item.title || "합주 일정"}
+                                                    </span>
+                                                </div>
+                                                <span className="text-[13px] font-medium text-[#525252]">
+                                                    📅 {formatDisplayDate(item.sttDate)} {formatDisplayTimeRange(item.sttTime, item.endTime)}
+                                                </span>
+                                            </div>
+
+                                            {/* 삭제 버튼 (방장/간부 권한) */}
+                                            {(bandInfo.canManage || bandInfo.isLeader) && (
+                                                <button
+                                                    onClick={() => handleDeleteConfirmedSchedule(item.schNo, item.title)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 active:scale-90 transition-all cursor-pointer"
+                                                    title="확정 일정 삭제"
+                                                >
+                                                    <FaTrashAlt size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="bg-white border border-dashed border-gray-200 rounded-[12px] p-6 text-center text-[13px] text-gray-400">
+                                    아직 최종 확정된 합주 일정이 없습니다.
+                                </div>
+                            )}
+                        </div>
+
                     </div>
-                </div>
+                )}
+
             </div>
 
+            {/* 안내 모달 */}
             <CommonModal
                 isOpen={modalConfig.isOpen}
                 type={modalConfig.type}

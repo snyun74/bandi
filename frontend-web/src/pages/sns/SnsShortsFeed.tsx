@@ -161,23 +161,19 @@ const SnsShortsFeed: React.FC = () => {
                         />
 
                         {/* Right Action Bar */}
-                        <div className="absolute right-3.5 bottom-24 z-40 flex flex-col items-center gap-3.5 text-white">
+                        <div className="absolute right-4 bottom-24 z-40 flex flex-col items-center gap-4 text-white">
                             {/* Heart (Like) Button */}
                             <button
                                 onClick={() => handleLikeToggle(item.shortsNo, 'L')}
-                                className="flex flex-col items-center group"
+                                className="flex flex-col items-center group active:scale-75 transition-transform cursor-pointer"
                             >
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-all active:scale-90 shadow-md ${
-                                    item.userAction === 'L'
-                                        ? 'bg-red-500/20 text-[#FF2D55] border-[#FF2D55]/50 shadow-red-500/30'
-                                        : 'bg-black/35 text-white border-white/20 hover:bg-black/50'
-                                }`}>
-                                    <FaHeart 
-                                        size={18} 
-                                        className={item.userAction === 'L' ? 'scale-110 text-[#FF2D55] drop-shadow-[0_0_6px_rgba(255,45,85,0.6)]' : 'text-white'} 
-                                    />
-                                </div>
-                                <span className="text-[11px] font-semibold mt-1 drop-shadow-md">
+                                <FaHeart 
+                                    size={28} 
+                                    className={item.userAction === 'L' 
+                                        ? 'text-[#FF2D55] scale-110 drop-shadow-[0_0_10px_rgba(255,45,85,0.8)]' 
+                                        : 'text-white/90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)] group-hover:text-white'} 
+                                />
+                                <span className="text-[12px] font-bold mt-1 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                                     {item.likeCount || 0}
                                 </span>
                             </button>
@@ -188,22 +184,24 @@ const SnsShortsFeed: React.FC = () => {
                                     isOpen: true,
                                     targetId: item.shortsNo
                                 })}
-                                className="flex flex-col items-center group"
+                                className="flex flex-col items-center group active:scale-75 transition-transform cursor-pointer"
                             >
-                                <div className="w-10 h-10 rounded-full bg-black/35 text-white border border-white/20 flex items-center justify-center backdrop-blur-md hover:bg-black/50 transition-all active:scale-90 shadow-md">
-                                    <FaCommentDots size={18} />
-                                </div>
-                                <span className="text-[11px] font-semibold mt-1 drop-shadow-md">
+                                <FaCommentDots 
+                                    size={27} 
+                                    className="text-white/90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)] group-hover:text-white" 
+                                />
+                                <span className="text-[12px] font-bold mt-1 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                                     {item.commentCount || 0}
                                 </span>
                             </button>
 
                             {/* View Count Indicator */}
                             <div className="flex flex-col items-center">
-                                <div className="w-8 h-8 rounded-full bg-black/25 text-zinc-300 border border-white/10 flex items-center justify-center backdrop-blur-xs">
-                                    <FaEye size={14} />
-                                </div>
-                                <span className="text-[10px] font-medium text-zinc-300 mt-1 drop-shadow-md">
+                                <FaEye 
+                                    size={22} 
+                                    className="text-white/70 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]" 
+                                />
+                                <span className="text-[11px] font-medium mt-1 text-white/80 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                                     {item.viewCount || 0}
                                 </span>
                             </div>

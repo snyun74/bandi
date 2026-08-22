@@ -32,6 +32,7 @@ public class BandService {
     private final com.bandi.backend.repository.BnStudioRepository bnStudioRepository;
     private final com.bandi.backend.repository.BnRoomRepository bnRoomRepository;
     private final com.bandi.backend.repository.BandScheduleRepository bandScheduleRepository;
+    private final com.bandi.backend.repository.UserRepository userRepository;
 
     @Transactional
     public Long createBand(BandCreateRequestDto dto) {
@@ -1089,38 +1090,208 @@ public class BandService {
         }
     }
 
+    @Transactional
+    public void savePlanScheduleBatch(com.bandi.backend.dto.PlanScheduleBatchDto dto) {
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        Long bnNo = dto.getBnNo();
+        String userId = dto.getUserId();
+
+        // 1. 해당 합주방에서 이 사용자의 기존 일정 시간 삭제
+        java.util.List<com.bandi.backend.entity.band.BnPlanScheduleTime> userTimes = bnPlanScheduleTimeRepository.findByBnNo(bnNo).stream()
+                .filter(t -> t.getBnUserId().equals(userId))
+                .collect(java.util.stream.Collectors.toList());
+        bnPlanScheduleTimeRepository.deleteAll(userTimes);
+
+        // 사용자의 기존 Like 삭제
+        java.util.List<com.bandi.backend.entity.band.BnPlanScheduleLike> userLikes = bnPlanScheduleLikeRepository.findAll().stream()
+                .filter(l -> l.getBnNo().equals(bnNo) && l.getBnUserId().equals(userId))
+                .collect(java.util.stream.Collectors.toList());
+        bnPlanScheduleLikeRepository.deleteAll(userLikes);
+
+        if (dto.getSlots() == null || dto.getSlots().isEmpty()) {
+            return;
+        }
+
+        // 2. 날짜별 고유 목록 추출
+        java.util.Set<String> uniqueDates = dto.getSlots().stream()
+                .map(com.bandi.backend.dto.PlanScheduleBatchDto.PlanSlotDto::getDate)
+                .collect(java.util.stream.Collectors.toSet());
+
+        for (String dateStr : uniqueDates) {
+            // BN_PLAN_SCHEDULE 존재 확인 후 저장
+            com.bandi.backend.entity.band.BnPlanScheduleId planId = new com.bandi.backend.entity.band.BnPlanScheduleId(bnNo, dateStr);
+            if (!bnPlanScheduleRepository.existsById(planId)) {
+                com.bandi.backend.entity.band.BnPlanSchedule plan = new com.bandi.backend.entity.band.BnPlanSchedule();
+                plan.setBnNo(bnNo);
+                plan.setBnSchDate(dateStr);
+                plan.setInsDtime(currentDateTime);
+                plan.setInsId(userId);
+                plan.setUpdDtime(currentDateTime);
+                plan.setUpdId(userId);
+                bnPlanScheduleRepository.save(plan);
+            }
+
+            // BN_PLAN_SCHEDULE_LIKE 저장
+            com.bandi.backend.entity.band.BnPlanScheduleLike planLike = new com.bandi.backend.entity.band.BnPlanScheduleLike();
+            planLike.setBnNo(bnNo);
+            planLike.setBnSchDate(dateStr);
+            planLike.setBnUserId(userId);
+            planLike.setInsDtime(currentDateTime);
+            planLike.setInsId(userId);
+            planLike.setUpdDtime(currentDateTime);
+            planLike.setUpdId(userId);
+            bnPlanScheduleLikeRepository.save(planLike);
+        }
+
+        // 3. BN_PLAN_SCHEDULE_TIME 저장
+        for (com.bandi.backend.dto.PlanScheduleBatchDto.PlanSlotDto slot : dto.getSlots()) {
+            String timeFormat = slot.getTime();
+            if (timeFormat.length() > 4) {
+                timeFormat = timeFormat.substring(0, 4);
+            }
+
+            com.bandi.backend.entity.band.BnPlanScheduleTime planTime = new com.bandi.backend.entity.band.BnPlanScheduleTime();
+            planTime.setBnNo(bnNo);
+            planTime.setBnSchDate(slot.getDate());
+            planTime.setBnUserId(userId);
+            planTime.setBnSchTime(timeFormat);
+            planTime.setInsDtime(currentDateTime);
+            planTime.setInsId(userId);
+            planTime.setUpdDtime(currentDateTime);
+            planTime.setUpdId(userId);
+            bnPlanScheduleTimeRepository.save(planTime);
+        }
+    }
+
     @Transactional(readOnly = true)
     public java.util.List<com.bandi.backend.dto.BandScheduleDto> getSchedules(Long bnNo) {
         java.util.List<com.bandi.backend.entity.band.BnPlanScheduleTime> times = bnPlanScheduleTimeRepository
                 .findByBnNo(bnNo);
 
+        // Fetch user nicknames for convenience
+        java.util.Map<String, String> userNickMap = new java.util.HashMap<>();
+
         return times.stream()
                 .map(t -> {
-                    // Convert "HH00" to "HH0000" / "HH5900" for frontend compatibility
                     String hourStr = t.getBnSchTime().substring(0, 2);
                     String startStr = hourStr + "0000";
-                    String endStr = hourStr + "5900"; // Or "6000" if exclusive? Frontend handles inclusive logic.
-                    // Use 5900 to match insertion logic style essentially covering that hour.
+                    String endStr = hourStr + "5900";
+
+                    String nick = userNickMap.computeIfAbsent(t.getBnUserId(), uId -> {
+                        return userRepository.findById(uId).map(com.bandi.backend.entity.member.User::getUserNickNm)
+                                .orElse(uId);
+                    });
 
                     return com.bandi.backend.dto.BandScheduleDto.builder()
-                            .bnSchNo(0L) // No single ID anymore
+                            .bnSchNo(0L)
                             .bnNo(t.getBnNo())
                             .title("합주조율")
                             .content("합주내용")
                             .startDate(t.getBnSchDate())
                             .startTime(startStr)
-                            .endDate(t.getBnSchDate()) // Assume same date for now
+                            .endDate(t.getBnSchDate())
                             .endTime(endStr)
                             .allDayYn("P")
                             .userId(t.getBnUserId())
+                            .userNickNm(nick)
                             .build();
                 })
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    // =========================================================
-    // 예약 기능 메서드
-    // =========================================================
+    // --- 최종 합주일정 확정 (BN_SCHEDULE) CRUD ---
+
+    @Transactional
+    public void createConfirmedSchedule(com.bandi.backend.dto.ConfirmedScheduleDto dto) {
+        Long bnNo = dto.getBnNo();
+        String userId = dto.getUserId();
+
+        BnGroup group = bnGroupRepository.findById(bnNo)
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
+
+        // 방장 또는 클랜 간부 권한 체크
+        boolean isLeader = group.getBnLeaderId().equals(userId);
+        boolean canManage = isLeader;
+        if (!canManage && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
+            com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(
+                    group.getCnNo(), userId);
+            com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId).orElse(null);
+            if (clanUser != null && ("01".equals(clanUser.getCnUserRoleCd()) || "02".equals(clanUser.getCnUserRoleCd()))) {
+                canManage = true;
+            }
+        }
+
+        if (!canManage) {
+            throw new RuntimeException("합주 일정 확정 권한이 없습니다. (방장 또는 클랜 간부만 가능)");
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        com.bandi.backend.entity.band.BandSchedule schedule = new com.bandi.backend.entity.band.BandSchedule();
+        schedule.setBnNo(bnNo);
+        schedule.setBnSchTitle((dto.getTitle() != null && !dto.getTitle().trim().isEmpty()) ? dto.getTitle().trim() : "합주 일정");
+        schedule.setBnSchContent(dto.getContent());
+        schedule.setBnSchSttDate(dto.getSttDate());
+        schedule.setBnSchSttTime(dto.getSttTime());
+        schedule.setBnSchEndDate(dto.getEndDate() != null ? dto.getEndDate() : dto.getSttDate());
+        schedule.setBnSchEndTime(dto.getEndTime());
+        schedule.setBnSchAllDayYn("N");
+        schedule.setBnSchStatCd("A");
+        schedule.setInsDtime(currentDateTime);
+        schedule.setInsId(userId);
+        schedule.setUpdDtime(currentDateTime);
+        schedule.setUpdId(userId);
+
+        bandScheduleRepository.save(schedule);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.bandi.backend.dto.ConfirmedScheduleDto> getConfirmedSchedules(Long bnNo) {
+        java.util.List<com.bandi.backend.entity.band.BandSchedule> list = bandScheduleRepository.findByBnNo(bnNo);
+
+        return list.stream()
+                .filter(s -> !"D".equals(s.getBnSchStatCd()))
+                .sorted(java.util.Comparator.comparing(com.bandi.backend.entity.band.BandSchedule::getBnSchSttDate)
+                        .thenComparing(s -> s.getBnSchSttTime() != null ? s.getBnSchSttTime() : "0000"))
+                .map(s -> com.bandi.backend.dto.ConfirmedScheduleDto.builder()
+                        .schNo(s.getBnSchNo())
+                        .bnNo(s.getBnNo())
+                        .title(s.getBnSchTitle())
+                        .content(s.getBnSchContent())
+                        .sttDate(s.getBnSchSttDate())
+                        .sttTime(s.getBnSchSttTime())
+                        .endDate(s.getBnSchEndDate())
+                        .endTime(s.getBnSchEndTime())
+                        .allDayYn(s.getBnSchAllDayYn())
+                        .statCd(s.getBnSchStatCd())
+                        .userId(s.getInsId())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteConfirmedSchedule(Long bnNo, Long schNo, String userId) {
+        BnGroup group = bnGroupRepository.findById(bnNo)
+                .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
+
+        // 권한 체크
+        boolean isLeader = group.getBnLeaderId().equals(userId);
+        boolean canManage = isLeader;
+        if (!canManage && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
+            com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(
+                    group.getCnNo(), userId);
+            com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId).orElse(null);
+            if (clanUser != null && ("01".equals(clanUser.getCnUserRoleCd()) || "02".equals(clanUser.getCnUserRoleCd()))) {
+                canManage = true;
+            }
+        }
+
+        if (!canManage) {
+            throw new RuntimeException("삭제 권한이 없습니다.");
+        }
+
+        bandScheduleRepository.deleteById(schNo);
+    }
 
     /**
      * 세션 예약 등록
