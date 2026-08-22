@@ -37,10 +37,15 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
         @Query(value = "SELECT " +
                         "    K.CN_NO AS \"cnNo\", " +
                         "    K.CN_BOARD_TYPE_NO AS \"cnBoardTypeNo\", " +
+                        "    K.CN_BOARD_TYPE_NM AS \"boardTypeNm\", " +
                         "    B.CN_BOARD_NO AS \"cnBoardNo\", " +
                         "    B.TITLE AS \"title\", " +
+                        "    B.CONTENT AS \"content\", " +
+                        "    B.WRITER_USER_ID AS \"writerUserId\", " +
                         "    B.INS_DTIME AS \"regDate\", " +
                         "    (CASE WHEN B.MASKING_YN = 'Y' THEN '익명' ELSE (SELECT U.USER_NICK_NM FROM MM_USER U WHERE U.USER_ID = B.WRITER_USER_ID) END) AS \"userNickNm\", "
+                        +
+                        "    (CASE WHEN B.MASKING_YN = 'Y' THEN NULL ELSE (SELECT F.FILE_PATH FROM MM_USER U2 LEFT JOIN CM_ATTACHMENT F ON F.ATTACH_NO = U2.ATTACH_NO WHERE U2.USER_ID = B.WRITER_USER_ID) END) AS \"profileImageUrl\", "
                         +
                         "    (SELECT COUNT(1) FROM CN_BOARD_LIKE L WHERE L.CN_BOARD_NO = B.CN_BOARD_NO) AS \"boardLikeCnt\", "
                         +
@@ -52,10 +57,9 @@ public interface ClanBoardRepository extends JpaRepository<ClanBoard, Long> {
                         "WHERE K.CN_NO = :clanId " +
                         "  AND K.BOARD_TYPE_STAT_CD = 'A' " +
                         "  AND B.BOARD_STAT_CD = 'A' " +
-                        "  AND (:userId = '' OR B.WRITER_USER_ID NOT IN (SELECT CB.BLOCK_USER_ID FROM CM_BLOCK CB WHERE CB.USER_ID = :userId)) " +
-                        "  AND B.INS_DTIME >= TO_CHAR(NOW() - INTERVAL '31 days', 'YYYYMMDD') || '000000' " +
-                        "ORDER BY \"boardLikeCnt\" DESC " +
-                        "LIMIT 3", nativeQuery = true)
+                        "  AND (:userId IS NULL OR :userId = '' OR B.WRITER_USER_ID NOT IN (SELECT CB.BLOCK_USER_ID FROM CM_BLOCK CB WHERE CB.USER_ID = :userId)) " +
+                        "ORDER BY B.INS_DTIME DESC " +
+                        "LIMIT 5", nativeQuery = true)
         List<HotBoardPostDto> findTopBoardPosts(@Param("clanId") Long clanId, @Param("userId") String userId);
 
         @Query(value = "SELECT " +

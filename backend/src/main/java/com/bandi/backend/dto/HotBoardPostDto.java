@@ -17,5 +17,13 @@ public interface HotBoardPostDto {
 
     Long getBoardReplyCnt();
 
+    String getContent();
+
+    String getBoardTypeNm();
+
+    String getWriterUserId();
+
+    String getProfileImageUrl();
+
     String getMaskingYn();
 }

@@ -104,7 +104,38 @@ public class ClanService {
                 .setParameter("updId", dto.getUserId())
                 .executeUpdate();
 
-        // 5. Send push notification to system admins (ADMIN_YN = 'Y')
+        // 5. Create Default "자유게시판" (CN_BOARD_TYPE)
+        ClanBoardType defaultBoardType = new ClanBoardType();
+        defaultBoardType.setCnNo(savedClan.getCnNo());
+        defaultBoardType.setCnBoardTypeNm("자유게시판");
+        defaultBoardType.setBoardTypeStatCd("A");
+        defaultBoardType.setInsDtime(currentDateTime);
+        defaultBoardType.setInsId(dto.getUserId());
+        defaultBoardType.setUpdDtime(currentDateTime);
+        defaultBoardType.setUpdId(dto.getUserId());
+
+        ClanBoardType savedBoardType = clanBoardTypeRepository.save(defaultBoardType);
+
+        // 6. Create Initial Post in Default Board (CN_BOARD)
+        com.bandi.backend.entity.clan.ClanBoard initialPost = new com.bandi.backend.entity.clan.ClanBoard();
+        initialPost.setCnNo(savedClan.getCnNo());
+        initialPost.setCnBoardTypeNo(savedBoardType.getCnBoardTypeNo());
+        initialPost.setWriterUserId(dto.getUserId());
+        initialPost.setTitle("우리 밴드만의 익명 게시판!!");
+        initialPost.setContent("드디어 우리 밴드가 만들어졌어요! \n익명으로 부담없이 자유게시판을 즐겨보세요");
+        initialPost.setYoutubeUrl("");
+        initialPost.setRegDate(todayDate);
+        initialPost.setBoardStatCd("A");
+        initialPost.setPinYn("N");
+        initialPost.setMaskingYn("N");
+        initialPost.setInsDtime(currentDateTime);
+        initialPost.setInsId(dto.getUserId());
+        initialPost.setUpdDtime(currentDateTime);
+        initialPost.setUpdId(dto.getUserId());
+
+        clanBoardRepository.save(initialPost);
+
+        // 7. Send push notification to system admins (ADMIN_YN = 'Y')
         try {
             String applicantNickname = userRepository.findById(dto.getUserId())
                     .map(u -> (u.getUserNickNm() != null && !u.getUserNickNm().isEmpty()) ? u.getUserNickNm() : u.getUserNm())

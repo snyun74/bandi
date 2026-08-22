@@ -619,7 +619,7 @@ const BoardDetail: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-bold text-sm ${comment.replyUserId === post.writerUserId ? 'text-[#00BDF8]' : 'text-gray-800'}`}>
                                                         {comment.userNickNm || "익명"}
-                                                        {comment.replyUserId === post.writerUserId && comment.maskingYn !== 'Y' && " (작성자)"}
+                                                        {comment.replyUserId === post.writerUserId && "(글쓴이)"}
                                                     </span>
                                                 </div>
                                                 <div className="text-xs text-gray-400">{formatDate(comment.regDate)}</div>

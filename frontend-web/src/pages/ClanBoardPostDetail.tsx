@@ -610,9 +610,9 @@ const ClanBoardPostDetail: React.FC = () => {
                                         </div>
                                         <div className="w-full">
                                             <div className="flex items-center gap-2">
-                                                <span className={`font-bold text-sm ${comment.writerUserId === post.writerUserId && comment.maskingYn !== 'Y' ? 'text-[#00BDF8]' : 'text-gray-800'}`}>
-                                                    {comment.userNickNm}
-                                                    {comment.writerUserId === post.writerUserId && comment.maskingYn !== 'Y' && " (작성자)"}
+                                                <span className={`font-bold text-sm ${comment.writerUserId === post.writerUserId ? 'text-[#00BDF8]' : 'text-gray-800'}`}>
+                                                    {comment.userNickNm || "익명"}
+                                                    {comment.writerUserId === post.writerUserId && "(글쓴이)"}
                                                 </span>
                                             </div>
                                             <div className="text-xs text-gray-400">{formatDate(comment.regDate)}</div>
