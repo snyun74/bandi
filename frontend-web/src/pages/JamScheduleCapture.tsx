@@ -395,19 +395,90 @@ const JamScheduleCapture: React.FC = () => {
         return `${dates.size}개 날짜 · 총 ${totalHours}시간 선택`;
     };
 
-    // 특정 슬롯의 다른 참여자 수 및 참여자 목록 계산
+    // 특정 슬롯의 다른 참여자 수 및 참여자 목록 계산 (현재 내가 선택/해제한 상태 실시간 반영)
     const getSlotParticipants = (dateStr: string, hour: number) => {
         const hourPrefix = String(hour).padStart(2, '0');
-        const matched = schedules.filter(s => {
-            if (s.startDate !== dateStr) return false;
-            const startH = s.startTime.substring(0, 2);
-            return startH === hourPrefix;
-        });
+        const slotKey = `${dateStr}_${hourPrefix}00`;
 
-        const userIds = Array.from(new Set(matched.map(s => s.userId).filter(Boolean)));
+        // 다른 사용자들이 등록한 스케줄 목록 (내 기존 스케줄 제외)
+        const otherUserIds = schedules
+            .filter(s => s.startDate === dateStr && s.startTime.substring(0, 2) === hourPrefix && s.userId !== userId)
+            .map(s => s.userId)
+            .filter(Boolean);
+
+        const currentUsersSet = new Set<string>(otherUserIds);
+
+        // 현재 내가 이 슬롯을 선택한 상태라면 내 아이디 추가 (처음 선택 시 1명으로 연한 색상 즉시 반영)
+        if (selectedSlots.has(slotKey) && userId) {
+            currentUsersSet.add(userId);
+        }
+
+        const userIds = Array.from(currentUsersSet);
         return {
             count: userIds.length,
             userIds
+        };
+    };
+
+    // 세션에 참여 중인 모든 멤버 아이디 목록
+    const sessionJoinedUserIds = Array.from(
+        new Set(bandInfo.roles.filter(r => r.userId).map(r => r.userId!))
+    );
+
+    // 스케줄을 등록한 전체 고유 유저 수 (세션 목록이 없을 경우 대비)
+    const allScheduleUserIds = Array.from(new Set(schedules.map(s => s.userId).filter(Boolean)));
+    const totalSessionCount = sessionJoinedUserIds.length > 0
+        ? sessionJoinedUserIds.length
+        : (allScheduleUserIds.length > 0 ? allScheduleUserIds.length : 1);
+
+    // 슬롯별 참여 인원수 및 색상 스타일 계산 (1명: 연한색 -> N명: 점진적으로 진한색 -> 전원 참석: 진한 초록색)
+    const getSlotColorInfo = (dateStr: string, hour: number) => {
+        const { userIds } = getSlotParticipants(dateStr, hour);
+
+        // 세션 참여자 중 해당 슬롯에 가능한 인원 수 계산
+        const matchedCount = sessionJoinedUserIds.length > 0
+            ? userIds.filter(uid => sessionJoinedUserIds.includes(uid)).length
+            : userIds.length;
+
+        if (matchedCount === 0) {
+            return {
+                bg: '#FFFFFF',
+                text: '#94A3B8',
+                matchedCount: 0,
+                isFull: false
+            };
+        }
+
+        // 2. 세션수만큼 모두 참여한 시간대 -> 무조건 진한 초록색 (#10B981)
+        if (totalSessionCount > 0 && matchedCount >= totalSessionCount) {
+            return {
+                bg: '#10B981', // 진한 초록색 (Emerald-500)
+                text: '#FFFFFF',
+                matchedCount,
+                isFull: true
+            };
+        }
+
+        // 1. 참여 유저수에 따라 연한색 -> 점진적으로 진한 색
+        const blueSteps = [
+            '#E0F2FE', // 1명: 연한 하늘색
+            '#BAE6FD', // 2명: 조금 더 진한 하늘색
+            '#7DD3FC', // 3명: 중간 하늘색
+            '#38BDF8', // 4명: 진한 하늘색
+            '#0EA5E9', // 5명: 짙은 파란색
+            '#0284C7', // 6명: 더 짙은 파란색
+            '#0369A1'  // 7명 이상
+        ];
+
+        const stepIdx = Math.min(matchedCount - 1, blueSteps.length - 1);
+        const bg = blueSteps[Math.max(0, stepIdx)];
+        const text = matchedCount >= 4 ? '#FFFFFF' : '#0369A1';
+
+        return {
+            bg,
+            text,
+            matchedCount,
+            isFull: false
         };
     };
 
@@ -505,11 +576,6 @@ const JamScheduleCapture: React.FC = () => {
     // =========================================================================
     // 탭 2: 조율 현황 로직 (모든 세션 참여자 교집합 계산 및 최종 확정)
     // =========================================================================
-
-    // 세션에 참여 중인 모든 멤버 아이디 목록
-    const sessionJoinedUserIds = Array.from(
-        new Set(bandInfo.roles.filter(r => r.userId).map(r => r.userId!))
-    );
 
     // 특정 날짜에 모든 세션 참여자가 동시에 가능한 시간대 목록 계산
     const getAllMatchingHoursForDate = (dateStr: string) => {
@@ -834,7 +900,33 @@ const JamScheduleCapture: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* Availability Grid Card (Figma 100% 픽셀 퍼펙트 테이블) */}
+                            {/* 색상 단계 안내 범례 (참여 인원수별 색상 및 전원 참여 진한 초록색) */}
+                            <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F8FAFC] px-3.5 py-2 rounded-[10px] border border-[#EBECEF]">
+                                <div className="flex items-center gap-1.5 font-medium">
+                                    <span className="text-gray-500">세션 총 인원:</span>
+                                    <span className="font-bold text-[#0B1114]">{totalSessionCount}명</span>
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#E0F2FE] inline-block shadow-2xs" />
+                                        <span className="text-[11px]">1명 (연한색)</span>
+                                    </div>
+                                    {totalSessionCount > 2 && (
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-3.5 h-3.5 rounded-[3px] bg-[#7DD3FC] inline-block shadow-2xs" />
+                                            <span className="text-[11px]">중간</span>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-1">
+                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#10B981] inline-block shadow-2xs" />
+                                        <span className="text-[11px] font-bold text-[#10B981]">
+                                            {totalSessionCount}명 전원 (진한 초록)
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Availability Grid Card (테두리 없는 깔끔한 색상 히트맵) */}
                             <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-3 shadow-xs select-none">
                                 <div 
                                     ref={gridContainerRef}
@@ -870,29 +962,19 @@ const JamScheduleCapture: React.FC = () => {
                                             {timeHours.map((hour) => {
                                                 const hourLabel = `${String(hour).padStart(2, '0')}:00`;
                                                 return (
-                                                    <tr key={hour} className="border-b border-[#F0F0F0] last:border-b-0 h-[34px]">
-                                                        {/* 세로 시간 라벨 (이곳을 잡고 스크롤하면 부드럽게 화면 스크롤 가능) */}
-                                                        <td className="text-[11px] font-medium text-[#737373] bg-white sticky left-0 z-10 border-r border-[#F0F0F0] select-none touch-pan-y cursor-default">
+                                                    <tr key={hour} className="h-[34px]">
+                                                        {/* 세로 시간 라벨 (테두리 없음) */}
+                                                        <td className="text-[11px] font-medium text-[#737373] bg-white sticky left-0 z-10 select-none touch-pan-y cursor-default">
                                                             {hourLabel}
                                                         </td>
 
-                                                        {/* 각 일자별 셀 (이곳을 드래그하면 일정 선택 동작) */}
+                                                        {/* 각 일자별 셀 (테두리 없이 색상만 표시, 전원 참석 시 진한 초록색) */}
                                                         {weekDays.map((d, colIdx) => {
                                                             const dateStr = formatDateToYMD(d);
                                                             const slotKey = `${dateStr}_${String(hour).padStart(2, '0')}00`;
                                                             const isMySelected = selectedSlots.has(slotKey);
-                                                            const { count } = getSlotParticipants(dateStr, hour);
                                                             const isFocused = focusedSlot.date === dateStr && focusedSlot.hour === hour;
-
-                                                            // 히트맵 스타일
-                                                            let cellBg = 'bg-white';
-                                                            if (isMySelected) {
-                                                                cellBg = 'bg-[#D9F7FF]';
-                                                            } else if (count > 0) {
-                                                                if (count === 1) cellBg = 'bg-[#F0FBFF]';
-                                                                else if (count === 2) cellBg = 'bg-[#E1F7FF]';
-                                                                else cellBg = 'bg-[#BAE6FD]';
-                                                            }
+                                                            const colorInfo = getSlotColorInfo(dateStr, hour);
 
                                                             return (
                                                                 <td
@@ -903,15 +985,14 @@ const JamScheduleCapture: React.FC = () => {
                                                                     onMouseDown={(e) => handleCellMouseDown(dateStr, hour, e)}
                                                                     onMouseEnter={() => handleCellMouseEnter(dateStr, hour)}
                                                                     onTouchStart={(e) => handleCellTouchStart(dateStr, hour, e)}
-                                                                    className={`p-0 h-[34px] cursor-pointer transition-colors border-r border-[#F0F0F0] last:border-r-0 relative select-none touch-none ${cellBg} ${
-                                                                        isFocused ? 'ring-2 ring-[#00BDF8] z-10' : ''
+                                                                    className={`p-0 h-[34px] cursor-pointer transition-colors relative select-none touch-none ${
+                                                                        isFocused ? 'ring-2 ring-[#00BDF8] ring-inset z-10 rounded-[2px]' : ''
                                                                     }`}
-                                                                    style={{ touchAction: 'none' }}
-                                                                >
-                                                                    <div className={`w-full h-full flex items-center justify-center select-none pointer-events-none ${
-                                                                        isMySelected ? 'border border-[#00BDF8] bg-[#D9F7FF]' : ''
-                                                                    }`} />
-                                                                </td>
+                                                                    style={{
+                                                                        backgroundColor: colorInfo.bg,
+                                                                        touchAction: 'none'
+                                                                    }}
+                                                                />
                                                             );
                                                         })}
                                                     </tr>
