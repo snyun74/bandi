@@ -431,7 +431,10 @@ const JamScheduleCapture: React.FC = () => {
         ? sessionJoinedUserIds.length
         : (allScheduleUserIds.length > 0 ? allScheduleUserIds.length : 1);
 
-    // 슬롯별 참여 인원수 및 색상 스타일 계산 (1명: 연한색 -> N명: 점진적으로 진한색 -> 전원 참석: 진한 초록색)
+    // 슬롯별 참여 인원수 및 색상 스타일 계산
+    // 1. 세션수 만큼 모두 참여한 경우: #2EE59D
+    // 2. 세션수 - 1 만큼 참여한 경우: #00BDF8
+    // 3. 1명부터 (세션수 - 2)명까지: #00BDF8보다 연한 색으로 단계별 계산 (1명: 아주 연한색 -> 점진적으로 진해짐)
     const getSlotColorInfo = (dateStr: string, hour: number) => {
         const { userIds } = getSlotParticipants(dateStr, hour);
 
@@ -449,34 +452,42 @@ const JamScheduleCapture: React.FC = () => {
             };
         }
 
-        // 2. 세션수만큼 모두 참여한 시간대 -> 무조건 진한 초록색 (#10B981)
+        // 1. 세션수만큼 모두 참여한 경우 -> #2EE59D
         if (totalSessionCount > 0 && matchedCount >= totalSessionCount) {
             return {
-                bg: '#10B981', // 진한 초록색 (Emerald-500)
+                bg: '#2EE59D',
                 text: '#FFFFFF',
                 matchedCount,
                 isFull: true
             };
         }
 
-        // 1. 참여 유저수에 따라 연한색 -> 점진적으로 진한 색
-        const blueSteps = [
-            '#E0F2FE', // 1명: 연한 하늘색
-            '#BAE6FD', // 2명: 조금 더 진한 하늘색
-            '#7DD3FC', // 3명: 중간 하늘색
-            '#38BDF8', // 4명: 진한 하늘색
-            '#0EA5E9', // 5명: 짙은 파란색
-            '#0284C7', // 6명: 더 짙은 파란색
-            '#0369A1'  // 7명 이상
-        ];
+        // 2. 세션수 - 1 만큼 참여한 경우 -> #00BDF8
+        if (matchedCount >= totalSessionCount - 1) {
+            return {
+                bg: '#00BDF8',
+                text: '#FFFFFF',
+                matchedCount,
+                isFull: false
+            };
+        }
 
-        const stepIdx = Math.min(matchedCount - 1, blueSteps.length - 1);
-        const bg = blueSteps[Math.max(0, stepIdx)];
-        const text = matchedCount >= 4 ? '#FFFFFF' : '#0369A1';
+        // 3. 1명부터 (세션수 - 2)명까지는 #00BDF8보다 연한 색으로 단계별 계산
+        const maxStep = Math.max(1, totalSessionCount - 1);
+        const minAlpha = 0.20; // 1명일 때 아주 연한 하늘색
+        const maxSubAlpha = 0.75; // (세션수 - 2)명일 때의 알파값
+        const progress = maxStep <= 2 ? 0 : (matchedCount - 1) / (maxStep - 2);
+        const alpha = minAlpha + (maxSubAlpha - minAlpha) * progress;
+
+        // #00BDF8 (0, 189, 248) 색상을 흰색(#FFFFFF) 배경과 알파 블렌딩
+        const r = Math.round(255 * (1 - alpha) + 0 * alpha);
+        const g = Math.round(255 * (1 - alpha) + 189 * alpha);
+        const b = Math.round(255 * (1 - alpha) + 248 * alpha);
+        const bg = `rgb(${r}, ${g}, ${b})`;
 
         return {
             bg,
-            text,
+            text: alpha > 0.5 ? '#FFFFFF' : '#0098CC',
             matchedCount,
             isFull: false
         };
@@ -900,7 +911,7 @@ const JamScheduleCapture: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* 색상 단계 안내 범례 (참여 인원수별 색상 및 전원 참여 진한 초록색) */}
+                            {/* 색상 단계 안내 범례 (참여 인원수별 색상 및 전원 참여 #2EE59D) */}
                             <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F8FAFC] px-3.5 py-2 rounded-[10px] border border-[#EBECEF]">
                                 <div className="flex items-center gap-1.5 font-medium">
                                     <span className="text-gray-500">세션 총 인원:</span>
@@ -908,19 +919,19 @@ const JamScheduleCapture: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <div className="flex items-center gap-1">
-                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#E0F2FE] inline-block shadow-2xs" />
+                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#D6F5FE] border border-[#BAE6FD] inline-block shadow-2xs" />
                                         <span className="text-[11px]">1명 (연한색)</span>
                                     </div>
                                     {totalSessionCount > 2 && (
                                         <div className="flex items-center gap-1">
-                                            <span className="w-3.5 h-3.5 rounded-[3px] bg-[#7DD3FC] inline-block shadow-2xs" />
-                                            <span className="text-[11px]">중간</span>
+                                            <span className="w-3.5 h-3.5 rounded-[3px] bg-[#00BDF8] inline-block shadow-2xs" />
+                                            <span className="text-[11px] font-medium text-[#0098CC]">{totalSessionCount - 1}명</span>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-1">
-                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#10B981] inline-block shadow-2xs" />
-                                        <span className="text-[11px] font-bold text-[#10B981]">
-                                            {totalSessionCount}명 전원 (진한 초록)
+                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#2EE59D] inline-block shadow-2xs" />
+                                        <span className="text-[11px] font-bold text-[#1eb375]">
+                                            {totalSessionCount}명 전원
                                         </span>
                                     </div>
                                 </div>
