@@ -82,6 +82,7 @@ import SnsPostFeed from './pages/sns/SnsPostFeed';
 import SnsUnifiedFeed from './pages/sns/SnsUnifiedFeed';
 import SnsExplore from './pages/sns/SnsExplore';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import SettingsPage from './pages/SettingsPage';
 
 declare global {
   interface Window {
@@ -200,6 +201,8 @@ function App() {
             <Route path="profile/posts" element={<MyPostList />} />
             <Route path="profile/post/create" element={<SnsPostCreate />} />
             <Route path="profile/shorts/create" element={<SnsShortsCreate />} />
+            <Route path="profile/settings" element={<SettingsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="notices" element={<NoticeListPage />} />
             <Route path="notices/:noticeNo" element={<NoticeDetailPage />} />
             <Route path="customer-center" element={<CustomerCenterPage />} />

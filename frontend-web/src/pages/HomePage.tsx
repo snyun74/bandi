@@ -835,7 +835,7 @@ export default function HomePage() {
                     title: '밴디톡에 글을 남겨보세요! ✍️',
                     description: '자유롭게 소통하고 질문하려면\n로그인이 필요합니다.'
                 })}
-                className="fixed bottom-[calc(var(--nav-offset)+20px)] right-4 md:right-[max(1.25rem,calc((100vw-480px)/2+1.25rem))] w-[48px] h-[48px] rounded-full bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white shadow-lg flex items-center justify-center transition-all z-20"
+                className="fixed bottom-[calc(var(--nav-height)+var(--safe-bottom)+18px)] right-4 md:right-[max(1.25rem,calc((100vw-480px)/2+1.25rem))] w-[48px] h-[48px] rounded-full bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white shadow-lg flex items-center justify-center transition-all z-40"
                 aria-label="글쓰기"
             >
                 <FaPen size={17} />

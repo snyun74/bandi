@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { FaChevronLeft, FaHeart, FaCommentDots, FaEye } from 'react-icons/fa';
+import { FaChevronLeft } from 'react-icons/fa';
+import { Heart, MessageSquareText, Eye } from 'lucide-react';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../../components/common/CommonModal';
 import SnsCommentModal from '../../components/sns/SnsCommentModal';
@@ -314,20 +315,21 @@ const SnsUnifiedFeed: React.FC = () => {
                                 />
                             )}
                             
-                            {/* Right Action Bar (SNS & YouTube Shorts Minimal Style) */}
-                            <div className="absolute right-4 bottom-24 z-40 flex flex-col items-center gap-4 text-white">
+                            {/* Right Action Bar (SNS & YouTube Shorts Minimal Outline Style) */}
+                            <div className="absolute right-3.5 bottom-24 z-40 flex flex-col items-center gap-4 text-white select-none">
                                 {/* Heart (Like) Button */}
                                 <button
                                     onClick={() => handleLikeToggle(item.type, targetId, 'L')}
-                                    className="flex flex-col items-center group active:scale-75 transition-transform cursor-pointer"
+                                    className="flex flex-col items-center group active:scale-90 transition-transform cursor-pointer"
                                 >
-                                    <FaHeart 
-                                        size={28} 
+                                    <Heart 
+                                        size={24} 
+                                        strokeWidth={1.8}
                                         className={item.userAction === 'L' 
-                                            ? 'text-[#FF2D55] scale-110 drop-shadow-[0_0_10px_rgba(255,45,85,0.8)]' 
-                                            : 'text-white/90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)] group-hover:text-white'} 
+                                            ? 'text-white fill-white scale-105 transition-all' 
+                                            : 'text-white/90 group-hover:text-white transition-colors'} 
                                     />
-                                    <span className="text-[12px] font-bold mt-1 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                                    <span className="text-[12px] font-medium mt-1 text-white/90">
                                         {item.likeCount || 0}
                                     </span>
                                 </button>
@@ -339,24 +341,26 @@ const SnsUnifiedFeed: React.FC = () => {
                                         type: item.type,
                                         targetId: targetId
                                     })}
-                                    className="flex flex-col items-center group active:scale-75 transition-transform cursor-pointer"
+                                    className="flex flex-col items-center group active:scale-90 transition-transform cursor-pointer"
                                 >
-                                    <FaCommentDots 
-                                        size={27} 
-                                        className="text-white/90 drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)] group-hover:text-white" 
+                                    <MessageSquareText 
+                                        size={24} 
+                                        strokeWidth={1.8}
+                                        className="text-white/90 group-hover:text-white transition-colors" 
                                     />
-                                    <span className="text-[12px] font-bold mt-1 text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                                    <span className="text-[12px] font-medium mt-1 text-white/90">
                                         {item.commentCount || 0}
                                     </span>
                                 </button>
 
                                 {/* View Count Indicator */}
                                 <div className="flex flex-col items-center">
-                                    <FaEye 
+                                    <Eye 
                                         size={22} 
-                                        className="text-white/70 drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]" 
+                                        strokeWidth={1.8}
+                                        className="text-white/75" 
                                     />
-                                    <span className="text-[11px] font-medium mt-1 text-white/80 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                                    <span className="text-[11px] font-medium mt-1 text-white/75">
                                         {item.viewCount || 0}
                                     </span>
                                 </div>

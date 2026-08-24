@@ -40,6 +40,7 @@ const AdminPartnerApprovalPage: React.FC = () => {
         title?: string;
         message: string;
         onConfirm?: () => void;
+        onCancel?: () => void;
     }>({
         isOpen: false,
         type: 'alert',
@@ -103,12 +104,13 @@ const AdminPartnerApprovalPage: React.FC = () => {
         });
     };
 
-    const showConfirm = (message: string, onConfirm: () => void) => {
+    const showConfirm = (message: string, onConfirm: () => void, onCancel?: () => void) => {
         setModal({
             isOpen: true,
             type: 'confirm',
             message,
-            onConfirm
+            onConfirm,
+            onCancel
         });
     };
 
@@ -409,6 +411,10 @@ const AdminPartnerApprovalPage: React.FC = () => {
                 onConfirm={() => {
                     setModal(prev => ({ ...prev, isOpen: false }));
                     if (modal.onConfirm) modal.onConfirm();
+                }}
+                onCancel={() => {
+                    setModal(prev => ({ ...prev, isOpen: false }));
+                    if (modal.onCancel) modal.onCancel();
                 }}
             />
         </div>

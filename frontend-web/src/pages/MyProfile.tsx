@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes, FaPlay } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes, FaPlay, FaCog } from 'react-icons/fa';
 import { BsPersonCircle, BsChatSquare, BsDoorOpen, BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../components/common/CommonModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
@@ -442,6 +442,17 @@ const MyProfile: React.FC = () => {
                             )}
 
                             <div className="mx-3 h-[1px] bg-gray-100"></div>
+                            {/* 설정 메뉴 */}
+                            <button
+                                onClick={() => { setIsMenuOpen(false); navigate('/main/settings'); }}
+                                className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                            >
+                                <FaCog className="text-gray-400" size={15} />
+                                <span>설정</span>
+                            </button>
+
+                            <div className="mx-3 h-[1px] bg-gray-100"></div>
+                            {/* 로그아웃 메뉴 */}
                             <button
                                 onClick={handleLogoutClick}
                                 className="w-full px-4 py-3 text-left text-sm text-[#FF6B6B] font-medium hover:bg-red-50 flex items-center gap-3 transition-colors"
@@ -450,19 +461,6 @@ const MyProfile: React.FC = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                                 <span>로그아웃</span>
-                            </button>
-                            <div className="mx-3 h-[1px] bg-gray-100"></div>
-                            <button
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    setIsAccountWithdrawModalOpen(true);
-                                }}
-                                className="w-full px-4 py-3 text-left text-sm text-gray-400 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142a2 2 0 011.667 1.667H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>회원 탈퇴</span>
                             </button>
                         </div>
                     )}

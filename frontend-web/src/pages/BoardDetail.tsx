@@ -145,6 +145,36 @@ const BoardDetail: React.FC = () => {
         }
     };
 
+    // 익명 작성자 번호 매핑: 글쓴이는 '익명(글쓴이)', 다른 익명 작성자는 댓글 작성 순서대로 '익명1', '익명2', ...
+    const anonymousMap = React.useMemo(() => {
+        const map = new Map<string, string>();
+        let counter = 1;
+        comments.forEach(comment => {
+            if (comment.maskingYn === 'Y' && comment.replyUserId) {
+                if (comment.replyUserId === post?.writerUserId) {
+                    if (!map.has(comment.replyUserId)) {
+                        map.set(comment.replyUserId, '익명(글쓴이)');
+                    }
+                } else {
+                    if (!map.has(comment.replyUserId)) {
+                        map.set(comment.replyUserId, `익명${counter}`);
+                        counter++;
+                    }
+                }
+            }
+        });
+        return map;
+    }, [comments, post?.writerUserId]);
+
+    const getCommentAuthorDisplay = (comment: Comment) => {
+        const isPostAuthor = comment.replyUserId === post?.writerUserId;
+        if (comment.maskingYn === 'Y') {
+            return anonymousMap.get(comment.replyUserId) || (isPostAuthor ? '익명(글쓴이)' : '익명');
+        }
+        const baseNick = comment.userNickNm || comment.replyUserId || "사용자";
+        return isPostAuthor ? `${baseNick}(글쓴이)` : baseNick;
+    };
+
     const handleReplyClick = (comment: Comment) => {
         if (comment.parentReplyNo) {
             alert("답글에는 답글을 달 수 없습니다.");
@@ -618,8 +648,7 @@ const BoardDetail: React.FC = () => {
                                             <div className="w-full">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`font-bold text-sm ${comment.replyUserId === post.writerUserId ? 'text-[#00BDF8]' : 'text-gray-800'}`}>
-                                                        {comment.userNickNm || "익명"}
-                                                        {comment.replyUserId === post.writerUserId && "(글쓴이)"}
+                                                        {getCommentAuthorDisplay(comment)}
                                                     </span>
                                                 </div>
                                                 <div className="text-xs text-gray-400">{formatDate(comment.regDate)}</div>

@@ -284,10 +284,10 @@ const JamScheduleCapture: React.FC = () => {
         };
     }, []);
 
-    // 모바일/터치 드래그 시 브라우저 전체 스크롤 완전 차단 (passive: false)
+    // 모바일/터치 드래그 시 브라우저 전체 스크롤 완전 차단 (수정 모드일 때만 동작)
     useEffect(() => {
         const el = gridContainerRef.current;
-        if (!el) return;
+        if (!el || !isEditMode) return;
 
         const onTouchMoveNative = (e: TouchEvent) => {
             if (isEditMode && isDragging.current) {
@@ -911,37 +911,57 @@ const JamScheduleCapture: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* 색상 단계 안내 범례 (참여 인원수별 색상 및 전원 참여 #2EE59D) */}
-                            <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F8FAFC] px-3.5 py-2 rounded-[10px] border border-[#EBECEF]">
-                                <div className="flex items-center gap-1.5 font-medium">
-                                    <span className="text-gray-500">세션 총 인원:</span>
-                                    <span className="font-bold text-[#0B1114]">{totalSessionCount}명</span>
-                                </div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <div className="flex items-center gap-1">
-                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#D6F5FE] border border-[#BAE6FD] inline-block shadow-2xs" />
-                                        <span className="text-[11px]">1명 (연한색)</span>
+                            {/* 색상 단계 안내 범례 (조회 모드: 참여 인원수별 색상 / 수정 모드: 내 가능 시간 안내) */}
+                            {isEditMode ? (
+                                <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F0F9FF] px-3.5 py-2 rounded-[10px] border border-[#BAE6FD]">
+                                    <div className="flex items-center gap-1.5 font-medium text-[#0098CC]">
+                                        <span className="w-2 h-2 rounded-full bg-[#00BDF8] animate-pulse" />
+                                        <span className="font-bold">내 일정 수정 모드</span>
                                     </div>
-                                    {totalSessionCount > 2 && (
+                                    <div className="flex items-center gap-2.5">
                                         <div className="flex items-center gap-1">
                                             <span className="w-3.5 h-3.5 rounded-[3px] bg-[#00BDF8] inline-block shadow-2xs" />
-                                            <span className="text-[11px] font-medium text-[#0098CC]">{totalSessionCount - 1}명</span>
+                                            <span className="text-[11px] font-semibold text-[#0098CC]">내 가능 시간</span>
                                         </div>
-                                    )}
-                                    <div className="flex items-center gap-1">
-                                        <span className="w-3.5 h-3.5 rounded-[3px] bg-[#2EE59D] inline-block shadow-2xs" />
-                                        <span className="text-[11px] font-bold text-[#1eb375]">
-                                            {totalSessionCount}명 전원
-                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-3.5 h-3.5 rounded-[3px] bg-white border border-gray-300 inline-block shadow-2xs" />
+                                            <span className="text-[11px] text-gray-500">선택 안 됨</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F8FAFC] px-3.5 py-2 rounded-[10px] border border-[#EBECEF]">
+                                    <div className="flex items-center gap-1.5 font-medium">
+                                        <span className="text-gray-500">세션 총 인원:</span>
+                                        <span className="font-bold text-[#0B1114]">{totalSessionCount}명</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-3.5 h-3.5 rounded-[3px] bg-[#D6F5FE] border border-[#BAE6FD] inline-block shadow-2xs" />
+                                            <span className="text-[11px]">1명 (연한색)</span>
+                                        </div>
+                                        {totalSessionCount > 2 && (
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-3.5 h-3.5 rounded-[3px] bg-[#00BDF8] inline-block shadow-2xs" />
+                                                <span className="text-[11px] font-medium text-[#0098CC]">{totalSessionCount - 1}명</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-1">
+                                            <span className="w-3.5 h-3.5 rounded-[3px] bg-[#2EE59D] inline-block shadow-2xs" />
+                                            <span className="text-[11px] font-bold text-[#1eb375]">
+                                                {totalSessionCount}명 전원
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-                            {/* Availability Grid Card (테두리 없는 깔끔한 색상 히트맵) */}
+                            {/* Availability Grid Card */}
                             <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-3 shadow-xs select-none">
                                 <div 
                                     ref={gridContainerRef}
-                                    className="w-full overflow-x-auto select-none"
+                                    className={`w-full overflow-x-auto select-none ${isEditMode ? 'touch-none' : 'touch-pan-y'}`}
+                                    style={{ touchAction: isEditMode ? 'none' : 'pan-y pan-x' }}
                                 >
                                     <table className="w-full border-collapse text-center select-none">
                                         {/* Date Columns Header */}
@@ -974,12 +994,12 @@ const JamScheduleCapture: React.FC = () => {
                                                 const hourLabel = `${String(hour).padStart(2, '0')}:00`;
                                                 return (
                                                     <tr key={hour} className="h-[34px]">
-                                                        {/* 세로 시간 라벨 (테두리 없음) */}
+                                                        {/* 세로 시간 라벨 */}
                                                         <td className="text-[11px] font-medium text-[#737373] bg-white sticky left-0 z-10 select-none touch-pan-y cursor-default">
                                                             {hourLabel}
                                                         </td>
 
-                                                        {/* 각 일자별 셀 (테두리 없이 색상만 표시, 전원 참석 시 진한 초록색) */}
+                                                        {/* 각 일자별 셀 (수정 모드: 내 선택 여부 / 조회 모드: 전원 참여 히트맵) */}
                                                         {weekDays.map((d, colIdx) => {
                                                             const dateStr = formatDateToYMD(d);
                                                             const slotKey = `${dateStr}_${String(hour).padStart(2, '0')}00`;
@@ -987,21 +1007,33 @@ const JamScheduleCapture: React.FC = () => {
                                                             const isFocused = focusedSlot.date === dateStr && focusedSlot.hour === hour;
                                                             const colorInfo = getSlotColorInfo(dateStr, hour);
 
+                                                            // 수정 모드일 때는 내가 선택한 시간대만 명확하게 표시, 뷰 모드일 때는 전체 세션 참가자 색상 표시
+                                                            const cellBg = isEditMode
+                                                                ? (isMySelected ? '#00BDF8' : '#FFFFFF')
+                                                                : colorInfo.bg;
+
                                                             return (
                                                                 <td
                                                                     key={colIdx}
                                                                     data-slot-key={slotKey}
                                                                     data-date={dateStr}
                                                                     data-hour={hour}
+                                                                    onClick={() => {
+                                                                        if (!isEditMode) {
+                                                                            setFocusedSlot({ date: dateStr, hour });
+                                                                        }
+                                                                    }}
                                                                     onMouseDown={(e) => handleCellMouseDown(dateStr, hour, e)}
                                                                     onMouseEnter={() => handleCellMouseEnter(dateStr, hour)}
                                                                     onTouchStart={(e) => handleCellTouchStart(dateStr, hour, e)}
-                                                                    className={`p-0 h-[34px] cursor-pointer transition-colors relative select-none touch-none ${
+                                                                    className={`p-0 h-[34px] cursor-pointer transition-colors relative select-none ${
+                                                                        isEditMode ? 'border border-gray-100/70 touch-none' : 'touch-pan-y'
+                                                                    } ${
                                                                         isFocused ? 'ring-2 ring-[#00BDF8] ring-inset z-10 rounded-[2px]' : ''
                                                                     }`}
                                                                     style={{
-                                                                        backgroundColor: colorInfo.bg,
-                                                                        touchAction: 'none'
+                                                                        backgroundColor: cellBg,
+                                                                        touchAction: isEditMode ? 'none' : 'pan-y pan-x'
                                                                     }}
                                                                 />
                                                             );
