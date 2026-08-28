@@ -97,16 +97,12 @@ const getStudioLogoConfig = (studio: StudioDirItem, index: number) => {
     return fallbacks[index % fallbacks.length];
 };
 
-// 전국 주요 권역 (가로 스크롤 없이 화면에 깔끔하게 들어오는 팔도 기준)
+// 주요 권역 탭 (전체 / 서울 / 경기 / 인천 1줄 구성)
 const REGION_TABS = [
     { label: '전체', query: '' },
     { label: '서울', query: '서울' },
     { label: '경기', query: '경기' },
     { label: '인천', query: '인천' },
-    { label: '충청·대전', query: '충' },
-    { label: '전라·광주', query: '전' },
-    { label: '경상·부산', query: '경' },
-    { label: '강원·제주', query: '제주' },
 ];
 
 const JamStudioList: React.FC = () => {
@@ -178,14 +174,14 @@ const JamStudioList: React.FC = () => {
                 </div>
             </div>
 
-            {/* Search & Area Filter (고정 - 가로 스크롤 없이 한 화면에 다 나오는 4x2 그리드) */}
+            {/* Search & Area Filter (고정 - 전체/서울/경기/인천 1줄 그리드) */}
             <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 shrink-0 z-10 w-full shadow-xs">
                 <div className="max-w-2xl mx-auto space-y-2.5">
                     {/* Search Bar */}
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="합주실 이름, 지역(서울, 마포구, 서교동, 강남 등) 검색"
+                            placeholder="합주실명, 지역(부산, 대전, 강원 등), 구, 동 검색"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-9 text-xs text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] focus:bg-white transition-all font-medium"
@@ -201,7 +197,7 @@ const JamStudioList: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Region Tabs (스크롤 없는 4x2 깔끔한 그리드) */}
+                    {/* Region Tabs (깔끔한 1줄 4분할 탭) */}
                     <div className="grid grid-cols-4 gap-1.5">
                         {REGION_TABS.map((area) => {
                             const isActive = selectedArea === area.label && searchQuery.trim() === '';
@@ -209,7 +205,7 @@ const JamStudioList: React.FC = () => {
                                 <button
                                     key={area.label}
                                     onClick={() => handleAreaClick(area.label, area.query)}
-                                    className={`py-1.5 text-[11px] font-bold rounded-lg transition-all text-center border ${
+                                    className={`py-2 text-[12px] font-bold rounded-xl transition-all text-center border ${
                                         isActive
                                             ? 'bg-[#003C48] text-white border-[#003C48] shadow-xs'
                                             : 'bg-gray-50 text-gray-600 border-gray-200/80 hover:bg-gray-100'

@@ -20,13 +20,14 @@ public interface BnStudioDirRepository extends JpaRepository<BnStudioDir, Long> 
 
     boolean existsByStudioNmAndJibunAddress(String studioNm, String jibunAddress);
 
-    // 키워드 검색 (상호명, 도로명, 지번, 시도, 시군구) - 최신 갱신일시 순
+    // 키워드 검색 (상호명, 도로명, 지번, 시도, 시군구, 동) - 최신 갱신일시 순
     @Query("SELECT d FROM BnStudioDir d WHERE d.useYn = 'Y' AND (" +
             "LOWER(d.studioNm) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(d.roadAddress) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(d.jibunAddress) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(d.sido) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(d.sigungu) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+            "LOWER(d.sigungu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(d.dong) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
             ") ORDER BY COALESCE(d.updDtime, d.insDtime) DESC, d.dirNo DESC")
     Page<BnStudioDir> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
@@ -40,7 +41,8 @@ public interface BnStudioDirRepository extends JpaRepository<BnStudioDir, Long> 
             "LOWER(d.roadAddress) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(d.jibunAddress) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(d.sido) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(d.sigungu) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
+            "LOWER(d.sigungu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(d.dong) LIKE LOWER(CONCAT('%', :keyword, '%'))" +
             ") ORDER BY COALESCE(d.updDtime, d.insDtime) DESC, d.dirNo DESC")
     Page<BnStudioDir> findAllForAdmin(@Param("keyword") String keyword, Pageable pageable);
 }

@@ -536,27 +536,36 @@ const ClanJamList: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#F7F9FC] font-['Pretendard'] pb-24 text-gray-900 selection:bg-[#00BDF8] selection:text-white">
-            <div className="w-full max-w-lg mx-auto px-4 py-4 space-y-5">
-
-                {/* ========================================================================= */}
-                {/* 1 영역. 상단 환영 & 방 만들기 & 검색/필터 (피그마 100% 일치) */}
-                {/* ========================================================================= */}
-                <section className="space-y-4 pt-1">
+        <div 
+            className="flex flex-col bg-[#F7F9FC] font-['Pretendard'] text-gray-900 selection:bg-[#00BDF8] selection:text-white"
+            style={{
+                position: 'fixed',
+                top: 'calc(var(--header-height) + var(--safe-top))',
+                bottom: 'calc(var(--nav-offset) + var(--safe-bottom))',
+                left: 0,
+                right: 0,
+                fontFamily: '"Pretendard", sans-serif'
+            }}
+        >
+            {/* ========================================================================= */}
+            {/* 1 영역. 상단 환영 & 방 만들기 & 검색/필터 (고정 영역) */}
+            {/* ========================================================================= */}
+            <div className="bg-[#F7F9FC] border-b border-gray-200/80 px-4 pt-3 pb-3 shrink-0 z-20 w-full shadow-2xs">
+                <div className="w-full max-w-lg mx-auto space-y-3">
                     {/* 상단 타이틀 & 방 만들기 버튼 */}
                     <div className="flex items-center justify-between">
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
                                 {clanId && (
-                                    <button onClick={() => navigate(-1)} className="text-[#0B1114] p-1 -ml-1">
-                                        <FaChevronLeft size={20} />
+                                    <button onClick={() => navigate(-1)} className="text-[#0B1114] p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors">
+                                        <FaChevronLeft size={18} />
                                     </button>
                                 )}
-                                <h1 className="text-[24px] font-bold leading-[32px] text-[#0B1114] tracking-tight">
+                                <h1 className="text-[20px] font-bold leading-[28px] text-[#0B1114] tracking-tight">
                                     {clanId ? "클랜 합주방" : "자유 합주방"}
                                 </h1>
                             </div>
-                            <p className="text-[14px] font-normal leading-[22px] text-[#0B1114]">
+                            <p className="text-[13px] font-normal leading-[18px] text-gray-500">
                                 원하는 멤버와 자유롭게 합주해요!
                             </p>
                         </div>
@@ -565,7 +574,7 @@ const ClanJamList: React.FC = () => {
                         {(!clanId || userRole === '01' || userRole === '02') && (
                             <button
                                 onClick={() => navigate(clanId ? `/main/clan/jam/${clanId}/create` : `/main/jam/create`)}
-                                className="flex items-center gap-1.5 bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white text-[12px] font-bold px-3.5 py-2 rounded-full shadow-sm transition-all cursor-pointer shrink-0"
+                                className="flex items-center gap-1.5 bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white text-[12px] font-bold px-3.5 py-2 rounded-full shadow-xs transition-all cursor-pointer shrink-0"
                             >
                                 <FaPlusCircle size={13} />
                                 <span>방 만들기</span>
@@ -574,36 +583,38 @@ const ClanJamList: React.FC = () => {
                     </div>
 
                     {/* 검색창 & 필터 버튼 Row */}
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                         {/* 둥근 검색 필드 */}
-                        <div className="flex-1 relative h-[50px] bg-white rounded-full border border-[#ECECEC] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] flex items-center px-4">
-                            <FaSearch className="text-[#00BDF8] mr-3 shrink-0" size={16} />
+                        <div className="flex-1 relative h-[44px] bg-white rounded-full border border-[#ECECEC] shadow-2xs flex items-center px-4">
+                            <FaSearch className="text-[#00BDF8] mr-2.5 shrink-0" size={14} />
                             <input
                                 type="text"
                                 placeholder="방 제목, 아티스트, 곡명등을 검색해보세요."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 onKeyDown={handleSearch}
-                                className="w-full text-[14px] font-medium text-[#0B1114] placeholder-[#B8B8B8] bg-transparent outline-none"
+                                className="w-full text-[13px] font-medium text-[#0B1114] placeholder-[#B8B8B8] bg-transparent outline-none"
                             />
                         </div>
 
                         {/* 필터 버튼 */}
                         <button
                             onClick={() => setIsFilterModalOpen(true)}
-                            className="w-[50px] h-[50px] rounded-[24px] bg-white border border-[#E5E5E5] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] flex items-center justify-center text-[#00BDF8] hover:bg-gray-50 active:scale-95 transition-all cursor-pointer shrink-0"
+                            className="w-[44px] h-[44px] rounded-full bg-white border border-[#E5E5E5] shadow-2xs flex items-center justify-center text-[#00BDF8] hover:bg-gray-50 active:scale-95 transition-all cursor-pointer shrink-0"
                             aria-label="필터 설정"
                         >
-                            <SlidersHorizontal size={20} className="text-[#00BDF8]" />
+                            <SlidersHorizontal size={18} className="text-[#00BDF8]" />
                         </button>
                     </div>
-                </section>
+                </div>
+            </div>
 
-                {/* ========================================================================= */}
-                {/* 2 영역. 밴디콘 추천 합주 목록 */}
-                {/* ========================================================================= */}
-                <section className="space-y-3.5 pt-1">
-                    <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
+            {/* ========================================================================= */}
+            {/* 2 영역. 밴디콘 추천 합주 목록 (하단 독립 스크롤 영역) */}
+            {/* ========================================================================= */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 w-full">
+                <div className="w-full max-w-lg mx-auto space-y-3.5 pb-16">
+                    <h2 className="text-[17px] font-bold leading-[24px] text-[#0B1114]">
                         밴디콘 추천 합주
                     </h2>
 
@@ -742,7 +753,7 @@ const ClanJamList: React.FC = () => {
                             );
                         })
                     )}
-                </section>
+                </div>
             </div>
 
             {/* ========================================================================= */}
