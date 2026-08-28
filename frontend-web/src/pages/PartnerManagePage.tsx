@@ -824,33 +824,50 @@ const PartnerManagePage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#F8F9FA] font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
-            <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 sticky top-0 z-[100]">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate('/main/profile')} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
-                        <FaChevronLeft size={20} />
-                    </button>
-                    <h1 className="text-[14px] font-bold text-[#003C48]">{partner ? `${partner.bizNm} 관리` : '합주실 관리'}</h1>
+        <div
+            className="flex flex-col bg-[#F8F9FA] font-['Pretendard']"
+            style={{
+                position: 'fixed',
+                top: 'calc(var(--header-height) + var(--safe-top))',
+                bottom: 'calc(var(--nav-offset) + var(--safe-bottom))',
+                left: 0,
+                right: 0,
+                fontFamily: '"Pretendard", sans-serif'
+            }}
+        >
+            {/* Page Sub Header (고정) */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 shrink-0 z-20 w-full">
+                <div className="max-w-lg mx-auto w-full flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => navigate('/main/profile')} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                            <FaChevronLeft size={20} />
+                        </button>
+                        <h1 className="text-[15px] font-bold text-[#003C48]">{partner ? `${partner.bizNm} 관리` : '합주실 관리'}</h1>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex bg-white px-2 py-1.5 border-b border-gray-100 flex-shrink-0">
-                {(['studio', 'room', 'price', 'approve'] as const).map((tab) => {
-                    const label = tab === 'studio' ? '지점' : tab === 'room' ? '룸' : tab === 'price' ? '단가' : '승인';
-                    const isActive = activeTab === tab;
-                    return (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`flex-1 text-center py-2 text-xs font-bold rounded-xl transition-all ${isActive ? 'bg-[#003C48] text-white shadow-sm' : 'text-gray-400'}`}
-                        >
-                            {label}
-                        </button>
-                    );
-                })}
+            {/* Tab Bar (고정) */}
+            <div className="bg-white px-4 py-2 border-b border-gray-100 shrink-0 z-10 w-full">
+                <div className="max-w-lg mx-auto flex gap-1.5">
+                    {(['studio', 'room', 'price', 'approve'] as const).map((tab) => {
+                        const label = tab === 'studio' ? '지점' : tab === 'room' ? '룸' : tab === 'price' ? '단가' : '승인';
+                        const isActive = activeTab === tab;
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`flex-1 text-center py-2.5 text-xs font-bold rounded-xl transition-all ${isActive ? 'bg-[#003C48] text-white shadow-sm' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 max-w-lg mx-auto w-full pb-20">
+            {/* Scrollable Body Content (바디만 독립 스크롤) */}
+            <div className="flex-1 overflow-y-auto min-h-0 p-4 max-w-lg mx-auto w-full pb-16">
                 {activeTab === 'studio' && (
                     <div className="flex flex-col gap-4">
                         <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm">

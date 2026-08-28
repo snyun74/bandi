@@ -36,6 +36,11 @@ kakao:
   client-id: b7b74bba84f701122fa1bacf9697f578
   redirect-uri: http://127.0.0.1:5173/auth/kakao/callback
 
+naver:
+  search:
+    client-id: ${NAVER_SEARCH_CLIENT_ID:}
+    client-secret: ${NAVER_SEARCH_CLIENT_SECRET:}
+
 ---
 spring:
   config:

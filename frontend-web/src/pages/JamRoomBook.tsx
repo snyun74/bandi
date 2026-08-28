@@ -123,6 +123,8 @@ const JamRoomBook: React.FC = () => {
         }
 
         const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+        const todayStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
+        const currentHour = new Date().getHours();
 
         for (let d = 1; d <= totalDays; d++) {
             const dayDate = new Date(currentYear, currentMonth - 1, d);
@@ -132,20 +134,22 @@ const JamRoomBook: React.FC = () => {
 
             // 요일별 오픈 시간대 확인
             const dayPrices = scheduleData?.prices?.filter(p => p.dayOfWeek === dayOfWeek) || [];
-            let startHour = 0;
-            let endHour = 24;
+            let startHour = 9;
+            let endHour = 22;
 
             if (dayPrices.length > 0) {
-                // 등록된 가격 시간대 중 가장 빠른 시작과 가장 늦은 종료
-                startHour = Math.min(...dayPrices.map(p => parseInt(p.sttTime.substring(0, 2), 10)));
-                endHour = Math.max(...dayPrices.map(p => parseInt(p.endTime.substring(0, 2), 10)));
+                const minPriceHour = Math.min(...dayPrices.map(p => parseInt(p.sttTime.substring(0, 2), 10)));
+                const maxPriceHour = Math.max(...dayPrices.map(p => parseInt(p.endTime.substring(0, 2), 10)));
+                startHour = Math.min(9, minPriceHour);
+                endHour = Math.max(22, maxPriceHour);
             }
 
             const totalSlotsCount = Math.max(0, endHour - startHour);
 
             // 해당 날짜의 예약 확인
             const dayReservations = scheduleData?.reservations?.filter(r => r.useDate === dateStr) || [];
-            let bookedCount = 0;
+            let unavailableCount = 0;
+            const isToday = dateStr === todayStr;
 
             for (let h = startHour; h < endHour; h++) {
                 const slotKey = String(h).padStart(2, '0') + '00';
@@ -155,10 +159,11 @@ const JamRoomBook: React.FC = () => {
                     const sTime = parseInt(slotKey, 10);
                     return sTime >= rStt && sTime < rEnd;
                 });
-                if (isBooked) bookedCount++;
+                const isPastTime = isToday && (h <= currentHour);
+                if (isBooked || isPastTime) unavailableCount++;
             }
 
-            const isFullyBooked = totalSlotsCount > 0 && bookedCount >= totalSlotsCount;
+            const isFullyBooked = totalSlotsCount > 0 && unavailableCount >= totalSlotsCount;
 
             days.push({
                 dateNumber: d,
@@ -185,26 +190,36 @@ const JamRoomBook: React.FC = () => {
         // 요일별 등록 단가 확인
         const dayPrices = scheduleData?.prices?.filter(p => p.dayOfWeek === dayOfWeek) || [];
 
-        let startHour = 0;
-        let endHour = 24;
+        // 기본 시간대: 09:00 ~ 22:00 (단가 설정에서 시간대를 늘려놓으면 늘려놓은 기준 적용)
+        let startHour = 9;
+        let endHour = 22;
 
         if (dayPrices.length > 0) {
-            startHour = Math.min(...dayPrices.map(p => parseInt(p.sttTime.substring(0, 2), 10)));
-            endHour = Math.max(...dayPrices.map(p => parseInt(p.endTime.substring(0, 2), 10)));
+            const minPriceHour = Math.min(...dayPrices.map(p => parseInt(p.sttTime.substring(0, 2), 10)));
+            const maxPriceHour = Math.max(...dayPrices.map(p => parseInt(p.endTime.substring(0, 2), 10)));
+            startHour = Math.min(9, minPriceHour);
+            endHour = Math.max(22, maxPriceHour);
         }
 
         // 해당 일자의 예약 목록
         const dayReservations = scheduleData?.reservations?.filter(r => r.useDate === selectedDateStr) || [];
+
+        const defaultPrice = scheduleData?.hourBaseUprice || 18000;
+
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+        const currentHour = now.getHours();
+        const isToday = selectedDateStr === todayStr;
 
         const slots: {
             timeStr: string;     // "16:00"
             slotKey: string;     // "1600"
             nextSlotKey: string; // "1700"
             isBooked: boolean;
+            isPast: boolean;
             price: number;
+            isDiscounted: boolean;
         }[] = [];
-
-        const defaultPrice = scheduleData?.hourBaseUprice || 18000;
 
         for (let h = startHour; h < endHour; h++) {
             const slotKey = String(h).padStart(2, '0') + '00';
@@ -218,6 +233,9 @@ const JamRoomBook: React.FC = () => {
                 return sTime >= rStt && sTime < rEnd;
             });
 
+            // 오늘이고 현재 시간보다 이전(또는 이미 시작된 시간)이면 과거 시간대로 처리
+            const isPast = isToday && (h <= currentHour);
+
             // 해당 시간의 단가 계산
             let slotPrice = defaultPrice;
             const matchedPrice = dayPrices.find(p => {
@@ -230,12 +248,16 @@ const JamRoomBook: React.FC = () => {
                 slotPrice = matchedPrice.timeUprice;
             }
 
+            const isDiscounted = slotPrice < defaultPrice;
+
             slots.push({
                 timeStr,
                 slotKey,
                 nextSlotKey,
                 isBooked,
-                price: slotPrice
+                isPast,
+                price: slotPrice,
+                isDiscounted
             });
         }
 
@@ -243,8 +265,8 @@ const JamRoomBook: React.FC = () => {
     }, [selectedDateStr, scheduleData]);
 
     // 시간 슬롯 클릭 (토글 방식: 선택 / 취소)
-    const handleSlotClick = (slotKey: string, isBooked: boolean) => {
-        if (isBooked) return;
+    const handleSlotClick = (slotKey: string, isBooked: boolean, isPast: boolean) => {
+        if (isBooked || isPast) return;
 
         setSelectedSlots(prev => {
             if (prev.includes(slotKey)) {
@@ -340,6 +362,17 @@ const JamRoomBook: React.FC = () => {
             }
         });
     };
+
+    // 선택 날짜의 전체 슬롯이 모두 동일한 할인 단가로 적용되었는지 확인 (하루 종일 할인)
+    const allDayDiscountPrice = useMemo(() => {
+        if (availableSlots.length === 0) return null;
+        const defaultPrice = scheduleData?.hourBaseUprice || 0;
+        const firstPrice = availableSlots[0].price;
+        if (firstPrice < defaultPrice && availableSlots.every(s => s.price === firstPrice)) {
+            return firstPrice;
+        }
+        return null;
+    }, [availableSlots, scheduleData]);
 
     return (
         <div className="flex flex-col h-full bg-white font-['Pretendard'] overflow-hidden">
@@ -454,9 +487,20 @@ const JamRoomBook: React.FC = () => {
                         {selectedDateDisplay} · {scheduleData?.roomNm || '룸'}
                     </h3>
                     {scheduleData?.hourBaseUprice && (
-                        <span className="text-[13px] font-bold text-[#00BDF8] bg-[#00BDF8]/10 px-2.5 py-0.5 rounded-full">
-                            {scheduleData.hourBaseUprice.toLocaleString()}원 / 시간
-                        </span>
+                        allDayDiscountPrice ? (
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] text-gray-400 line-through">
+                                    {scheduleData.hourBaseUprice.toLocaleString()}원
+                                </span>
+                                <span className="text-[13px] font-bold text-[#00BDF8] bg-[#00BDF8]/10 px-2.5 py-0.5 rounded-full">
+                                    {allDayDiscountPrice.toLocaleString()}원 / 시간
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="text-[13px] font-bold text-[#00BDF8] bg-[#00BDF8]/10 px-2.5 py-0.5 rounded-full">
+                                {scheduleData.hourBaseUprice.toLocaleString()}원 / 시간
+                            </span>
+                        )
                     )}
                 </div>
 
@@ -477,17 +521,26 @@ const JamRoomBook: React.FC = () => {
                                 return (
                                     <button
                                         key={slot.slotKey}
-                                        disabled={slot.isBooked}
-                                        onClick={() => handleSlotClick(slot.slotKey, slot.isBooked)}
-                                        className={`shrink-0 px-4 py-2.5 rounded-full text-[13px] font-bold border transition-all duration-200 ${
+                                        disabled={slot.isBooked || slot.isPast}
+                                        onClick={() => handleSlotClick(slot.slotKey, slot.isBooked, slot.isPast)}
+                                        className={`shrink-0 px-3.5 py-2 rounded-2xl flex flex-col items-center justify-center text-[13px] font-bold border transition-all duration-200 min-w-[72px] ${
                                             slot.isBooked
                                                 ? 'bg-gray-100 text-gray-300 border-gray-100 cursor-not-allowed line-through'
+                                                : slot.isPast
+                                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'
                                                 : isSelected
                                                 ? 'bg-[#00BDF8] text-white border-[#00BDF8] shadow-md shadow-[#00BDF8]/30 scale-105'
-                                                : 'bg-white text-gray-500 border-gray-200 hover:border-[#00BDF8] hover:text-[#00BDF8]'
+                                                : 'bg-white text-gray-700 border-gray-200 hover:border-[#00BDF8] hover:text-[#00BDF8]'
                                         }`}
                                     >
-                                        {slot.timeStr}
+                                        <span className="leading-tight">{slot.timeStr}</span>
+                                        {slot.isDiscounted && !slot.isBooked && !slot.isPast && (
+                                            <span className={`text-[10px] font-extrabold mt-0.5 leading-none ${
+                                                isSelected ? 'text-white' : 'text-[#FF4B4B]'
+                                            }`}>
+                                                할인중
+                                            </span>
+                                        )}
                                     </button>
                                 );
                             })

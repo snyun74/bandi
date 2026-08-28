@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Header: React.FC = () => {
@@ -58,7 +58,7 @@ const Header: React.FC = () => {
             />
 
             {/* Right: Nickname or Login Button & Chat Icon */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                 {userId ? (
                     <span
                         className="top-nick-name text-[14px] cursor-pointer"
@@ -75,14 +75,10 @@ const Header: React.FC = () => {
                     </button>
                 )}
                 
-                <div className="relative cursor-pointer hover:scale-105 transition-transform" onClick={handleChatClick}>
-                    <img
-                        src="/images/talk_icon.png"
-                        alt="Chat"
-                        className="w-[50px] h-[50px] object-contain"
-                    />
+                <div className="relative cursor-pointer p-1 hover:scale-110 active:scale-95 transition-all flex items-center justify-center mr-1" onClick={handleChatClick}>
+                    <Send className="w-[22px] h-[22px] text-[#00BDF8]" />
                     {unreadCount > 0 && (
-                        <div className="absolute top-[8px] right-[8px] bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 border-2 border-white">
+                        <div className="absolute -top-1.5 -right-2 bg-[#FF4B4B] text-white text-[10px] font-bold rounded-full min-w-[17px] h-[17px] flex items-center justify-center px-1 border-2 border-white shadow-xs">
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </div>
                     )}

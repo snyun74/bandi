@@ -16,6 +16,8 @@ interface RoomDto {
     studioNo: number;
     roomNm: string;
     hourBaseUprice: number | null;
+    currentUprice?: number | null;
+    discountRate?: number | null;
     capacityCnt: number | null;
     equipmentInfo: string | null;
     roomStatCd: string;
@@ -345,14 +347,26 @@ const JamStudioDetail: React.FC = () => {
 
                                             {/* 가격 + 즉시예약 */}
                                             <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-                                                <span className="text-[16px] font-bold text-[#00BDF8]">
-                                                    {room.hourBaseUprice
-                                                        ? `${room.hourBaseUprice.toLocaleString()}원 / 시간`
-                                                        : '가격 문의'}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                    {room.discountRate && room.discountRate > 0 ? (
+                                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                                            <span className="text-[12px] text-gray-400 line-through">
+                                                                {room.hourBaseUprice?.toLocaleString()}원
+                                                            </span>
+                                                            <span className="text-[12px] font-bold text-[#FF4B4B]">
+                                                                {room.discountRate}% 할인중
+                                                            </span>
+                                                        </div>
+                                                    ) : null}
+                                                    <span className="text-[16px] font-bold text-[#00BDF8]">
+                                                        {(room.currentUprice ?? room.hourBaseUprice)
+                                                            ? `${(room.currentUprice ?? room.hourBaseUprice)!.toLocaleString()}원 / 시간`
+                                                            : '가격 문의'}
+                                                    </span>
+                                                </div>
                                                 <button
                                                     onClick={() => navigate(`/main/jam/reservation/studios/${studioNo}/rooms/${room.roomNo}/book`)}
-                                                    className="text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-3 py-1.5 rounded-full transition-all border border-emerald-200 shadow-sm"
+                                                    className="text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-3.5 py-1.5 rounded-full transition-all border border-emerald-200 shadow-sm shrink-0"
                                                 >
                                                     즉시예약
                                                 </button>

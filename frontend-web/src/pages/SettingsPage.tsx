@@ -134,7 +134,7 @@ const SettingsPage: React.FC = () => {
                             <FaChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
                         </button>
 
-                        {/* 3. 합주실 입점 약관 (합주실 입점 승인된 파트너 유저에게만 노출) */}
+                        {/* 3. 합주실 입점 약관 (임시 숨김 처리 - 소스 보존)
                         {partnerStatus === 'A' && (
                             <button
                                 onClick={() => setActivePolicy('PARTNER')}
@@ -161,6 +161,7 @@ const SettingsPage: React.FC = () => {
                                 <FaChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
                             </button>
                         )}
+                        */}
                     </div>
                 </div>
 

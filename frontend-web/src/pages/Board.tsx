@@ -132,7 +132,7 @@ const Board: React.FC = () => {
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex-1 mr-4">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${post.boardTypeFg === "0" ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                            <span className="text-[#0098CC] text-[13px] font-bold shrink-0">
                                                 {post.boardTypeFg === "0" ? '자유' : '초보'}
                                             </span>
                                             <h4 className="text-[#003C48] text-[15px] font-medium line-clamp-1">
@@ -183,7 +183,7 @@ const Board: React.FC = () => {
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex-1 mr-4">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${post.boardTypeFg === "0" ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                                <span className="text-[#0098CC] text-[13px] font-bold shrink-0">
                                                     {post.boardTypeFg === "0" ? '자유' : '초보'}
                                                 </span>
                                                 <h4 className="text-[#003C48] text-[15px] font-medium line-clamp-1">

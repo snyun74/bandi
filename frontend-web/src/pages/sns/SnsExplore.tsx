@@ -92,9 +92,19 @@ const SnsExplore: React.FC = () => {
     }, [postsPage, shortsPage]);
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-white z-[100] border-b border-gray-50">
+        <div
+            className="flex flex-col bg-white font-['Pretendard']"
+            style={{
+                position: 'fixed',
+                top: 'calc(var(--header-height) + var(--safe-top))',
+                bottom: 'calc(var(--nav-offset) + var(--safe-bottom))',
+                left: 0,
+                right: 0,
+                fontFamily: '"Pretendard", sans-serif'
+            }}
+        >
+            {/* Header (고정) */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white z-30 border-b border-gray-50 shrink-0">
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigate(-1)} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <FaChevronLeft size={20} />
@@ -103,8 +113,8 @@ const SnsExplore: React.FC = () => {
                 </div>
             </div>
 
-            {/* Grid Content */}
-            <div className="flex-1 overflow-y-auto px-0.5 py-0.5 pb-20 nice-scroll">
+            {/* Grid Content (독립 스크롤) */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-0.5 py-0.5 pb-16 nice-scroll">
                 <div className="grid grid-cols-3 gap-1">
                     {combinedItems.map((item, index) => {
                         const isLast = index === combinedItems.length - 1;

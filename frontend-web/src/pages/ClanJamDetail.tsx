@@ -760,9 +760,9 @@ const ClanJamDetail: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Feature Card 2: 합주실 예약 */}
+                    {/* Feature Card 2: 합주실 둘러보기 */}
                     <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">합주실 예약</h3>
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">합주실 둘러보기</h3>
                         <button
                             onClick={() => {
                                 if (!bandDetail.isConfirmed) {
@@ -780,7 +780,7 @@ const ClanJamDetail: React.FC = () => {
                             }}
                             className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
                         >
-                            합주실 보러가기
+                            합주실 둘러보기
                         </button>
                     </div>
 

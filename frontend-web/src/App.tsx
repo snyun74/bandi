@@ -69,6 +69,7 @@ import PartnerInfoPage from './pages/PartnerInfoPage';
 import PartnerManagePage from './pages/PartnerManagePage';
 import AdminPartnerApprovalPage from './pages/AdminPartnerApprovalPage';
 import AdminAmbassadorPage from './pages/AdminAmbassadorPage';
+import AdminStudioDirectoryPage from './pages/AdminStudioDirectoryPage';
 import NoticeListPage from './pages/NoticeListPage';
 import NoticeDetailPage from './pages/NoticeDetailPage';
 import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
@@ -192,6 +193,7 @@ function App() {
             <Route path="admin/jams" element={<AdminJamManagement />} />
             <Route path="admin/partner-approval" element={<AdminPartnerApprovalPage />} />
             <Route path="admin/ambassadors" element={<AdminAmbassadorPage />} />
+            <Route path="admin/studio-directory" element={<AdminStudioDirectoryPage />} />
             <Route path="partner/apply" element={<ApplyPartnerPage />} />
             <Route path="partner/info" element={<PartnerInfoPage />} />
             <Route path="partner/manage" element={<PartnerManagePage />} />

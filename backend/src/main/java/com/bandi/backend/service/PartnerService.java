@@ -141,6 +141,8 @@ public class PartnerService {
         private String updId;
         private List<AttachmentDto> attachments;
         private Integer lowestPrice;
+        private Integer originalLowestPrice;
+        private Integer discountRate;
         private String roomSummary;
         private String studioTypeCd;
     }
@@ -155,6 +157,8 @@ public class PartnerService {
         private Long studioNo;
         private String roomNm;
         private Integer hourBaseUprice;
+        private Integer currentUprice;
+        private Integer discountRate;
         private Integer capacityCnt;
         private String equipmentInfo;
         private String roomStatCd;
@@ -714,11 +718,18 @@ public class PartnerService {
                     } catch (Exception e) {
                         log.error("Failed to load room attachments for roomNo: {}", room.getRoomNo(), e);
                     }
+
+                    // 현재 요일/시간 기준 실시간 단가 및 할인율 계산
+                    List<BnRoomPrice> prices = roomPriceRepository.findByRoomNoOrderByDayOfWeekAscSttTimeAsc(room.getRoomNo());
+                    CurrentPriceInfo priceInfo = calculateCurrentPrice(room, prices);
+
                     roomDtos.add(RoomDto.builder()
                             .roomNo(room.getRoomNo())
                             .studioNo(room.getStudioNo())
                             .roomNm(room.getRoomNm())
                             .hourBaseUprice(room.getHourBaseUprice())
+                            .currentUprice(priceInfo.currentUprice)
+                            .discountRate(priceInfo.discountRate)
                             .capacityCnt(room.getCapacityCnt())
                             .equipmentInfo(room.getEquipmentInfo())
                             .roomStatCd(room.getRoomStatCd())
@@ -748,6 +759,51 @@ public class PartnerService {
                 .attachments(attachments)
                 .rooms(roomDtos)
                 .build();
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class CurrentPriceInfo {
+        private final Integer currentUprice;
+        private final Integer discountRate;
+    }
+
+    private CurrentPriceInfo calculateCurrentPrice(BnRoom room, List<BnRoomPrice> prices) {
+        Integer basePrice = room.getHourBaseUprice();
+        if (prices == null || prices.isEmpty()) {
+            return new CurrentPriceInfo(basePrice, 0);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        int currentDayOfWeek = now.getDayOfWeek().getValue() % 7; // 0=일, 1=월, ..., 6=토
+        int currentTime = Integer.parseInt(now.format(DateTimeFormatter.ofPattern("HHmm")));
+
+        Integer matchedPrice = null;
+        for (BnRoomPrice p : prices) {
+            if (p.getDayOfWeek() != null && p.getDayOfWeek() == currentDayOfWeek) {
+                try {
+                    String cleanStt = p.getSttTime() != null ? p.getSttTime().replaceAll("[^0-9]", "") : "";
+                    String cleanEnd = p.getEndTime() != null ? p.getEndTime().replaceAll("[^0-9]", "") : "";
+                    if (!cleanStt.isEmpty() && !cleanEnd.isEmpty()) {
+                        int stt = Integer.parseInt(cleanStt);
+                        int end = Integer.parseInt(cleanEnd);
+                        if (currentTime >= stt && currentTime < end) {
+                            matchedPrice = p.getTimeUprice();
+                            break;
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        Integer currentUprice = matchedPrice != null ? matchedPrice : basePrice;
+        int discountRate = 0;
+        if (basePrice != null && basePrice > 0 && currentUprice != null && currentUprice < basePrice) {
+            discountRate = Math.round((float) (basePrice - currentUprice) / basePrice * 100);
+        }
+
+        return new CurrentPriceInfo(currentUprice, discountRate);
     }
 
     @Transactional(readOnly = true)
@@ -790,8 +846,10 @@ public class PartnerService {
                 log.error("Failed to load attachments for studioNo: {}", s.getStudioNo(), e);
             }
 
-            // 룸 최저가 및 요약 조회 (상태가 'A'인 룸만 반영)
+            // 룸 최저가 및 요약 조회 (상태가 'A'인 룸만 반영, 현재 실시간 단가 및 할인율 반영)
             Integer lowestPrice = null;
+            Integer originalLowestPrice = null;
+            Integer discountRate = null;
             String roomSummary = "";
             try {
                 List<BnRoom> rooms = roomRepository.findByStudioNoOrderByInsDtimeDesc(s.getStudioNo());
@@ -801,11 +859,30 @@ public class PartnerService {
                             .collect(Collectors.toList());
 
                     if (!activeRooms.isEmpty()) {
-                        lowestPrice = activeRooms.stream()
-                                .map(BnRoom::getHourBaseUprice)
-                                .filter(price -> price != null)
-                                .min(Integer::compare)
-                                .orElse(null);
+                        BnRoom bestRoom = null;
+                        int minEffectivePrice = Integer.MAX_VALUE;
+                        int bestDiscountRate = 0;
+                        Integer bestOriginalPrice = null;
+
+                        for (BnRoom r : activeRooms) {
+                            List<BnRoomPrice> prices = roomPriceRepository.findByRoomNoOrderByDayOfWeekAscSttTimeAsc(r.getRoomNo());
+                            CurrentPriceInfo priceInfo = calculateCurrentPrice(r, prices);
+                            Integer effectivePrice = priceInfo.getCurrentUprice() != null ? priceInfo.getCurrentUprice() : r.getHourBaseUprice();
+                            if (effectivePrice != null && effectivePrice < minEffectivePrice) {
+                                minEffectivePrice = effectivePrice;
+                                bestRoom = r;
+                                bestDiscountRate = priceInfo.getDiscountRate() != null ? priceInfo.getDiscountRate() : 0;
+                                bestOriginalPrice = r.getHourBaseUprice();
+                            }
+                        }
+
+                        if (bestRoom != null && minEffectivePrice != Integer.MAX_VALUE) {
+                            lowestPrice = minEffectivePrice;
+                            if (bestDiscountRate > 0 && bestOriginalPrice != null && bestOriginalPrice > lowestPrice) {
+                                originalLowestPrice = bestOriginalPrice;
+                                discountRate = bestDiscountRate;
+                            }
+                        }
 
                         List<String> roomNames = activeRooms.stream()
                                 .map(BnRoom::getRoomNm)
@@ -834,6 +911,8 @@ public class PartnerService {
                     .updId(s.getUpdId())
                     .attachments(attachments)
                     .lowestPrice(lowestPrice)
+                    .originalLowestPrice(originalLowestPrice)
+                    .discountRate(discountRate)
                     .roomSummary(roomSummary)
                     .studioTypeCd(s.getStudioTypeCd())
                     .build());
@@ -891,6 +970,17 @@ public class PartnerService {
 
         int reqStt = Integer.parseInt(cleanStt);
         int reqEnd = Integer.parseInt(cleanEnd);
+
+        // 과거 일자 및 오늘 기준 과거 시간대 예약 차단
+        LocalDateTime nowDateTime = LocalDateTime.now();
+        String todayStr = nowDateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        int currentHhmm = Integer.parseInt(nowDateTime.format(DateTimeFormatter.ofPattern("HHmm")));
+
+        if (cleanDate.compareTo(todayStr) < 0) {
+            throw new IllegalStateException("과거 날짜는 예약할 수 없습니다.");
+        } else if (cleanDate.equals(todayStr) && reqStt <= currentHhmm) {
+            throw new IllegalStateException("현재 시간보다 이전의 시간대는 예약할 수 없습니다.");
+        }
 
         log.info("[createReservation] 중복 검증 시작 - roomNo: {}, date: {}, req: {} ~ {}",
                 resv.getRoomNo(), cleanDate, reqStt, reqEnd);

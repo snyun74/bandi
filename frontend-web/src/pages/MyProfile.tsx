@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes, FaPlay, FaCog } from 'react-icons/fa';
 import { BsPersonCircle, BsChatSquare, BsDoorOpen, BsThreeDotsVertical } from 'react-icons/bs';
+import { Clapperboard, Image as ImageIcon } from 'lucide-react';
 import CommonModal from '../components/common/CommonModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 
@@ -304,9 +305,19 @@ const MyProfile: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div
+            className="flex flex-col bg-white font-['Pretendard']"
+            style={{
+                position: 'fixed',
+                top: 'calc(var(--header-height) + var(--safe-top))',
+                bottom: 'calc(var(--nav-offset) + var(--safe-bottom))',
+                left: 0,
+                right: 0,
+                fontFamily: '"Pretendard", sans-serif'
+            }}
+        >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-white z-[100] border-b border-gray-50">
+            <div className="flex items-center justify-between px-4 py-3 bg-white z-[100] border-b border-gray-50 shrink-0 relative">
                 <div className="flex items-center gap-3">
                     <button onClick={() => navigate(-1)} className="text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <FaChevronLeft size={20} />
@@ -329,11 +340,19 @@ const MyProfile: React.FC = () => {
                         <FaBars size={20} />
                     </button>
 
-                    {/* Dropdown Menu */}
+                    {/* Menu Backdrop */}
+                    {isMenuOpen && (
+                        <div 
+                            className="fixed inset-0 z-[150] bg-transparent"
+                            onClick={() => setIsMenuOpen(false)}
+                        />
+                    )}
+
+                    {/* Dropdown Menu (최상위 z-[200]) */}
                     {isMenuOpen && (
                         <div
                             ref={menuRef}
-                            className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200"
+                            className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[200] overflow-hidden py-2 animate-in fade-in slide-in-from-top-2 duration-200"
                         >
                             <button
                                 onClick={() => { setIsMenuOpen(false); showAlert("작업 진행중입니다."); }}
@@ -365,7 +384,7 @@ const MyProfile: React.FC = () => {
                                 <span>내가 쓴 글</span>
                             </button>
                             <div className="mx-3 h-[1px] bg-gray-100"></div>
-                            {/* 합주실 파트너 메뉴 */}
+                            {/* 합주실 파트너 메뉴 (임시 숨김 처리 - 소스 보존)
                             {partnerStatus === 'A' ? (
                                 <>
                                     <button
@@ -412,6 +431,7 @@ const MyProfile: React.FC = () => {
                                 </button>
                             )}
                             <div className="mx-3 h-[1px] bg-gray-100"></div>
+                            */}
 
                             {/* 엠버서더 메뉴 */}
                             <button
@@ -467,9 +487,9 @@ const MyProfile: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col flex-1 overflow-hidden bg-white">
-                {/* Profile Info */}
-                <div className="px-6 py-4 flex items-center justify-between">
+            <div className="flex flex-col flex-1 overflow-hidden min-h-0 bg-white">
+                {/* Profile Info (고정) */}
+                <div className="px-6 py-4 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
                         <div
                             onClick={() => setIsEditModalOpen(true)}
@@ -509,26 +529,26 @@ const MyProfile: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Create Buttons (Split) */}
-                <div className="px-4 py-3 bg-white flex-shrink-0 z-10 border-b border-gray-50 pb-4 flex gap-2">
+                {/* Create Buttons (Split, 고정) */}
+                <div className="px-4 py-3 bg-white shrink-0 z-10 border-b border-gray-50 pb-4 flex gap-2">
                     <button
                         onClick={() => navigate('/main/profile/shorts/create')}
                         className="flex-1 bg-[#F8F9FA] text-[#003C48] font-bold py-2.5 rounded-xl text-[13px] border border-gray-200 flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors shadow-sm"
                     >
-                        <span className="text-base">🎬</span>
+                        <Clapperboard size={16} className="text-[#003C48]" />
                         <span>릴스 만들기</span>
                     </button>
                     <button
                         onClick={() => navigate('/main/profile/post/create')}
                         className="flex-1 bg-[#F8F9FA] text-[#003C48] font-bold py-2.5 rounded-xl text-[13px] border border-gray-200 flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors shadow-sm"
                     >
-                        <span className="text-base">📸</span>
+                        <ImageIcon size={16} className="text-[#003C48]" />
                         <span>게시물 만들기</span>
                     </button>
                 </div>
 
-                {/* Grid Content */}
-                <div className="flex-1 overflow-y-auto px-0.5 py-0.5 pb-20 nice-scroll">
+                {/* Grid Content (피드 & 게시물 목록만 독립 스크롤) */}
+                <div className="flex-1 overflow-y-auto min-h-0 px-0.5 py-0.5 pb-20 nice-scroll">
                     <div className="grid grid-cols-3 gap-1">
                         {combinedItems.map((item, index) => {
                             const isLast = index === combinedItems.length - 1;
@@ -574,7 +594,7 @@ const MyProfile: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
-                                                        <span className="text-[20px]">🎬</span>
+                                                        <Clapperboard size={24} className="text-gray-300" />
                                                     </div>
                                                 )}
                                                 {overlayInfo?.textOverlay?.text && (

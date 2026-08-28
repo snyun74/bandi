@@ -545,53 +545,80 @@ public class ChatService {
           .unreadCount(unreadCnt < 0 ? 0 : unreadCnt)
           .attachNo(attachNo)
           .attachFilePath(attachFilePath)
-          .attachFilePath(attachFilePath)
           .attachFileName(attachFileNm)
           .voteNo(voteNo)
           .parentMsgNo(parentMsgNo)
           .parentMsgContent(parentMsgContent)
           .parentMsgUserNickNm(parentMsgUserNickNm)
           .build();
+      // DTO list add
       messages.add(dto);
-
-      // Mark as read if not my message
-      if (!senderId.equals(userId)) {
-        if ("BAND".equals(roomType)) {
-          try {
-            entityManager.createNativeQuery(
-                "INSERT INTO BN_CHAT_MESSAGE_READ (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID, BN_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID) DO NOTHING")
-                .setParameter("msgNo", msgNo)
-                .setParameter("userId", userId)
-                .setParameter("readDtime", currentDateTime)
-                .executeUpdate();
-          } catch (Exception e) {
-            // Ignore unique constraint violation or multiple reads
-          }
-        } else if ("GROUP".equals(roomType)) {
-          try {
-            entityManager.createNativeQuery(
-                "INSERT INTO CM_GRP_CHAT_MESSAGE_READ (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID, GRP_CHAT_READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID) DO NOTHING")
-                .setParameter("msgNo", msgNo)
-                .setParameter("userId", userId)
-                .setParameter("readDtime", currentDateTime)
-                .executeUpdate();
-          } catch (Exception e) {
-            // Ignore unique constraint violation or multiple reads
-          }
-        } else {
-          try {
-            entityManager.createNativeQuery(
-                "INSERT INTO CN_CHAT_MESSAGE_READ (CN_MSG_NO, READ_USER_ID, READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (CN_MSG_NO, READ_USER_ID) DO NOTHING")
-                .setParameter("msgNo", msgNo)
-                .setParameter("userId", userId)
-                .setParameter("readDtime", currentDateTime)
-                .executeUpdate();
-          } catch (Exception e) {
-            // Ignore unique constraint violation or multiple reads
-          }
-        }
-      }
     }
+
+    // Mark unread messages as read in batch for the room
+    try {
+      if ("BAND".equals(roomType)) {
+        entityManager.createNativeQuery("""
+            INSERT INTO BN_CHAT_MESSAGE_READ (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID, BN_CHAT_READ_DTIME)
+            SELECT MSG.BN_CHAT_MSG_NO, :userId, :readDtime
+            FROM BN_CHAT_MESSAGE MSG
+            WHERE MSG.BN_NO = :roomNo
+              AND MSG.BN_CHAT_SND_USER_ID <> :userId
+              AND MSG.BN_CHAT_STAT_CD = 'A'
+              AND NOT EXISTS (
+                  SELECT 1 FROM BN_CHAT_MESSAGE_READ MSR
+                  WHERE MSR.BN_CHAT_MSG_NO = MSG.BN_CHAT_MSG_NO
+                    AND MSR.BN_CHAT_READ_USER_ID = :userId
+              )
+            ON CONFLICT (BN_CHAT_MSG_NO, BN_CHAT_READ_USER_ID) DO NOTHING
+            """)
+            .setParameter("roomNo", roomNo)
+            .setParameter("userId", userId)
+            .setParameter("readDtime", currentDateTime)
+            .executeUpdate();
+      } else if ("GROUP".equals(roomType)) {
+        entityManager.createNativeQuery("""
+            INSERT INTO CM_GRP_CHAT_MESSAGE_READ (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID, GRP_CHAT_READ_DTIME)
+            SELECT MSG.GRP_CHAT_MSG_NO, :userId, :readDtime
+            FROM CM_GRP_CHAT_MESSAGE MSG
+            WHERE MSG.GRP_CHAT_NO = :roomNo
+              AND MSG.GRP_CHAT_SND_USER_ID <> :userId
+              AND MSG.GRP_CHAT_STAT_CD = 'A'
+              AND NOT EXISTS (
+                  SELECT 1 FROM CM_GRP_CHAT_MESSAGE_READ MSR
+                  WHERE MSR.GRP_CHAT_MSG_NO = MSG.GRP_CHAT_MSG_NO
+                    AND MSR.GRP_CHAT_READ_USER_ID = :userId
+              )
+            ON CONFLICT (GRP_CHAT_MSG_NO, GRP_CHAT_READ_USER_ID) DO NOTHING
+            """)
+            .setParameter("roomNo", roomNo)
+            .setParameter("userId", userId)
+            .setParameter("readDtime", currentDateTime)
+            .executeUpdate();
+      } else {
+        entityManager.createNativeQuery("""
+            INSERT INTO CN_CHAT_MESSAGE_READ (CN_MSG_NO, READ_USER_ID, READ_DTIME)
+            SELECT MSG.CN_MSG_NO, :userId, :readDtime
+            FROM CN_CHAT_MESSAGE MSG
+            WHERE MSG.CN_NO = :roomNo
+              AND MSG.SND_USER_ID <> :userId
+              AND MSG.CHAT_STAT_CD = 'A'
+              AND NOT EXISTS (
+                  SELECT 1 FROM CN_CHAT_MESSAGE_READ MSR
+                  WHERE MSR.CN_MSG_NO = MSG.CN_MSG_NO
+                    AND MSR.READ_USER_ID = :userId
+              )
+            ON CONFLICT (CN_MSG_NO, READ_USER_ID) DO NOTHING
+            """)
+            .setParameter("roomNo", roomNo)
+            .setParameter("userId", userId)
+            .setParameter("readDtime", currentDateTime)
+            .executeUpdate();
+      }
+    } catch (Exception e) {
+      // Ignore
+    }
+
     return messages;
   }
 
@@ -1123,21 +1150,32 @@ public class ChatService {
           .parentMsgUserNickNm(parentMsgUserNickNm)
           .build();
       messages.add(dto);
-
-      // Mark as read if not my message
-      if (!senderId.equals(userId)) {
-        try {
-          entityManager.createNativeQuery(
-              "INSERT INTO MM_CHAT_MESSAGE_READ (MM_MSG_NO, READ_USER_ID, READ_DTIME) VALUES (:msgNo, :userId, :readDtime) ON CONFLICT (MM_MSG_NO, READ_USER_ID) DO NOTHING")
-              .setParameter("msgNo", msgNo)
-              .setParameter("userId", userId)
-              .setParameter("readDtime", currentDateTime)
-              .executeUpdate();
-        } catch (Exception e) {
-          // Ignore
-        }
-      }
     }
+
+    // Mark unread private messages as read in batch
+    try {
+      entityManager.createNativeQuery("""
+          INSERT INTO MM_CHAT_MESSAGE_READ (MM_MSG_NO, READ_USER_ID, READ_DTIME)
+          SELECT MSG.MM_MSG_NO, :userId, :readDtime
+          FROM MM_CHAT_MESSAGE MSG
+          WHERE MSG.MM_ROOM_NO = :roomNo
+            AND MSG.SND_USER_ID <> :userId
+            AND MSG.CHAT_STAT_CD = 'A'
+            AND NOT EXISTS (
+                SELECT 1 FROM MM_CHAT_MESSAGE_READ MSR
+                WHERE MSR.MM_MSG_NO = MSG.MM_MSG_NO
+                  AND MSR.READ_USER_ID = :userId
+            )
+          ON CONFLICT (MM_MSG_NO, READ_USER_ID) DO NOTHING
+          """)
+          .setParameter("roomNo", roomNo)
+          .setParameter("userId", userId)
+          .setParameter("readDtime", currentDateTime)
+          .executeUpdate();
+    } catch (Exception e) {
+      // Ignore
+    }
+
     return messages;
   }
 
