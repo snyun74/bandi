@@ -424,9 +424,6 @@ const ClanDetail: React.FC = () => {
                             <p className="text-[14px] font-medium text-[#525252] leading-snug line-clamp-2">
                                 {clan.description || '클랜 소개가 없습니다.'}
                             </p>
-                            <p className="text-[13px] font-medium text-[#525252] pt-0.5">
-                                멤버 · {clan.memberCount}명
-                            </p>
                         </div>
                     </div>
 

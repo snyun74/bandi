@@ -199,9 +199,6 @@ const Clan: React.FC = () => {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <h3 className="text-[15px] font-bold text-[#003C48] truncate">{clan.name}</h3>
-                                        <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full shrink-0">
-                                            {clan.memberCount}명
-                                        </span>
                                     </div>
                                     <p className="text-gray-500 text-[12px] truncate mt-1">{clan.description || '클랜 소개글이 없습니다.'}</p>
                                 </div>

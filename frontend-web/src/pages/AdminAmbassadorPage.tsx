@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
     FaChevronLeft, FaMedal, FaSearch, FaCheck, FaTimes,
     FaExternalLinkAlt, FaYoutube, FaLink, FaPhoneAlt, FaUser,
-    FaClock, FaExclamationTriangle, FaFilter
+    FaClock, FaExclamationTriangle, FaFilter, FaBook
 } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import { AdminAmbassadorCourseDelegateModal } from '../components/admin/AdminAmbassadorCourseDelegateModal';
 
 interface AdminAmbassadorItem {
     userId: string;
@@ -39,6 +40,10 @@ const AdminAmbassadorPage: React.FC = () => {
     const [isRejectModalOpen, setIsRejectModalOpen] = useState<boolean>(false);
     const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [rejectReason, setRejectReason] = useState<string>('');
+
+    // Delegate Course Modal state
+    const [isDelegateModalOpen, setIsDelegateModalOpen] = useState<boolean>(false);
+    const [selectedAmbassadorForDelegate, setSelectedAmbassadorForDelegate] = useState<AdminAmbassadorItem | null>(null);
 
     // Common Alert/Confirm Modal
     const [modal, setModal] = useState<{
@@ -154,6 +159,11 @@ const AdminAmbassadorPage: React.FC = () => {
                 message: '통신 오류가 발생했습니다.'
             });
         }
+    };
+
+    const handleOpenDelegateModal = (ambassador: AdminAmbassadorItem) => {
+        setSelectedAmbassadorForDelegate(ambassador);
+        setIsDelegateModalOpen(true);
     };
 
     const formatPhone = (phone?: string) => {
@@ -410,41 +420,54 @@ const AdminAmbassadorPage: React.FC = () => {
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex gap-2 pt-1 border-t border-gray-100">
-                                    {isPending && (
-                                        <>
-                                            <button
-                                                onClick={() => handleApprove(item.userId, item.userNm)}
-                                                className="flex-1 py-2.5 bg-[#003C48] text-white rounded-xl text-xs font-bold hover:bg-[#002830] transition-all shadow-sm flex items-center justify-center gap-1"
-                                            >
-                                                <FaCheck size={11} /> 승인 처리
-                                            </button>
-                                            <button
-                                                onClick={() => handleOpenReject(item.userId)}
-                                                className="flex-1 py-2.5 bg-red-50 text-red-500 border border-red-100 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-1"
-                                            >
-                                                <FaTimes size={11} /> 거절 / 반려
-                                            </button>
-                                        </>
-                                    )}
-
+                                <div className="space-y-2 pt-1 border-t border-gray-100">
+                                    {/* 엠버서더 교육자료 대리 등록/관리 버튼 (승인된 엠버서더) */}
                                     {isApproved && (
                                         <button
-                                            onClick={() => handleOpenReject(item.userId)}
-                                            className="w-full py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-1"
+                                            onClick={() => handleOpenDelegateModal(item)}
+                                            className="w-full py-2.5 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 text-[#006075] border border-cyan-200/80 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 active:scale-[0.99]"
                                         >
-                                            <FaTimes size={11} /> 승인 취소 (반려 처리)
+                                            <FaBook className="text-[#00BDF8]" size={13} />
+                                            <span>교육자료(강의) 대리 등록 및 관리</span>
                                         </button>
                                     )}
 
-                                    {isRejected && (
-                                        <button
-                                            onClick={() => handleApprove(item.userId, item.userNm)}
-                                            className="w-full py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center justify-center gap-1"
-                                        >
-                                            <FaCheck size={11} /> 재심사 승인
-                                        </button>
-                                    )}
+                                    <div className="flex gap-2">
+                                        {isPending && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleApprove(item.userId, item.userNm)}
+                                                    className="flex-1 py-2.5 bg-[#003C48] text-white rounded-xl text-xs font-bold hover:bg-[#002830] transition-all shadow-sm flex items-center justify-center gap-1"
+                                                >
+                                                    <FaCheck size={11} /> 승인 처리
+                                                </button>
+                                                <button
+                                                    onClick={() => handleOpenReject(item.userId)}
+                                                    className="flex-1 py-2.5 bg-red-50 text-red-500 border border-red-100 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-1"
+                                                >
+                                                    <FaTimes size={11} /> 거절 / 반려
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {isApproved && (
+                                            <button
+                                                onClick={() => handleOpenReject(item.userId)}
+                                                className="w-full py-2 bg-red-50 text-red-500 border border-red-100 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-1"
+                                            >
+                                                <FaTimes size={11} /> 승인 취소 (반려 처리)
+                                            </button>
+                                        )}
+
+                                        {isRejected && (
+                                            <button
+                                                onClick={() => handleApprove(item.userId, item.userNm)}
+                                                className="w-full py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center justify-center gap-1"
+                                            >
+                                                <FaCheck size={11} /> 재심사 승인
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -486,6 +509,13 @@ const AdminAmbassadorPage: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Delegate Ambassador Course Management Modal */}
+            <AdminAmbassadorCourseDelegateModal
+                isOpen={isDelegateModalOpen}
+                onClose={() => setIsDelegateModalOpen(false)}
+                targetAmbassador={selectedAmbassadorForDelegate}
+            />
 
             {/* Common Alert / Confirm Modal */}
             <CommonModal
