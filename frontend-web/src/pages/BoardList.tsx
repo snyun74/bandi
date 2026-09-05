@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaPen, FaSearch, FaRegThumbsUp, FaRegCommentDots } from 'react-icons/fa';
+import { FaChevronLeft, FaPen, FaSearch, FaHeart, FaComment, FaTrashAlt } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
-import SectionTitle from '../components/common/SectionTitle';
+import DefaultProfile from '../components/common/DefaultProfile';
 
 interface BoardPost {
     boardNo: number;
@@ -14,13 +14,17 @@ interface BoardPost {
     likeCnt: number;
     commentCnt: number;
     isLiked: boolean;
+    content?: string;
+    profileImg?: string;
+    profileImageUrl?: string;
+    maskingYn?: string;
 }
 
 const BoardList: React.FC = () => {
     const navigate = useNavigate();
     const { boardTypeFg } = useParams<{ boardTypeFg: string }>();
     const [posts, setPosts] = useState<BoardPost[]>([]);
-    const [, setPage] = useState(0);
+    const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [keyword, setKeyword] = useState("");
@@ -51,12 +55,12 @@ const BoardList: React.FC = () => {
         if (!boardTypeFg) return;
         setLoading(true);
         try {
-            const userId = localStorage.getItem("userId") || "";
+            const currentUserId = localStorage.getItem("userId") || "";
             const params = new URLSearchParams();
             params.append('boardTypeFg', boardTypeFg);
-            params.append('userId', userId);
+            params.append('userId', currentUserId);
             params.append('page', pageNum.toString());
-            params.append('size', '30'); // Limit to 30 as requested
+            params.append('size', '30');
             if (searchQuery) params.append('keyword', searchQuery);
 
             const response = await fetch(`/api/boards?${params.toString()}`);
@@ -65,20 +69,18 @@ const BoardList: React.FC = () => {
                 const newPosts = data.content || [];
 
                 setPosts(prev => isReset ? newPosts : [...prev, ...newPosts]);
-                // If fewer items than requested size, then no more pages
                 setHasMore(!data.last && newPosts.length === 30);
             } else {
-                setHasMore(false); // Stop on error
+                setHasMore(false);
             }
         } catch (error) {
             console.error("Failed to fetch posts", error);
-            setHasMore(false); // Stop on error
+            setHasMore(false);
         } finally {
             setLoading(false);
         }
     };
 
-    // Intersection Observer callback
     const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
         const target = entries[0];
         if (target.isIntersecting && hasMore && !loading) {
@@ -101,21 +103,8 @@ const BoardList: React.FC = () => {
 
         return () => {
             if (observer.current) observer.current.disconnect();
-        }
-    }, [handleObserver, lastPostRef.current]); // Re-attach observer when ref changes or dependencies change?
-    // Actually better logic for observer:
-    // Attach to a sentinel div at the bottom.
-
-    useEffect(() => {
-        // Re-connect observer when loading state or hasMore changes to ensure we don't trigger while loading
-        // But actually the callback handles the check.
-        // We just need to make sure the observer observes the CURRENT ref.
-        if (observer.current && lastPostRef.current) {
-            observer.current.disconnect();
-            observer.current.observe(lastPostRef.current);
-        }
+        };
     }, [handleObserver]);
-
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -145,7 +134,6 @@ const BoardList: React.FC = () => {
                 setPostToDelete(null);
                 setModalMessage('게시글이 삭제되었습니다.');
                 setOnModalConfirm(() => () => {
-                    // Reset and fetch first page again
                     setPosts([]);
                     setPage(0);
                     setHasMore(true);
@@ -169,13 +157,15 @@ const BoardList: React.FC = () => {
         }
     };
 
-    const formatDate = (dateStr: string) => {
-        if (!dateStr || dateStr.length < 8) return dateStr;
-        return `${dateStr.substring(0, 4)}.${dateStr.substring(4, 6)}.${dateStr.substring(6, 8)}`;
+    const formatShortDate = (dateStr: string) => {
+        if (!dateStr || dateStr.length < 8) return dateStr || '';
+        const y = dateStr.substring(2, 4);
+        const m = dateStr.substring(4, 6);
+        const d = dateStr.substring(6, 8);
+        return `${y}.${m}.${d}`;
     };
 
     const handleWriteClick = () => {
-        const userId = localStorage.getItem("userId");
         if (!userId) {
             alert("로그인이 필요한 서비스입니다.");
             return;
@@ -184,96 +174,156 @@ const BoardList: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="flex flex-col min-h-screen bg-[#F7F9FC] font-['Pretendard'] text-gray-900 pb-20 relative">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-4 mb-2 bg-white sticky top-0 z-10">
-                <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
-                        <FaChevronLeft size={24} />
+            <div className="bg-white border-b border-gray-100 sticky top-0 z-20 px-4 py-3.5 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-1 -ml-1 text-[#2F2F31] hover:text-[#00BDF8] transition-colors"
+                        aria-label="뒤로가기"
+                    >
+                        <FaChevronLeft size={18} />
                     </button>
-                    <SectionTitle as="h1" className="!mt-0 !mb-0">{boardName}</SectionTitle>
+                    <h1 className="text-[18px] font-bold text-[#0B1114]">{boardName}</h1>
                 </div>
                 <button
                     onClick={handleWriteClick}
-                    className="text-[#00BDF8]"
+                    className="p-1.5 text-[#00BDF8] hover:text-[#00a8e0] active:scale-95 transition-all"
+                    title="글쓰기"
                 >
-                    <FaPen size={20} />
+                    <FaPen size={18} />
                 </button>
             </div>
 
-            {/* Search */}
-            <div className="px-4 mb-4">
-                <form onSubmit={handleSearch} className="relative">
-                    <input
-                        type="text"
-                        placeholder="검색"
-                        className="w-full border border-[#00BDF8] rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-[#00BDF8]"
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                    />
-                    <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#00BDF8]" size={16} />
-                </form>
-            </div>
+            <div className="p-4 space-y-4 max-w-lg mx-auto w-full">
+                {/* Search */}
+                <div>
+                    <form onSubmit={handleSearch} className="relative">
+                        <input
+                            type="text"
+                            placeholder="제목으로 검색"
+                            className="w-full bg-white border border-[#ECECEC] rounded-full py-2.5 pl-10 pr-4 text-sm text-[#2F2F31] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] shadow-[0px_2px_6px_rgba(0,0,0,0.02)] transition-all"
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
+                        />
+                        <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                    </form>
+                </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto px-4 pb-10">
-                <div className="divide-y divide-gray-100">
+                {/* List */}
+                <div className="space-y-3">
                     {posts.length > 0 ? (
-                        posts.map((post) => (
-                            <div key={post.boardNo}
-                                onClick={() => navigate(`/main/board/detail/${post.boardNo}`)}
-                                className="py-4 cursor-pointer hover:bg-gray-50 transition-colors">
-                                <div className="flex justify-between items-start mb-1">
-                                    <h3 className="body-board-post-title flex-1 pr-2">{post.title}</h3>
-                                    <span className="text-gray-400 text-xs whitespace-nowrap">{formatDate(post.regDate)}</span>
-                                </div>
-                                <div className="flex items-center gap-3 mt-1 justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs text-gray-500">
-                                            <span className="text-xs">👤</span>
-                                            <span>{post.userNickNm || "익명"}</span>
+                        posts.map((post) => {
+                            const isAnonymous = post.maskingYn === 'Y' || (!post.userNickNm && !post.maskingYn);
+                            const displayName = isAnonymous ? '익명' : (post.userNickNm || '익명');
+                            const profileImgUrl = isAnonymous ? null : (post.profileImg || post.profileImageUrl);
+
+                            return (
+                                <div
+                                    key={post.boardNo}
+                                    onClick={() => navigate(`/main/board/detail/${post.boardNo}`)}
+                                    className="bg-white rounded-[12px] p-[16px_20px] border border-[#ECECEC] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] cursor-pointer hover:border-gray-300 hover:shadow-md transition-all space-y-3"
+                                >
+                                    {/* 상단: 카테고리 뱃지 + 제목 + 작성일 */}
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                            <span className="text-[#0098CC] text-[12px] font-bold leading-[14px] shrink-0">
+                                                {post.boardTypeFg === '1' ? '초보자' : '자유'}
+                                            </span>
+                                            <h4 className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
+                                                {post.title}
+                                            </h4>
                                         </div>
+                                        <span className="text-[10px] font-semibold leading-[14px] text-[#737373] shrink-0">
+                                            {formatShortDate(post.regDate)}
+                                        </span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {post.commentCnt > 0 && (
-                                            <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded">
-                                                <FaRegCommentDots size={12} />
-                                                <span>({post.commentCnt})</span>
+
+                                    {/* 본문 미리보기 */}
+                                    {post.content && (
+                                        <p className="text-[14px] font-medium leading-[22px] text-[#55575B] line-clamp-2 whitespace-pre-wrap">
+                                            {post.content}
+                                        </p>
+                                    )}
+
+                                    {/* 하단: 작성자 프로필 + 좋아요/댓글 수 + 삭제 */}
+                                    <div className="flex items-center justify-between pt-1">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                            <div className="w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
+                                                {profileImgUrl ? (
+                                                    <img
+                                                        src={profileImgUrl}
+                                                        alt={displayName}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLElement).style.display = 'none';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <DefaultProfile type="user" iconSize={12} className="w-full h-full" />
+                                                )}
                                             </div>
-                                        )}
-                                        <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded">
-                                            <FaRegThumbsUp size={12} />
-                                            <span>({post.likeCnt})</span>
+                                            <span className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
+                                                {displayName}
+                                            </span>
                                         </div>
-                                        {post.writerUserId === userId && (
-                                            <button
-                                                onClick={(e) => confirmDeletePost(e, post.boardNo)}
-                                                className="text-xs text-red-500 hover:text-red-600 font-medium px-2 py-0.5"
-                                            >
-                                                삭제
-                                            </button>
-                                        )}
+
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            <span className="flex items-center gap-1 text-[12px] font-bold text-[#00BDF8]">
+                                                <FaHeart size={11} className="text-[#00BDF8]" />
+                                                {post.likeCnt || 0}
+                                            </span>
+                                            <span className="flex items-center gap-1 text-[12px] font-bold text-[#8E9196]">
+                                                <FaComment size={11} className="text-[#D9D9DB]" />
+                                                {post.commentCnt || 0}
+                                            </span>
+                                            {post.writerUserId === userId && (
+                                                <button
+                                                    onClick={(e) => confirmDeletePost(e, post.boardNo)}
+                                                    className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-red-500 font-medium pl-1 transition-colors"
+                                                    title="게시글 삭제"
+                                                >
+                                                    <FaTrashAlt size={10} />
+                                                    <span>삭제</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         !loading && (
-                            <div className="py-10 text-center text-gray-400 text-sm">
-                                <p>게시글이 없습니다.</p>
+                            <div className="bg-white rounded-[12px] p-8 text-center text-gray-400 text-xs border border-[#ECECEC]">
+                                <p className="text-sm text-gray-500 mb-1">등록된 게시글이 없습니다.</p>
+                                <p className="text-xs text-gray-400">첫 번째 이야기를 남겨보세요!</p>
                             </div>
                         )
                     )}
 
-                    {/* Sentinel for Infinite Scroll */}
-                    {hasMore && (
-                        <div ref={lastPostRef} className="py-4 text-center">
-                            {loading && <div className="text-gray-400 text-xs">Loading...</div>}
-                        </div>
-                    )}
+                    {/* 무한스크롤 감지 div */}
+                    <div ref={lastPostRef} className="py-2 text-center">
+                        {loading && (
+                            <div className="py-4 text-center text-gray-400 text-xs flex items-center justify-center gap-2">
+                                <div className="w-4 h-4 border-2 border-[#00BDF8] border-t-transparent rounded-full animate-spin" />
+                                <span>게시글을 불러오는 중...</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
+            {/* 우하단 플로팅 글쓰기 FAB 버튼 */}
+            <button
+                onClick={handleWriteClick}
+                className="fixed bottom-[calc(var(--nav-height,56px)+var(--safe-bottom,0px)+18px)] right-4 md:right-[max(1.25rem,calc((100vw-480px)/2+1.25rem))] w-[48px] h-[48px] rounded-full bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white shadow-lg flex items-center justify-center transition-all z-40"
+                aria-label="글쓰기"
+            >
+                <FaPen size={17} />
+            </button>
+
+            {/* Alert Modal */}
             <CommonModal
                 isOpen={isModalOpen}
                 type="alert"
@@ -287,6 +337,7 @@ const BoardList: React.FC = () => {
                 }}
             />
 
+            {/* Delete Confirm Modal */}
             <CommonModal
                 isOpen={isDeleteConfirmOpen}
                 type="confirm"

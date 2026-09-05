@@ -6,9 +6,14 @@ import com.bandi.backend.entity.band.BnEduLesson;
 import com.bandi.backend.service.AmbassadorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -93,6 +98,39 @@ public class AmbassadorController {
             @RequestParam String userId,
             @RequestParam String status) {
         return ResponseEntity.ok(ambassadorService.updateLessonStatus(lessonNo, userId, status));
+    }
+
+    @GetMapping("/lessons/{lessonNo}/download-data")
+    public ResponseEntity<?> downloadLessonData(
+            @PathVariable Long lessonNo,
+            @RequestParam(required = false) String userId) {
+        try {
+            Map<String, Object> fileInfo = ambassadorService.getLessonDataFile(lessonNo, userId);
+            Path filePath = (Path) fileInfo.get("filePath");
+            String fileName = (String) fileInfo.get("fileName");
+            String mimeType = (String) fileInfo.get("mimeType");
+
+            Resource resource = new UrlResource(filePath.toUri());
+            if (!resource.exists() || !resource.isReadable()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+            ContentDisposition contentDisposition = ContentDisposition.builder("attachment")
+                    .filename(encodedFileName, StandardCharsets.UTF_8)
+                    .build();
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(mimeType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                    .body(resource);
+        } catch (RuntimeException e) {
+            log.warn("교육자료 다운로드 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("교육자료 다운로드 중 예외 발생: ", e);
+            return ResponseEntity.internalServerError().body(Map.of("message", "파일 다운로드 중 오류가 발생했습니다."));
+        }
     }
 
     // --- 4. 수강 평가 내역 조회 ---

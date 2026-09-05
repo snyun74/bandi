@@ -729,13 +729,25 @@ export default function HomePage() {
                     {/* 4 영역. 밴드 합주의 모든 이야기 실시간 밴디톡 */}
                     {/* ========================================================================= */}
                     <section className="pt-2">
-                        <div className="mb-3">
-                            <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
-                                밴드 합주의 모든 이야기
-                            </h2>
-                            <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
-                                실시간 밴디톡
-                            </h2>
+                        <div className="flex items-end justify-between mb-3">
+                            <div>
+                                <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
+                                    밴드 합주의 모든 이야기
+                                </h2>
+                                <h2 className="text-[18px] font-bold leading-[26px] text-[#0B1114]">
+                                    실시간 밴디톡
+                                </h2>
+                            </div>
+                            <div
+                                onClick={() => requireAuth(() => navigate('/main/board'), {
+                                    title: '밴디톡 전체보기를 이용해 보세요! 📝',
+                                    description: '커뮤니티 게시판을 보시려면\n로그인이 필요합니다.'
+                                })}
+                                className="flex items-center gap-1 text-[13px] font-medium text-[#737373] hover:text-[#00BDF8] cursor-pointer transition-colors pb-1 shrink-0"
+                            >
+                                <span>전체보기</span>
+                                <FaChevronRight size={10} />
+                            </div>
                         </div>
 
                         {/* 피드 카드 목록 */}
@@ -797,8 +809,8 @@ export default function HomePage() {
                                             </div>
 
                                             <div className="flex items-center gap-3">
-                                                <span className="flex items-center gap-1 text-[12px] font-bold text-[#E40004]">
-                                                    <FaHeart size={11} className="text-[#E40004]" />
+                                                <span className="flex items-center gap-1 text-[12px] font-bold text-[#00BDF8]">
+                                                    <FaHeart size={11} className="text-[#00BDF8]" />
                                                     {post.likeCnt || 0}
                                                 </span>
                                                 <span className="flex items-center gap-1 text-[12px] font-bold text-[#8E9196]">
@@ -810,18 +822,6 @@ export default function HomePage() {
                                     </div>
                                 ))
                             )}
-                        </div>
-
-                        {/* 밴디톡 전체보기 링크 */}
-                        <div
-                            onClick={() => requireAuth(() => navigate('/main/board'), {
-                                title: '밴디톡 전체보기를 이용해 보세요! 📝',
-                                description: '커뮤니티 게시판을 보시려면\n로그인이 필요합니다.'
-                            })}
-                            className="flex items-center justify-center gap-1 py-4 text-[13px] font-medium leading-[20px] text-[#525252] cursor-pointer hover:text-[#00BDF8] transition-colors"
-                        >
-                            <span>전체보기</span>
-                            <FaChevronRight size={10} className="text-[#737373]" />
                         </div>
                     </section>
                 </div>

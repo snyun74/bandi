@@ -4,7 +4,7 @@ import {
     FaChevronLeft, FaPlus, FaBook, FaUsers, FaStar, FaVideo,
     FaCheck, FaTimes, FaTrash, FaEye, FaPlay, FaExclamationTriangle,
     FaMoneyBillWave, FaClock, FaCheckCircle, FaTimesCircle, FaHeart,
-    FaImage, FaFilm, FaSpinner
+    FaImage, FaFilm, FaSpinner, FaFileAlt, FaPaperclip, FaDownload
 } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import { uploadFileApi } from '../utils/fileUtils';
@@ -38,6 +38,9 @@ interface LessonItem {
     videoUrl?: string;
     attachNoImg?: number;
     imgUrl?: string;
+    attachData?: number;
+    dataUrl?: string;
+    dataFileName?: string;
     durationSec: number;
     lessonStatCd: 'R' | 'A' | 'D';
     insDtime: string;
@@ -117,10 +120,13 @@ const AmbassadorManagePage: React.FC = () => {
         attachNoImg: null as number | null,
         imgFileName: '',
         imgPreviewUrl: '',
+        attachData: null as number | null,
+        dataFileName: '',
         durationMinutes: 15
     });
     const [isLessonMovUploading, setIsLessonMovUploading] = useState<boolean>(false);
     const [isLessonImgUploading, setIsLessonImgUploading] = useState<boolean>(false);
+    const [isLessonDataUploading, setIsLessonDataUploading] = useState<boolean>(false);
 
     // Evaluation Modal
     const [isEvalModalOpen, setIsEvalModalOpen] = useState<boolean>(false);
@@ -365,6 +371,8 @@ const AmbassadorManagePage: React.FC = () => {
             attachNoImg: null,
             imgFileName: '',
             imgPreviewUrl: '',
+            attachData: null,
+            dataFileName: '',
             durationMinutes: 15
         });
         setIsCreateLessonOpen(true);
@@ -428,6 +436,33 @@ const AmbassadorManagePage: React.FC = () => {
         }));
     };
 
+    const handleLessonDataChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsLessonDataUploading(true);
+        try {
+            const res = await uploadFileApi(file, 'ambassador', userId);
+            setLessonForm(prev => ({
+                ...prev,
+                attachData: res.attachNo,
+                dataFileName: file.name
+            }));
+        } catch (err: any) {
+            showAlert(err.message || '교육자료 파일 업로드에 실패했습니다.');
+        } finally {
+            setIsLessonDataUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveLessonData = () => {
+        setLessonForm(prev => ({
+            ...prev,
+            attachData: null,
+            dataFileName: ''
+        }));
+    };
+
     const handleCreateLessonSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCourseForLessons) return;
@@ -448,6 +483,7 @@ const AmbassadorManagePage: React.FC = () => {
                 lessonDesc: lessonForm.lessonDesc.trim(),
                 attachNoMov: lessonForm.attachNoMov,
                 attachNoImg: lessonForm.attachNoImg,
+                attachData: lessonForm.attachData,
                 durationSec: (lessonForm.durationMinutes || 0) * 60
             };
 
@@ -1236,13 +1272,18 @@ const AmbassadorManagePage: React.FC = () => {
                                                         <h4 className="text-xs font-bold text-[#003C48] truncate">
                                                             {l.lessonTitle}
                                                         </h4>
-                                                        <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5">
+                                                        <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5 flex-wrap">
                                                             <span className="flex items-center gap-1">
                                                                 <FaClock size={10} /> 약 {minutes > 0 ? `${minutes}분` : `${l.durationSec}초`}
                                                             </span>
                                                             <span className="text-purple-600 font-medium">
                                                                 동영상 첨부됨 (ID: {l.attachNoMov})
                                                             </span>
+                                                            {l.attachData && (
+                                                                <span className="text-[#0098CC] font-bold flex items-center gap-0.5">
+                                                                    <FaPaperclip size={9} /> 자료 첨부됨 ({l.dataFileName || `ID: ${l.attachData}`})
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1485,6 +1526,59 @@ const AmbassadorManagePage: React.FC = () => {
                                                 <FaImage className="text-gray-400" size={18} />
                                                 <span className="text-xs font-semibold text-gray-700">대표 썸네일 이미지 선택</span>
                                                 <span className="text-[10px] text-gray-400">JPG, PNG, GIF 등</span>
+                                            </div>
+                                        )}
+                                    </label>
+                                )}
+                            </div>
+
+                            {/* 교육자료 첨부파일 (ATTACH_DATA) - 선택 */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1.5">
+                                    <FaFileAlt className="text-[#0098CC]" />
+                                    <span>교육자료 첨부파일 (ATTACH_DATA)</span>
+                                    <span className="text-[10px] text-gray-400 font-normal">(선택 - PDF, 악보, 교재 등)</span>
+                                </label>
+                                {lessonForm.attachData ? (
+                                    <div className="flex items-center justify-between p-2.5 bg-[#E6F7FE]/60 border border-[#00BDF8]/40 rounded-xl">
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <div className="w-10 h-10 rounded-lg bg-[#00BDF8]/20 flex items-center justify-center text-[#0098CC] shrink-0">
+                                                <FaPaperclip size={16} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-medium text-gray-800 truncate">
+                                                    {lessonForm.dataFileName || '업로드된 교육자료 파일'}
+                                                </p>
+                                                <p className="text-[10px] text-[#0098CC] font-bold">✓ 교육자료 첨부 완료 (ID: {lessonForm.attachData})</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveLessonData}
+                                            className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg transition-colors"
+                                            title="교육자료 삭제"
+                                        >
+                                            <FaTimes size={14} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 hover:border-[#00BDF8] rounded-2xl p-3.5 bg-gray-50/60 hover:bg-[#00BDF8]/5 transition-all cursor-pointer">
+                                        <input
+                                            type="file"
+                                            onChange={handleLessonDataChange}
+                                            disabled={isLessonDataUploading}
+                                            className="hidden"
+                                        />
+                                        {isLessonDataUploading ? (
+                                            <div className="flex items-center gap-2 text-xs text-[#0098CC] font-medium py-1">
+                                                <FaSpinner className="animate-spin" />
+                                                <span>교육자료 파일 업로드 중...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1 text-center">
+                                                <FaPaperclip className="text-gray-400" size={18} />
+                                                <span className="text-xs font-semibold text-gray-700">교육자료 첨부파일 선택</span>
+                                                <span className="text-[10px] text-gray-400">PDF, ZIP, HWP, DOCX, 악보 등 (수강생 다운로드 제공)</span>
                                             </div>
                                         )}
                                     </label>

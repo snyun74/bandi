@@ -39,6 +39,9 @@ public class BnEduLesson {
     @Column(name = "ATTACH_NO_IMG")
     private Long attachNoImg;
 
+    @Column(name = "ATTACH_DATA")
+    private Long attachData;
+
     @Column(name = "DURATION_SEC", nullable = false)
     @Builder.Default
     private Integer durationSec = 0;

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegThumbsUp, FaChevronRight, FaMinusCircle, FaRegCommentDots } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaMinusCircle, FaHeart, FaComment, FaFire, FaPlus, FaFolder } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
-import SectionTitle from '../components/common/SectionTitle';
+import DefaultProfile from '../components/common/DefaultProfile';
 
 interface HotPost {
     id: number;
@@ -13,6 +13,10 @@ interface HotPost {
     date: string;
     isHot: boolean;
     boardTypeNo: number;
+    boardTypeNm?: string;
+    content?: string;
+    profileImg?: string;
+    maskingYn?: string;
 }
 
 interface BoardCategory {
@@ -60,13 +64,16 @@ const ClanBoardList: React.FC = () => {
                     const mappedPosts = data.map((item: any) => ({
                         id: item.cnBoardNo,
                         title: item.title,
-                        author: item.userNickNm,
-                        likeCount: item.boardLikeCnt,
-                        replyCount: item.boardReplyCnt,
-                        date: item.regDate && item.regDate.length >= 8 ?
-                            `${item.regDate.substring(0, 4)}.${item.regDate.substring(4, 6)}.${item.regDate.substring(6, 8)}` : item.regDate,
+                        author: item.userNickNm || '익명',
+                        likeCount: item.boardLikeCnt || 0,
+                        replyCount: item.boardReplyCnt || 0,
+                        date: item.regDate || '',
                         isHot: true,
-                        boardTypeNo: item.cnBoardTypeNo || 0
+                        boardTypeNo: item.cnBoardTypeNo || 0,
+                        boardTypeNm: item.boardTypeNm,
+                        content: item.content,
+                        profileImg: item.profileImageUrl,
+                        maskingYn: item.maskingYn
                     }));
                     setHotPosts(mappedPosts);
                 }
@@ -115,6 +122,14 @@ const ClanBoardList: React.FC = () => {
         fetchUserRole();
     }, [clanId]);
 
+    const formatShortDate = (dateStr: string) => {
+        if (!dateStr || dateStr.length < 8) return dateStr || '';
+        const y = dateStr.substring(2, 4);
+        const m = dateStr.substring(4, 6);
+        const d = dateStr.substring(6, 8);
+        return `${y}.${m}.${d}`;
+    };
+
     const handleCreateBoard = async () => {
         if (!newBoardName.trim()) {
             setCommonModal({
@@ -136,7 +151,7 @@ const ClanBoardList: React.FC = () => {
                 body: JSON.stringify({
                     cnNo: clanId,
                     cnBoardTypeNm: newBoardName,
-                    userId: 'admin' // Fixed as per instruction/current capability (should be real user ID)
+                    userId: userId || 'admin'
                 }),
             });
 
@@ -196,7 +211,6 @@ const ClanBoardList: React.FC = () => {
             });
 
             if (response.ok) {
-                // Success: Just close modal and refresh
                 closeCommonModal();
                 fetchBoards();
             } else {
@@ -220,135 +234,205 @@ const ClanBoardList: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
+        <div className="flex flex-col min-h-screen bg-[#F7F9FC] font-['Pretendard'] text-gray-900 pb-16 relative">
             {/* Header */}
-            <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
-                    <FaChevronLeft size={24} />
-                </button>
-                <SectionTitle as="h1" className="!mt-0 !mb-0">클랜 게시판</SectionTitle>
+            <div className="bg-white border-b border-gray-100 sticky top-0 z-20 px-4 py-3.5 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-1 -ml-1 text-[#2F2F31] hover:text-[#00BDF8] transition-colors"
+                        aria-label="뒤로가기"
+                    >
+                        <FaChevronLeft size={18} />
+                    </button>
+                    <h1 className="text-[18px] font-bold text-[#0B1114]">클랜 게시판</h1>
+                </div>
+                {(userRole === '01' || userRole === '02') && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-1.5 bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white text-[13px] font-semibold px-3.5 py-1.5 rounded-full shadow-xs transition-all"
+                    >
+                        <FaPlus size={11} />
+                        <span>게시판 추가</span>
+                    </button>
+                )}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-10 relative">
+            <div className="p-4 space-y-6 max-w-lg mx-auto w-full">
+                {/* 1. Hot 인기 게시글 */}
+                <section>
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                        <span className="text-[#FF5A5A] flex items-center gap-1 font-bold text-[15px]">
+                            <FaFire size={14} />
+                            클랜 핫이슈
+                        </span>
+                    </div>
 
-                {/* Hot Section */}
-                <div className="mb-6">
-                    <SectionTitle as="h2" className="!mt-0 !mb-2 text-[#FF5252]"># 🔥 Hot 🔥</SectionTitle>
+                    <div className="space-y-3">
+                        {hotPosts.length === 0 ? (
+                            <div className="bg-white rounded-[12px] p-6 text-center text-gray-400 text-xs border border-[#ECECEC]">
+                                아직 인기 게시글이 없습니다.
+                            </div>
+                        ) : (
+                            hotPosts.map((post) => {
+                                const isAnonymous = post.maskingYn === 'Y' || (!post.author && !post.maskingYn);
+                                const displayName = isAnonymous ? '익명' : (post.author || '익명');
+                                const profileImgUrl = isAnonymous ? null : post.profileImg;
 
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-                        <div className="divide-y divide-gray-100">
-                            {hotPosts.length > 0 ? (
-                                hotPosts.map((post) => (
-                                    <div key={post.id} className="py-3 first:pt-0 last:pb-0" onClick={() => navigate(`/main/clan/board/${clanId}/${post.boardTypeNo}/post/${post.id}`)}>
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h3 className="text-[#003C48] text-sm font-medium truncate flex-1 pr-2">{post.title}</h3>
-                                            <span className="text-gray-400 text-xs whitespace-nowrap">{post.date}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded text-xs text-gray-500">
-                                                <span className="text-xs">👤</span>
-                                                <span>{post.author}</span>
+                                return (
+                                    <div
+                                        key={`clan-hot-${post.id}`}
+                                        onClick={() => navigate(`/main/clan/board/${clanId}/${post.boardTypeNo}/post/${post.id}`)}
+                                        className="bg-white rounded-[12px] p-[16px_20px] border border-[#ECECEC] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] cursor-pointer hover:border-gray-300 hover:shadow-md transition-all space-y-3"
+                                    >
+                                        {/* 상단: 카테고리 뱃지 + 제목 + 작성일 */}
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                <span className="text-[#0098CC] text-[12px] font-bold leading-[14px] shrink-0">
+                                                    {post.boardTypeNm || '인기글'}
+                                                </span>
+                                                <h4 className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
+                                                    {post.title}
+                                                </h4>
                                             </div>
-                                            <div className="flex items-center gap-2 float-right">
-                                                <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded">
-                                                    <FaRegCommentDots size={10} />
-                                                    <span>({post.replyCount})</span>
+                                            <span className="text-[10px] font-semibold leading-[14px] text-[#737373] shrink-0">
+                                                {formatShortDate(post.date)}
+                                            </span>
+                                        </div>
+
+                                        {/* 본문 미리보기 */}
+                                        {post.content && (
+                                            <p className="text-[14px] font-medium leading-[22px] text-[#55575B] line-clamp-2 whitespace-pre-wrap">
+                                                {post.content}
+                                            </p>
+                                        )}
+
+                                        {/* 하단: 작성자 프로필 + 좋아요/댓글 수 */}
+                                        <div className="flex items-center justify-between pt-1">
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <div className="w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
+                                                    {profileImgUrl ? (
+                                                        <img
+                                                            src={profileImgUrl}
+                                                            alt={displayName}
+                                                            className="w-full h-full object-cover"
+                                                            onError={(e) => {
+                                                                (e.target as HTMLElement).style.display = 'none';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <DefaultProfile type="user" iconSize={12} className="w-full h-full" />
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center gap-1 text-xs text-[#FF5252] bg-red-50 px-2 py-0.5 rounded">
-                                                    <FaRegThumbsUp size={10} />
-                                                    <span>({post.likeCount})</span>
-                                                </div>
+                                                <span className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
+                                                    {displayName}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-3 shrink-0">
+                                                <span className="flex items-center gap-1 text-[12px] font-bold text-[#00BDF8]">
+                                                    <FaHeart size={11} className="text-[#00BDF8]" />
+                                                    {post.likeCount || 0}
+                                                </span>
+                                                <span className="flex items-center gap-1 text-[12px] font-bold text-[#8E9196]">
+                                                    <FaComment size={11} className="text-[#D9D9DB]" />
+                                                    {post.replyCount || 0}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="py-8 text-center text-gray-400 text-sm">
-                                    <p>아직 인기 게시글이 없어요! 😅</p>
-                                    <p className="text-xs mt-1">첫 번째 인기글의 주인공이 되어보세요!</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Board List Section */}
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <SectionTitle as="h2" className="!mt-0 !mb-0">게시판 목록</SectionTitle>
-                        {(userRole === '01' || userRole === '02') && (
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="bg-gray-100 hover:bg-gray-200 text-gray-600 text-[14px] px-3 py-1.5 rounded-full font-medium transition-colors"
-                            >
-                                게시판 생성
-                            </button>
+                                );
+                            })
                         )}
                     </div>
+                </section>
 
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                        <div className="divide-y divide-gray-100">
-                            {boards.map((board) => (
+                {/* 2. 게시판 목록 (카테고리 리스트) */}
+                <section>
+                    <div className="flex items-center justify-between mb-2.5">
+                        <h2 className="text-[15px] font-bold text-[#0B1114]">게시판 목록</h2>
+                    </div>
+
+                    <div className="bg-white rounded-[14px] border border-[#ECECEC] shadow-[0px_2px_8px_rgba(0,0,0,0.03)] overflow-hidden divide-y divide-[#F1F3F5]">
+                        {boards.length === 0 ? (
+                            <div className="p-6 text-center text-gray-400 text-xs">
+                                등록된 게시판이 없습니다.
+                            </div>
+                        ) : (
+                            boards.map((board) => (
                                 <div
                                     key={board.id}
-                                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                                    className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50/80 transition-colors group"
                                     onClick={() => navigate(`/main/clan/board/${clanId}/${board.id}`)}
                                 >
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
                                         {(userRole === '01' || userRole === '02') && (
-                                            <div onClick={(e) => handleDeleteBoard(e, board)}>
-                                                <FaMinusCircle className="text-[#FF8A80] hover:text-red-500 transition-colors" size={20} />
-                                            </div>
+                                            <button
+                                                onClick={(e) => handleDeleteBoard(e, board)}
+                                                className="text-gray-300 hover:text-red-500 transition-colors p-1 -m-1 shrink-0"
+                                                title="게시판 삭제"
+                                            >
+                                                <FaMinusCircle size={17} />
+                                            </button>
                                         )}
-                                        <span className="text-[#003C48] font-medium text-[15px]">{board.name}</span>
+                                        <div className="w-8 h-8 rounded-lg bg-[#F0F7FA] text-[#0098CC] flex items-center justify-center shrink-0">
+                                            <FaFolder size={14} />
+                                        </div>
+                                        <span className="text-[#2F2F31] font-semibold text-[15px] group-hover:text-[#00BDF8] transition-colors truncate">
+                                            {board.name}
+                                        </span>
                                     </div>
-                                    <FaChevronRight className="text-gray-400" size={16} />
+                                    <FaChevronRight className="text-gray-300 group-hover:text-[#00BDF8] group-hover:translate-x-0.5 transition-all shrink-0" size={13} />
                                 </div>
-                            ))}
+                            ))
+                        )}
+                    </div>
+                </section>
+            </div>
+
+            {/* 게시판 추가 모달 */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in-up">
+                        <h3 className="text-[17px] font-bold text-[#0B1114] mb-2 text-center">클랜 게시판 추가</h3>
+                        <p className="text-xs text-gray-500 text-center mb-4">새로 개설할 게시판 이름을 입력해 주세요.</p>
+                        <input
+                            type="text"
+                            placeholder="예: 공지사항, 정기모임 후기"
+                            className="w-full bg-[#F8F9FA] border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#2F2F31] focus:outline-none focus:ring-2 focus:ring-[#00BDF8] mb-4 placeholder-gray-400"
+                            value={newBoardName}
+                            onChange={(e) => setNewBoardName(e.target.value)}
+                            autoFocus
+                        />
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setIsModalOpen(false);
+                                    setNewBoardName("");
+                                }}
+                                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-3 rounded-xl font-bold text-sm transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleCreateBoard}
+                                className="flex-1 bg-[#00BDF8] hover:bg-[#00a8e0] text-white py-3 rounded-xl font-bold text-sm shadow-xs transition-colors"
+                            >
+                                추가하기
+                            </button>
                         </div>
                     </div>
                 </div>
+            )}
 
-                {/* Modal Overlay */}
-                {isModalOpen && (
-                    <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in-up">
-                            <h3 className="text-lg font-bold text-[#003C48] mb-4 text-center">클랜 게시판 추가하기</h3>
-                            <input
-                                type="text"
-                                placeholder="추가할 게시판 이름을 입력하세요."
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#00BDF8] mb-4"
-                                value={newBoardName}
-                                onChange={(e) => setNewBoardName(e.target.value)}
-                            />
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 bg-gray-100 text-gray-500 py-3 rounded-xl font-bold text-sm"
-                                >
-                                    취소
-                                </button>
-                                <button
-                                    onClick={handleCreateBoard}
-                                    className="flex-1 bg-[#00BDF8] text-white py-3 rounded-xl font-bold text-sm shadow-md"
-                                >
-                                    게시판 추가하기
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Result Modal */}
-                <CommonModal
-                    isOpen={commonModal.isOpen}
-                    type={commonModal.type}
-                    message={commonModal.message}
-                    onConfirm={commonModal.onConfirm}
-                    onCancel={commonModal.onCancel}
-                />
-
-            </div>
+            {/* Result Modal */}
+            <CommonModal
+                isOpen={commonModal.isOpen}
+                type={commonModal.type}
+                message={commonModal.message}
+                onConfirm={commonModal.onConfirm}
+                onCancel={commonModal.onCancel}
+            />
         </div>
     );
 };

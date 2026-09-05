@@ -31,17 +31,176 @@ public class StudioDirectoryService {
     private String kakaoRestApiKey;
 
     private static final String KAKAO_KEYWORD_SEARCH_URL = "https://dapi.kakao.com/v2/local/search/keyword.json";
+    private static final String KAKAO_CATEGORY_SEARCH_URL = "https://dapi.kakao.com/v2/local/search/category.json";
+
+    /**
+     * 카카오 카테고리 검색 API로 반경 3km(3000m) 내 가장 가까운 지하철역 조회
+     * @return "홍대입구역 (350m)" 형태의 문자열 또는 null (지하철역이 없는 경우)
+     */
+    public String findNearestSubway(String mapX, String mapY) {
+        if (mapX == null || mapX.isBlank() || mapY == null || mapY.isBlank()) {
+            return null;
+        }
+        try {
+            URI uri = UriComponentsBuilder.fromUriString(KAKAO_CATEGORY_SEARCH_URL)
+                    .queryParam("category_group_code", "SW8") // 지하철역
+                    .queryParam("x", mapX)
+                    .queryParam("y", mapY)
+                    .queryParam("radius", 3000) // 3km 반경
+                    .queryParam("sort", "distance") // 최단 거리순
+                    .queryParam("size", 1)
+                    .build()
+                    .encode()
+                    .toUri();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "KakaoAK " + kakaoRestApiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            ResponseEntity<Map> response = restTemplate.exchange(uri, HttpMethod.GET, requestEntity, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> body = response.getBody();
+                List<Map<String, Object>> documents = (List<Map<String, Object>>) body.get("documents");
+                if (documents != null && !documents.isEmpty()) {
+                    Map<String, Object> firstDoc = documents.get(0);
+                    String placeName = String.valueOf(firstDoc.getOrDefault("place_name", "")).trim();
+                    String distanceStr = String.valueOf(firstDoc.getOrDefault("distance", "")).trim();
+
+                    if (!placeName.isBlank()) {
+                        if (!distanceStr.isBlank() && !"null".equals(distanceStr)) {
+                            try {
+                                int distMeters = Integer.parseInt(distanceStr);
+                                if (distMeters >= 1000) {
+                                    double km = distMeters / 1000.0;
+                                    return String.format("%s (%.1fkm)", placeName, km);
+                                } else {
+                                    return String.format("%s (%dm)", placeName, distMeters);
+                                }
+                            } catch (NumberFormatException ignored) {
+                                return placeName;
+                            }
+                        }
+                        return placeName;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[findNearestSubway] Failed to find subway for x={}, y={}: {}", mapX, mapY, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * DB 내의 모든 합주실에 대해 지하철역 정보 일괄 계산 및 업데이트
+     */
+    @Transactional
+    public Map<String, Object> updateAllSubwayInfo() {
+        List<BnStudioDir> all = studioDirRepository.findAll();
+        int updatedCount = 0;
+        int noSubwayCount = 0;
+
+        String nowDtime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        for (BnStudioDir dir : all) {
+            if (dir.getMapX() != null && !dir.getMapX().isBlank() && dir.getMapY() != null && !dir.getMapY().isBlank()) {
+                String subway = findNearestSubway(dir.getMapX(), dir.getMapY());
+                dir.setSubwayInfo(subway);
+                dir.setUpdDtime(nowDtime);
+                dir.setUpdId("SUBWAY_SYNC");
+                studioDirRepository.save(dir);
+
+                if (subway != null) {
+                    updatedCount++;
+                } else {
+                    noSubwayCount++;
+                }
+
+                try {
+                    Thread.sleep(15);
+                } catch (InterruptedException ignored) {}
+            }
+        }
+
+        log.info("[updateAllSubwayInfo] Completed. Updated: {}, NoSubway: {}, Total: {}", updatedCount, noSubwayCount, all.size());
+        return Map.of(
+                "totalCount", all.size(),
+                "updatedCount", updatedCount,
+                "noSubwayCount", noSubwayCount
+        );
+    }
 
     /**
      * 우리 자체 DB에서 합주실 검색 (사용자용: useYn = 'Y')
+     * @param keyword 검색어
+     * @param region 지역명 필터
+     * @param sort 정렬 옵션 (LATEST, NAME_ASC, NAME_DESC)
      */
     @Transactional(readOnly = true)
-    public Page<BnStudioDir> searchDirectory(String keyword, int page, int size) {
+    public Page<BnStudioDir> searchDirectory(String keyword, String region, String sort, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return studioDirRepository.findByUseYnOrderByLatest(pageable);
+        String effectiveKeyword = buildEffectiveKeyword(keyword, region);
+
+        if (effectiveKeyword == null || effectiveKeyword.trim().isEmpty()) {
+            if ("NAME_ASC".equalsIgnoreCase(sort)) {
+                return studioDirRepository.findByUseYnOrderByNameAsc(pageable);
+            } else if ("NAME_DESC".equalsIgnoreCase(sort)) {
+                return studioDirRepository.findByUseYnOrderByNameDesc(pageable);
+            } else {
+                return studioDirRepository.findByUseYnOrderByLatest(pageable);
+            }
+        } else {
+            String trimmedKw = effectiveKeyword.trim();
+            if ("NAME_ASC".equalsIgnoreCase(sort)) {
+                return studioDirRepository.searchByKeywordNameAsc(trimmedKw, pageable);
+            } else if ("NAME_DESC".equalsIgnoreCase(sort)) {
+                return studioDirRepository.searchByKeywordNameDesc(trimmedKw, pageable);
+            } else {
+                return studioDirRepository.searchByKeywordLatest(trimmedKw, pageable);
+            }
         }
-        return studioDirRepository.searchByKeyword(keyword.trim(), pageable);
+    }
+
+    private String buildEffectiveKeyword(String keyword, String region) {
+        String cleanKw = keyword != null ? keyword.trim() : "";
+        if (!cleanKw.isEmpty()) {
+            return cleanKw;
+        }
+        if (region == null || region.trim().isEmpty() || "전체".equals(region.trim())) {
+            return "";
+        }
+        String cleanRegion = region.trim();
+        switch (cleanRegion) {
+            case "합정/홍대":
+                return "홍대";
+            case "신촌":
+                return "신촌";
+            case "사당/이수":
+                return "사당";
+            case "신도림/영등포구청":
+                return "영등포";
+            case "망원":
+                return "망원";
+            case "상도/중앙대":
+                return "상도";
+            case "서울대입구":
+                return "서울대";
+            case "방배":
+                return "방배";
+            case "혜화/성신여대":
+                return "혜화";
+            case "강남":
+                return "강남";
+            case "강동/송파":
+                return "송파";
+            case "기타 서울":
+                return "서울";
+            case "광주·전남":
+                return "광주";
+            default:
+                return cleanRegion;
+        }
     }
 
     /**
@@ -183,6 +342,11 @@ public class StudioDirectoryService {
                                 existingOpt = studioDirRepository.findByStudioNmAndRoadAddress(placeName, roadAddress);
                             }
 
+                            String subwayInfo = null;
+                            if (!x.isBlank() && !y.isBlank()) {
+                                subwayInfo = findNearestSubway(x, y);
+                            }
+
                             BnStudioDir studioDir;
                             if (existingOpt.isPresent()) {
                                 studioDir = existingOpt.get();
@@ -192,6 +356,7 @@ public class StudioDirectoryService {
                                 studioDir.setLinkUrl(naverLinkUrl);
                                 if (!x.isBlank()) studioDir.setMapX(x);
                                 if (!y.isBlank()) studioDir.setMapY(y);
+                                if (subwayInfo != null) studioDir.setSubwayInfo(subwayInfo);
                                 studioDir.setSido(sido);
                                 studioDir.setSigungu(sigungu);
                                 studioDir.setDong(dong);
@@ -208,6 +373,7 @@ public class StudioDirectoryService {
                                 studioDir.setLinkUrl(naverLinkUrl);
                                 studioDir.setMapX(x);
                                 studioDir.setMapY(y);
+                                studioDir.setSubwayInfo(subwayInfo);
                                 studioDir.setSido(sido);
                                 studioDir.setSigungu(sigungu);
                                 studioDir.setDong(dong);

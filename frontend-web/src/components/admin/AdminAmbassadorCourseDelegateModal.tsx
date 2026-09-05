@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
     FaChevronLeft, FaPlus, FaBook, FaStar, FaVideo,
     FaCheck, FaTimes, FaTrash, FaEye, FaPlay, FaExclamationTriangle,
-    FaFilm, FaSpinner, FaImage, FaTimesCircle, FaUserCheck
+    FaFilm, FaSpinner, FaImage, FaTimesCircle, FaUserCheck,
+    FaFileAlt, FaPaperclip
 } from 'react-icons/fa';
 import CommonModal from '../common/CommonModal';
 import { uploadFileApi } from '../../utils/fileUtils';
@@ -36,6 +37,9 @@ interface LessonItem {
     videoUrl?: string;
     attachNoImg?: number;
     imgUrl?: string;
+    attachData?: number;
+    dataUrl?: string;
+    dataFileName?: string;
     durationSec: number;
     lessonStatCd: 'R' | 'A' | 'D';
     insDtime: string;
@@ -109,10 +113,13 @@ export const AdminAmbassadorCourseDelegateModal: React.FC<AdminAmbassadorCourseD
         attachNoImg: null as number | null,
         imgFileName: '',
         imgPreviewUrl: '',
+        attachData: null as number | null,
+        dataFileName: '',
         durationMinutes: 15
     });
     const [isLessonMovUploading, setIsLessonMovUploading] = useState<boolean>(false);
     const [isLessonImgUploading, setIsLessonImgUploading] = useState<boolean>(false);
+    const [isLessonDataUploading, setIsLessonDataUploading] = useState<boolean>(false);
 
     // Evaluation Modal
     const [isEvalModalOpen, setIsEvalModalOpen] = useState<boolean>(false);
@@ -343,6 +350,8 @@ export const AdminAmbassadorCourseDelegateModal: React.FC<AdminAmbassadorCourseD
             attachNoImg: null,
             imgFileName: '',
             imgPreviewUrl: '',
+            attachData: null,
+            dataFileName: '',
             durationMinutes: 15
         });
         setIsCreateLessonOpen(true);
@@ -406,6 +415,33 @@ export const AdminAmbassadorCourseDelegateModal: React.FC<AdminAmbassadorCourseD
         }));
     };
 
+    const handleLessonDataChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !targetUserId) return;
+        setIsLessonDataUploading(true);
+        try {
+            const res = await uploadFileApi(file, 'ambassador', targetUserId);
+            setLessonForm(prev => ({
+                ...prev,
+                attachData: res.attachNo,
+                dataFileName: file.name
+            }));
+        } catch (err: any) {
+            showAlert(err.message || '교육자료 파일 업로드에 실패했습니다.');
+        } finally {
+            setIsLessonDataUploading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveLessonData = () => {
+        setLessonForm(prev => ({
+            ...prev,
+            attachData: null,
+            dataFileName: ''
+        }));
+    };
+
     const handleCreateLessonSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedCourseForLessons || !targetUserId) return;
@@ -426,6 +462,7 @@ export const AdminAmbassadorCourseDelegateModal: React.FC<AdminAmbassadorCourseD
                 lessonDesc: lessonForm.lessonDesc.trim(),
                 attachNoMov: lessonForm.attachNoMov,
                 attachNoImg: lessonForm.attachNoImg,
+                attachData: lessonForm.attachData,
                 durationSec: (lessonForm.durationMinutes || 0) * 60
             };
 
@@ -983,10 +1020,17 @@ export const AdminAmbassadorCourseDelegateModal: React.FC<AdminAmbassadorCourseD
                                                 </p>
                                             )}
 
-                                            <div className="flex justify-between items-center pt-2 border-t border-gray-50 text-[11px]">
-                                                <span className="text-gray-400 font-mono text-[10px]">
-                                                    시간: {Math.round(lesson.durationSec / 60)}분
-                                                </span>
+                                            <div className="flex justify-between items-center pt-2 border-t border-gray-50 text-[11px] flex-wrap gap-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-400 font-mono text-[10px]">
+                                                        시간: {Math.round(lesson.durationSec / 60)}분
+                                                    </span>
+                                                    {lesson.attachData && (
+                                                        <span className="text-[#0098CC] text-[10px] font-bold flex items-center gap-0.5">
+                                                            <FaPaperclip size={9} /> 자료: {lesson.dataFileName || `ID ${lesson.attachData}`}
+                                                        </span>
+                                                    )}
+                                                </div>
 
                                                 <div className="flex gap-1.5">
                                                     {lesson.videoUrl && (
@@ -1180,11 +1224,50 @@ export const AdminAmbassadorCourseDelegateModal: React.FC<AdminAmbassadorCourseD
                                 )}
                             </div>
 
+                            {/* 교육자료 첨부파일 (선택) */}
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-gray-700 flex items-center gap-1.5">
+                                    <FaFileAlt className="text-[#0098CC]" />
+                                    <span>교육자료 첨부파일 (ATTACH_DATA)</span>
+                                    <span className="text-[10px] text-gray-400 font-normal">(선택 - PDF, 악보, 교재 등)</span>
+                                </label>
+                                {lessonForm.attachData ? (
+                                    <div className="p-3 bg-[#E6F7FE]/60 border border-[#00BDF8]/40 rounded-2xl flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs text-[#007A99] truncate">
+                                            <FaPaperclip size={13} className="shrink-0 text-[#0098CC]" />
+                                            <span className="truncate">{lessonForm.dataFileName || '교육자료 등록 완료'}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveLessonData}
+                                            className="text-red-400 hover:text-red-600 p-1 text-xs"
+                                            title="교육자료 삭제"
+                                        >
+                                            <FaTrash size={11} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-gray-200 hover:border-[#00BDF8] rounded-2xl cursor-pointer hover:bg-[#00BDF8]/5 transition-all">
+                                        {isLessonDataUploading ? (
+                                            <div className="flex items-center gap-1.5 text-xs text-[#0098CC]">
+                                                <FaSpinner className="animate-spin" size={14} /> 교육자료 업로드 중...
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 text-gray-400 text-xs">
+                                                <FaPaperclip size={14} />
+                                                <span>교육자료 첨부파일 선택 (PDF, ZIP, 악보 등)</span>
+                                            </div>
+                                        )}
+                                        <input type="file" onChange={handleLessonDataChange} className="hidden" disabled={isLessonDataUploading} />
+                                    </label>
+                                )}
+                            </div>
+
                             {/* Submit & Cancel */}
                             <div className="flex gap-2 pt-2">
                                 <button
                                     type="submit"
-                                    disabled={isLessonMovUploading || isLessonImgUploading}
+                                    disabled={isLessonMovUploading || isLessonImgUploading || isLessonDataUploading}
                                     className="flex-1 py-2.5 bg-[#00BDF8] text-white rounded-xl text-xs font-bold hover:bg-[#009fd4] active:scale-95 transition-all shadow-sm disabled:opacity-50"
                                 >
                                     차시 등록

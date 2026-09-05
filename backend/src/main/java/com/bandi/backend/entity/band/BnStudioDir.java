@@ -54,6 +54,9 @@ public class BnStudioDir {
     @Column(name = "use_yn", length = 1, nullable = false)
     private String useYn;
 
+    @Column(name = "subway_info", length = 100)
+    private String subwayInfo;
+
     @Column(name = "ins_dtime", length = 14, nullable = false)
     private String insDtime;
 

@@ -17,7 +17,10 @@ import {
     FaLayerGroup,
     FaVideo,
     FaRegCommentDots,
-    FaMusic
+    FaMusic,
+    FaFileAlt,
+    FaPaperclip,
+    FaDownload
 } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 
@@ -74,6 +77,9 @@ interface LessonItem {
     videoUrl: string | null;
     attachNoImg: number | null;
     imgUrl: string | null;
+    attachData?: number | null;
+    dataUrl?: string | null;
+    dataFileName?: string | null;
     durationSec: number;
     lessonStatCd: string;
     insDtime: string;
@@ -369,6 +375,39 @@ const Membersador: React.FC = () => {
         setApplyTargetCourse(course);
         setApplyMemo('');
         setIsApplyModalOpen(true);
+    };
+
+    // 교육자료 다운로드 핸들러 (동영상은 제외, 교육자료 파일만 다운로드)
+    const handleDownloadLessonData = (e: React.MouseEvent, lesson: LessonItem, isPaid: boolean, isApproved: boolean) => {
+        e.stopPropagation(); // 영상 재생 클릭 방지
+        if (!lesson.attachData) {
+            showAlert('해당 강의에 등록된 교육자료 파일이 없습니다.');
+            return;
+        }
+
+        // 유료 강좌이고 아직 승인되지 않은 경우
+        if (isPaid && !isApproved) {
+            showAlert(
+                '유료 강좌의 교육자료입니다. 수강 신청 및 결제 완료 후 교육자료를 다운로드하실 수 있습니다.',
+                '수강 신청 안내',
+                () => {
+                    setIsDetailModalOpen(false);
+                    if (selectedCourseDetail) {
+                        handleOpenApplyModal(selectedCourseDetail.course);
+                    }
+                }
+            );
+            return;
+        }
+
+        // 다운로드 트리거
+        const downloadUrl = `/api/ambassador/lessons/${lesson.lessonNo}/download-data?userId=${currentUserId || ''}`;
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', lesson.dataFileName || '강의자료');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // Submit Course Application (자동 승인 처리)
@@ -881,9 +920,23 @@ const Membersador: React.FC = () => {
                                                         </div>
                                                     </div>
 
-                                                    {/* Lesson Play Icon */}
-                                                    <div className="shrink-0 w-8 h-8 rounded-full bg-slate-100 group-hover/lesson:bg-[#00B2D2] text-slate-400 group-hover/lesson:text-white flex items-center justify-center transition-all shadow-xs">
-                                                        <FaPlay className="w-2.5 h-2.5 ml-0.5" />
+                                                    {/* Actions: Education Data Download & Play Icon */}
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        {lesson.attachData && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => handleDownloadLessonData(e, lesson, isPaid, isApproved)}
+                                                                className="px-2.5 py-1.5 bg-sky-50 hover:bg-[#00B2D2] text-[#0098CC] hover:text-white rounded-xl text-[11px] font-bold transition-all flex items-center gap-1.5 border border-sky-200/80 shadow-2xs group/btn"
+                                                                title={`교육자료 다운로드: ${lesson.dataFileName || '자료 받기'}`}
+                                                            >
+                                                                <FaFileAlt className="w-3 h-3 text-[#0098CC] group-hover/btn:text-white" />
+                                                                <span>자료받기</span>
+                                                            </button>
+                                                        )}
+                                                        {/* Lesson Play Icon */}
+                                                        <div className="w-8 h-8 rounded-full bg-slate-100 group-hover/lesson:bg-[#00B2D2] text-slate-400 group-hover/lesson:text-white flex items-center justify-center transition-all shadow-xs">
+                                                            <FaPlay className="w-2.5 h-2.5 ml-0.5" />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );

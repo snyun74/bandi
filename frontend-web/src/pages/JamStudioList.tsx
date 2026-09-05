@@ -12,7 +12,8 @@ import {
     FaHeadphones,
     FaMusic,
     FaVolumeUp,
-    FaCompactDisc
+    FaCompactDisc,
+    FaCheck
 } from 'react-icons/fa';
 
 interface StudioDirItem {
@@ -26,6 +27,7 @@ interface StudioDirItem {
     sido?: string;
     sigungu?: string;
     dong?: string;
+    subwayInfo?: string;
     useYn: string;
     insDtime: string;
     updDtime?: string;
@@ -97,29 +99,64 @@ const getStudioLogoConfig = (studio: StudioDirItem, index: number) => {
     return fallbacks[index % fallbacks.length];
 };
 
-// 주요 권역 탭 (전체 / 서울 / 경기 / 인천 1줄 구성)
-const REGION_TABS = [
-    { label: '전체', query: '' },
-    { label: '서울', query: '서울' },
-    { label: '경기', query: '경기' },
-    { label: '인천', query: '인천' },
+// 사용자가 캡처로 지정한 순서의 지역 리스트
+const REGION_LIST = [
+    '전체',
+    '합정/홍대',
+    '신촌',
+    '사당/이수',
+    '신도림/영등포구청',
+    '망원',
+    '상도/중앙대',
+    '서울대입구',
+    '방배',
+    '혜화/성신여대',
+    '강남',
+    '강동/송파',
+    '기타 서울',
+    '경기',
+    '인천',
+    '부산',
+    '대구',
+    '광주·전남',
+    '대전',
+    '울산',
+    '세종',
+    '강원',
+    '충북',
+    '충남',
+    '전북',
+    '경북',
+    '경남',
+    '제주'
 ];
+
+type SortType = 'LATEST' | 'NAME_ASC' | 'NAME_DESC';
 
 const JamStudioList: React.FC = () => {
     const navigate = useNavigate();
     const [studios, setStudios] = useState<StudioDirItem[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
-    const [selectedArea, setSelectedArea] = useState<string>('전체');
+    const [selectedRegion, setSelectedRegion] = useState<string>('전체');
+    const [sortType, setSortType] = useState<SortType>('LATEST');
+    const [isRegionModalOpen, setIsRegionModalOpen] = useState<boolean>(false);
+
     const [page, setPage] = useState<number>(0);
     const [totalPages, setTotalPages] = useState<number>(0);
     const [totalElements, setTotalElements] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    const fetchStudios = useCallback(async (kw: string, targetPage: number) => {
+    const fetchStudios = useCallback(async (kw: string, region: string, sort: SortType, targetPage: number) => {
         setIsLoading(true);
         try {
-            const url = `/api/studios/directory/search?keyword=${encodeURIComponent(kw)}&page=${targetPage}&size=20`;
-            const res = await fetch(url);
+            const params = new URLSearchParams();
+            if (kw.trim()) params.append('keyword', kw.trim());
+            if (region && region !== '전체') params.append('region', region);
+            params.append('sort', sort);
+            params.append('page', targetPage.toString());
+            params.append('size', '20');
+
+            const res = await fetch(`/api/studios/directory/search?${params.toString()}`);
             if (res.ok) {
                 const data = await res.json();
                 setStudios(data.content || []);
@@ -134,16 +171,19 @@ const JamStudioList: React.FC = () => {
         }
     }, []);
 
-    // 검색어 또는 지역 탭 변경 시 호출
+    // 검색어, 지역, 정렬 변경 시 호출
     useEffect(() => {
-        const effectiveQuery = searchQuery.trim() !== '' ? searchQuery.trim() : (REGION_TABS.find(a => a.label === selectedArea)?.query || '');
-        fetchStudios(effectiveQuery, 0);
-    }, [searchQuery, selectedArea, fetchStudios]);
+        fetchStudios(searchQuery, selectedRegion, sortType, 0);
+    }, [searchQuery, selectedRegion, sortType, fetchStudios]);
 
-    const handleAreaClick = (areaLabel: string, areaQuery: string) => {
-        setSelectedArea(areaLabel);
-        setSearchQuery('');
-        fetchStudios(areaQuery, 0);
+    // 정렬 토글 핸들러: 오름차순(가나다순) <-> 내림차순(역순) 토글
+    const handleToggleSort = () => {
+        setSortType((prev) => (prev === 'NAME_ASC' ? 'NAME_DESC' : 'NAME_ASC'));
+    };
+
+    const getSortLabel = () => {
+        if (sortType === 'NAME_DESC') return '내림차순';
+        return '오름차순';
     };
 
     return (
@@ -174,62 +214,107 @@ const JamStudioList: React.FC = () => {
                 </div>
             </div>
 
-            {/* Search & Area Filter (고정 - 전체/서울/경기/인천 1줄 그리드) */}
+            {/* Search, Filter & Sort Bar (고정) */}
             <div className="bg-white px-4 pt-3 pb-3 border-b border-gray-100 shrink-0 z-10 w-full shadow-xs">
-                <div className="max-w-2xl mx-auto space-y-2.5">
-                    {/* Search Bar */}
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="합주실명, 지역(부산, 대전, 강원 등), 구, 동 검색"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-9 text-xs text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] focus:bg-white transition-all font-medium"
-                        />
-                        <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold"
+                <div className="max-w-2xl mx-auto">
+                    <div className="flex items-center gap-2">
+                        {/* 1. 검색 인풋 */}
+                        <div className="flex-1 relative">
+                            <input
+                                type="text"
+                                placeholder={selectedRegion !== '전체' ? `[${selectedRegion}] 합주실 검색...` : "합주실명, 구, 동 검색"}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2.5 pl-9 pr-8 text-xs text-[#003C48] placeholder-gray-400 focus:outline-none focus:border-[#00BDF8] focus:bg-white transition-all font-medium"
+                            />
+                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+
+                        {/* 2. 지역 필터링 아이콘 버튼 (캡처 디자인) */}
+                        <button
+                            onClick={() => setIsRegionModalOpen(true)}
+                            title={`지역 필터: ${selectedRegion}`}
+                            className={`h-[40px] px-3 rounded-xl border flex items-center justify-center gap-1.5 transition-all shrink-0 ${
+                                selectedRegion !== '전체'
+                                    ? 'bg-[#00BDF8]/10 border-[#00BDF8] text-[#0098CC] font-bold'
+                                    : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+                            }`}
+                        >
+                            {/* 3단 라인 필터 아이콘 */}
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <line x1="4" y1="7" x2="20" y2="7" strokeLinecap="round" />
+                                <line x1="7" y1="12" x2="17" y2="12" strokeLinecap="round" />
+                                <line x1="10" y1="17" x2="14" y2="17" strokeLinecap="round" />
+                            </svg>
+                            {selectedRegion !== '전체' && (
+                                <span className="text-[11px] max-w-[60px] truncate">{selectedRegion}</span>
+                            )}
+                        </button>
+
+                        {/* 3. 오름/내림차순 정렬 토글 아이콘 버튼 (캡처 디자인 - 텍스트 없이 아이콘만 표출) */}
+                        <button
+                            onClick={handleToggleSort}
+                            title={`정렬: ${getSortLabel()}`}
+                            className="h-[40px] w-[40px] rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-all shrink-0 active:scale-95 text-gray-700 hover:text-[#003C48]"
+                        >
+                            {/* 위아래 정렬 화살표 아이콘 */}
+                            <svg 
+                                className={`w-4 h-4 transition-transform duration-200 ${sortType === 'NAME_DESC' ? 'rotate-180 text-[#00BDF8]' : 'text-gray-700'}`} 
+                                viewBox="0 0 24 24" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                strokeWidth={2}
                             >
-                                ✕
-                            </button>
-                        )}
+                                <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </button>
                     </div>
 
-                    {/* Region Tabs (깔끔한 1줄 4분할 탭) */}
-                    <div className="grid grid-cols-4 gap-1.5">
-                        {REGION_TABS.map((area) => {
-                            const isActive = selectedArea === area.label && searchQuery.trim() === '';
-                            return (
+                    {/* 선택된 지역 활성화 태그 */}
+                    {selectedRegion !== '전체' && (
+                        <div className="flex items-center gap-1.5 mt-2 pt-1 border-t border-gray-50">
+                            <span className="text-[11px] text-gray-500 font-medium">선택된 지역:</span>
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0098CC] bg-[#00BDF8]/10 px-2 py-0.5 rounded-full">
+                                {selectedRegion}
                                 <button
-                                    key={area.label}
-                                    onClick={() => handleAreaClick(area.label, area.query)}
-                                    className={`py-2 text-[12px] font-bold rounded-xl transition-all text-center border ${
-                                        isActive
-                                            ? 'bg-[#003C48] text-white border-[#003C48] shadow-xs'
-                                            : 'bg-gray-50 text-gray-600 border-gray-200/80 hover:bg-gray-100'
-                                    }`}
+                                    onClick={() => setSelectedRegion('전체')}
+                                    className="hover:text-red-500 ml-0.5"
                                 >
-                                    {area.label}
+                                    ✕
                                 </button>
-                            );
-                        })}
-                    </div>
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Scrollable Studio List (목록만 독립 스크롤) */}
+            {/* Scrollable Studio List (목록 스크롤) */}
             <div className="flex-1 overflow-y-auto min-h-0 p-4 max-w-2xl mx-auto w-full space-y-3 pb-20">
                 {isLoading && studios.length === 0 ? (
                     <div className="py-24 text-center text-gray-400 text-xs font-medium">
-                        전국 합주실 정보를 불러오는 중입니다...
+                        합주실 정보를 불러오는 중입니다...
                     </div>
                 ) : studios.length === 0 ? (
                     <div className="py-20 text-center bg-white rounded-2xl border border-gray-100 p-8 space-y-2">
                         <span className="text-3xl">🎸</span>
                         <p className="text-gray-500 font-bold text-sm">검색 결과에 맞는 합주실이 없습니다.</p>
-                        <p className="text-gray-400 text-xs">다른 지역명이나 상호명으로 검색해 보세요.</p>
+                        <p className="text-gray-400 text-xs">다른 지역이나 검색어를 선택해 보세요.</p>
+                        {selectedRegion !== '전체' && (
+                            <button
+                                onClick={() => setSelectedRegion('전체')}
+                                className="mt-3 px-4 py-1.5 bg-[#00BDF8] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#009bc9]"
+                            >
+                                전체 지역 보기
+                            </button>
+                        )}
                     </div>
                 ) : (
                     studios.map((studio, idx) => {
@@ -264,12 +349,18 @@ const JamStudioList: React.FC = () => {
                                             )}
                                         </div>
 
-                                        {/* Address & Telephone */}
+                                        {/* Address, Subway & Telephone */}
                                         <div className="mt-1 space-y-0.5 text-[11px] text-gray-600">
                                             {studio.roadAddress && (
                                                 <p className="flex items-center gap-1 text-gray-700 font-medium truncate">
                                                     <FaMapMarkerAlt size={10} className="text-[#00BDF8] shrink-0" />
                                                     <span className="truncate">{studio.roadAddress}</span>
+                                                </p>
+                                            )}
+                                            {studio.subwayInfo && (
+                                                <p className="flex items-center gap-1 text-[#007A99] font-semibold truncate">
+                                                    <span className="text-[11px] shrink-0 leading-none">🚇</span>
+                                                    <span className="truncate">{studio.subwayInfo}</span>
                                                 </p>
                                             )}
                                             {studio.telephone && (
@@ -313,7 +404,7 @@ const JamStudioList: React.FC = () => {
                     <div className="flex justify-center items-center gap-2 pt-3 pb-6">
                         <button
                             disabled={page === 0}
-                            onClick={() => fetchStudios(searchQuery, page - 1)}
+                            onClick={() => fetchStudios(searchQuery, selectedRegion, sortType, page - 1)}
                             className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold disabled:opacity-40 hover:bg-gray-50"
                         >
                             이전
@@ -323,7 +414,7 @@ const JamStudioList: React.FC = () => {
                         </span>
                         <button
                             disabled={page >= totalPages - 1}
-                            onClick={() => fetchStudios(searchQuery, page + 1)}
+                            onClick={() => fetchStudios(searchQuery, selectedRegion, sortType, page + 1)}
                             className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold disabled:opacity-40 hover:bg-gray-50"
                         >
                             다음
@@ -331,6 +422,66 @@ const JamStudioList: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* ========================================================================= */}
+            {/* 지역 선택 바텀시트 모달 (캡처 화면 100% 일치 구현) */}
+            {/* ========================================================================= */}
+            {isRegionModalOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end justify-center animate-fadeIn"
+                    onClick={() => setIsRegionModalOpen(false)}
+                >
+                    <div 
+                        className="bg-white w-full max-w-lg rounded-t-[24px] max-h-[80vh] flex flex-col shadow-2xl animate-slideUp"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* 드래그 핸들 */}
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto my-3 shrink-0" />
+
+                        {/* 모달 타이틀 */}
+                        <div className="px-5 pb-3 border-b border-gray-100 shrink-0 flex items-center justify-between">
+                            <h2 className="text-[18px] font-bold text-[#0B1114]">지역 선택</h2>
+                            {selectedRegion !== '전체' && (
+                                <button
+                                    onClick={() => {
+                                        setSelectedRegion('전체');
+                                        setIsRegionModalOpen(false);
+                                    }}
+                                    className="text-xs font-bold text-[#00BDF8] hover:underline"
+                                >
+                                    초기화
+                                </button>
+                            )}
+                        </div>
+
+                        {/* 지역 리스트 (캡처 순서 그대로 나열) */}
+                        <div className="flex-1 overflow-y-auto divide-y divide-gray-100 py-1">
+                            {REGION_LIST.map((region) => {
+                                const isSelected = selectedRegion === region;
+                                return (
+                                    <div
+                                        key={region}
+                                        onClick={() => {
+                                            setSelectedRegion(region);
+                                            setIsRegionModalOpen(false);
+                                        }}
+                                        className={`px-5 py-3.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                            isSelected 
+                                                ? 'bg-cyan-50/50 text-[#0098CC] font-bold' 
+                                                : 'text-[#2F2F31] hover:bg-gray-50 active:bg-gray-100'
+                                        }`}
+                                    >
+                                        <span className="text-[15px]">{region}</span>
+                                        {isSelected && (
+                                            <FaCheck className="text-[#00BDF8]" size={14} />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

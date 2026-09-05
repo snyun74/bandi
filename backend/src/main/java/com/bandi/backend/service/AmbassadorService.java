@@ -5,6 +5,7 @@ import com.bandi.backend.entity.member.User;
 import com.bandi.backend.repository.*;
 import com.bandi.backend.entity.common.CmAttachment;
 import com.bandi.backend.repository.CmAttachmentRepository;
+import com.bandi.backend.utils.FileStorageUtil;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -235,6 +239,15 @@ public class AmbassadorService {
                 imgUrl = cmAttachmentRepository.findById(l.getAttachNoImg())
                         .map(CmAttachment::getFilePath).orElse(null);
             }
+            String dataUrl = null;
+            String dataFileName = null;
+            if (l.getAttachData() != null) {
+                CmAttachment dataAtt = cmAttachmentRepository.findById(l.getAttachData()).orElse(null);
+                if (dataAtt != null) {
+                    dataUrl = dataAtt.getFilePath();
+                    dataFileName = dataAtt.getFileName();
+                }
+            }
             result.add(LessonResponseDto.builder()
                     .lessonNo(l.getLessonNo())
                     .courseNo(l.getCourseNo())
@@ -245,6 +258,9 @@ public class AmbassadorService {
                     .videoUrl(videoUrl)
                     .attachNoImg(l.getAttachNoImg())
                     .imgUrl(imgUrl)
+                    .attachData(l.getAttachData())
+                    .dataUrl(dataUrl)
+                    .dataFileName(dataFileName)
                     .durationSec(l.getDurationSec())
                     .lessonStatCd(l.getLessonStatCd())
                     .insDtime(l.getInsDtime())
@@ -277,6 +293,7 @@ public class AmbassadorService {
                 .lessonDesc(dto.getLessonDesc())
                 .attachNoMov(dto.getAttachNoMov())
                 .attachNoImg(dto.getAttachNoImg())
+                .attachData(dto.getAttachData())
                 .durationSec(dto.getDurationSec() != null ? dto.getDurationSec() : 0)
                 .lessonStatCd("R") // 등록(R) 상태
                 .insDtime(now)
@@ -305,6 +322,52 @@ public class AmbassadorService {
         lesson.setUpdId(userId);
 
         return lessonRepository.save(lesson);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getLessonDataFile(Long lessonNo, String userId) {
+        BnEduLesson lesson = lessonRepository.findById(lessonNo)
+                .orElseThrow(() -> new RuntimeException("강의를 찾을 수 없습니다: " + lessonNo));
+
+        if (lesson.getAttachData() == null) {
+            throw new RuntimeException("해당 강의에 등록된 교육자료(첨부파일)가 없습니다.");
+        }
+
+        BnEduCourse course = courseRepository.findById(lesson.getCourseNo())
+                .orElseThrow(() -> new RuntimeException("연관된 교육과정을 찾을 수 없습니다."));
+
+        boolean isPaid = "P".equals(course.getEduTypeFg());
+        boolean isOwner = course.getUserId().equals(userId);
+
+        // 유료 과정인 경우 결제 및 승인('A') 확인 필수 (단, 강좌 개설자 본인은 즉시 허용)
+        if (isPaid && !isOwner) {
+            if (userId == null || userId.trim().isEmpty()) {
+                throw new RuntimeException("로그인 후 교육자료를 다운로드하실 수 있습니다.");
+            }
+            List<BnEduApplication> apps = applicationRepository.findByCourseNoAndUserId(course.getCourseNo(), userId);
+            boolean hasAccess = apps.stream().anyMatch(a -> "A".equals(a.getAppStatCd()));
+            if (!hasAccess) {
+                throw new RuntimeException("유료 교육과정의 교육자료는 수강 신청 및 결제 완료 후 승인을 득한 수강생만 다운로드할 수 있습니다.");
+            }
+        }
+
+        CmAttachment attachment = cmAttachmentRepository.findById(lesson.getAttachData())
+                .orElseThrow(() -> new RuntimeException("첨부파일 정보를 찾을 수 없습니다."));
+
+        String baseUploadDir = FileStorageUtil.getBaseUploadDir();
+        String relPath = attachment.getFilePath().startsWith("/") ? attachment.getFilePath().substring(1) : attachment.getFilePath();
+        Path targetPath = Paths.get(baseUploadDir, relPath);
+
+        if (!Files.exists(targetPath)) {
+            throw new RuntimeException("서버에 실제 파일이 존재하지 않습니다.");
+        }
+
+        return Map.of(
+                "filePath", targetPath,
+                "fileName", attachment.getFileName(),
+                "mimeType", attachment.getMimeType() != null ? attachment.getMimeType() : "application/octet-stream",
+                "fileSize", attachment.getFileSize()
+        );
     }
 
     // --- 4. 수강 평가 내역 조회 ---
@@ -619,6 +682,15 @@ public class AmbassadorService {
                 lImgUrl = cmAttachmentRepository.findById(l.getAttachNoImg())
                         .map(CmAttachment::getFilePath).orElse(null);
             }
+            String lDataUrl = null;
+            String lDataFileName = null;
+            if (l.getAttachData() != null) {
+                CmAttachment dataAtt = cmAttachmentRepository.findById(l.getAttachData()).orElse(null);
+                if (dataAtt != null) {
+                    lDataUrl = dataAtt.getFilePath();
+                    lDataFileName = dataAtt.getFileName();
+                }
+            }
             lessonDtos.add(LessonResponseDto.builder()
                     .lessonNo(l.getLessonNo())
                     .courseNo(l.getCourseNo())
@@ -629,6 +701,9 @@ public class AmbassadorService {
                     .videoUrl(lVideoUrl)
                     .attachNoImg(l.getAttachNoImg())
                     .imgUrl(lImgUrl)
+                    .attachData(l.getAttachData())
+                    .dataUrl(lDataUrl)
+                    .dataFileName(lDataFileName)
                     .durationSec(l.getDurationSec())
                     .lessonStatCd(l.getLessonStatCd())
                     .insDtime(l.getInsDtime())
@@ -792,6 +867,7 @@ public class AmbassadorService {
         private String lessonDesc;
         private Long attachNoMov; // 필수 (본강의 동영상)
         private Long attachNoImg; // 선택 (강의 대표 이미지)
+        private Long attachData;  // 선택 (교육자료 첨부파일)
         private Integer durationSec;
     }
 
@@ -807,6 +883,9 @@ public class AmbassadorService {
         private String videoUrl;
         private Long attachNoImg;
         private String imgUrl;
+        private Long attachData;
+        private String dataUrl;
+        private String dataFileName;
         private Integer durationSec;
         private String lessonStatCd;
         private String insDtime;

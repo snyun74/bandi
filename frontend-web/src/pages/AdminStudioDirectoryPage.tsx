@@ -14,6 +14,7 @@ interface StudioDirItem {
     sido?: string;
     sigungu?: string;
     dong?: string;
+    subwayInfo?: string;
     useYn: string;
     insDtime: string;
     updDtime?: string;
@@ -28,6 +29,7 @@ const AdminStudioDirectoryPage: React.FC = () => {
     const [totalElements, setTotalElements] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isSubwaySyncing, setIsSubwaySyncing] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
     // 모달 상태 관리
@@ -126,13 +128,48 @@ const AdminStudioDirectoryPage: React.FC = () => {
     };
 
     const handleSyncNationwide = () => {
-        if (isSyncing) return;
+        if (isSyncing || isSubwaySyncing) return;
         setModalConfig({
             isOpen: true,
             type: 'confirm',
             title: '합주실 데이터 갱신',
             message: '전국 주요 거점의 합주실 데이터를 네이버 플레이스 기준으로 새로 수집 및 갱신하시겠습니까?\n(약 10~15초 소요)',
             onConfirm: executeSyncNationwide
+        });
+    };
+
+    // 지하철역 정보 일괄 갱신 실행
+    const executeSyncSubway = async () => {
+        closeModal();
+        setIsSubwaySyncing(true);
+        try {
+            const res = await fetch('/api/studios/directory/update-subway-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                showToast(`지하철역 갱신 완료! (총 ${data.totalCount || 0}개 중 ${data.updatedCount || 0}개 지하철 매칭)`);
+                fetchStudios(keyword, 0);
+            } else {
+                showToast("지하철역 갱신 중 오류가 발생했습니다.");
+            }
+        } catch (e) {
+            console.error("Failed to sync subway info", e);
+            showToast("네트워크 오류가 발생했습니다.");
+        } finally {
+            setIsSubwaySyncing(false);
+        }
+    };
+
+    const handleSyncSubway = () => {
+        if (isSyncing || isSubwaySyncing) return;
+        setModalConfig({
+            isOpen: true,
+            type: 'confirm',
+            title: '지하철역 정보 일괄 갱신',
+            message: '등록된 모든 합주실의 3km 반경 내 가장 가까운 지하철역 정보를 일괄 계산하여 저장하시겠습니까?',
+            onConfirm: executeSyncSubway
         });
     };
 
@@ -192,13 +229,23 @@ const AdminStudioDirectoryPage: React.FC = () => {
                             </span>
                         </div>
                     </div>
-                    <button
-                        onClick={handleCleanDuplicates}
-                        className="text-[11px] text-gray-500 hover:text-red-500 font-medium px-2 py-1 bg-gray-50 rounded-lg border border-gray-200 transition-colors flex items-center gap-1"
-                        title="중복 합주실 정리"
-                    >
-                        <FaTrashAlt size={10} /> 중복정리
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            disabled={isSubwaySyncing}
+                            onClick={handleSyncSubway}
+                            className="text-[11px] text-[#007A99] hover:text-[#00BDF8] font-bold px-2 py-1 bg-cyan-50/70 rounded-lg border border-cyan-200/60 transition-colors flex items-center gap-1 disabled:opacity-50"
+                            title="3km 이내 지하철역 정보 일괄 갱신"
+                        >
+                            <span>🚇 지하철 갱신</span>
+                        </button>
+                        <button
+                            onClick={handleCleanDuplicates}
+                            className="text-[11px] text-gray-500 hover:text-red-500 font-medium px-2 py-1 bg-gray-50 rounded-lg border border-gray-200 transition-colors flex items-center gap-1"
+                            title="중복 합주실 정리"
+                        >
+                            <FaTrashAlt size={10} /> 중복정리
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -264,12 +311,18 @@ const AdminStudioDirectoryPage: React.FC = () => {
                                             )}
                                         </div>
 
-                                        {/* Address */}
+                                        {/* Address & Subway */}
                                         <div className="mt-2 space-y-0.5 text-[11px] text-gray-600">
                                             {studio.roadAddress && (
                                                 <p className="flex items-center gap-1 text-gray-700 font-medium truncate">
                                                     <FaMapMarkerAlt size={11} className="text-[#00BDF8] shrink-0" />
                                                     <span className="truncate">{studio.roadAddress}</span>
+                                                </p>
+                                            )}
+                                            {studio.subwayInfo && (
+                                                <p className="flex items-center gap-1 text-[#007A99] font-semibold truncate">
+                                                    <span className="text-[11px] shrink-0">🚇</span>
+                                                    <span className="truncate">{studio.subwayInfo}</span>
                                                 </p>
                                             )}
                                             {studio.jibunAddress && (

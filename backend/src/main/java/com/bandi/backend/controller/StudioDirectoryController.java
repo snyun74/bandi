@@ -19,15 +19,17 @@ public class StudioDirectoryController {
 
     /**
      * 1. 자체 DB 기반 전국 합주실 검색 (사용자용: useYn = Y)
-     * GET /api/studios/directory/search?keyword=홍대&page=0&size=20
+     * GET /api/studios/directory/search?keyword=홍대&region=합정/홍대&sort=NAME_ASC&page=0&size=20
      */
     @GetMapping("/search")
     public ResponseEntity<Page<BnStudioDir>> search(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String region,
+            @RequestParam(defaultValue = "LATEST") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        Page<BnStudioDir> result = studioDirectoryService.searchDirectory(keyword, page, size);
+        Page<BnStudioDir> result = studioDirectoryService.searchDirectory(keyword, region, sort, page, size);
         return ResponseEntity.ok(result);
     }
 
@@ -96,6 +98,16 @@ public class StudioDirectoryController {
     @PostMapping("/update-naver-links")
     public ResponseEntity<Map<String, Object>> updateNaverLinks() {
         Map<String, Object> result = studioDirectoryService.updateAllLinksToNaver();
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 8. DB의 모든 합주실에 대해 3km 이내 가장 가까운 지하철역 정보 일괄 갱신
+     * POST /api/studios/directory/update-subway-info
+     */
+    @PostMapping("/update-subway-info")
+    public ResponseEntity<Map<String, Object>> updateSubwayInfo() {
+        Map<String, Object> result = studioDirectoryService.updateAllSubwayInfo();
         return ResponseEntity.ok(result);
     }
 
