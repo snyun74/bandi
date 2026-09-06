@@ -243,8 +243,8 @@ const ClanBoardPostList: React.FC = () => {
                                         </div>
 
                                         <div className="flex items-center gap-3 shrink-0">
-                                            <span className="flex items-center gap-1 text-[12px] font-bold text-[#00BDF8]">
-                                                <FaHeart size={11} className="text-[#00BDF8]" />
+                                            <span className="flex items-center gap-1 text-[12px] font-bold text-red-500">
+                                                <FaHeart size={11} className="text-red-500" />
                                                 {post.boardLikeCnt || 0}
                                             </span>
                                             <span className="flex items-center gap-1 text-[12px] font-bold text-[#8E9196]">

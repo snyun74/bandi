@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaImage, FaTimes, FaBan, FaExclamationTriangle } from 'react-icons/fa';
+import { FaChevronLeft, FaHeart, FaRegHeart, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaImage, FaTimes, FaBan, FaExclamationTriangle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
 
@@ -613,8 +613,8 @@ const ClanBoardPostDetail: React.FC = () => {
                                 <FaEdit /> <span>수정</span>
                             </div>
                         )}
-                        <div className="flex items-center gap-1 cursor-pointer text-[#00BDF8]" onClick={handleLike}>
-                            <FaRegThumbsUp /> <span>({post.likeCnt})</span>
+                        <div className="flex items-center gap-1 cursor-pointer text-red-500" onClick={handleLike}>
+                            {post.isLiked ? <FaHeart className="text-red-500" /> : <FaRegHeart className="text-red-500" />} <span>({post.likeCnt})</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <FaRegCommentDots /> <span>({post.replyCnt})</span>
@@ -691,9 +691,9 @@ const ClanBoardPostDetail: React.FC = () => {
                                         )}
                                         <button
                                             onClick={() => handleCommentLike(comment.cnReplyNo)}
-                                            className="flex items-center gap-1 text-[#00BDF8] text-xs bg-blue-50 px-2 py-1 rounded-full cursor-pointer hover:bg-blue-100 transition-colors"
+                                            className="flex items-center gap-1 text-red-500 text-xs bg-red-50 px-2 py-1 rounded-full cursor-pointer hover:bg-red-100 transition-colors"
                                         >
-                                            <FaRegThumbsUp /> <span>({comment.likeCount || 0})</span>
+                                            {comment.isLiked ? <FaHeart className="text-red-500" /> : <FaRegHeart className="text-red-500" />} <span>({comment.likeCount || 0})</span>
                                         </button>
                                     </div>
                                 </div>

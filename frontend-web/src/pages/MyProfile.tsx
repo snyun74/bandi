@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaBookmark, FaPen, FaBars, FaTimes, FaPlay, FaCog } from 'react-icons/fa';
 import { BsPersonCircle, BsChatSquare, BsDoorOpen, BsThreeDotsVertical } from 'react-icons/bs';
@@ -718,47 +719,52 @@ const MyProfile: React.FC = () => {
                 onCancel={() => { setIsDeleteModalOpen(false); setItemToDelete(null); }}
             />
 
-            {/* Instagram-style Action Menu (Bottom Sheet) */}
+            {/* Instagram-style Action Menu (Bottom Sheet above Bottom Nav) */}
             {isActionMenuOpen && (
-                <div className="fixed inset-0 z-[10000] flex items-end justify-center">
-                    {/* Backdrop */}
+                <div 
+                    className="fixed top-0 left-0 right-0 z-40 flex items-end justify-center"
+                    style={{ bottom: 'calc(var(--nav-height) + var(--safe-bottom))' }}
+                >
+                    {/* Backdrop (위에만 어둡게 적용) */}
                     <div 
-                        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        className="absolute inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
                         onClick={() => setIsActionMenuOpen(false)}
                     />
-                    {/* Menu Content */}
-                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] pb-[calc(20px+var(--safe-bottom))] animate-in slide-in-from-bottom duration-300 overflow-hidden shadow-2xl">
-                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-2" />
-                        <div className="flex flex-col py-2">
+                    {/* Bottom Sheet Modal Container */}
+                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] px-4 pt-3 pb-4 shadow-2xl z-10 animate-in slide-in-from-bottom duration-300 border-t border-gray-100">
+                        {/* Drag indicator pill */}
+                        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-3" />
+                        
+                        <div className="flex flex-col gap-1.5">
                             <button
                                 onClick={() => {
                                     setIsActionMenuOpen(false);
                                     setIsPublicTypeModalOpen(true);
                                 }}
-                                className="w-full py-4 text-gray-800 font-bold text-[16px] active:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                className="w-full py-3.5 px-4 bg-gray-50 hover:bg-gray-100 active:scale-[0.99] rounded-xl text-gray-800 font-bold text-[15px] transition-all flex items-center justify-center gap-2 shadow-2xs"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                                 <span>공개여부 설정</span>
                             </button>
-                            <div className="mx-4 h-[1px] bg-gray-100" />
+                            
                             <button
                                 onClick={() => {
                                     setIsActionMenuOpen(false);
                                     setIsDeleteModalOpen(true);
                                 }}
-                                className="w-full py-4 text-[#FF3B30] font-bold text-[16px] active:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                className="w-full py-3.5 px-4 bg-rose-50 hover:bg-rose-100 active:scale-[0.99] rounded-xl text-red-500 font-bold text-[15px] transition-all flex items-center justify-center gap-2 shadow-2xs"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                                 <span>삭제</span>
                             </button>
-                            <div className="mx-4 h-[1px] bg-gray-100" />
+                            
                             <button
                                 onClick={() => setIsActionMenuOpen(false)}
-                                className="w-full py-4 text-gray-800 font-medium text-[16px] active:bg-gray-50 transition-colors"
+                                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 active:scale-[0.99] rounded-xl text-gray-600 font-semibold text-[14px] transition-all text-center mt-1"
                             >
                                 취소
                             </button>
@@ -767,22 +773,28 @@ const MyProfile: React.FC = () => {
                 </div>
             )}
 
-            {/* Public Type Modal (Bottom Sheet) */}
+            {/* Public Type Modal (Bottom Sheet above Bottom Nav) */}
             {isPublicTypeModalOpen && (
-                <div className="fixed inset-0 z-[10000] flex items-end justify-center">
+                <div 
+                    className="fixed top-0 left-0 right-0 z-40 flex items-end justify-center"
+                    style={{ bottom: 'calc(var(--nav-height) + var(--safe-bottom))' }}
+                >
+                    {/* Backdrop */}
                     <div 
-                        className="absolute inset-0 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        className="absolute inset-0 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200"
                         onClick={() => {
                             setIsPublicTypeModalOpen(false);
                             setItemToDelete(null);
                         }}
                     />
-                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] pb-[calc(20px+var(--safe-bottom))] animate-in slide-in-from-bottom duration-300 overflow-hidden shadow-2xl">
-                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-2" />
-                        <div className="px-4 py-3 text-center border-b border-gray-100">
-                            <h3 className="text-[16px] font-bold text-gray-800">공개여부 설정</h3>
+                    {/* Bottom Sheet Modal Container */}
+                    <div className="relative w-full max-w-md bg-white rounded-t-[24px] px-4 pt-3 pb-4 shadow-2xl z-10 animate-in slide-in-from-bottom duration-300 border-t border-gray-100">
+                        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-2" />
+                        <div className="px-4 py-2 text-center">
+                            <h3 className="text-[16px] font-bold text-gray-900">공개여부 설정</h3>
+                            <p className="text-[12px] text-gray-500 mt-0.5">게시물의 공개 범위를 선택해 주세요.</p>
                         </div>
-                        <div className="flex flex-col py-2">
+                        <div className="flex flex-col gap-1.5 py-2">
                             {publicTypes.map(pt => {
                                 const currentItem = itemToDelete ? combinedItems.find(item => item.type === itemToDelete.type && (item.postId === itemToDelete.id || item.shortsNo === itemToDelete.id)) : null;
                                 const isSelected = currentItem?.publicTypeCd === pt.commDtlCd;
@@ -790,20 +802,26 @@ const MyProfile: React.FC = () => {
                                     <button
                                         key={pt.commDtlCd}
                                         onClick={() => handlePublicTypeChange(pt.commDtlCd)}
-                                        className={`w-full py-4 text-[15px] transition-colors flex items-center justify-center gap-2 ${isSelected ? 'text-[#003C48] font-bold bg-gray-50' : 'text-gray-800 font-medium active:bg-gray-50'}`}
+                                        className={`w-full py-3.5 px-4 rounded-xl text-[14px] transition-all flex items-center justify-between shadow-2xs ${
+                                            isSelected 
+                                                ? 'bg-[#00BDF8]/10 text-[#007A99] font-bold border-2 border-[#00BDF8]/40' 
+                                                : 'bg-gray-50 hover:bg-gray-100 text-gray-800 font-medium active:bg-gray-200'
+                                        }`}
                                     >
-                                        <span>{pt.commDtlNm}</span>
-                                        {isSelected && <span className="text-[#003C48]">✓</span>}
+                                        <span className="flex items-center gap-2">
+                                            <span className="text-base">{pt.commDtlCd === 'PUBLIC' ? '🌐' : pt.commDtlCd === 'CLUB' ? '👥' : '🔒'}</span>
+                                            <span>{pt.commDtlNm}</span>
+                                        </span>
+                                        {isSelected && <span className="text-[#007A99] text-base font-extrabold">✓</span>}
                                     </button>
                                 );
                             })}
-                            <div className="mx-4 h-[1px] bg-gray-100 my-2" />
                             <button
                                 onClick={() => {
                                     setIsPublicTypeModalOpen(false);
                                     setItemToDelete(null);
                                 }}
-                                className="w-full py-3 text-gray-500 font-medium text-[15px] active:bg-gray-50 transition-colors"
+                                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 active:scale-[0.99] rounded-xl text-gray-600 font-semibold text-[14px] transition-all text-center mt-1"
                             >
                                 취소
                             </button>

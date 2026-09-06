@@ -140,66 +140,126 @@ public class StudioDirectoryService {
     @Transactional(readOnly = true)
     public Page<BnStudioDir> searchDirectory(String keyword, String region, String sort, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        String effectiveKeyword = buildEffectiveKeyword(keyword, region);
 
-        if (effectiveKeyword == null || effectiveKeyword.trim().isEmpty()) {
-            if ("NAME_ASC".equalsIgnoreCase(sort)) {
-                return studioDirRepository.findByUseYnOrderByNameAsc(pageable);
-            } else if ("NAME_DESC".equalsIgnoreCase(sort)) {
-                return studioDirRepository.findByUseYnOrderByNameDesc(pageable);
-            } else {
-                return studioDirRepository.findByUseYnOrderByLatest(pageable);
+        org.springframework.data.jpa.domain.Specification<BnStudioDir> spec = (root, query, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            // 1. useYn = 'Y'
+            predicates.add(cb.equal(root.get("useYn"), "Y"));
+
+            // 2. Region filter (OR list of keywords matching studioNm, roadAddress, jibunAddress, sido, sigungu, dong, subwayInfo)
+            List<String> regionKeywords = getRegionKeywords(region);
+            if (!regionKeywords.isEmpty()) {
+                List<jakarta.persistence.criteria.Predicate> regionPredicates = new ArrayList<>();
+                for (String rk : regionKeywords) {
+                    String pattern = "%" + rk.toLowerCase() + "%";
+                    regionPredicates.add(cb.like(cb.lower(root.get("studioNm")), pattern));
+                    regionPredicates.add(cb.like(cb.lower(root.get("roadAddress")), pattern));
+                    regionPredicates.add(cb.like(cb.lower(root.get("jibunAddress")), pattern));
+                    regionPredicates.add(cb.like(cb.lower(root.get("sido")), pattern));
+                    regionPredicates.add(cb.like(cb.lower(root.get("sigungu")), pattern));
+                    regionPredicates.add(cb.like(cb.lower(root.get("dong")), pattern));
+                    regionPredicates.add(cb.like(cb.lower(root.get("subwayInfo")), pattern));
+                }
+                predicates.add(cb.or(regionPredicates.toArray(new jakarta.persistence.criteria.Predicate[0])));
             }
-        } else {
-            String trimmedKw = effectiveKeyword.trim();
-            if ("NAME_ASC".equalsIgnoreCase(sort)) {
-                return studioDirRepository.searchByKeywordNameAsc(trimmedKw, pageable);
-            } else if ("NAME_DESC".equalsIgnoreCase(sort)) {
-                return studioDirRepository.searchByKeywordNameDesc(trimmedKw, pageable);
-            } else {
-                return studioDirRepository.searchByKeywordLatest(trimmedKw, pageable);
+
+            // 3. User search keyword filter (AND with region filter)
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String userPattern = "%" + keyword.trim().toLowerCase() + "%";
+                jakarta.persistence.criteria.Predicate nameMatch = cb.like(cb.lower(root.get("studioNm")), userPattern);
+                jakarta.persistence.criteria.Predicate roadMatch = cb.like(cb.lower(root.get("roadAddress")), userPattern);
+                jakarta.persistence.criteria.Predicate jibunMatch = cb.like(cb.lower(root.get("jibunAddress")), userPattern);
+                jakarta.persistence.criteria.Predicate sidoMatch = cb.like(cb.lower(root.get("sido")), userPattern);
+                jakarta.persistence.criteria.Predicate sigunguMatch = cb.like(cb.lower(root.get("sigungu")), userPattern);
+                jakarta.persistence.criteria.Predicate dongMatch = cb.like(cb.lower(root.get("dong")), userPattern);
+                jakarta.persistence.criteria.Predicate subwayMatch = cb.like(cb.lower(root.get("subwayInfo")), userPattern);
+
+                predicates.add(cb.or(nameMatch, roadMatch, jibunMatch, sidoMatch, sigunguMatch, dongMatch, subwayMatch));
             }
-        }
+
+            // 4. Sorting logic
+            if (query != null && Long.class != query.getResultType() && long.class != query.getResultType()) {
+                if ("NAME_ASC".equalsIgnoreCase(sort)) {
+                    query.orderBy(cb.asc(root.get("studioNm")), cb.asc(root.get("dirNo")));
+                } else if ("NAME_DESC".equalsIgnoreCase(sort)) {
+                    query.orderBy(cb.desc(root.get("studioNm")), cb.desc(root.get("dirNo")));
+                } else {
+                    jakarta.persistence.criteria.Expression<String> latestTime = cb.coalesce(root.get("updDtime"), root.get("insDtime"));
+                    query.orderBy(cb.desc(latestTime), cb.desc(root.get("dirNo")));
+                }
+            }
+
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        return studioDirRepository.findAll(spec, pageable);
     }
 
-    private String buildEffectiveKeyword(String keyword, String region) {
-        String cleanKw = keyword != null ? keyword.trim() : "";
-        if (!cleanKw.isEmpty()) {
-            return cleanKw;
-        }
+    private List<String> getRegionKeywords(String region) {
         if (region == null || region.trim().isEmpty() || "전체".equals(region.trim())) {
-            return "";
+            return Collections.emptyList();
         }
         String cleanRegion = region.trim();
         switch (cleanRegion) {
             case "합정/홍대":
-                return "홍대";
+                return Arrays.asList("홍대", "합정", "서교", "동교", "상수", "연남", "망원", "마포");
             case "신촌":
-                return "신촌";
+                return Arrays.asList("신촌", "이대", "서대문", "창천", "대현", "노고산", "연희");
             case "사당/이수":
-                return "사당";
+                return Arrays.asList("사당", "이수", "총신대", "남현", "방배", "동작대로", "동작");
             case "신도림/영등포구청":
-                return "영등포";
+                return Arrays.asList("신도림", "영등포", "문래", "당산", "구로", "도림", "대림", "양평동");
             case "망원":
-                return "망원";
+                return Arrays.asList("망원", "합정", "마포", "망원동", "망원역");
             case "상도/중앙대":
-                return "상도";
+                return Arrays.asList("상도", "중앙대", "흑석", "노량진", "장승배기", "동작");
             case "서울대입구":
-                return "서울대";
+                return Arrays.asList("서울대", "봉천", "신림", "낙성대", "관악");
             case "방배":
-                return "방배";
+                return Arrays.asList("방배", "내방", "서초");
             case "혜화/성신여대":
-                return "혜화";
+                return Arrays.asList("혜화", "대학로", "성신여대", "동선동", "돈암", "명륜", "한성대", "성북", "종로");
             case "강남":
-                return "강남";
+                return Arrays.asList("강남", "역삼", "논현", "신사", "양재", "서초", "삼성", "압구정", "대치", "청담", "언주", "선릉", "학동", "교대");
             case "강동/송파":
-                return "송파";
+                return Arrays.asList("송파", "강동", "잠실", "천호", "길동", "문정", "방이", "암사", "명일", "가락", "석촌", "둔촌", "성내");
             case "기타 서울":
-                return "서울";
+                return Arrays.asList("서울", "마포", "서초", "강남", "송파", "강동", "용산", "종로", "중구", "성동", "광진", "동대문", "중랑", "성북", "강북", "도봉", "노원", "은평", "서대문", "양천", "강서", "구로", "금천", "영등포", "동작", "관악");
+            case "경기":
+                return Arrays.asList("경기", "경기도", "수원", "성남", "분당", "판교", "부천", "고양", "일산", "안양", "안산", "용인", "평택", "화성", "동탄", "시흥", "광명", "군포", "산본", "하남", "구리", "남양주", "의정부", "파주", "김포", "광주", "이천", "양주", "포천", "오산", "안성", "의왕", "과천");
+            case "인천":
+                return Arrays.asList("인천", "부평", "구월", "주안", "송도", "청라", "연수", "계양", "남동", "미추홀", "서구", "중구", "동구");
+            case "부산":
+                return Arrays.asList("부산", "서면", "해운대", "남포", "동래", "경성대", "부산대", "사상", "센텀", "수영", "연제", "금정", "부산진구");
+            case "대구":
+                return Arrays.asList("대구", "동성로", "대명", "수성", "경북대", "달서", "북구", "동구", "남구", "중구");
             case "광주·전남":
-                return "광주";
+            case "광주":
+            case "전남":
+                return Arrays.asList("광주", "충장로", "상무", "전남대", "전남", "목포", "여수", "순천", "나주", "광양");
+            case "대전":
+                return Arrays.asList("대전", "둔산", "궁동", "유성", "은행동", "서구", "유성구", "중구", "동구", "대덕");
+            case "울산":
+                return Arrays.asList("울산", "삼산", "성남동", "남구", "중구", "북구", "동구", "울주");
+            case "세종":
+                return Arrays.asList("세종", "조치원", "보람", "나성", "다정", "어진", "도담", "아름", "종촌", "고운", "한솔");
+            case "강원":
+                return Arrays.asList("강원", "강원도", "춘천", "원주", "강릉", "동해", "태백", "속초", "삼척");
+            case "충북":
+                return Arrays.asList("충북", "충청북도", "청주", "충주", "제천", "오창", "오송");
+            case "충남":
+                return Arrays.asList("충남", "충청남도", "천안", "아산", "신부동", "불당", "쌍용", "서산", "당진", "공주", "논산", "보령");
+            case "전북":
+                return Arrays.asList("전북", "전라북도", "전주", "객사", "익산", "군산", "전북대", "정읍", "남원", "김제");
+            case "경북":
+                return Arrays.asList("경북", "경상북도", "포항", "구미", "경주", "김천", "안동", "영주", "상주", "문경", "경산");
+            case "경남":
+                return Arrays.asList("경남", "경상남도", "창원", "상남동", "김해", "진주", "양산", "거제", "통영", "사천", "밀양");
+            case "제주":
+                return Arrays.asList("제주", "제주도", "서귀포", "제주시");
             default:
-                return cleanRegion;
+                return Collections.singletonList(cleanRegion);
         }
     }
 

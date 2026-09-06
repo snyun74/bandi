@@ -639,7 +639,7 @@ const ClanDetail: React.FC = () => {
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1 text-[#00BDF8]">
+                                    <div className="flex items-center gap-1 text-red-500">
                                         <FaHeart size={11} />
                                         <span className="text-[12px] font-bold">{latestPost.boardLikeCnt || 0}</span>
                                     </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaRegThumbsUp, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaPaperclip, FaImage, FaTimes, FaBan, FaExclamationTriangle } from 'react-icons/fa';
+import { FaChevronLeft, FaHeart, FaRegHeart, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaPaperclip, FaImage, FaTimes, FaBan, FaExclamationTriangle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
 import { validateFileSize } from '../utils/fileUtils';
@@ -606,8 +606,8 @@ const BoardDetail: React.FC = () => {
                                 <FaEdit /> <span className="text-xs">수정</span>
                             </div>
                         )}
-                        <div className={`flex items-center gap-1 cursor-pointer ${post.isLiked ? 'text-red-500' : 'text-[#00BDF8]'}`} onClick={handleLike}>
-                            <FaRegThumbsUp /> <span>({post.likeCnt})</span>
+                        <div className="flex items-center gap-1 cursor-pointer text-red-500" onClick={handleLike}>
+                            {post.isLiked ? <FaHeart className="text-red-500" /> : <FaRegHeart className="text-red-500" />} <span>({post.likeCnt})</span>
                         </div>
                         <div className="flex items-center gap-1 text-gray-400">
                             <FaRegCommentDots /> <span>({comments.length})</span>
@@ -698,9 +698,9 @@ const BoardDetail: React.FC = () => {
                                             )}
                                             <button
                                                 onClick={() => handleCommentLike(comment.replyNo)}
-                                                className={`flex items-center gap-1 text-xs bg-blue-50 px-2 py-1 rounded-full cursor-pointer hover:bg-blue-100 transition-colors ${comment.isLiked ? 'text-red-500' : 'text-[#00BDF8]'}`}
+                                                className="flex items-center gap-1 text-xs bg-red-50 px-2 py-1 rounded-full cursor-pointer hover:bg-red-100 transition-colors text-red-500"
                                             >
-                                                <FaRegThumbsUp /> <span>({comment.likeCnt || 0})</span>
+                                                {comment.isLiked ? <FaHeart className="text-red-500" /> : <FaRegHeart className="text-red-500" />} <span>({comment.likeCnt || 0})</span>
                                             </button>
                                         </div>
                                     </div>
