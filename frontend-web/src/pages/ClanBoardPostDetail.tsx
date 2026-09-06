@@ -37,6 +37,7 @@ interface Comment {
     depth?: number;
     childReplyCount?: number;
     likeCount?: number;
+    isLiked?: boolean;
     maskingYn?: string;
 }
 
@@ -53,6 +54,7 @@ interface PostDetail {
     likeCnt: number;
     replyCnt: number;
     scrapCnt: number;
+    isLiked?: boolean;
     isScrapped: boolean;
     attachFilePath?: string;
     maskingYn?: string;
