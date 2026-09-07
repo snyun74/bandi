@@ -8,6 +8,8 @@ interface VersionInfo {
   iosStoreUrl?: string;
 }
 
+const DISMISS_KEY = 'dismiss_app_update_timestamp';
+
 const AppUpdateModal: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
@@ -15,9 +17,6 @@ const AppUpdateModal: React.FC = () => {
   useEffect(() => {
     const checkVersion = async () => {
       try {
-        // 세션에서 이미 닫았는지 확인 (강제 업데이트가 아닐 경우)
-        const dismissed = sessionStorage.getItem('dismiss_app_update');
-
         const response = await fetch('/api/common/app-version');
         if (!response.ok) return;
 
@@ -31,13 +30,19 @@ const AppUpdateModal: React.FC = () => {
         const isNativeApp = isReactNative || isAndroidWebView || isAppBridge;
 
         // 2. 현재 설치된 앱의 버전 코드 확인
-        // (3.7부터는 window.__appVersionCode = 23 주입됨. 3.6 이하는 주입되지 않아 undefined)
+        // (3.7부터는 window.__appVersionCode = 23 주입됨. 3.6 이하는 주입되지 않아 undefined -> 22)
         const currentAppVersionCode = (window as any).__appVersionCode ?? 22;
 
         // 네이티브 앱 환경에서 최신 버전보다 낮은 경우 팝업 노출
         if (isNativeApp && currentAppVersionCode < data.latestVersionCode) {
-          if (!data.forceUpdate && dismissed === 'true') {
-            return;
+          if (!data.forceUpdate) {
+            const dismissedTime = localStorage.getItem(DISMISS_KEY);
+            if (dismissedTime) {
+              const diffHours = (Date.now() - parseInt(dismissedTime, 10)) / (1000 * 60 * 60);
+              if (diffHours < 24) {
+                return; // 24시간 동안 노출 방지
+              }
+            }
           }
           setShowModal(true);
         }
@@ -47,7 +52,7 @@ const AppUpdateModal: React.FC = () => {
     };
 
     // FCM 브릿지 등이 로드될 수 있도록 약간의 지연 후 체크
-    const timer = setTimeout(checkVersion, 500);
+    const timer = setTimeout(checkVersion, 800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -70,7 +75,7 @@ const AppUpdateModal: React.FC = () => {
   };
 
   const handleClose = () => {
-    sessionStorage.setItem('dismiss_app_update', 'true');
+    localStorage.setItem(DISMISS_KEY, Date.now().toString());
     setShowModal(false);
   };
 
@@ -106,7 +111,7 @@ const AppUpdateModal: React.FC = () => {
               onClick={handleClose}
               className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-semibold transition-colors duration-200"
             >
-              나중에
+              오늘 하루 닫기
             </button>
           )}
           <button
