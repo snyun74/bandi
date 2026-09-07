@@ -8,7 +8,7 @@ interface VersionInfo {
   iosStoreUrl?: string;
 }
 
-const DISMISS_KEY = 'dismiss_app_update_timestamp';
+const DISMISS_KEY = 'dismiss_app_update_version';
 
 const AppUpdateModal: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -35,13 +35,11 @@ const AppUpdateModal: React.FC = () => {
 
         // 네이티브 앱 환경에서 최신 버전보다 낮은 경우 팝업 노출
         if (isNativeApp && currentAppVersionCode < data.latestVersionCode) {
+          // 강제 업데이트가 아니고, 이미 해당 버전 팝업을 닫은 적이 있다면 노출 안 함
           if (!data.forceUpdate) {
-            const dismissedTime = localStorage.getItem(DISMISS_KEY);
-            if (dismissedTime) {
-              const diffHours = (Date.now() - parseInt(dismissedTime, 10)) / (1000 * 60 * 60);
-              if (diffHours < 24) {
-                return; // 24시간 동안 노출 방지
-              }
+            const dismissedVersion = localStorage.getItem(DISMISS_KEY);
+            if (dismissedVersion === data.latestVersionCode.toString()) {
+              return;
             }
           }
           setShowModal(true);
@@ -75,7 +73,10 @@ const AppUpdateModal: React.FC = () => {
   };
 
   const handleClose = () => {
-    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    // 해당 버전에 대해 다시 보지 않도록 버전 코드 저장 (다음 신규 버전 출시 전까지 절대 안 뜸)
+    if (versionInfo) {
+      localStorage.setItem(DISMISS_KEY, versionInfo.latestVersionCode.toString());
+    }
     setShowModal(false);
   };
 
@@ -111,7 +112,7 @@ const AppUpdateModal: React.FC = () => {
               onClick={handleClose}
               className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-semibold transition-colors duration-200"
             >
-              오늘 하루 닫기
+              다시 보지 않기
             </button>
           )}
           <button
