@@ -128,7 +128,7 @@ function App(): React.JSX.Element {
   const checkAppVersion = async () => {
     try {
       // 운영 환경과 로컬 환경에 따른 API 주소 설정
-      const API_BASE_URL = __DEV__ ? (Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080') : 'https://api.bandicon.kr';
+      const API_BASE_URL = __DEV__ ? (Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080') : 'https://www.bandicon.kr';
       const response = await fetch(`${API_BASE_URL}/api/common/app-version`);
       if (response.ok) {
         const data = await response.json();
@@ -249,6 +249,7 @@ function App(): React.JSX.Element {
         ref={webViewRef}
         source={{ uri: currentUrl }}
         style={{ flex: 1, display: webViewError ? 'none' : 'flex' }}
+        injectedJavaScriptBeforeContentLoaded={`window.__appVersionCode = ${CURRENT_VERSION_CODE}; true;`}
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
         allowsFullscreenVideo={false}
