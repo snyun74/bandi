@@ -75,7 +75,6 @@ import NoticeDetailPage from './pages/NoticeDetailPage';
 import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
-import AppUpdateModal from './components/common/AppUpdateModal';
 import PageTracker from './components/common/PageTracker';
 import SnsPostCreate from './pages/sns/SnsPostCreate';
 import SnsShortsCreate from './pages/sns/SnsShortsCreate';
@@ -280,9 +279,6 @@ function App() {
           onClose={() => setPushNotification(null)}
         />
       )}
-
-      {/* App Update Modal */}
-      <AppUpdateModal />
     </>
   );
 }
