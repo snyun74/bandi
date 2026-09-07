@@ -40,7 +40,7 @@ function App(): React.JSX.Element {
   const [webViewError, setWebViewError] = useState<string | null>(null);
 
   // 업데이트 알림 관련 상태
-  const CURRENT_VERSION_CODE = 22; // 현재 앱의 버전 코드
+  const CURRENT_VERSION_CODE = 23; // 현재 앱의 버전 코드
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [latestVersionInfo, setLatestVersionInfo] = useState<any>(null);
 
