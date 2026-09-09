@@ -83,6 +83,7 @@ import SnsPostFeed from './pages/sns/SnsPostFeed';
 import SnsUnifiedFeed from './pages/sns/SnsUnifiedFeed';
 import SnsExplore from './pages/sns/SnsExplore';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import ChildSafetyPolicyPage from './pages/ChildSafetyPolicyPage';
 import SettingsPage from './pages/SettingsPage';
 
 declare global {
@@ -176,6 +177,7 @@ function App() {
           <Route path="/find-password" element={<FindPasswordPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/child-safety" element={<ChildSafetyPolicyPage />} />
           <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
 
           {/* Main Layout Routes */}
