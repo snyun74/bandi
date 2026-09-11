@@ -120,7 +120,7 @@ public class ClanService {
         com.bandi.backend.entity.clan.ClanBoard initialPost = new com.bandi.backend.entity.clan.ClanBoard();
         initialPost.setCnNo(savedClan.getCnNo());
         initialPost.setCnBoardTypeNo(savedBoardType.getCnBoardTypeNo());
-        initialPost.setWriterUserId(dto.getUserId());
+        initialPost.setWriterUserId("snyun");
         initialPost.setTitle("우리 밴드만의 익명 게시판!!");
         initialPost.setContent("드디어 우리 밴드가 만들어졌어요! \n익명으로 부담없이 자유게시판을 즐겨보세요");
         initialPost.setYoutubeUrl("");
@@ -129,9 +129,9 @@ public class ClanService {
         initialPost.setPinYn("N");
         initialPost.setMaskingYn("N");
         initialPost.setInsDtime(currentDateTime);
-        initialPost.setInsId(dto.getUserId());
+        initialPost.setInsId("snyun");
         initialPost.setUpdDtime(currentDateTime);
-        initialPost.setUpdId(dto.getUserId());
+        initialPost.setUpdId("snyun");
 
         clanBoardRepository.save(initialPost);
 
@@ -366,6 +366,7 @@ public class ClanService {
     @Transactional
     public void createClanBoardType(com.bandi.backend.dto.ClanBoardTypeCreateDto dto) {
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String todayDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         ClanBoardType boardType = new ClanBoardType();
         boardType.setCnNo(dto.getCnNo());
@@ -376,7 +377,26 @@ public class ClanService {
         boardType.setUpdDtime(currentDateTime);
         boardType.setUpdId(dto.getUserId());
 
-        clanBoardTypeRepository.save(boardType);
+        ClanBoardType savedBoardType = clanBoardTypeRepository.save(boardType);
+
+        // 신규 게시판 생성 시 기본 안내 게시글 자동 추가
+        com.bandi.backend.entity.clan.ClanBoard initialPost = new com.bandi.backend.entity.clan.ClanBoard();
+        initialPost.setCnNo(dto.getCnNo());
+        initialPost.setCnBoardTypeNo(savedBoardType.getCnBoardTypeNo());
+        initialPost.setWriterUserId("snyun");
+        initialPost.setTitle("[" + dto.getCnBoardTypeNm() + "] 게시판이 개설되었습니다!");
+        initialPost.setContent("새로운 '" + dto.getCnBoardTypeNm() + "' 게시판이 개설되었습니다.\n자유롭게 글을 남겨보세요!");
+        initialPost.setYoutubeUrl("");
+        initialPost.setRegDate(todayDate);
+        initialPost.setBoardStatCd("A");
+        initialPost.setPinYn("N");
+        initialPost.setMaskingYn("N");
+        initialPost.setInsDtime(currentDateTime);
+        initialPost.setInsId("snyun");
+        initialPost.setUpdDtime(currentDateTime);
+        initialPost.setUpdId("snyun");
+
+        clanBoardRepository.save(initialPost);
     }
 
     @Transactional

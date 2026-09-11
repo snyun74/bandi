@@ -228,7 +228,7 @@ const Board: React.FC = () => {
                     <div className="flex items-center gap-1.5 mb-2.5">
                         <span className="text-[#FF5A5A] flex items-center gap-1 font-bold text-[15px]">
                             <FaFire size={14} />
-                            실시간 핫이슈
+                            Hot
                         </span>
                     </div>
 
@@ -246,7 +246,7 @@ const Board: React.FC = () => {
                 {/* 3. 최근 게시글 (무한 스크롤) */}
                 <section>
                     <div className="flex items-center justify-between mb-2.5">
-                        <h2 className="text-[15px] font-bold text-[#0B1114]">최신 이야기</h2>
+                        <h2 className="text-[15px] font-bold text-[#0B1114]">Live</h2>
                     </div>
 
                     <div className="space-y-3">

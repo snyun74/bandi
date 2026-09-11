@@ -543,7 +543,8 @@ public class BandService {
 
         // 4. Calculate Permissions
         boolean isBandLeader = group.getBnLeaderId().equals(userId);
-        boolean canManage = isBandLeader;
+        boolean isBandMember = isBandLeader || roleDtos.stream().anyMatch(r -> r.isCurrentUser() || (userId != null && userId.equals(r.getUserId())));
+        boolean canManage = isBandMember;
 
         if (!canManage && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
             // Check Clan Role
@@ -810,6 +811,35 @@ public class BandService {
         bnGroupRepository.save(group);
     }
 
+    @Transactional
+    public int endAllConfirmedClanJams(Long clanId, String userId) {
+        com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(clanId, userId);
+        com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId)
+                .orElseThrow(() -> new RuntimeException("클랜 멤버 정보를 찾을 수 없습니다."));
+        String role = clanUser.getCnUserRoleCd();
+        if (!"01".equals(role) && !"02".equals(role)) {
+            throw new RuntimeException("클랜장 또는 간부만 일괄 합주 종료를 수행할 수 있습니다.");
+        }
+
+        java.util.List<BnGroup> confirmedGroups = bnGroupRepository.findByCnNoAndBnConfFgAndBnStatCd(clanId, "Y", "A");
+        if (confirmedGroups.isEmpty()) {
+            return 0;
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+
+        for (BnGroup group : confirmedGroups) {
+            bnEvaluationRepository.insertEvaluationsFromSession(group.getBnNo(), currentDateTime, userId);
+            group.setBnConfFg("E");
+            group.setBnStatCd("E");
+            group.setUpdDtime(currentDateTime);
+            group.setUpdId(userId);
+            bnGroupRepository.save(group);
+        }
+
+        return confirmedGroups.size();
+    }
+
     @Transactional(readOnly = true)
     public boolean verifyBandPassword(Long bnNo, String password) {
         BnGroup group = bnGroupRepository.findById(bnNo)
@@ -828,10 +858,11 @@ public class BandService {
                 .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
         // Permission Check
-        boolean hasPermission = false;
-        if (group.getBnLeaderId().equals(dto.getUserId())) {
-            hasPermission = true;
-        }
+        boolean isBandLeader = group.getBnLeaderId().equals(dto.getUserId());
+        boolean isBandMember = isBandLeader || bnSessionRepository.findByBnNo(bnNo).stream()
+                .anyMatch(s -> dto.getUserId().equals(s.getBnSessionJoinUserId()));
+
+        boolean hasPermission = isBandMember;
 
         if (!hasPermission && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
             com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(

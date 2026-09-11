@@ -80,4 +80,6 @@ public interface BnGroupRepository extends JpaRepository<BnGroup, Long> {
             "      OR REPLACE(UPPER(G.BN_SINGER_NM), ' ', '') LIKE CONCAT('%', :keyword, '%') ) " +
             "ORDER BY G.BN_NO DESC", nativeQuery = true)
     java.util.List<BnGroup> findFilteredBands(@Param("clanId") Long clanId, @Param("keyword") String keyword);
+
+    java.util.List<BnGroup> findByCnNoAndBnConfFgAndBnStatCd(Long cnNo, String bnConfFg, String bnStatCd);
 }

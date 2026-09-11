@@ -264,7 +264,7 @@ const ClanBoardList: React.FC = () => {
                     <div className="flex items-center gap-1.5 mb-2.5">
                         <span className="text-[#FF5A5A] flex items-center gap-1 font-bold text-[15px]">
                             <FaFire size={14} />
-                            클랜 핫이슈
+                            Hot
                         </span>
                     </div>
 

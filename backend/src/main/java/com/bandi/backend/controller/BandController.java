@@ -142,6 +142,20 @@ public class BandController {
         }
     }
 
+    @PostMapping("/clan/{clanId}/end-confirmed")
+    public ResponseEntity<?> endAllConfirmedClanJams(@PathVariable Long clanId,
+            @RequestBody java.util.Map<String, String> body) {
+        try {
+            String userId = body.get("userId");
+            int count = bandService.endAllConfirmedClanJams(clanId, userId);
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "합주 확정된 " + count + "건이 합주 종료 처리되었습니다.",
+                    "count", count));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/{bnNo}/verify-password")
     public ResponseEntity<?> verifyPassword(@PathVariable Long bnNo, @RequestBody java.util.Map<String, String> body) {
         String password = body.get("password");

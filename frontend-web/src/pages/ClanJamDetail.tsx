@@ -675,8 +675,9 @@ const ClanJamDetail: React.FC = () => {
                     return (
                         <div
                             onClick={() => {
-                                if (!bandDetail.isConfirmed) {
-                                    showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                                if (!isMember) {
+                                    showAlert("합주 참여자만 이용할 수 있습니다.");
                                     return;
                                 }
                                 navigate(`/main/jam/schedule/${jamId}`);
@@ -743,10 +744,6 @@ const ClanJamDetail: React.FC = () => {
                         <h3 className="text-[16px] font-semibold text-[#0B1114]">합주 일정 조율</h3>
                         <button
                             onClick={() => {
-                                if (!bandDetail.isConfirmed) {
-                                    showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
-                                    return;
-                                }
                                 const isMember = bandDetail.roles.some(r => r.isCurrentUser);
                                 if (!isMember) {
                                     showAlert("합주 참여자만 이용할 수 있습니다.");

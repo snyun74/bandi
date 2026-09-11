@@ -177,6 +177,44 @@ const ClanJamList: React.FC = () => {
         }
     };
 
+    // 클랜장/간부 전용: 확정된 합주 일괄 종료 처리
+    const handleCloseConfirmedJams = () => {
+        if (!clanId || !userId) return;
+
+        const confirmedCount = jamRooms.filter(room => room.isConfirmed || room.status === 'Y').length;
+        if (confirmedCount === 0) {
+            showAlert("현재 확정 상태인 합주방이 없습니다.");
+            return;
+        }
+
+        showConfirm(
+            `합주 확정된 총 ${confirmedCount}건이 합주 종료 처리됩니다.\n그래도 종료하시겠습니까?`,
+            async () => {
+                try {
+                    const res = await fetch(`/api/bands/clan/${clanId}/end-confirmed`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ userId }),
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        showAlert(data.message || `합주 확정된 총 ${confirmedCount}건이 합주 종료 처리되었습니다.`);
+                        fetchJamRooms(searchTerm);
+                    } else {
+                        const err = await res.text();
+                        showAlert(`합주 종료 실패: ${err}`);
+                    }
+                } catch (e) {
+                    console.error("Failed to end confirmed jams", e);
+                    showAlert("합주 종료 처리 중 오류가 발생했습니다.");
+                }
+            }
+        );
+    };
+
     useEffect(() => {
         fetchJamRooms(searchTerm);
     }, [clanId, sortOption]);
@@ -552,34 +590,45 @@ const ClanJamList: React.FC = () => {
             {/* ========================================================================= */}
             <div className="bg-[#F7F9FC] border-b border-gray-200/80 px-4 pt-3 pb-3 shrink-0 z-20 w-full shadow-2xs">
                 <div className="w-full max-w-lg mx-auto space-y-3">
-                    {/* 상단 타이틀 & 방 만들기 버튼 */}
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
+                    {/* 상단 타이틀 & 방 만들기 / 합주종료 버튼 */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="space-y-0.5 min-w-0 pr-1">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
                                 {clanId && (
-                                    <button onClick={() => navigate(-1)} className="text-[#0B1114] p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors">
+                                    <button onClick={() => navigate(-1)} className="text-[#0B1114] p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors shrink-0">
                                         <FaChevronLeft size={18} />
                                     </button>
                                 )}
-                                <h1 className="text-[20px] font-bold leading-[28px] text-[#0B1114] tracking-tight">
+                                <h1 className="text-[18px] sm:text-[20px] font-bold leading-[28px] text-[#0B1114] tracking-tight truncate">
                                     {clanId ? "클랜 합주방" : "자유 합주방"}
                                 </h1>
                             </div>
-                            <p className="text-[13px] font-normal leading-[18px] text-gray-500">
+                            <p className="text-[12px] sm:text-[13px] font-normal leading-[18px] text-gray-500 truncate">
                                 원하는 멤버와 자유롭게 합주해요!
                             </p>
                         </div>
 
-                        {/* 방 만들기 버튼 */}
-                        {(!clanId || userRole === '01' || userRole === '02') && (
-                            <button
-                                onClick={() => navigate(clanId ? `/main/clan/jam/${clanId}/create` : `/main/jam/create`)}
-                                className="flex items-center gap-1.5 bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white text-[12px] font-bold px-3.5 py-2 rounded-full shadow-xs transition-all cursor-pointer shrink-0"
-                            >
-                                <FaPlusCircle size={13} />
-                                <span>방 만들기</span>
-                            </button>
-                        )}
+                        {/* 액션 버튼 그룹 */}
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                            {clanId && (userRole === '01' || userRole === '02') && (
+                                <button
+                                    onClick={handleCloseConfirmedJams}
+                                    className="flex items-center gap-1 bg-[#4A5568] hover:bg-[#2D3748] active:scale-95 text-white text-[11px] sm:text-[12px] font-bold px-3 py-2 rounded-full shadow-xs transition-all cursor-pointer shrink-0"
+                                >
+                                    <span>합주종료</span>
+                                </button>
+                            )}
+
+                            {(!clanId || userRole === '01' || userRole === '02') && (
+                                <button
+                                    onClick={() => navigate(clanId ? `/main/clan/jam/${clanId}/create` : `/main/jam/create`)}
+                                    className="flex items-center gap-1.5 bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white text-[11px] sm:text-[12px] font-bold px-3.5 py-2 rounded-full shadow-xs transition-all cursor-pointer shrink-0"
+                                >
+                                    <FaPlusCircle size={13} />
+                                    <span>방 만들기</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* 검색창 & 필터 버튼 Row */}
