@@ -8,4 +8,5 @@ public class ClanUpdateDto {
     private String cnNm;
     private String cnDesc;
     private String cnUrl;
+    private String roomUseYn;
 }

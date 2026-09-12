@@ -14,6 +14,7 @@ import ClanCreatePage from './pages/ClanCreatePage';
 import MyClan from './pages/MyClan';
 import ClanDetail from './pages/ClanDetail';
 import ClanCalendar from './pages/ClanCalendar';
+import ClanRoomSchedule from './pages/ClanRoomSchedule';
 import ClanIntro from './pages/ClanIntro';
 import Membersador from './pages/Membersador';
 import ClanMemberStatus from './pages/ClanMemberStatus';
@@ -231,6 +232,7 @@ function App() {
             <Route path="clan/notice/:clanId/create" element={<ClanNoticeCreate />} />
             <Route path="clan/notice/:clanId/detail/:noticeId" element={<ClanNoticeDetail />} />
             <Route path="clan/calendar/:clanId" element={<ClanCalendar />} />
+            <Route path="clan/room-schedule/:clanId" element={<ClanRoomSchedule />} />
             <Route path="clan/board/:clanId" element={<ClanBoardList />} />
             <Route path="clan/board/:clanId" element={<ClanBoardList />} />
             <Route path="clan/jam/:clanId" element={<ClanJamList />} />

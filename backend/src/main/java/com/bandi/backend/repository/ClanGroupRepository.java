@@ -88,8 +88,9 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "(SELECT COUNT(m) FROM ClanChatMessage m " +
                         "  WHERE m.cnNo = g.cnNo " +
                         "  AND m.sndUserId <> :userId " +
-                        "  AND NOT EXISTS (SELECT r FROM ClanChatMessageRead r WHERE r.cnMsgNo = m.cnMsgNo AND r.readUserId = :userId)) "
+                        "  AND NOT EXISTS (SELECT r FROM ClanChatMessageRead r WHERE r.cnMsgNo = m.cnMsgNo AND r.readUserId = :userId)), "
                         +
+                        "g.roomUseYn " +
                         ") " +
                         "FROM ClanGroup g " +
                         "LEFT JOIN CmAttachment a ON g.attachNo = a.attachNo " +

@@ -47,4 +47,7 @@ public class ClanGroup {
 
     @Column(name = "upd_id", length = 20)
     private String updId;
+
+    @Column(name = "ROOM_USE_YN", length = 1)
+    private String roomUseYn;
 }

@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ClanListDto {
     private Long cnNo;
     private String cnNm;
@@ -17,4 +16,27 @@ public class ClanListDto {
     private Long userCnt;
     private String attachFilePath; // Added field for profile image
     private Long unreadChatCount; // Added field for unread chat count
+    private String roomUseYn; // Added field for room reservation usage
+
+    public ClanListDto(Long cnNo, String cnNm, String cnDesc, String cnUrl, Long userCnt, String attachFilePath, Long unreadChatCount) {
+        this.cnNo = cnNo;
+        this.cnNm = cnNm;
+        this.cnDesc = cnDesc;
+        this.cnUrl = cnUrl;
+        this.userCnt = userCnt;
+        this.attachFilePath = attachFilePath;
+        this.unreadChatCount = unreadChatCount;
+        this.roomUseYn = "N";
+    }
+
+    public ClanListDto(Long cnNo, String cnNm, String cnDesc, String cnUrl, Long userCnt, String attachFilePath, Long unreadChatCount, String roomUseYn) {
+        this.cnNo = cnNo;
+        this.cnNm = cnNm;
+        this.cnDesc = cnDesc;
+        this.cnUrl = cnUrl;
+        this.userCnt = userCnt;
+        this.attachFilePath = attachFilePath;
+        this.unreadChatCount = unreadChatCount;
+        this.roomUseYn = roomUseYn != null ? roomUseYn : "N";
+    }
 }

@@ -66,6 +66,7 @@ public class ClanService {
         clan.setCnOwdUserId(dto.getUserId());
         clan.setCnApprStatCd("RQ"); // Required: RQ
         clan.setCnStatCd("A"); // Required: A
+        clan.setRoomUseYn("N");
         clan.setInsDtime(currentDateTime);
         clan.setInsId(dto.getUserId());
         clan.setUpdDtime(currentDateTime);
@@ -717,6 +718,9 @@ public class ClanService {
         }
         if (dto.getCnUrl() != null) {
             clan.setCnUrl(dto.getCnUrl());
+        }
+        if (dto.getRoomUseYn() != null) {
+            clan.setRoomUseYn(dto.getRoomUseYn());
         }
 
         clan.setUpdDtime(currentDateTime);

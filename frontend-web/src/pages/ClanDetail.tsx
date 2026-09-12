@@ -8,13 +8,15 @@ import {
     FaUserFriends,
     FaBell,
     FaHeart,
-    FaRegCommentDots
+    FaRegCommentDots,
+    FaDoorOpen
 } from 'react-icons/fa';
 import { MessageSquare, User, Music } from 'lucide-react';
 import CommonModal from '../components/common/CommonModal';
 import GatheringCreateModal from '../components/GatheringCreateModal';
 import GatheringApplyModal from '../components/GatheringApplyModal';
 import DefaultProfile from '../components/common/DefaultProfile';
+import ClanJamSelectModal, { type EligibleJam } from '../components/clan/ClanJamSelectModal';
 
 interface ClanDetailData {
     id: number;
@@ -26,6 +28,7 @@ interface ClanDetailData {
     attachFilePath?: string;
     unreadChatCount?: number;
     cnUrl?: string;
+    roomUseYn?: string;
 }
 
 const ClanDetail: React.FC = () => {
@@ -35,9 +38,14 @@ const ClanDetail: React.FC = () => {
     const [notices, setNotices] = useState<any[]>([]);
     const [topPosts, setTopPosts] = useState<any[]>([]);
     const [schedules, setSchedules] = useState<any[]>([]);
+    const [roomSchedules, setRoomSchedules] = useState<any[]>([]);
     const [recentJams, setRecentJams] = useState<any[]>([]);
     const [gatherings, setGatherings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Eligible jams for room reservation modal
+    const [eligibleJams, setEligibleJams] = useState<EligibleJam[]>([]);
+    const [isJamSelectModalOpen, setIsJamSelectModalOpen] = useState(false);
 
     // Calendar week navigation state
     const [weekStart, setWeekStart] = useState<Date>(() => {
@@ -58,9 +66,10 @@ const ClanDetail: React.FC = () => {
         nm: string;
         desc: string;
         url: string;
+        roomUseYn: string;
         imageFile: File | null;
         previewUrl: string | null;
-    }>({ nm: '', desc: '', url: '', imageFile: null, previewUrl: null });
+    }>({ nm: '', desc: '', url: '', roomUseYn: 'N', imageFile: null, previewUrl: null });
 
     const [isGatheringCreateModalOpen, setIsGatheringCreateModalOpen] = useState(false);
     const [isGatheringApplyModalOpen, setIsGatheringApplyModalOpen] = useState(false);
@@ -77,91 +86,98 @@ const ClanDetail: React.FC = () => {
         setIsAlertOpen(true);
     };
 
-    useEffect(() => {
-        const fetchMethod = async () => {
-            if (!id) return;
-            try {
-                const userId = localStorage.getItem('userId');
-                const clanUrl = userId ? `/api/clans/${id}?userId=${userId}` : `/api/clans/${id}`;
+    const fetchMethod = async () => {
+        if (!id) return;
+        try {
+            const userId = localStorage.getItem('userId');
+            const clanUrl = userId ? `/api/clans/${id}?userId=${userId}` : `/api/clans/${id}`;
 
-                // Range for schedules (current week +- 2 weeks)
-                const rangeStart = new Date(weekStart);
-                rangeStart.setDate(rangeStart.getDate() - 14);
-                const rangeEnd = new Date(weekStart);
-                rangeEnd.setDate(rangeEnd.getDate() + 21);
+            // Range for schedules (current week +- 2 weeks)
+            const rangeStart = new Date(weekStart);
+            rangeStart.setDate(rangeStart.getDate() - 14);
+            const rangeEnd = new Date(weekStart);
+            rangeEnd.setDate(rangeEnd.getDate() + 21);
 
-                const formatDateStr = (d: Date) =>
-                    d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+            const formatDateStr = (d: Date) =>
+                d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
 
-                const startDateStr = formatDateStr(rangeStart);
-                const endDateStr = formatDateStr(rangeEnd);
+            const startDateStr = formatDateStr(rangeStart);
+            const endDateStr = formatDateStr(rangeEnd);
 
-                const [clanRes, noticeRes, topRes, scheduleRes, jamRes, roleRes, gatheringsRes] = await Promise.all([
-                    fetch(clanUrl),
-                    fetch(`/api/clans/${id}/notices?limit=5`),
-                    fetch(`/api/clans/${id}/boards/top?userId=${userId || ''}`),
-                    fetch(`/api/clan/schedule?clanId=${id}&startDate=${startDateStr}&endDate=${endDateStr}`),
-                    fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`),
-                    userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null),
-                    fetch(`/api/clans/gatherings/clan/${id}?userId=${userId || ''}`)
-                ]);
+            const [clanRes, noticeRes, topRes, scheduleRes, roomScheduleRes, jamRes, roleRes, gatheringsRes] = await Promise.all([
+                fetch(clanUrl),
+                fetch(`/api/clans/${id}/notices?limit=5`),
+                fetch(`/api/clans/${id}/boards/top?userId=${userId || ''}`),
+                fetch(`/api/clan/schedule?clanId=${id}&startDate=${startDateStr}&endDate=${endDateStr}`),
+                fetch(`/api/clan/${id}/room-schedules?startDate=${startDateStr}&endDate=${endDateStr}&userId=${userId || ''}`),
+                fetch(userId ? `/api/clans/${id}/bands/recent?userId=${userId}` : `/api/clans/${id}/bands/recent`),
+                userId ? fetch(`/api/clans/${id}/members/${userId}/role`) : Promise.resolve(null),
+                fetch(`/api/clans/gatherings/clan/${id}?userId=${userId || ''}`)
+            ]);
 
-                if (clanRes.ok) {
-                    const data = await clanRes.json();
-                    setClan({
-                        id: data.cnNo,
-                        name: data.cnNm,
-                        description: data.cnDesc,
-                        memberCount: data.userCnt,
-                        logoColor: 'bg-black',
-                        logoText: data.cnNm ? data.cnNm.substring(0, 1) : '?',
-                        attachFilePath: data.attachFilePath,
-                        unreadChatCount: data.unreadChatCount,
-                        cnUrl: data.cnUrl
-                    });
-                }
-
-                if (roleRes && roleRes.ok) {
-                    const role = await roleRes.text();
-                    setMyRole(role);
-                }
-
-                if (noticeRes.ok) {
-                    const noticeData = await noticeRes.json();
-                    setNotices(Array.isArray(noticeData) ? noticeData : []);
-                }
-
-                if (topRes.ok) {
-                    const topData = await topRes.json();
-                    setTopPosts(Array.isArray(topData) ? topData : []);
-                }
-
-                if (scheduleRes.ok) {
-                    const scheduleData = await scheduleRes.json();
-                    setSchedules(Array.isArray(scheduleData) ? scheduleData : []);
-                }
-
-                if (jamRes.ok) {
-                    const jamData = await jamRes.json();
-                    setRecentJams(Array.isArray(jamData) ? jamData : []);
-                }
-
-                if (gatheringsRes && gatheringsRes.ok) {
-                    const gatherData = await gatheringsRes.json();
-                    const sortedGather = (Array.isArray(gatherData) ? gatherData : []).sort((a: any, b: any) => {
-                        if (a.gatherProcFg === 'N' && b.gatherProcFg !== 'N') return -1;
-                        if (a.gatherProcFg !== 'N' && b.gatherProcFg === 'N') return 1;
-                        return b.gatherNo - a.gatherNo;
-                    });
-                    setGatherings(sortedGather);
-                }
-            } catch (error) {
-                console.error('Failed to fetch clan data', error);
-            } finally {
-                setLoading(false);
+            if (clanRes.ok) {
+                const data = await clanRes.json();
+                setClan({
+                    id: data.cnNo,
+                    name: data.cnNm,
+                    description: data.cnDesc,
+                    memberCount: data.userCnt,
+                    logoColor: 'bg-black',
+                    logoText: data.cnNm ? data.cnNm.substring(0, 1) : '?',
+                    attachFilePath: data.attachFilePath,
+                    unreadChatCount: data.unreadChatCount,
+                    cnUrl: data.cnUrl,
+                    roomUseYn: data.roomUseYn || 'N'
+                });
             }
-        };
 
+            if (roleRes && roleRes.ok) {
+                const role = await roleRes.text();
+                setMyRole(role);
+            }
+
+            if (noticeRes.ok) {
+                const noticeData = await noticeRes.json();
+                setNotices(Array.isArray(noticeData) ? noticeData : []);
+            }
+
+            if (topRes.ok) {
+                const topData = await topRes.json();
+                setTopPosts(Array.isArray(topData) ? topData : []);
+            }
+
+            if (scheduleRes.ok) {
+                const scheduleData = await scheduleRes.json();
+                setSchedules(Array.isArray(scheduleData) ? scheduleData : []);
+            }
+
+            if (roomScheduleRes.ok) {
+                const roomData = await roomScheduleRes.json();
+                setRoomSchedules(Array.isArray(roomData) ? roomData : []);
+            }
+
+            if (jamRes.ok) {
+                const jamData = await jamRes.json();
+                setRecentJams(Array.isArray(jamData) ? jamData : []);
+            }
+
+            if (gatheringsRes && gatheringsRes.ok) {
+                const gatherData = await gatheringsRes.json();
+                const sortedGather = (Array.isArray(gatherData) ? gatherData : []).sort((a: any, b: any) => {
+                    if (a.gatherProcFg === 'N' && b.gatherProcFg !== 'N') return -1;
+                    if (a.gatherProcFg !== 'N' && b.gatherProcFg === 'N') return 1;
+                    return b.gatherNo - a.gatherNo;
+                });
+                setGatherings(sortedGather);
+            }
+        } catch (error) {
+            console.error('Failed to fetch clan data', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchMethod();
     }, [id, weekStart]);
 
@@ -227,6 +243,63 @@ const ClanDetail: React.FC = () => {
         return schedules.filter((s: any) => s.sttDate === selectedDateStr);
     }, [schedules, selectedDateStr]);
 
+    const selectedRoomSchedules = useMemo(() => {
+        return roomSchedules.filter((s: any) => s.schSttDate === selectedDateStr);
+    }, [roomSchedules, selectedDateStr]);
+
+    const handleRoomReserveClick = async () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            showAlert('로그인이 필요한 서비스입니다.');
+            return;
+        }
+        try {
+            const res = await fetch(`/api/clan/${id}/room-schedules/eligible-jams?userId=${userId}`);
+            if (res.ok) {
+                const jams: EligibleJam[] = await res.json();
+                if (!jams || jams.length === 0) {
+                    showAlert('해당 클랜의 진행 중이거나 확정된 합주방에 소속되어 있어야 동아리방 예약이 가능합니다.');
+                } else if (jams.length === 1) {
+                    navigate(`/main/clan/room-schedule/${id}?bnNo=${jams[0].bnNo}`);
+                } else {
+                    setEligibleJams(jams);
+                    setIsJamSelectModalOpen(true);
+                }
+            } else {
+                showAlert('합주방 소속 정보를 조회할 수 없습니다.');
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert('합주방 소속 정보를 조회하는 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleDeleteRoomSchedule = (sch: any) => {
+        setConfirmMessage(
+            `[${sch.bnNm}]의 ${sch.schSttTime.slice(0, 2)}:00 ~ ${sch.schEndTime.slice(0, 2)}:00 동아리방 예약을 취소하시겠습니까?`
+        );
+        setOnConfirmAction(() => async () => {
+            setIsConfirmOpen(false);
+            try {
+                const userId = localStorage.getItem('userId');
+                const res = await fetch(`/api/clan/${id}/room-schedules/${sch.cnSchNo}?userId=${userId}`, {
+                    method: 'DELETE',
+                });
+                if (res.ok) {
+                    showAlert('동아리방 예약이 취소되었습니다.');
+                    fetchMethod();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    showAlert(err.message || '예약 취소에 실패했습니다.');
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert('오류가 발생했습니다.');
+            }
+        });
+        setIsConfirmOpen(true);
+    };
+
     const handleGatheringApplyClick = (gather: any) => {
         if (gather.applied) return;
         setSelectedGathering(gather);
@@ -273,6 +346,7 @@ const ClanDetail: React.FC = () => {
                 nm: clan.name || '',
                 desc: clan.description || '',
                 url: clan.cnUrl || '',
+                roomUseYn: clan.roomUseYn || 'N',
                 imageFile: null,
                 previewUrl: clan.attachFilePath || null
             });
@@ -311,7 +385,8 @@ const ClanDetail: React.FC = () => {
                 userId: userId,
                 cnNm: editForm.nm,
                 cnDesc: editForm.desc,
-                cnUrl: editForm.url
+                cnUrl: editForm.url,
+                roomUseYn: editForm.roomUseYn
             };
             formData.append('data', new Blob([JSON.stringify(updateData)], { type: 'application/json' }));
             if (editForm.imageFile) {
@@ -755,6 +830,132 @@ const ClanDetail: React.FC = () => {
                         </div>
                     </div>
                 </section>
+
+                {/* ─────────────────────────────────────────────────────────────
+                    영역 6. 동아리방 (roomUseYn === 'Y'일 때만 표시)
+                ───────────────────────────────────────────────────────────── */}
+                {clan?.roomUseYn === 'Y' && (
+                    <section className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[16px] font-semibold text-[#0B1114]">동아리방</h3>
+                            <span
+                                onClick={handleRoomReserveClick}
+                                className="text-[13px] font-medium text-[#525252] hover:text-[#00BDF8] cursor-pointer transition-colors"
+                            >
+                                예약하기
+                            </span>
+                        </div>
+
+                        <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-4 flex flex-col gap-4 shadow-sm">
+                            {/* Week Navigator (syncs with weekStart) */}
+                            <div className="flex items-center justify-between">
+                                <span className="text-[13px] font-medium text-[#202428]">{weekTitle}</span>
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={handlePrevWeek}
+                                        className="w-6 h-6 rounded bg-[#F4F6F8] hover:bg-gray-200 flex items-center justify-center text-[#626A72] text-[11px] transition-colors"
+                                    >
+                                        <FaChevronLeft />
+                                    </button>
+                                    <button
+                                        onClick={handleNextWeek}
+                                        className="w-6 h-6 rounded bg-[#F4F6F8] hover:bg-gray-200 flex items-center justify-center text-[#626A72] text-[11px] transition-colors"
+                                    >
+                                        <FaChevronRight />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Week Days Row */}
+                            <div className="grid grid-cols-7 gap-1 text-center">
+                                {weekDays.map((day) => {
+                                    const hasRoomSch = roomSchedules.some(
+                                        (s: any) => s.schSttDate === day.dateStr
+                                    );
+                                    return (
+                                        <div key={day.dateStr} className="flex flex-col items-center gap-1.5">
+                                            <span className="text-[10px] font-medium text-[#8A9198]">
+                                                {day.label}
+                                            </span>
+                                            <button
+                                                onClick={() => setSelectedDateStr(day.dateStr)}
+                                                className={`w-8 h-9 rounded-[10px] flex flex-col items-center justify-center transition-all ${
+                                                    day.isSelected
+                                                        ? 'bg-[#DDF6FC] text-[#0099C7] font-bold shadow-xs'
+                                                        : 'text-[#555C63] text-[13px] font-medium hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <span className="text-[13px] leading-none">{day.dayNum}</span>
+                                                {hasRoomSch && (
+                                                    <span
+                                                        className={`w-1 h-1 rounded-full mt-0.5 ${
+                                                            day.isSelected ? 'bg-[#00A6D6]' : 'bg-[#00BDF8]'
+                                                        }`}
+                                                    />
+                                                )}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Selected Date Room Schedule Preview */}
+                            <div className="pt-3 border-t border-gray-100">
+                                {selectedRoomSchedules.length > 0 ? (
+                                    <div className="space-y-2.5">
+                                        {selectedRoomSchedules.map((sch: any) => (
+                                            <div
+                                                key={sch.cnSchNo}
+                                                className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-gray-100 bg-[#FAFCFD] hover:border-cyan-200 transition-all"
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                    <div className="w-1 self-stretch bg-[#00BDF8] rounded-full min-h-[42px] shrink-0" />
+                                                    <div className="flex-1 min-w-0 space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <h4 className="text-[15px] font-bold text-[#0B1114] truncate">
+                                                                {sch.bnNm}
+                                                            </h4>
+                                                            {sch.bnSongNm && (
+                                                                <span className="text-[12px] text-gray-500 font-medium truncate">
+                                                                    ({sch.bnSongNm})
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <div className="bg-[#F2F5F7] rounded-[10px] px-2 py-0.5 flex items-center gap-1.5 text-[11px] text-[#525252] font-semibold">
+                                                                <FaRegClock size={10} className="text-[#00BDF8]" />
+                                                                <span>
+                                                                    {sch.schSttTime.slice(0, 2)}:00 ~{' '}
+                                                                    {sch.schEndTime.slice(0, 2)}:00
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-[11px] text-gray-400">
+                                                                예약자: {sch.userNickNm || sch.insId}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {sch.canDelete && (
+                                                    <button
+                                                        onClick={() => handleDeleteRoomSchedule(sch)}
+                                                        className="px-2.5 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 text-[11px] font-semibold transition-colors shrink-0"
+                                                    >
+                                                        취소
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center text-xs text-gray-400 py-3">
+                                        선택한 날짜에 등록된 동아리방 일정이 없습니다.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
@@ -815,6 +1016,33 @@ const ClanDetail: React.FC = () => {
                                     placeholder="URL을 입력하세요"
                                 />
                             </div>
+                            <div>
+                                <label className="block text-sm font-bold text-[#0B1114] mb-1.5">동아리방 사용 여부</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm((prev) => ({ ...prev, roomUseYn: 'N' }))}
+                                        className={`py-2 px-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                            editForm.roomUseYn !== 'Y'
+                                                ? 'border-[#00BDF8] bg-[#EBF9FE] text-[#00BDF8] font-bold shadow-xs'
+                                                : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        미사용 (N)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm((prev) => ({ ...prev, roomUseYn: 'Y' }))}
+                                        className={`py-2 px-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                            editForm.roomUseYn === 'Y'
+                                                ? 'border-[#00BDF8] bg-[#EBF9FE] text-[#00BDF8] font-bold shadow-xs'
+                                                : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
+                                        }`}
+                                    >
+                                        사용 (Y)
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex gap-2 mt-6">
@@ -834,6 +1062,17 @@ const ClanDetail: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* 합주방 선택 팝업 모달 */}
+            <ClanJamSelectModal
+                isOpen={isJamSelectModalOpen}
+                onClose={() => setIsJamSelectModalOpen(false)}
+                jams={eligibleJams}
+                onSelectJam={(jam) => {
+                    setIsJamSelectModalOpen(false);
+                    navigate(`/main/clan/room-schedule/${id}?bnNo=${jam.bnNo}`);
+                }}
+            />
 
             {/* 알림 / 확인 모달 */}
             <CommonModal
