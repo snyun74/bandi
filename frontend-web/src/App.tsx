@@ -59,6 +59,7 @@ import AdminClanApprovalPage from './pages/AdminClanApprovalPage';
 import AdminQaPage from './pages/AdminQaPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import AdminNoticeManagement from './pages/AdminNoticeManagement';
+import AdminPushPage from './pages/AdminPushPage';
 import AmbassadorApplyPage from './pages/AmbassadorApplyPage';
 import AmbassadorManagePage from './pages/AmbassadorManagePage';
 import AdminReportBlockPage from './pages/AdminReportBlockPage';
@@ -89,8 +90,9 @@ import SettingsPage from './pages/SettingsPage';
 
 declare global {
   interface Window {
-    receiveFcmToken?: (token: string) => void;
+    receiveFcmToken?: (token: string, deviceType?: string) => void;
     __pendingFcmToken?: string;
+    __pendingDeviceType?: string;
   }
 }
 
@@ -102,9 +104,10 @@ function App() {
     requestPermission();
 
     // 2. Native Bridge Setup (For App Push & Messages)
-    window.receiveFcmToken = (token: string) => {
-      console.log('FCM Token received from Native Bridge:', token);
-      saveTokenToServer(token, 'APP');
+    window.receiveFcmToken = (token: string, deviceType?: string) => {
+      const type = deviceType || window.__pendingDeviceType || 'APP';
+      console.log('FCM Token received from Native Bridge:', token, type);
+      saveTokenToServer(token, type);
     };
 
     // Native App으로부터 직접 알림 데이터를 전달받는 함수
@@ -129,8 +132,9 @@ function App() {
     // Check if there was a pending token from before the bridge was ready
     if (window.__pendingFcmToken) {
       console.log('Processing pending FCM token from Native Bridge');
-      window.receiveFcmToken(window.__pendingFcmToken);
+      window.receiveFcmToken(window.__pendingFcmToken, window.__pendingDeviceType);
       delete window.__pendingFcmToken;
+      delete window.__pendingDeviceType;
     }
 
     // 3. Foreground Message Listener (Web Environment)
@@ -192,6 +196,7 @@ function App() {
             <Route path="admin/qa" element={<AdminQaPage />} />
             <Route path="admin/users" element={<AdminUserManagement />} />
             <Route path="admin/notices" element={<AdminNoticeManagement />} />
+            <Route path="admin/push" element={<AdminPushPage />} />
             <Route path="admin/report-block" element={<AdminReportBlockPage />} />
             <Route path="admin/jams" element={<AdminJamManagement />} />
             <Route path="admin/partner-approval" element={<AdminPartnerApprovalPage />} />

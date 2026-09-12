@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell, FaMusic, FaStore, FaMedal, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaAd, FaUserShield, FaHeadset, FaUserCog, FaBell, FaMusic, FaStore, FaMedal, FaMapMarkedAlt, FaPaperPlane } from 'react-icons/fa';
 
 const AdminPage: React.FC = () => {
     const navigate = useNavigate();
@@ -68,6 +68,7 @@ const AdminPage: React.FC = () => {
         { id: 'qa', label: '고객센터관리', icon: <FaHeadset size={24} />, path: '/main/admin/qa', count: counts.unansweredQas },
         { id: 'user', label: `회원관리(${userStats.total}명)`, icon: <FaUserCog size={24} />, path: '/main/admin/users' },
         { id: 'notice', label: '공지사항관리', icon: <FaBell size={24} />, path: '/main/admin/notices' },
+        { id: 'push', label: '메시지푸시관리', icon: <FaPaperPlane size={24} className="text-[#00BDF8]" />, path: '/main/admin/push' },
         { id: 'report-block', label: '신고/차단관리', icon: <FaUserShield size={24} />, path: '/main/admin/report-block', count: counts.reportCount },
         { id: 'jam-list', label: '합주목록', icon: <FaMusic size={24} />, path: '/main/admin/jams' },
         { id: 'partner-approval', label: '합주실입점승인', icon: <FaStore size={24} />, path: '/main/admin/partner-approval', count: pendingPartnerCount },

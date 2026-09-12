@@ -80,12 +80,14 @@ function App(): React.JSX.Element {
   // 웹뷰로 토큰 전달 (인위적 주입)
   const sendTokenToWebView = (token: string) => {
     if (webViewRef.current && token) {
+      const deviceType = Platform.OS === 'ios' ? 'IOS' : 'ANDROID';
       const script = `
         if (window.receiveFcmToken) {
-          window.receiveFcmToken("${token}");
+          window.receiveFcmToken("${token}", "${deviceType}");
         } else {
           console.log("window.receiveFcmToken not found yet");
           window.__pendingFcmToken = "${token}";
+          window.__pendingDeviceType = "${deviceType}";
         }
         true;
       `;

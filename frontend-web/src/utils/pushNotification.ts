@@ -30,7 +30,7 @@ export const requestPermission = async () => {
     }
 };
 
-export const saveTokenToServer = async (token: string, deviceType: "WEB" | "APP" = "WEB") => {
+export const saveTokenToServer = async (token: string, deviceType: "WEB" | "ANDROID" | "IOS" | "APP" | string = "WEB") => {
     const userId = localStorage.getItem("userId");
     
     if (!userId) {
