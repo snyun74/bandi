@@ -258,7 +258,7 @@ const ClanDetail: React.FC = () => {
             if (res.ok) {
                 const jams: EligibleJam[] = await res.json();
                 if (!jams || jams.length === 0) {
-                    showAlert('해당 클랜의 진행 중이거나 확정된 합주방에 소속되어 있어야 동아리방 예약이 가능합니다.');
+                    showAlert('해당 클랜의 진행 중이거나 확정된 합주방에 소속되어 있어야 동방 예약이 가능합니다.');
                 } else if (jams.length === 1) {
                     navigate(`/main/clan/room-schedule/${id}?bnNo=${jams[0].bnNo}`);
                 } else {
@@ -276,7 +276,7 @@ const ClanDetail: React.FC = () => {
 
     const handleDeleteRoomSchedule = (sch: any) => {
         setConfirmMessage(
-            `[${sch.bnNm}]의 ${sch.schSttTime.slice(0, 2)}:00 ~ ${sch.schEndTime.slice(0, 2)}:00 동아리방 예약을 취소하시겠습니까?`
+            `[${sch.bnNm}]의 ${sch.schSttTime.slice(0, 2)}:00 ~ ${sch.schEndTime.slice(0, 2)}:00 동방 예약을 취소하시겠습니까?`
         );
         setOnConfirmAction(() => async () => {
             setIsConfirmOpen(false);
@@ -286,7 +286,7 @@ const ClanDetail: React.FC = () => {
                     method: 'DELETE',
                 });
                 if (res.ok) {
-                    showAlert('동아리방 예약이 취소되었습니다.');
+                    showAlert('동방 예약이 취소되었습니다.');
                     fetchMethod();
                 } else {
                     const err = await res.json().catch(() => ({}));
@@ -837,7 +837,7 @@ const ClanDetail: React.FC = () => {
                 {clan?.roomUseYn === 'Y' && (
                     <section className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-[16px] font-semibold text-[#0B1114]">동아리방</h3>
+                            <h3 className="text-[16px] font-semibold text-[#0B1114]">동방</h3>
                             <span
                                 onClick={handleRoomReserveClick}
                                 className="text-[13px] font-medium text-[#525252] hover:text-[#00BDF8] cursor-pointer transition-colors"
@@ -949,7 +949,7 @@ const ClanDetail: React.FC = () => {
                                     </div>
                                 ) : (
                                     <div className="text-center text-xs text-gray-400 py-3">
-                                        선택한 날짜에 등록된 동아리방 일정이 없습니다.
+                                        선택한 날짜에 등록된 동방 일정이 없습니다.
                                     </div>
                                 )}
                             </div>
@@ -1017,7 +1017,7 @@ const ClanDetail: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-[#0B1114] mb-1.5">동아리방 사용 여부</label>
+                                <label className="block text-sm font-bold text-[#0B1114] mb-1.5">동방 사용 여부</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"

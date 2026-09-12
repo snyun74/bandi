@@ -5,7 +5,6 @@ import {
     FaChevronRight,
     FaChevronDown,
     FaChevronUp,
-    FaTrashAlt,
     FaMusic,
     FaDoorOpen,
     FaCalendarAlt,
@@ -383,7 +382,7 @@ const ClanRoomSchedule: React.FC = () => {
             setModalInfo({
                 isOpen: true,
                 title: '합주방 선택 필요',
-                message: '동아리방 예약을 진행할 합주방을 선택해 주세요.',
+                message: '동방 예약을 진행할 합주방을 선택해 주세요.',
                 type: 'alert',
             });
             return;
@@ -499,8 +498,8 @@ const ClanRoomSchedule: React.FC = () => {
             // 성공
             setModalInfo({
                 isOpen: true,
-                title: '동아리방 예약 완료',
-                message: `${selectedJam.bnNm}의 동아리방 일정이 성공적으로 예약되었습니다! 🎉`,
+                title: '동방 예약 완료',
+                message: `${selectedJam.bnNm}의 동방 일정이 성공적으로 예약되었습니다! 🎉`,
                 type: 'alert',
                 onConfirm: () => {
                     setSelectedSlots(new Set());
@@ -525,7 +524,7 @@ const ClanRoomSchedule: React.FC = () => {
         setModalInfo({
             isOpen: true,
             title: '예약 취소 확인',
-            message: `[${sch.bnNm}]의 ${sch.schSttTime.slice(0, 2)}:00 ~ ${sch.schEndTime.slice(0, 2)}:00 동아리방 예약을 취소하시겠습니까?`,
+            message: `[${sch.bnNm}]의 ${sch.schSttTime.slice(0, 2)}:00 ~ ${sch.schEndTime.slice(0, 2)}:00 동방 예약을 취소하시겠습니까?`,
             type: 'confirm',
             onConfirm: async () => {
                 try {
@@ -538,7 +537,7 @@ const ClanRoomSchedule: React.FC = () => {
                         setModalInfo({
                             isOpen: true,
                             title: '예약 취소 완료',
-                            message: '동아리방 예약이 취소되었습니다.',
+                            message: '동방 예약이 취소되었습니다.',
                             type: 'alert',
                             onConfirm: () => fetchSchedules(),
                         });
@@ -573,10 +572,10 @@ const ClanRoomSchedule: React.FC = () => {
                     <div className="flex flex-col items-center">
                         <h1 className="text-[16px] font-bold text-[#0B1114] flex items-center gap-1.5 truncate max-w-[240px]">
                             <FaDoorOpen className="text-[#00BDF8]" size={16} />
-                            동아리방 예약
+                            동방 예약
                         </h1>
                         <span className="text-[12px] text-gray-500 font-medium">
-                            {clanInfo ? clanInfo.name : '클랜 동아리방'}
+                            {clanInfo ? clanInfo.name : '클랜 동방'}
                         </span>
                     </div>
                     <div className="w-9" />
@@ -665,7 +664,7 @@ const ClanRoomSchedule: React.FC = () => {
                     {/* 상태 구분 범례 바 (라인 없는 순수 색상 블록) */}
                     <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F8FAFC] px-3.5 py-2.5 rounded-[10px] border border-[#EBECEF]">
                         <div className="flex items-center gap-1 font-medium">
-                            <span className="text-gray-500">동아리방:</span>
+                            <span className="text-gray-500">동방:</span>
                             <span className="font-bold text-[#0B1114]">1실</span>
                         </div>
                         <div className="flex items-center gap-2.5 flex-wrap">
@@ -871,9 +870,8 @@ const ClanRoomSchedule: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleDeleteReservation(sch)}
-                                                        className="px-2.5 py-1 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600 text-[11px] font-semibold flex items-center gap-1 transition-colors shrink-0 cursor-pointer shadow-2xs"
+                                                        className="px-2.5 py-1 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600 text-[11px] font-semibold transition-colors shrink-0 cursor-pointer shadow-2xs"
                                                     >
-                                                        <FaTrashAlt size={10} />
                                                         취소
                                                     </button>
                                                 )}
@@ -883,7 +881,7 @@ const ClanRoomSchedule: React.FC = () => {
                                 </div>
                             ) : (
                                 <p className="text-center text-[12px] text-gray-400 py-3">
-                                    이번 주에 등록된 동아리방 예약이 없습니다.
+                                    이번 주에 등록된 동방 예약이 없습니다.
                                 </p>
                             )}
                         </div>
@@ -897,7 +895,7 @@ const ClanRoomSchedule: React.FC = () => {
                         disabled={selectedSlots.size === 0 || isSubmitting || !selectedJam}
                         className="w-full h-[52px] bg-[#00BDF8] hover:bg-[#00a8dc] active:scale-[0.99] text-white text-[15px] font-bold rounded-[12px] flex items-center justify-center transition-all shadow-[0_4px_14px_rgba(0,189,248,0.3)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isSubmitting ? '예약 저장 중...' : '동아리방 일정 예약 저장'}
+                        {isSubmitting ? '예약 저장 중...' : '동방 일정 예약 저장'}
                     </button>
                     {selectedSlots.size > 0 && (
                         <button
