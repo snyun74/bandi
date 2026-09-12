@@ -913,17 +913,14 @@ const ClanRoomSchedule: React.FC = () => {
             {/* Common Alert / Confirm Modal */}
             <CommonModal
                 isOpen={modalInfo.isOpen}
-                onClose={() => {
-                    setModalInfo((prev) => ({ ...prev, isOpen: false }));
-                    if (modalInfo.type === 'alert' && modalInfo.onConfirm) {
-                        modalInfo.onConfirm();
-                    }
-                }}
                 onConfirm={() => {
                     setModalInfo((prev) => ({ ...prev, isOpen: false }));
                     if (modalInfo.onConfirm) {
                         modalInfo.onConfirm();
                     }
+                }}
+                onCancel={() => {
+                    setModalInfo((prev) => ({ ...prev, isOpen: false }));
                 }}
                 title={modalInfo.title}
                 message={modalInfo.message}
