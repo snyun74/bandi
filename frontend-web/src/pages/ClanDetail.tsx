@@ -247,31 +247,13 @@ const ClanDetail: React.FC = () => {
         return roomSchedules.filter((s: any) => s.schSttDate === selectedDateStr);
     }, [roomSchedules, selectedDateStr]);
 
-    const handleRoomReserveClick = async () => {
+    const handleRoomReserveClick = () => {
         const userId = localStorage.getItem('userId');
         if (!userId) {
             showAlert('로그인이 필요한 서비스입니다.');
             return;
         }
-        try {
-            const res = await fetch(`/api/clan/${id}/room-schedules/eligible-jams?userId=${userId}`);
-            if (res.ok) {
-                const jams: EligibleJam[] = await res.json();
-                if (!jams || jams.length === 0) {
-                    showAlert('해당 클랜의 진행 중이거나 확정된 합주방에 소속되어 있어야 동방 예약이 가능합니다.');
-                } else if (jams.length === 1) {
-                    navigate(`/main/clan/room-schedule/${id}?bnNo=${jams[0].bnNo}`);
-                } else {
-                    setEligibleJams(jams);
-                    setIsJamSelectModalOpen(true);
-                }
-            } else {
-                showAlert('합주방 소속 정보를 조회할 수 없습니다.');
-            }
-        } catch (err) {
-            console.error(err);
-            showAlert('합주방 소속 정보를 조회하는 중 오류가 발생했습니다.');
-        }
+        navigate(`/main/clan/room-schedule/${id}`);
     };
 
     const handleDeleteRoomSchedule = (sch: any) => {
@@ -906,30 +888,31 @@ const ClanDetail: React.FC = () => {
                                         {selectedRoomSchedules.map((sch: any) => (
                                             <div
                                                 key={sch.cnSchNo}
-                                                className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-gray-100 bg-[#FAFCFD] hover:border-cyan-200 transition-all"
+                                                className="flex items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-xl border border-gray-100 bg-[#FAFCFD] hover:border-cyan-200 transition-all"
                                             >
-                                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                    <div className="w-1 self-stretch bg-[#00BDF8] rounded-full min-h-[42px] shrink-0" />
+                                                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                                                    <div className="w-1 self-stretch bg-[#00BDF8] rounded-full min-h-[46px] shrink-0" />
                                                     <div className="flex-1 min-w-0 space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <h4 className="text-[15px] font-bold text-[#0B1114] truncate">
-                                                                {sch.bnNm}
-                                                            </h4>
-                                                            {sch.bnSongNm && (
-                                                                <span className="text-[12px] text-gray-500 font-medium truncate">
-                                                                    ({sch.bnSongNm})
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <div className="bg-[#F2F5F7] rounded-[10px] px-2 py-0.5 flex items-center gap-1.5 text-[11px] text-[#525252] font-semibold">
+                                                        {/* 1라인: 합주방명 */}
+                                                        <h4 className="text-[14px] sm:text-[15px] font-bold text-[#0B1114] truncate leading-tight">
+                                                            {sch.bnNm}
+                                                        </h4>
+                                                        {/* 2라인: 제목 (예약자 폰트 크기인 11px 적용) */}
+                                                        {sch.bnSongNm && (
+                                                            <p className="text-[11px] text-[#626A72] font-medium truncate leading-tight">
+                                                                {sch.bnSongNm}
+                                                            </p>
+                                                        )}
+                                                        {/* 3라인: 시간 및 예약자 */}
+                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-0.5">
+                                                            <div className="bg-[#F2F5F7] rounded-[8px] px-2 py-0.5 flex items-center gap-1.5 text-[11px] text-[#525252] font-semibold shrink-0">
                                                                 <FaRegClock size={10} className="text-[#00BDF8]" />
                                                                 <span>
                                                                     {sch.schSttTime.slice(0, 2)}:00 ~{' '}
                                                                     {sch.schEndTime.slice(0, 2)}:00
                                                                 </span>
                                                             </div>
-                                                            <span className="text-[11px] text-gray-400">
+                                                            <span className="text-[11px] text-gray-400 truncate">
                                                                 예약자: {sch.userNickNm || sch.insId}
                                                             </span>
                                                         </div>
@@ -939,7 +922,7 @@ const ClanDetail: React.FC = () => {
                                                 {sch.canDelete && (
                                                     <button
                                                         onClick={() => handleDeleteRoomSchedule(sch)}
-                                                        className="px-2.5 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 text-[11px] font-semibold transition-colors shrink-0"
+                                                        className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 text-[11px] font-semibold transition-colors shrink-0 cursor-pointer"
                                                     >
                                                         취소
                                                     </button>
