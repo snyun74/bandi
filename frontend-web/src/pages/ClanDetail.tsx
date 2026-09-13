@@ -187,6 +187,18 @@ const ClanDetail: React.FC = () => {
         fetchMethod();
     }, [id, weekStart]);
 
+    // 모달 오픈 시 메인화면(배경) 스크롤 잠금 -> 오직 팝업 창 내부에서만 스크롤 동작
+    useEffect(() => {
+        if (isEditModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isEditModalOpen]);
+
     // Calendar week calculations
     const weekDays = useMemo(() => {
         const days = [];
@@ -965,66 +977,86 @@ const ClanDetail: React.FC = () => {
             ───────────────────────────────────────────────────────────── */}
             {isEditModalOpen && (
                 <div
-                    className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm p-4"
                     style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
                 >
-                    <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-lg animate-fade-in-up">
-                        <h2 className="text-xl font-bold text-[#0B1114] mb-4 text-center">클랜 정보 수정</h2>
+                    <div className="bg-white w-full max-w-sm rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] animate-fade-in-up">
+                        {/* Header */}
+                        <h2 className="text-lg sm:text-xl font-bold text-[#0B1114] mb-3 text-center shrink-0">
+                            클랜 정보 수정
+                        </h2>
 
-                        <div className="flex justify-center mb-6">
-                            <div
-                                className="w-24 h-24 rounded-full bg-gray-100 border-2 border-gray-100 overflow-hidden flex items-center justify-center cursor-pointer relative"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                {editForm.previewUrl ? (
-                                    <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <DefaultProfile type="clan" iconSize={28} />
-                                )}
-                                <div className="absolute bottom-0 right-0 bg-[#00BDF8] text-white p-1.5 rounded-full">
-                                    <FaRegEdit size={12} />
+                        {/* Scrollable Form Body (팝업 내부에서만 스크롤) */}
+                        <div className="flex-1 overflow-y-auto pr-1 space-y-4 overscroll-contain">
+                            {/* Profile Image */}
+                            <div className="flex justify-center my-2">
+                                <div
+                                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 border-2 border-gray-100 overflow-hidden flex items-center justify-center cursor-pointer relative"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    {editForm.previewUrl ? (
+                                        <img src={editForm.previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <DefaultProfile type="clan" iconSize={26} />
+                                    )}
+                                    <div className="absolute bottom-0 right-0 bg-[#00BDF8] text-white p-1.5 rounded-full shadow-xs">
+                                        <FaRegEdit size={12} />
+                                    </div>
                                 </div>
+                                <input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*" />
                             </div>
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} hidden accept="image/*" />
-                        </div>
 
-                        <div className="space-y-4">
+                            {/* Clan Name */}
                             <div>
-                                <label className="block text-sm font-bold text-[#0B1114] mb-1">클랜 이름</label>
+                                <label className="block text-xs sm:text-sm font-bold text-[#0B1114] mb-1">
+                                    클랜 이름 <span className="text-red-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     value={editForm.nm}
                                     onChange={(e) => setEditForm((prev) => ({ ...prev, nm: e.target.value }))}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8]"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#00BDF8]"
                                     placeholder="클랜 이름을 입력하세요"
                                 />
                             </div>
+
+                            {/* Clan Description */}
                             <div>
-                                <label className="block text-sm font-bold text-[#0B1114] mb-1">클랜 소개</label>
+                                <label className="block text-xs sm:text-sm font-bold text-[#0B1114] mb-1">
+                                    클랜 소개 <span className="text-red-500">*</span>
+                                </label>
                                 <textarea
                                     value={editForm.desc}
                                     onChange={(e) => setEditForm((prev) => ({ ...prev, desc: e.target.value }))}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8] h-24 resize-none"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#00BDF8] h-20 resize-none"
                                     placeholder="클랜 소개를 입력하세요"
                                 />
                             </div>
+
+                            {/* Clan URL */}
                             <div>
-                                <label className="block text-sm font-bold text-[#0B1114] mb-1">URL (유튜브/참고자료)</label>
+                                <label className="block text-xs sm:text-sm font-bold text-[#0B1114] mb-1">
+                                    URL (유튜브/참고자료)
+                                </label>
                                 <input
                                     type="text"
                                     value={editForm.url}
                                     onChange={(e) => setEditForm((prev) => ({ ...prev, url: e.target.value }))}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8]"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#00BDF8]"
                                     placeholder="URL을 입력하세요"
                                 />
                             </div>
+
+                            {/* Room Use & Times */}
                             <div>
-                                <label className="block text-sm font-bold text-[#0B1114] mb-1.5">동방 사용 여부</label>
+                                <label className="block text-xs sm:text-sm font-bold text-[#0B1114] mb-1.5">
+                                    동방 사용 여부
+                                </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setEditForm((prev) => ({ ...prev, roomUseYn: 'N' }))}
-                                        className={`py-2 px-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                        className={`py-2 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                                             editForm.roomUseYn !== 'Y'
                                                 ? 'border-[#00BDF8] bg-[#EBF9FE] text-[#00BDF8] font-bold shadow-xs'
                                                 : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
@@ -1035,7 +1067,7 @@ const ClanDetail: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setEditForm((prev) => ({ ...prev, roomUseYn: 'Y' }))}
-                                        className={`py-2 px-3 rounded-xl border text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                                        className={`py-2 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                                             editForm.roomUseYn === 'Y'
                                                 ? 'border-[#00BDF8] bg-[#EBF9FE] text-[#00BDF8] font-bold shadow-xs'
                                                 : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
@@ -1046,7 +1078,7 @@ const ClanDetail: React.FC = () => {
                                 </div>
 
                                 {editForm.roomUseYn === 'Y' && (
-                                    <div className="mt-3 bg-[#F8FAFC] p-3 rounded-xl border border-sky-100 space-y-2">
+                                    <div className="mt-2.5 bg-[#F8FAFC] p-3 rounded-xl border border-sky-100 space-y-2">
                                         <label className="block text-xs font-bold text-[#0B1114]">
                                             동방 예약 가능 시간대 <span className="text-red-500">*</span>
                                         </label>
@@ -1056,7 +1088,7 @@ const ClanDetail: React.FC = () => {
                                                 <select
                                                     value={editForm.roomSttTime}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, roomSttTime: e.target.value }))}
-                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
                                                 >
                                                     {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(hour => (
                                                         <option key={hour} value={hour}>{hour}:00</option>
@@ -1069,7 +1101,7 @@ const ClanDetail: React.FC = () => {
                                                 <select
                                                     value={editForm.roomEndTime}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, roomEndTime: e.target.value }))}
-                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
                                                 >
                                                     {Array.from({ length: 24 }, (_, i) => String(i + 1).padStart(2, '0')).map(hour => (
                                                         <option key={hour} value={hour}>{hour}:00</option>
@@ -1085,16 +1117,17 @@ const ClanDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-2 mt-6">
+                        {/* Footer Action Buttons (Fixed at bottom) */}
+                        <div className="flex gap-2 pt-4 mt-3 border-t border-gray-100 shrink-0">
                             <button
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                                className="flex-1 bg-gray-100 text-gray-600 font-bold py-2.5 sm:py-3 rounded-xl hover:bg-gray-200 text-xs sm:text-sm transition-colors cursor-pointer"
                             >
                                 취소
                             </button>
                             <button
                                 onClick={handleUpdateClan}
-                                className="flex-1 bg-[#00BDF8] text-white font-bold py-3 rounded-xl hover:bg-[#00a6da] transition-colors"
+                                className="flex-1 bg-[#00BDF8] text-white font-bold py-2.5 sm:py-3 rounded-xl hover:bg-[#00a6da] text-xs sm:text-sm transition-colors cursor-pointer shadow-xs"
                             >
                                 수정완료
                             </button>
