@@ -30,6 +30,7 @@ interface RoomScheduleDto {
     userNickNm?: string;
     profileImageUrl?: string;
     canDelete?: boolean;
+    isMyJam?: boolean;
 }
 
 const defaultTimeHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
@@ -43,6 +44,11 @@ const ClanRoomSchedule: React.FC = () => {
     const [eligibleJams, setEligibleJams] = useState<EligibleJam[]>([]);
     const [isJamSelectModalOpen, setIsJamSelectModalOpen] = useState(false);
     const [schedules, setSchedules] = useState<RoomScheduleDto[]>([]);
+
+    // 유저 소속 합주방 번호 Set
+    const myJamBnNos = useMemo(() => {
+        return new Set(eligibleJams.map((j) => j.bnNo));
+    }, [eligibleJams]);
 
     // 주간 예약 목록 펼치기 / 닫기 상태
     const [isWeekListOpen, setIsWeekListOpen] = useState(true);
@@ -138,6 +144,20 @@ const ClanRoomSchedule: React.FC = () => {
         setCurrentBaseDate(next);
     };
 
+    // 소속 합주방 목록 조회
+    const fetchEligibleJams = useCallback(async () => {
+        if (!clanId || !userId) return;
+        try {
+            const res = await fetch(`/api/clan/${clanId}/room-schedules/eligible-jams?userId=${userId}`);
+            if (res.ok) {
+                const data: EligibleJam[] = await res.json();
+                setEligibleJams(Array.isArray(data) ? data : []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch eligible jams', err);
+        }
+    }, [clanId, userId]);
+
     // 스케쥴 조회
     const fetchSchedules = useCallback(async () => {
         if (!clanId) return;
@@ -178,14 +198,14 @@ const ClanRoomSchedule: React.FC = () => {
                         roomEndTime: clanData.roomEndTime
                     });
                 }
-                await fetchSchedules();
+                await Promise.all([fetchSchedules(), fetchEligibleJams()]);
             } catch (err) {
                 console.error('Failed to load init data', err);
             }
         };
 
         loadInitData();
-    }, [clanId, fetchSchedules]);
+    }, [clanId, fetchSchedules, fetchEligibleJams]);
 
     // 전역 마우스업 / 터치종료 리스너
     useEffect(() => {
@@ -654,20 +674,16 @@ const ClanRoomSchedule: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <div className="flex items-center gap-1">
-                                <span className="w-3 h-3 rounded-[3px] bg-white border border-gray-300 inline-block shadow-2xs" />
+                                <span className="w-3.5 h-3.5 rounded-[3px] bg-white border border-gray-300 inline-block shadow-2xs" />
                                 <span className="text-[11px] text-gray-700">예약 가능</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <span className="w-3 h-3 rounded-[3px] bg-[#00BDF8] inline-block shadow-2xs" />
-                                <span className="text-[11px] font-bold text-[#0098CC]">선택 중</span>
+                                <span className="w-3.5 h-3.5 rounded-[3px] bg-[#00BDF8] border border-white inline-block shadow-2xs" />
+                                <span className="text-[11px] font-bold text-[#0098CC]">내 합주방 예약 / 선택 중</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <span className="w-3 h-3 rounded-[3px] bg-[#2EE59D] inline-block shadow-2xs" />
-                                <span className="text-[11px] font-bold text-[#1eb375]">예약 완료</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <span className="w-3 h-3 rounded-[3px] bg-[#E2E8F0] inline-block shadow-2xs" />
-                                <span className="text-[11px] font-medium text-gray-400">지난 일정</span>
+                                <span className="w-3.5 h-3.5 rounded-[3px] bg-[#E2E8F0] border border-white inline-block shadow-2xs" />
+                                <span className="text-[11px] font-medium text-gray-400">타 합주방 예약 / 지난 일정</span>
                             </div>
                         </div>
                     </div>
@@ -741,16 +757,32 @@ const ClanRoomSchedule: React.FC = () => {
                                                     const isSelected = selectedSlots.has(slotKey);
                                                     const reservation = getSlotReservation(dateStr, hour);
                                                     const past = isSlotPast(dateStr, hour);
+                                                    const isMyJam = reservation ? Boolean(reservation.isMyJam || myJamBnNos.has(reservation.bnNo)) : false;
 
                                                     let cellBg = '#FFFFFF';
+                                                    let borderClass = 'border border-gray-100';
                                                     let cursorStyle = 'cursor-pointer';
 
                                                     if (isSelected) {
+                                                        // 내가 현재 선택 중인 슬롯: 파란색 (#00BDF8) + 흰색 박스 라인 테두리
                                                         cellBg = '#00BDF8';
+                                                        borderClass = 'border border-white shadow-2xs';
                                                     } else if (reservation) {
-                                                        cellBg = '#2EE59D';
+                                                        if (isMyJam) {
+                                                            // 내가 속한 합주방의 예약: 파란색 (#00BDF8) + 흰색 박스 라인 테두리
+                                                            cellBg = '#00BDF8';
+                                                            borderClass = 'border border-white shadow-2xs';
+                                                            cursorStyle = 'cursor-pointer';
+                                                        } else {
+                                                            // 타 합주방 예약: 회색 (#E2E8F0) + 흰색 박스 라인 테두리
+                                                            cellBg = '#E2E8F0';
+                                                            borderClass = 'border border-white';
+                                                            cursorStyle = 'cursor-not-allowed';
+                                                        }
                                                     } else if (past) {
+                                                        // 지난 일정: 회색 (#E2E8F0) + 흰색 박스 라인 테두리
                                                         cellBg = '#E2E8F0';
+                                                        borderClass = 'border border-white';
                                                         cursorStyle = 'cursor-not-allowed';
                                                     }
 
@@ -769,7 +801,7 @@ const ClanRoomSchedule: React.FC = () => {
                                                             onTouchStart={() =>
                                                                 handleCellTouchStart(dateStr, hour)
                                                             }
-                                                            className={`p-0 h-[38px] sm:h-[42px] transition-colors relative select-none ${cursorStyle}`}
+                                                            className={`p-0 h-[38px] sm:h-[42px] transition-colors relative select-none ${borderClass} ${cursorStyle}`}
                                                             style={{
                                                                 backgroundColor: cellBg,
                                                                 touchAction: 'pan-y',
@@ -819,6 +851,7 @@ const ClanRoomSchedule: React.FC = () => {
                             {weekSchedules.length > 0 ? (
                                 <div className="divide-y divide-gray-100 space-y-1">
                                     {weekSchedules.map((sch) => {
+                                        const isMyJam = Boolean(sch.isMyJam || myJamBnNos.has(sch.bnNo));
                                         const m = parseInt(sch.schSttDate.substring(4, 6), 10);
                                         const d = parseInt(sch.schSttDate.substring(6, 8), 10);
                                         const dateObj = new Date(
@@ -835,12 +868,21 @@ const ClanRoomSchedule: React.FC = () => {
                                                 className="py-2 px-2 flex items-center justify-between gap-2 hover:bg-gray-50/70 rounded-lg transition-colors"
                                             >
                                                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                                    <div className="w-1 self-stretch bg-[#00BDF8] rounded-full min-h-[44px] shrink-0" />
+                                                    <div className={`w-1 self-stretch rounded-full min-h-[44px] shrink-0 ${
+                                                        isMyJam ? 'bg-[#00BDF8]' : 'bg-[#CBD5E1]'
+                                                    }`} />
                                                     <div className="min-w-0 flex-1 space-y-0.5">
-                                                        {/* 1라인: 합주방명 */}
-                                                        <h4 className="text-[13px] sm:text-[14px] font-bold text-gray-900 truncate leading-tight">
-                                                            {sch.bnNm}
-                                                        </h4>
+                                                        {/* 1라인: 합주방명 + 내 합주방 뱃지 */}
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <h4 className="text-[13px] sm:text-[14px] font-bold text-gray-900 truncate leading-tight">
+                                                                {sch.bnNm}
+                                                            </h4>
+                                                            {isMyJam && (
+                                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#E1F7FF] text-[#0098CC] border border-[#BAE6FD]">
+                                                                    내 합주방
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         {/* 2라인: 제목 (곡명) */}
                                                         {sch.bnSongNm && (
                                                             <p className="text-[11px] text-[#626A72] font-medium truncate leading-tight">
@@ -850,7 +892,7 @@ const ClanRoomSchedule: React.FC = () => {
                                                         {/* 3라인: 일시 및 예약자 */}
                                                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5">
                                                             <div className="bg-[#F2F5F7] rounded-[6px] px-1.5 py-0.5 flex items-center gap-1 text-[10px] sm:text-[11px] text-[#525252] font-semibold shrink-0">
-                                                                <FaRegClock size={9} className="text-[#00BDF8]" />
+                                                                <FaRegClock size={9} className={isMyJam ? "text-[#00BDF8]" : "text-gray-400"} />
                                                                 <span>
                                                                     {m}/{d}({dayName}) {sch.schSttTime.slice(0, 2)}:00 ~{' '}
                                                                     {sch.schEndTime.slice(0, 2)}:00

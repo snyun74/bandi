@@ -91,6 +91,15 @@ public class CnRoomScheduleService {
         Map<String, User> userCache = new HashMap<>();
         Map<Long, String> attachCache = new HashMap<>();
 
+        Set<Long> myJamBnNos = new HashSet<>();
+        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
+            myJamBnNos = bnUserRepository.findByBnUserId(currentUserId).stream()
+                    .filter(bu -> "A".equals(bu.getBnUserStatCd()))
+                    .map(BnUser::getBnNo)
+                    .collect(Collectors.toSet());
+        }
+        final Set<Long> finalMyJamBnNos = myJamBnNos;
+
         return schedules.stream().map(schedule -> {
             BnGroup group = groupCache.computeIfAbsent(schedule.getBnNo(),
                     k -> bnGroupRepository.findById(k).orElse(null));
@@ -115,6 +124,7 @@ public class CnRoomScheduleService {
             boolean isFuture = scheduleStartDateTime.compareTo(nowStr) > 0;
             boolean isOwner = currentUserId != null && currentUserId.equals(schedule.getInsId());
             boolean canDelete = isFuture && isOwner;
+            boolean isMyJam = finalMyJamBnNos.contains(schedule.getBnNo());
 
             return CnRoomScheduleDto.builder()
                     .cnSchNo(schedule.getCnSchNo())
@@ -134,6 +144,7 @@ public class CnRoomScheduleService {
                     .userNickNm(creator != null ? creator.getUserNickNm() : schedule.getInsId())
                     .profileImageUrl(userProfileImg)
                     .canDelete(canDelete)
+                    .isMyJam(isMyJam)
                     .build();
         }).collect(Collectors.toList());
     }

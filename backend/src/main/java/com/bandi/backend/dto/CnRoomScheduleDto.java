@@ -27,4 +27,5 @@ public class CnRoomScheduleDto {
     private String userNickNm;
     private String profileImageUrl;
     private Boolean canDelete;
+    private Boolean isMyJam;
 }
