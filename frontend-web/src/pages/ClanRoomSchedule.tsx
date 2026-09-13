@@ -500,8 +500,7 @@ const ClanRoomSchedule: React.FC = () => {
                 setModalInfo({
                     isOpen: true,
                     title: '동방 예약 불가',
-                    message:
-                        '해당 클랜의 진행 중이거나 확정된 합주방에 소속되어 있어야 동방 예약이 가능합니다.',
+                    message: '합주방에 소속되어 있어야 동방 예약이 가능합니다.',
                     type: 'alert',
                 });
                 return;
