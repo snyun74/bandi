@@ -721,6 +721,13 @@ public class ClanService {
         }
         if (dto.getRoomUseYn() != null) {
             clan.setRoomUseYn(dto.getRoomUseYn());
+            if ("Y".equalsIgnoreCase(dto.getRoomUseYn())) {
+                clan.setRoomSttTime(dto.getRoomSttTime());
+                clan.setRoomEndTime(dto.getRoomEndTime());
+            } else {
+                clan.setRoomSttTime(null);
+                clan.setRoomEndTime(null);
+            }
         }
 
         clan.setUpdDtime(currentDateTime);

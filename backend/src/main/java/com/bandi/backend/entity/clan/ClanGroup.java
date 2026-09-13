@@ -50,4 +50,10 @@ public class ClanGroup {
 
     @Column(name = "ROOM_USE_YN", length = 1)
     private String roomUseYn;
+
+    @Column(name = "ROOM_STT_TIME", length = 2)
+    private String roomSttTime;
+
+    @Column(name = "ROOM_END_TIME", length = 2)
+    private String roomEndTime;
 }

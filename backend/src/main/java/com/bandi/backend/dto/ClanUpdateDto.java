@@ -9,4 +9,6 @@ public class ClanUpdateDto {
     private String cnDesc;
     private String cnUrl;
     private String roomUseYn;
+    private String roomSttTime;
+    private String roomEndTime;
 }

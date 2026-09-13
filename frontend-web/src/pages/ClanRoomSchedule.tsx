@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     FaChevronLeft,
@@ -32,14 +32,14 @@ interface RoomScheduleDto {
     canDelete?: boolean;
 }
 
-const timeHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+const defaultTimeHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 
 const ClanRoomSchedule: React.FC = () => {
     const navigate = useNavigate();
     const { clanId } = useParams<{ clanId: string }>();
     const userId = localStorage.getItem('userId') || '';
 
-    const [clanInfo, setClanInfo] = useState<{ id: number; name: string } | null>(null);
+    const [clanInfo, setClanInfo] = useState<{ id: number; name: string; roomSttTime?: string; roomEndTime?: string } | null>(null);
     const [eligibleJams, setEligibleJams] = useState<EligibleJam[]>([]);
     const [isJamSelectModalOpen, setIsJamSelectModalOpen] = useState(false);
     const [schedules, setSchedules] = useState<RoomScheduleDto[]>([]);
@@ -55,6 +55,23 @@ const ClanRoomSchedule: React.FC = () => {
         sunday.setHours(0, 0, 0, 0);
         return sunday;
     });
+
+    // 동방 설정 시간대 (시작 ~ 종료) 동적 계산
+    const timeHours = useMemo(() => {
+        if (!clanInfo || !clanInfo.roomSttTime || !clanInfo.roomEndTime) {
+            return defaultTimeHours;
+        }
+        const stt = parseInt(clanInfo.roomSttTime, 10);
+        const end = parseInt(clanInfo.roomEndTime, 10);
+        if (isNaN(stt) || isNaN(end) || stt >= end) {
+            return defaultTimeHours;
+        }
+        const hours: number[] = [];
+        for (let h = stt; h < end; h++) {
+            hours.push(h);
+        }
+        return hours.length > 0 ? hours : defaultTimeHours;
+    }, [clanInfo]);
 
     // 멀티 선택된 슬롯들: Set of "YYYYMMDD_HH00"
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
@@ -154,7 +171,12 @@ const ClanRoomSchedule: React.FC = () => {
                 const clanRes = await fetch(`/api/clans/${clanId}`);
                 if (clanRes.ok) {
                     const clanData = await clanRes.json();
-                    setClanInfo({ id: clanData.cnNo, name: clanData.cnNm });
+                    setClanInfo({
+                        id: clanData.cnNo,
+                        name: clanData.cnNm,
+                        roomSttTime: clanData.roomSttTime,
+                        roomEndTime: clanData.roomEndTime
+                    });
                 }
                 await fetchSchedules();
             } catch (err) {
@@ -697,16 +719,16 @@ const ClanRoomSchedule: React.FC = () => {
                                     </tr>
                                 </thead>
 
-                                {/* Time Rows (08:00 ~ 22:00) */}
+                                {/* Time Rows */}
                                 <tbody>
-                                    {timeHours.map((hour) => {
+                                    {timeHours.map((hour: number) => {
                                         const hourLabel = `${String(hour).padStart(2, '0')}:00`;
                                         return (
-                                            <tr key={hour} className="h-[22px] sm:h-[25px]">
+                                            <tr key={hour} className="h-[38px] sm:h-[42px]">
                                                 {/* 세로 시간 라벨 (KST 열: touchAction pan-y로 위아래 스크롤 완벽 지원) */}
                                                 <td
                                                     data-kst="true"
-                                                    className="w-[36px] sm:w-[42px] text-[10px] sm:text-[11px] font-medium text-[#737373] bg-white select-none cursor-default leading-none"
+                                                    className="w-[36px] sm:w-[42px] text-[11px] sm:text-[12px] font-semibold text-[#626A72] bg-white select-none cursor-default leading-none"
                                                     style={{ touchAction: 'pan-y' }}
                                                 >
                                                     {hourLabel}
@@ -747,7 +769,7 @@ const ClanRoomSchedule: React.FC = () => {
                                                             onTouchStart={() =>
                                                                 handleCellTouchStart(dateStr, hour)
                                                             }
-                                                            className={`p-0 h-[22px] sm:h-[25px] transition-colors relative select-none ${cursorStyle}`}
+                                                            className={`p-0 h-[38px] sm:h-[42px] transition-colors relative select-none ${cursorStyle}`}
                                                             style={{
                                                                 backgroundColor: cellBg,
                                                                 touchAction: 'pan-y',

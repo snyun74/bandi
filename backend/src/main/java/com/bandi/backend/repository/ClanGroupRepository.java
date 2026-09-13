@@ -90,7 +90,9 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "  AND m.sndUserId <> :userId " +
                         "  AND NOT EXISTS (SELECT r FROM ClanChatMessageRead r WHERE r.cnMsgNo = m.cnMsgNo AND r.readUserId = :userId)), "
                         +
-                        "g.roomUseYn " +
+                        "g.roomUseYn, " +
+                        "g.roomSttTime, " +
+                        "g.roomEndTime " +
                         ") " +
                         "FROM ClanGroup g " +
                         "LEFT JOIN CmAttachment a ON g.attachNo = a.attachNo " +

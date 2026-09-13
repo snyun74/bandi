@@ -29,6 +29,8 @@ interface ClanDetailData {
     unreadChatCount?: number;
     cnUrl?: string;
     roomUseYn?: string;
+    roomSttTime?: string;
+    roomEndTime?: string;
 }
 
 const ClanDetail: React.FC = () => {
@@ -67,9 +69,11 @@ const ClanDetail: React.FC = () => {
         desc: string;
         url: string;
         roomUseYn: string;
+        roomSttTime: string;
+        roomEndTime: string;
         imageFile: File | null;
         previewUrl: string | null;
-    }>({ nm: '', desc: '', url: '', roomUseYn: 'N', imageFile: null, previewUrl: null });
+    }>({ nm: '', desc: '', url: '', roomUseYn: 'N', roomSttTime: '08', roomEndTime: '22', imageFile: null, previewUrl: null });
 
     const [isGatheringCreateModalOpen, setIsGatheringCreateModalOpen] = useState(false);
     const [isGatheringApplyModalOpen, setIsGatheringApplyModalOpen] = useState(false);
@@ -127,7 +131,9 @@ const ClanDetail: React.FC = () => {
                     attachFilePath: data.attachFilePath,
                     unreadChatCount: data.unreadChatCount,
                     cnUrl: data.cnUrl,
-                    roomUseYn: data.roomUseYn || 'N'
+                    roomUseYn: data.roomUseYn || 'N',
+                    roomSttTime: data.roomSttTime || '08',
+                    roomEndTime: data.roomEndTime || '22'
                 });
             }
 
@@ -329,6 +335,8 @@ const ClanDetail: React.FC = () => {
                 desc: clan.description || '',
                 url: clan.cnUrl || '',
                 roomUseYn: clan.roomUseYn || 'N',
+                roomSttTime: clan.roomSttTime || '08',
+                roomEndTime: clan.roomEndTime || '22',
                 imageFile: null,
                 previewUrl: clan.attachFilePath || null
             });
@@ -361,6 +369,15 @@ const ClanDetail: React.FC = () => {
             return;
         }
 
+        if (editForm.roomUseYn === 'Y') {
+            const stt = parseInt(editForm.roomSttTime, 10);
+            const end = parseInt(editForm.roomEndTime, 10);
+            if (isNaN(stt) || isNaN(end) || stt >= end) {
+                showAlert('동방 예약 시작 시간은 종료 시간보다 앞서야 합니다.');
+                return;
+            }
+        }
+
         try {
             const formData = new FormData();
             const updateData = {
@@ -368,7 +385,9 @@ const ClanDetail: React.FC = () => {
                 cnNm: editForm.nm,
                 cnDesc: editForm.desc,
                 cnUrl: editForm.url,
-                roomUseYn: editForm.roomUseYn
+                roomUseYn: editForm.roomUseYn,
+                roomSttTime: editForm.roomUseYn === 'Y' ? editForm.roomSttTime : null,
+                roomEndTime: editForm.roomUseYn === 'Y' ? editForm.roomEndTime : null
             };
             formData.append('data', new Blob([JSON.stringify(updateData)], { type: 'application/json' }));
             if (editForm.imageFile) {
@@ -1025,6 +1044,44 @@ const ClanDetail: React.FC = () => {
                                         사용 (Y)
                                     </button>
                                 </div>
+
+                                {editForm.roomUseYn === 'Y' && (
+                                    <div className="mt-3 bg-[#F8FAFC] p-3 rounded-xl border border-sky-100 space-y-2">
+                                        <label className="block text-xs font-bold text-[#0B1114]">
+                                            동방 예약 가능 시간대 <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1">
+                                                <span className="text-[11px] text-gray-500 block mb-1">시작 시간</span>
+                                                <select
+                                                    value={editForm.roomSttTime}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, roomSttTime: e.target.value }))}
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                >
+                                                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(hour => (
+                                                        <option key={hour} value={hour}>{hour}:00</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <span className="text-gray-400 font-bold self-end pb-1.5">~</span>
+                                            <div className="flex-1">
+                                                <span className="text-[11px] text-gray-500 block mb-1">종료 시간</span>
+                                                <select
+                                                    value={editForm.roomEndTime}
+                                                    onChange={(e) => setEditForm(prev => ({ ...prev, roomEndTime: e.target.value }))}
+                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                >
+                                                    {Array.from({ length: 24 }, (_, i) => String(i + 1).padStart(2, '0')).map(hour => (
+                                                        <option key={hour} value={hour}>{hour}:00</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-gray-500">
+                                            지정한 시간대 사이에서만 멤버들이 동방을 예약할 수 있습니다.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
