@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaSearch, FaLock, FaMicrophone, FaGuitar, FaDrum, FaMusic, FaCheck, FaPlusCircle } from 'react-icons/fa';
+import { FaChevronLeft, FaSearch, FaLock, FaMicrophone, FaGuitar, FaDrum, FaMusic, FaCheck, FaPlusCircle, FaInfoCircle } from 'react-icons/fa';
 import { GiGrandPiano } from 'react-icons/gi';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal, X, LayoutGrid, LayoutList } from 'lucide-react';
 import CommonModal from '../components/common/CommonModal';
 import DefaultProfile from '../components/common/DefaultProfile';
 
@@ -46,6 +47,7 @@ const ClanJamList: React.FC = () => {
     const [sortOption, setSortOption] = useState<string>('sort:latest');
     const [sessionCodes, setSessionCodes] = useState<{ commDtlCd: string; commDtlNm: string; commOrder: number }[]>([]);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'card' | 'grid'>('card');
 
     // 참여하기 / 취소하기 바텀시트 모달 상태
     const [actionModal, setActionModal] = useState<{
@@ -663,16 +665,136 @@ const ClanJamList: React.FC = () => {
             {/* ========================================================================= */}
             <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 w-full">
                 <div className="w-full max-w-lg mx-auto space-y-3.5 pb-16">
-                    <h2 className="text-[17px] font-bold leading-[24px] text-[#0B1114]">
-                        밴디콘 추천 합주
-                    </h2>
+                    {/* 상단 타이틀 & 그리드/리스트 전환 버튼 */}
+                    <div className="flex items-center justify-between gap-2">
+                        <h2 className="text-[17px] font-bold leading-[24px] text-[#0B1114]">
+                            밴디콘 추천 합주
+                        </h2>
+                        <button
+                            onClick={() => setViewMode(prev => prev === 'card' ? 'grid' : 'card')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold transition-all shadow-2xs active:scale-95 cursor-pointer ${
+                                viewMode === 'grid'
+                                    ? 'bg-[#00BDF8] text-white'
+                                    : 'bg-white text-gray-700 border border-[#E5E5E5] hover:bg-gray-50'
+                            }`}
+                            title={viewMode === 'grid' ? '리스트 형식으로 보기' : '그리드 테이블 형식으로 보기'}
+                        >
+                            {viewMode === 'grid' ? (
+                                <>
+                                    <LayoutList size={13} />
+                                    <span>리스트 보기</span>
+                                </>
+                            ) : (
+                                <>
+                                    <LayoutGrid size={13} className="text-[#00BDF8]" />
+                                    <span>그리드 보기</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
 
                     {jamRooms.length === 0 ? (
                         <div className="bg-white rounded-[12px] p-8 text-center text-gray-400 border border-[#E5E5E5] space-y-2">
                             <p className="text-base font-bold text-gray-700">개설된 합주방이 없습니다. 🎸</p>
                             <p className="text-xs text-gray-400">첫 번째 합주방을 직접 만들어보세요!</p>
                         </div>
+                    ) : viewMode === 'grid' ? (
+                        /* ============================================================= */
+                        /* 복원된 그리드 (테이블 매트릭스) 뷰 */
+                        /* ============================================================= */
+                        <div className="bg-white border border-[#E5E5E5] rounded-[16px] overflow-hidden shadow-[0px_2px_8px_rgba(0,0,0,0.03)]">
+                            <div className="overflow-x-auto no-scrollbar">
+                                <table className="w-full text-center border-collapse whitespace-nowrap">
+                                    <thead>
+                                        <tr className="bg-[#F7F9FC] border-b border-gray-200 text-[#0B1114] text-[11px] font-bold">
+                                            <th className="py-2.5 px-3 text-left sticky left-0 z-20 bg-[#F7F9FC] border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] min-w-[130px]">
+                                                합주방 정보
+                                            </th>
+                                            {sessionCodes.map((code) => (
+                                                <th key={code.commDtlCd} className="py-2.5 px-2 min-w-[68px] text-gray-700 border-r border-gray-100 last:border-r-0">
+                                                    {code.commDtlNm}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-[11px] divide-y divide-gray-100">
+                                        {jamRooms.map((room) => {
+                                            const isClosed = room.isConfirmed || room.status === 'E';
+                                            const safeRoles = room.roles || [];
+
+                                            return (
+                                                <tr key={room.id} className="hover:bg-gray-50/70 transition-colors">
+                                                    {/* 좌측 고정 열: 방 제목 & 곡명/아티스트 */}
+                                                    <td className="py-2.5 px-3 text-left sticky left-0 z-10 bg-white border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] min-w-[130px] max-w-[150px]">
+                                                        <div
+                                                            onClick={() => handleRoomClick(room)}
+                                                            className="font-bold text-[#0B1114] hover:text-[#00BDF8] cursor-pointer truncate flex items-center gap-1"
+                                                            title={room.title}
+                                                        >
+                                                            {room.secret && <FaLock size={10} className="text-gray-400 shrink-0" />}
+                                                            <span className="truncate">{room.title}</span>
+                                                        </div>
+                                                        <div className="text-[10px] text-[#737373] truncate mt-0.5" title={`${room.songTitle} - ${room.artist}`}>
+                                                            {room.songTitle && room.artist ? `${room.songTitle} - ${room.artist}` : room.songTitle || room.artist || '-'}
+                                                        </div>
+                                                        <span className={`inline-block text-[9px] font-bold px-1.5 py-0.2 rounded mt-1 ${
+                                                            isClosed ? 'bg-gray-100 text-gray-500' : 'bg-[#E6F8FE] text-[#00BDF8]'
+                                                        }`}>
+                                                            {isClosed ? '마감' : '모집 중'}
+                                                        </span>
+                                                    </td>
+
+                                                    {/* 세션별 셀 매트릭스 */}
+                                                    {sessionCodes.map((code) => {
+                                                        const matchedRoles = safeRoles.filter(r => r.sessionTypeCd === code.commDtlCd);
+                                                        if (matchedRoles.length === 0) {
+                                                            return (
+                                                                <td key={code.commDtlCd} className="py-2 px-1 text-gray-300 border-r border-gray-100 last:border-r-0">
+                                                                    -
+                                                                </td>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <td key={code.commDtlCd} className="py-2 px-1 border-r border-gray-100 last:border-r-0 text-center">
+                                                                <div className="flex flex-col items-center gap-0.5">
+                                                                    {matchedRoles.map((role, rIdx) => (
+                                                                        <div
+                                                                            key={rIdx}
+                                                                            onClick={(e) => handleSessionClick(e, room, role)}
+                                                                            className="cursor-pointer hover:opacity-75 transition-opacity py-0.5 px-1 rounded"
+                                                                        >
+                                                                            <div className={`text-[11px] leading-tight ${
+                                                                                role.status === 'occupied' && role.user
+                                                                                    ? 'text-[#0B1114] font-medium'
+                                                                                    : 'text-gray-400 font-normal'
+                                                                            }`}>
+                                                                                {role.status === 'occupied' && role.user ? role.user : "공석"}
+                                                                            </div>
+                                                                            {role.reservedUsers && role.reservedUsers.length > 0 && (
+                                                                                <div className="text-[9px] text-[#FF9F43] font-medium mt-0.5 leading-tight">
+                                                                                    {role.reservedUsers.map((nick, nIdx) => (
+                                                                                        <div key={nIdx}>({nick})</div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     ) : (
+                        /* ============================================================= */
+                        /* 기본 리스트 카드 뷰 */
+                        /* ============================================================= */
                         jamRooms.map((room) => {
                             const occupiedCount = room.roles.filter(r => r.status === 'occupied').length;
                             const totalCount = room.roles.length;
@@ -806,22 +928,24 @@ const ClanJamList: React.FC = () => {
             </div>
 
             {/* ========================================================================= */}
+            {/* ========================================================================= */}
             {/* 참여하기 / 취소하기 바텀시트 모달 (2번째 캡처 화면 100% 일치) */}
             {/* ========================================================================= */}
-            {actionModal.isOpen && actionModal.room && (
+            {actionModal.isOpen && actionModal.room && createPortal(
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-end justify-center animate-fadeIn"
+                    className="fixed top-0 left-0 right-0 bg-black/50 backdrop-blur-xs z-[45] flex items-end justify-center animate-fadeIn font-['Pretendard']"
+                    style={{ bottom: 'calc(var(--nav-height) + var(--safe-bottom))' }}
                     onClick={() => setActionModal(prev => ({ ...prev, isOpen: false }))}
                 >
                     <div
-                        className="bg-white w-full max-w-lg rounded-t-[24px] p-5 pb-8 space-y-5 shadow-2xl animate-slideUp max-h-[90vh] overflow-y-auto"
+                        className="bg-white w-full max-w-lg rounded-t-[24px] p-5 pb-5 space-y-4 shadow-2xl animate-slideUp max-h-[80vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* 상단 핸들 바 */}
                         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto" />
 
                         {/* 합주 정보 요약 */}
-                        <div className="flex items-center gap-3.5 pb-2">
+                        <div className="flex items-center gap-3.5 pb-1">
                             <div className="w-[56px] h-[56px] rounded-[16px] overflow-hidden bg-gray-100 shadow-xs shrink-0 flex items-center justify-center">
                                 {actionModal.room.attachFilePath ? (
                                     <img
@@ -846,7 +970,7 @@ const ClanJamList: React.FC = () => {
                         </div>
 
                         {/* 포지션 선택 리스트 */}
-                        <div className="space-y-2.5">
+                        <div className="space-y-2">
                             <h4 className="text-[14px] font-bold text-[#0B1114]">
                                 {actionModal.mode === 'join' ? '참여할 포지션 선택' : '취소할 포지션 선택'}
                             </h4>
@@ -971,29 +1095,34 @@ const ClanJamList: React.FC = () => {
                             </p>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* ========================================================================= */}
             {/* 필터 / 정렬 모달 */}
             {/* ========================================================================= */}
-            {isFilterModalOpen && (
+            {isFilterModalOpen && createPortal(
                 <div
-                    className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-end justify-center animate-fadeIn"
+                    className="fixed top-0 left-0 right-0 bg-black/40 backdrop-blur-xs z-[45] flex items-end justify-center animate-fadeIn font-['Pretendard']"
+                    style={{ bottom: 'calc(var(--nav-height) + var(--safe-bottom))' }}
                     onClick={() => setIsFilterModalOpen(false)}
                 >
                     <div
-                        className="bg-white w-full max-w-lg rounded-t-[24px] p-6 space-y-4 shadow-2xl animate-slideUp"
+                        className="bg-white w-full max-w-lg rounded-t-[24px] p-5 pb-5 space-y-4 shadow-2xl animate-slideUp max-h-[80vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                        {/* 상단 핸들 바 */}
+                        <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto -mt-1 mb-1" />
+
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-2.5">
                             <h3 className="text-base font-bold text-[#0B1114]">정렬 및 필터</h3>
-                            <button onClick={() => setIsFilterModalOpen(false)} className="text-gray-400 hover:text-gray-700">
+                            <button onClick={() => setIsFilterModalOpen(false)} className="text-gray-400 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <div>
                                 <h4 className="text-xs font-bold text-gray-500 mb-2">정렬 기준</h4>
                                 <div className="grid grid-cols-3 gap-2">
@@ -1008,10 +1137,10 @@ const ClanJamList: React.FC = () => {
                                                 setSortOption(item.value);
                                                 setIsFilterModalOpen(false);
                                             }}
-                                            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                                                 sortOption === item.value
-                                                    ? 'bg-[#00BDF8] text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    ? 'bg-[#00BDF8] text-white shadow-xs'
+                                                    : 'bg-[#F4F6F8] text-gray-700 hover:bg-gray-200'
                                             }`}
                                         >
                                             {item.label}
@@ -1022,7 +1151,22 @@ const ClanJamList: React.FC = () => {
 
                             <div>
                                 <h4 className="text-xs font-bold text-gray-500 mb-2">세션별 모아보기</h4>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                    {/* 전체(필터 해제) 버튼 */}
+                                    <button
+                                        onClick={() => {
+                                            setSortOption('sort:latest');
+                                            setIsFilterModalOpen(false);
+                                        }}
+                                        className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                                            !sortOption.startsWith('filter:')
+                                                ? 'bg-[#00BDF8] text-white shadow-xs'
+                                                : 'bg-[#F4F6F8] text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        전체
+                                    </button>
+
                                     {sessionCodes.map((code) => (
                                         <button
                                             key={code.commDtlCd}
@@ -1030,10 +1174,10 @@ const ClanJamList: React.FC = () => {
                                                 setSortOption(`filter:${code.commDtlCd}`);
                                                 setIsFilterModalOpen(false);
                                             }}
-                                            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                                            className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                                                 sortOption === `filter:${code.commDtlCd}`
-                                                    ? 'bg-[#00BDF8] text-white'
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    ? 'bg-[#00BDF8] text-white shadow-xs'
+                                                    : 'bg-[#F4F6F8] text-gray-700 hover:bg-gray-200'
                                             }`}
                                         >
                                             {code.commDtlNm}
@@ -1043,12 +1187,13 @@ const ClanJamList: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* 비밀번호 입력 모달 */}
-            {passwordModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+            {passwordModal.isOpen && createPortal(
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 font-['Pretendard']">
                     <div className="bg-white rounded-2xl p-6 w-full max-w-xs shadow-2xl space-y-4">
                         <h3 className="text-lg font-bold text-[#0B1114] text-center">비밀번호 입력</h3>
                         <input
@@ -1077,12 +1222,13 @@ const ClanJamList: React.FC = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* 상세 설명 모달 */}
-            {descModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" onClick={() => setDescModal(prev => ({ ...prev, isOpen: false }))}>
+            {descModal.isOpen && createPortal(
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 font-['Pretendard']" onClick={() => setDescModal(prev => ({ ...prev, isOpen: false }))}>
                     <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-base font-bold text-[#0B1114]">{descModal.title}</h3>
                         <div className="text-gray-600 text-sm whitespace-pre-wrap max-h-60 overflow-y-auto leading-relaxed">
@@ -1095,7 +1241,8 @@ const ClanJamList: React.FC = () => {
                             닫기
                         </button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* 공통 Alert / Confirm 모달 */}
