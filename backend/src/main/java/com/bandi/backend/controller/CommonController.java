@@ -30,7 +30,7 @@ public class CommonController {
         int iosVersionCode = 4;
         String iosVersionName = "1.1.0";
         boolean iosForceUpdate = false;
-        String iosStoreUrl = "https://apps.apple.com/app/id6475653554";
+        String iosStoreUrl = "https://apps.apple.com/app/id6779875361";
 
         // Android 설정 (기본값)
         int androidVersionCode = 24;

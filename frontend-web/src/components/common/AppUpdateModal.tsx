@@ -83,7 +83,7 @@ const AppUpdateModal: React.FC = () => {
   const handleUpdate = () => {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isIOS) {
-      const iosUrl = versionInfo.iosStoreUrl || 'https://apps.apple.com/app/id6475653554';
+      const iosUrl = versionInfo.iosStoreUrl || 'https://apps.apple.com/app/id6779875361';
       window.location.href = iosUrl;
     } else {
       const androidStoreUrl = versionInfo.androidStoreUrl || versionInfo.storeUrl || 'market://details?id=com.bandimobile';

@@ -323,7 +323,7 @@ function App(): React.JSX.Element {
                 style={styles.updateButton}
                 onPress={async () => {
                   const targetUrl = Platform.OS === 'ios'
-                    ? (latestVersionInfo?.iosStoreUrl || 'https://apps.apple.com/app/id6475653554')
+                    ? (latestVersionInfo?.iosStoreUrl || 'https://apps.apple.com/app/id6779875361')
                     : (latestVersionInfo?.storeUrl || 'market://details?id=com.bandimobile');
 
                   try {
@@ -331,7 +331,7 @@ function App(): React.JSX.Element {
                   } catch (err) {
                     console.warn('Primary store URL failed, trying fallback:', err);
                     const fallbackUrl = Platform.OS === 'ios'
-                      ? 'https://apps.apple.com/app/id6475653554'
+                      ? 'https://apps.apple.com/app/id6779875361'
                       : 'https://play.google.com/store/apps/details?id=com.bandimobile';
                     Linking.openURL(fallbackUrl).catch(() => {
                       Alert.alert('알림', '스토어 페이지를 열 수 없습니다.');
