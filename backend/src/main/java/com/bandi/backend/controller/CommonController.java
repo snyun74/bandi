@@ -65,24 +65,22 @@ public class CommonController {
             }
         } catch (Exception ignored) {}
 
-        return ResponseEntity.ok(java.util.Map.of(
-            // iOS 전용
-            "iosVersionCode", iosVersionCode,
-            "iosVersionName", iosVersionName,
-            "iosForceUpdate", iosForceUpdate,
-            "iosStoreUrl", iosStoreUrl,
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("iosVersionCode", iosVersionCode);
+        response.put("iosVersionName", iosVersionName);
+        response.put("iosForceUpdate", iosForceUpdate);
+        response.put("iosStoreUrl", iosStoreUrl);
 
-            // Android 전용
-            "androidVersionCode", androidVersionCode,
-            "androidVersionName", androidVersionName,
-            "androidForceUpdate", androidForceUpdate,
-            "androidStoreUrl", androidStoreUrl,
+        response.put("androidVersionCode", androidVersionCode);
+        response.put("androidVersionName", androidVersionName);
+        response.put("androidForceUpdate", androidForceUpdate);
+        response.put("androidStoreUrl", androidStoreUrl);
 
-            // 공통/하위 호환 필드
-            "latestVersionCode", Math.max(iosVersionCode, androidVersionCode),
-            "latestVersionName", iosVersionName,
-            "forceUpdate", iosForceUpdate || androidForceUpdate,
-            "storeUrl", androidStoreUrl
-        ));
+        response.put("latestVersionCode", Math.max(iosVersionCode, androidVersionCode));
+        response.put("latestVersionName", iosVersionName);
+        response.put("forceUpdate", iosForceUpdate || androidForceUpdate);
+        response.put("storeUrl", androidStoreUrl);
+
+        return ResponseEntity.ok(response);
     }
 }
