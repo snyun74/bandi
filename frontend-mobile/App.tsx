@@ -321,15 +321,22 @@ function App(): React.JSX.Element {
               )}
               <TouchableOpacity
                 style={styles.updateButton}
-                onPress={() => {
-                  const url = Platform.OS === 'ios'
-                    ? (latestVersionInfo?.iosStoreUrl || 'itms-apps://itunes.apple.com/app/id6475653554')
+                onPress={async () => {
+                  const targetUrl = Platform.OS === 'ios'
+                    ? (latestVersionInfo?.iosStoreUrl || 'https://apps.apple.com/app/id6475653554')
                     : (latestVersionInfo?.storeUrl || 'market://details?id=com.bandimobile');
 
-                  Linking.openURL(url).catch(err => {
-                    console.error('Failed to open store URL:', err);
-                    Alert.alert('오류', '스토어를 열 수 없습니다.');
-                  });
+                  try {
+                    await Linking.openURL(targetUrl);
+                  } catch (err) {
+                    console.warn('Primary store URL failed, trying fallback:', err);
+                    const fallbackUrl = Platform.OS === 'ios'
+                      ? 'https://apps.apple.com/app/id6475653554'
+                      : 'https://play.google.com/store/apps/details?id=com.bandimobile';
+                    Linking.openURL(fallbackUrl).catch(() => {
+                      Alert.alert('알림', '스토어 페이지를 열 수 없습니다.');
+                    });
+                  }
                 }}
               >
                 <Text style={styles.updateButtonText}>업데이트 하기</Text>

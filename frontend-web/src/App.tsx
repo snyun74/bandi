@@ -87,6 +87,7 @@ import SnsExplore from './pages/sns/SnsExplore';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import ChildSafetyPolicyPage from './pages/ChildSafetyPolicyPage';
 import SettingsPage from './pages/SettingsPage';
+import AppUpdateModal from './components/common/AppUpdateModal';
 
 declare global {
   interface Window {
@@ -288,6 +289,9 @@ function App() {
           onClose={() => setPushNotification(null)}
         />
       )}
+
+      {/* App Version Update Modal */}
+      <AppUpdateModal />
     </>
   );
 }

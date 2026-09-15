@@ -6,6 +6,13 @@ interface VersionInfo {
   forceUpdate: boolean;
   storeUrl?: string;
   iosStoreUrl?: string;
+  iosVersionName?: string;
+  iosVersionCode?: number;
+  iosForceUpdate?: boolean;
+  androidVersionName?: string;
+  androidVersionCode?: number;
+  androidForceUpdate?: boolean;
+  androidStoreUrl?: string;
 }
 
 const DISMISS_KEY = 'dismiss_app_update_version';
@@ -13,6 +20,8 @@ const DISMISS_KEY = 'dismiss_app_update_version';
 const AppUpdateModal: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
+  const [displayVersionName, setDisplayVersionName] = useState<string>('');
+  const [isForce, setIsForce] = useState<boolean>(false);
 
   useEffect(() => {
     const checkVersion = async () => {
@@ -23,22 +32,38 @@ const AppUpdateModal: React.FC = () => {
         const data: VersionInfo = await response.json();
         setVersionInfo(data);
 
-        // 1. 앱 환경 확인 (ReactNativeWebView, WebView UserAgent, 브릿지 함수 등)
+        // 1. 디바이스 환경 확인
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         const isReactNative = !!(window as any).ReactNativeWebView;
         const isAndroidWebView = /Android.*(wv|Version\/[0-9.]+)/i.test(navigator.userAgent);
-        const isAppBridge = !!(window as any).__pendingFcmToken || !!(window as any).receiveNativeMessage;
-        const isNativeApp = isReactNative || isAndroidWebView || isAppBridge;
+        const isIOSWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(navigator.userAgent);
+        const isAppBridge = !!(window as any).__pendingFcmToken || !!(window as any).receiveNativeMessage || (window as any).__appVersionCode !== undefined;
+        const isNativeApp = isReactNative || isAndroidWebView || isIOSWebView || isAppBridge;
 
-        // 2. 현재 설치된 앱의 버전 코드 확인
-        // (3.7부터는 window.__appVersionCode = 23 주입됨. 3.6 이하는 주입되지 않아 undefined -> 22)
-        const currentAppVersionCode = (window as any).__appVersionCode ?? 22;
+        // 2. 플랫폼별 최신 버전 정보 결정
+        const targetVersionCode = isIOS
+          ? (data.iosVersionCode ?? data.latestVersionCode)
+          : (data.androidVersionCode ?? data.latestVersionCode);
+
+        const targetVersionName = isIOS
+          ? (data.iosVersionName || '1.1.0')
+          : (data.androidVersionName || data.latestVersionName || '3.7.1');
+
+        const force = isIOS
+          ? (data.iosForceUpdate ?? data.forceUpdate)
+          : (data.androidForceUpdate ?? data.forceUpdate);
+
+        setDisplayVersionName(targetVersionName);
+        setIsForce(force);
+
+        // 3. 현재 설치된 앱의 버전 코드 확인 (주입되지 않은 구버전은 0)
+        const currentAppVersionCode = (window as any).__appVersionCode ?? 0;
 
         // 네이티브 앱 환경에서 최신 버전보다 낮은 경우 팝업 노출
-        if (isNativeApp && currentAppVersionCode < data.latestVersionCode) {
-          // 강제 업데이트가 아니고, 이미 해당 버전 팝업을 닫은 적이 있다면 노출 안 함
-          if (!data.forceUpdate) {
+        if (isNativeApp && currentAppVersionCode < targetVersionCode) {
+          if (!force) {
             const dismissedVersion = localStorage.getItem(DISMISS_KEY);
-            if (dismissedVersion === data.latestVersionCode.toString()) {
+            if (dismissedVersion === `${isIOS ? 'ios' : 'android'}_${targetVersionCode}`) {
               return;
             }
           }
@@ -49,8 +74,7 @@ const AppUpdateModal: React.FC = () => {
       }
     };
 
-    // FCM 브릿지 등이 로드될 수 있도록 약간의 지연 후 체크
-    const timer = setTimeout(checkVersion, 800);
+    const timer = setTimeout(checkVersion, 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -62,8 +86,7 @@ const AppUpdateModal: React.FC = () => {
       const iosUrl = versionInfo.iosStoreUrl || 'https://apps.apple.com/app/id6475653554';
       window.location.href = iosUrl;
     } else {
-      const androidStoreUrl = versionInfo.storeUrl || 'market://details?id=com.bandimobile';
-      // market:// 스킴 시도 후 웹 스토어로 fallback
+      const androidStoreUrl = versionInfo.androidStoreUrl || versionInfo.storeUrl || 'market://details?id=com.bandimobile';
       try {
         window.location.href = androidStoreUrl;
       } catch {
@@ -73,10 +96,12 @@ const AppUpdateModal: React.FC = () => {
   };
 
   const handleClose = () => {
-    // 해당 버전에 대해 다시 보지 않도록 버전 코드 저장 (다음 신규 버전 출시 전까지 절대 안 뜸)
-    if (versionInfo) {
-      localStorage.setItem(DISMISS_KEY, versionInfo.latestVersionCode.toString());
-    }
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const targetVersionCode = isIOS
+      ? (versionInfo.iosVersionCode ?? versionInfo.latestVersionCode)
+      : (versionInfo.androidVersionCode ?? versionInfo.latestVersionCode);
+
+    localStorage.setItem(DISMISS_KEY, `${isIOS ? 'ios' : 'android'}_${targetVersionCode}`);
     setShowModal(false);
   };
 
@@ -99,15 +124,15 @@ const AppUpdateModal: React.FC = () => {
         </div>
 
         <h3 className="text-xl font-bold text-gray-900 mb-2">
-          새로운 버전 ({versionInfo.latestVersionName}) 출시!
+          새로운 버전 ({displayVersionName}) 출시!
         </h3>
         <p className="text-[14px] text-gray-600 mb-6 leading-relaxed">
           더 나은 서비스와 안정적인 사용을 위해<br />
           최신 버전으로 업데이트해 주세요.
         </p>
 
-        <div className={`grid ${versionInfo.forceUpdate ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
-          {!versionInfo.forceUpdate && (
+        <div className={`grid ${isForce ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+          {!isForce && (
             <button
               onClick={handleClose}
               className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-semibold transition-colors duration-200"

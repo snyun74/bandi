@@ -52,5 +52,7 @@
 	<string>프로필 사진 및 게시물 등록을 위한 사진 라이브러리 접근에 권한이 필요합니다.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
