@@ -126,7 +126,7 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
         List<ClanMemberProjection> findClanMembers(@Param("clanId") Long clanId);
 
         @Query("SELECT new com.bandi.backend.dto.MemberSessionDto(" +
-                        "s.bnSessionJoinUserId, g.bnSongNm, g.bnSingerNm, g.bnNm, '', s.bnSessionTypeCd) " +
+                        "s.bnSessionJoinUserId, g.bnNo, g.bnSongNm, g.bnSingerNm, g.bnNm, '', s.bnSessionTypeCd, g.bnConfFg, 'JOIN') " +
                         "FROM BnSession s " +
                         "JOIN BnGroup g ON s.bnNo = g.bnNo " +
                         "WHERE g.cnNo = :clanId " +
@@ -134,4 +134,14 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "AND g.bnConfFg IN ('N', 'Y') " +
                         "AND s.bnSessionJoinUserId IS NOT NULL")
         List<com.bandi.backend.dto.MemberSessionDto> findAllMemberSessions(@Param("clanId") Long clanId);
+
+        @Query("SELECT new com.bandi.backend.dto.MemberSessionDto(" +
+                        "r.bnSessionRsvUserId, g.bnNo, g.bnSongNm, g.bnSingerNm, g.bnNm, '', r.bnSessionTypeCd, g.bnConfFg, 'RSV') " +
+                        "FROM BnRsvSession r " +
+                        "JOIN BnGroup g ON r.bnNo = g.bnNo " +
+                        "WHERE g.cnNo = :clanId " +
+                        "AND g.bnStatCd = 'A' " +
+                        "AND g.bnConfFg IN ('N', 'Y') " +
+                        "AND r.bnSessionRsvUserId IS NOT NULL")
+        List<com.bandi.backend.dto.MemberSessionDto> findAllMemberRsvSessions(@Param("clanId") Long clanId);
 }

@@ -264,7 +264,8 @@ const ClanJamDetail: React.FC = () => {
                     setBandDetail(prev => prev ? { ...prev, isConfirmed: newStatus === 'Y' } : null);
                     showAlert(newStatus === 'Y' ? "확정이 완료되었습니다." : "미확정 상태로 변경되었습니다.");
                 } else {
-                    showAlert("상태 변경에 실패했습니다.");
+                    const errorMsg = await response.text();
+                    showAlert(errorMsg || "상태 변경에 실패했습니다.");
                 }
             } catch (error) {
                 console.error("Failed to update status", error);

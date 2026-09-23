@@ -27,4 +27,10 @@ public interface CnRoomScheduleRepository extends JpaRepository<CnRoomSchedule, 
     List<CnRoomSchedule> findOverlappingSchedules(@Param("cnNo") Long cnNo,
                                                  @Param("newStartDateTime") String newStartDateTime,
                                                  @Param("newEndDateTime") String newEndDateTime);
+
+    @Query("SELECT rs FROM CnRoomSchedule rs " +
+           "WHERE rs.cnNo = :cnNo " +
+           "  AND rs.schStatCd = 'A' " +
+           "ORDER BY rs.schSttDate ASC, rs.schSttTime ASC")
+    List<CnRoomSchedule> findAllActiveByCnNo(@Param("cnNo") Long cnNo);
 }

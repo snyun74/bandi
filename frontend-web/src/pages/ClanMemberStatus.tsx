@@ -25,11 +25,14 @@ const UserAvatar: React.FC<{ userId: string; size?: number }> = ({ userId, size 
 
 interface MemberSession {
     userId: string;
+    bnNo?: number;
     songTitle: string;
     artist: string;
     bnNm: string;
     part: string;
     sessionTypeCd: string;
+    bnConfFg?: string; // 'N': 진행중, 'Y': 합주확정
+    joinStatus?: 'JOIN' | 'RSV'; // 'JOIN': 참여, 'RSV': 예약대기
 }
 
 interface ClanMember {
@@ -116,12 +119,13 @@ const ClanMemberStatus: React.FC = () => {
         // Search by Nickname or Name
         if (member.userNickNm.toLowerCase().includes(query) || member.userNm.toLowerCase().includes(query)) return true;
 
-        // Search by Session (Song title, Artist)
+        // Search by Session (Song title, Artist, Part, Band name)
         if (member.sessions && member.sessions.length > 0) {
             return member.sessions.some(session =>
-                session.songTitle.toLowerCase().includes(query) ||
-                session.artist.toLowerCase().includes(query) ||
-                session.part.toLowerCase().includes(query)
+                (session.songTitle && session.songTitle.toLowerCase().includes(query)) ||
+                (session.artist && session.artist.toLowerCase().includes(query)) ||
+                (session.bnNm && session.bnNm.toLowerCase().includes(query)) ||
+                (session.part && session.part.toLowerCase().includes(query))
             );
         }
 
@@ -442,19 +446,63 @@ const ClanMemberStatus: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Session List */}
+                            {/* Session & Reservation List */}
                             {isExpanded && member.sessions && member.sessions.length > 0 && (
-                                <div className="mt-3 pl-3 border-l-2 border-gray-100 space-y-2 animate-fade-in-down">
-                                    {member.sessions.map((session, sIdx) => (
-                                        <div key={sIdx} className="text-xs text-gray-600 flex items-center gap-2">
-                                            <span className="font-bold text-[#00BDF8] min-w-[40px]">{session.part}</span>
-                                            <span className="text-gray-500 truncate">
-                                                {(session.songTitle && session.artist) 
-                                                    ? `${session.songTitle} - ${session.artist}` 
-                                                    : session.bnNm}
-                                            </span>
-                                        </div>
-                                    ))}
+                                <div className="mt-3 pl-3 space-y-1.5 animate-fade-in-down">
+                                    {member.sessions.map((session, sIdx) => {
+                                        const isRsv = session.joinStatus === 'RSV';
+                                        const displayName = (session.songTitle && session.artist)
+                                            ? `${session.songTitle} - ${session.artist}`
+                                            : session.bnNm;
+
+                                        return (
+                                            <div
+                                                key={sIdx}
+                                                className="flex items-center justify-between flex-wrap gap-2 text-xs py-0.5"
+                                            >
+                                                <div className="flex items-center flex-wrap gap-2 flex-1 min-w-0">
+                                                    {/* Part Name */}
+                                                    <span className={`font-bold min-w-[36px] ${
+                                                        isRsv
+                                                            ? 'text-amber-500'
+                                                            : 'text-[#00BDF8]'
+                                                    }`}>
+                                                        {session.part}
+                                                    </span>
+
+                                                    {/* Song / Jam Title */}
+                                                    <span className="text-gray-600 truncate max-w-[180px] sm:max-w-xs flex-1">
+                                                        {displayName}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    {/* Join vs Reserved Status Badge */}
+                                                    {isRsv ? (
+                                                        <span className="text-[10px] px-1.5 py-0.2 bg-amber-50 text-amber-600 border border-amber-200 rounded font-bold">
+                                                            예약대기
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] px-1.5 py-0.2 bg-cyan-50 text-[#00BDF8] border border-cyan-100 rounded font-bold">
+                                                            참여
+                                                        </span>
+                                                    )}
+
+                                                    {/* Band Progress Status */}
+                                                    {session.bnConfFg === 'Y' && (
+                                                        <span className="text-[10px] px-1.5 py-0.2 bg-blue-50 text-blue-600 border border-blue-100 rounded font-bold">
+                                                            확정
+                                                        </span>
+                                                    )}
+                                                    {session.bnConfFg === 'N' && (
+                                                        <span className="text-[10px] px-1.5 py-0.2 bg-gray-100 text-gray-500 border border-gray-200 rounded font-bold">
+                                                            진행중
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                             {isExpanded && (!member.sessions || member.sessions.length === 0) && (

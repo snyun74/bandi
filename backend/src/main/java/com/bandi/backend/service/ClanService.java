@@ -44,6 +44,7 @@ public class ClanService {
     private final com.bandi.backend.repository.ClanBoardLikeRepository clanBoardLikeRepository;
     private final com.bandi.backend.repository.ClanBoardDetailLikeRepository clanBoardDetailLikeRepository;
     private final CmScrapRepository cmScrapRepository;
+    private final com.bandi.backend.repository.CnRoomScheduleRepository cnRoomScheduleRepository;
 
     @Transactional
     public Long createClan(ClanCreateDto dto, MultipartFile file) {
@@ -264,18 +265,18 @@ public class ClanService {
         java.util.List<com.bandi.backend.dto.ClanMemberProjection> members = clanGroupRepository
                 .findClanMembers(clanId);
 
-        // 2. Fetch Sessions
-        java.util.List<com.bandi.backend.dto.MemberSessionDto> sessions = clanGroupRepository
+        // 2. Fetch Joined & Reserved Sessions
+        java.util.List<com.bandi.backend.dto.MemberSessionDto> joinedSessions = clanGroupRepository
                 .findAllMemberSessions(clanId);
+        java.util.List<com.bandi.backend.dto.MemberSessionDto> rsvSessions = clanGroupRepository
+                .findAllMemberRsvSessions(clanId);
+
+        java.util.List<com.bandi.backend.dto.MemberSessionDto> allSessions = new java.util.ArrayList<>();
+        allSessions.addAll(joinedSessions);
+        allSessions.addAll(rsvSessions);
 
         // 3. Helper to decode Session Type (Part)
         java.util.Map<String, String> partNameMap = new java.util.HashMap<>();
-        // Fetch known codes mapping (optimizing DB calls or reusing existing logic)
-        // For efficiency, we could fetch all relevant codes or just rely on 'getIcon'
-        // frontend logic if we pass raw code.
-        // But user requirement implies "Part Name" might be needed.
-        // Let's reuse getSessionName helper logic or similar bulk fetch.
-        // Since we are inside service, we can use entityManager.
         try {
             String sql = "SELECT COMM_DETAIL_CD, COMM_DETAIL_NM FROM CM_COMM_DETAIL WHERE COMM_CD = 'BD100'";
             java.util.List<Object[]> results = entityManager.createNativeQuery(sql).getResultList();
@@ -287,9 +288,9 @@ public class ClanService {
         }
 
         // 4. Map Sessions to Members
-        java.util.Map<String, java.util.List<com.bandi.backend.dto.MemberSessionDto>> sessionsByUserId = sessions
+        java.util.Map<String, java.util.List<com.bandi.backend.dto.MemberSessionDto>> sessionsByUserId = allSessions
                 .stream()
-                .peek(s -> s.setPart(partNameMap.getOrDefault(s.getSessionTypeCd(), s.getSessionTypeCd()))) // Decode
+                .peek(s -> s.setPart(partNameMap.getOrDefault(s.getSessionTypeCd(), s.getSessionTypeCd())))
                 .collect(java.util.stream.Collectors.groupingBy(com.bandi.backend.dto.MemberSessionDto::getUserId));
 
         // 5. Build Result DTOs

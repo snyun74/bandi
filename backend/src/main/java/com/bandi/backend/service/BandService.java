@@ -543,8 +543,7 @@ public class BandService {
 
         // 4. Calculate Permissions
         boolean isBandLeader = group.getBnLeaderId().equals(userId);
-        boolean isBandMember = isBandLeader || roleDtos.stream().anyMatch(r -> r.isCurrentUser() || (userId != null && userId.equals(r.getUserId())));
-        boolean canManage = isBandMember;
+        boolean canManage = isBandLeader;
 
         if (!canManage && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
             // Check Clan Role
@@ -962,6 +961,42 @@ public class BandService {
                 session.setUpdDtime(currentDateTime);
                 session.setUpdId(requesterId);
                 bnSessionRepository.save(session);
+
+                // 예약자 자동 승격: 가장 낮은 순번(BN_RSV_SESSION_NO ASC) 예약자를 자동 참여
+                java.util.List<com.bandi.backend.entity.band.BnRsvSession> reservations = bnRsvSessionRepository
+                        .findByBnNoAndBnSessionTypeCdOrderByBnRsvSessionNoAsc(
+                                bnNo, session.getBnSessionTypeCd());
+
+                if (!reservations.isEmpty()) {
+                    com.bandi.backend.entity.band.BnRsvSession firstRsv = reservations.get(0);
+                    String rsvUserId = firstRsv.getBnSessionRsvUserId();
+
+                    // 세션에 예약자 참여 처리
+                    session.setBnSessionJoinUserId(rsvUserId);
+                    session.setUpdDtime(currentDateTime);
+                    session.setUpdId(rsvUserId);
+                    bnSessionRepository.save(session);
+
+                    // BN_USER에 없으면 등록
+                    com.bandi.backend.entity.band.BnUserId bnUserId = new com.bandi.backend.entity.band.BnUserId(
+                            bnNo, rsvUserId);
+                    if (!bnUserRepository.existsById(bnUserId)) {
+                        BnUser newUser = new BnUser();
+                        newUser.setBnNo(bnNo);
+                        newUser.setBnUserId(rsvUserId);
+                        newUser.setBnRoleCd("NORL");
+                        newUser.setBnJoinDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+                        newUser.setBnUserStatCd("A");
+                        newUser.setInsDtime(currentDateTime);
+                        newUser.setInsId(rsvUserId);
+                        newUser.setUpdDtime(currentDateTime);
+                        newUser.setUpdId(rsvUserId);
+                        bnUserRepository.save(newUser);
+                    }
+
+                    // 예약 레코드 삭제
+                    bnRsvSessionRepository.delete(firstRsv);
+                }
             }
         }
 
