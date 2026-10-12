@@ -25,7 +25,8 @@ public class CommonController {
     }
 
     @GetMapping("/app-version")
-    public ResponseEntity<java.util.Map<String, Object>> getAppVersion() {
+    public ResponseEntity<java.util.Map<String, Object>> getAppVersion(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String platform) {
         // iOS 설정 (기본값)
         int iosVersionCode = 4;
         String iosVersionName = "1.1.0";
@@ -33,8 +34,8 @@ public class CommonController {
         String iosStoreUrl = "https://apps.apple.com/app/id6779875361";
 
         // Android 설정 (기본값)
-        int androidVersionCode = 24;
-        String androidVersionName = "3.7.1";
+        int androidVersionCode = 26;
+        String androidVersionName = "3.7.3";
         boolean androidForceUpdate = false;
         String androidStoreUrl = "market://details?id=com.bandimobile";
 
@@ -65,6 +66,8 @@ public class CommonController {
             }
         } catch (Exception ignored) {}
 
+        boolean isIos = "ios".equalsIgnoreCase(platform);
+
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("iosVersionCode", iosVersionCode);
         response.put("iosVersionName", iosVersionName);
@@ -76,10 +79,11 @@ public class CommonController {
         response.put("androidForceUpdate", androidForceUpdate);
         response.put("androidStoreUrl", androidStoreUrl);
 
-        response.put("latestVersionCode", Math.max(iosVersionCode, androidVersionCode));
-        response.put("latestVersionName", iosVersionName);
-        response.put("forceUpdate", iosForceUpdate || androidForceUpdate);
-        response.put("storeUrl", androidStoreUrl);
+        // 플랫폼에 맞는 최신 버전 정보 제공 (기본값은 안드로이드)
+        response.put("latestVersionCode", isIos ? iosVersionCode : androidVersionCode);
+        response.put("latestVersionName", isIos ? iosVersionName : androidVersionName);
+        response.put("forceUpdate", isIos ? iosForceUpdate : androidForceUpdate);
+        response.put("storeUrl", isIos ? iosStoreUrl : androidStoreUrl);
 
         return ResponseEntity.ok(response);
     }

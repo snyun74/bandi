@@ -13,11 +13,14 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet
+  StyleSheet,
+  NativeModules
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import messaging from '@react-native-firebase/messaging';
+
+const { AppVersionModule } = NativeModules;
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -39,8 +42,8 @@ function App(): React.JSX.Element {
   const [isCheckingInitialNotification, setIsCheckingInitialNotification] = useState(true);
   const [webViewError, setWebViewError] = useState<string | null>(null);
 
-  // 업데이트 알림 관련 상태
-  const CURRENT_VERSION_CODE = 24; // 현재 앱의 버전 코드 (3.7.1)
+  // 시스템(Android build.gradle / iOS Xcode)에서 현재 설치된 버전 코드를 동적으로 자동 감지
+  const CURRENT_VERSION_CODE = AppVersionModule?.versionCode ?? (Platform.OS === 'ios' ? 4 : 26);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [latestVersionInfo, setLatestVersionInfo] = useState<any>(null);
 
@@ -129,14 +132,19 @@ function App(): React.JSX.Element {
   // 앱 버전 체크 로직
   const checkAppVersion = async () => {
     try {
+      const platformParam = Platform.OS === 'ios' ? 'ios' : 'android';
       // 운영 환경과 로컬 환경에 따른 API 주소 설정
       const API_BASE_URL = __DEV__ ? (Platform.OS === 'android' ? 'http://10.0.2.2:8080' : 'http://localhost:8080') : 'https://www.bandicon.kr';
-      const response = await fetch(`${API_BASE_URL}/api/common/app-version`);
+      const response = await fetch(`${API_BASE_URL}/api/common/app-version?platform=${platformParam}`);
       if (response.ok) {
         const data = await response.json();
         setLatestVersionInfo(data);
-        if (data.latestVersionCode > CURRENT_VERSION_CODE) {
-          console.log('Update available! Current:', CURRENT_VERSION_CODE, 'Latest:', data.latestVersionCode);
+        const serverVersionCode = Platform.OS === 'ios'
+          ? (data.iosVersionCode ?? data.latestVersionCode)
+          : (data.androidVersionCode ?? data.latestVersionCode);
+
+        if (serverVersionCode > CURRENT_VERSION_CODE) {
+          console.log('Update available! Current:', CURRENT_VERSION_CODE, 'Latest:', serverVersionCode);
           setShowUpdateModal(true);
         }
       }
@@ -304,7 +312,7 @@ function App(): React.JSX.Element {
             </View>
             <View style={styles.modalBody}>
               <Text style={styles.modalDescription}>
-                더 나은 서비스를 위해 최신 버전({latestVersionInfo?.latestVersionName})으로 업데이트해 주세요.
+                더 나은 서비스를 위해 최신 버전({Platform.OS === 'ios' ? (latestVersionInfo?.iosVersionName || latestVersionInfo?.latestVersionName) : (latestVersionInfo?.androidVersionName || latestVersionInfo?.latestVersionName)})으로 업데이트해 주세요.
               </Text>
               <Text style={styles.modalSubDescription}>
                 안정적인 앱 사용을 위해 업데이트를 권장합니다.
