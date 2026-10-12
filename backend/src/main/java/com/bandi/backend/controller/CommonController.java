@@ -2,11 +2,13 @@ package com.bandi.backend.controller;
 
 import com.bandi.backend.entity.common.CommDetail;
 import com.bandi.backend.repository.CommDetailRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,7 +28,8 @@ public class CommonController {
 
     @GetMapping("/app-version")
     public ResponseEntity<java.util.Map<String, Object>> getAppVersion(
-            @org.springframework.web.bind.annotation.RequestParam(required = false) String platform) {
+            HttpServletRequest request,
+            @RequestParam(required = false) String platform) {
         // iOS 설정 (기본값)
         int iosVersionCode = 4;
         String iosVersionName = "1.1.0";
@@ -66,7 +69,16 @@ public class CommonController {
             }
         } catch (Exception ignored) {}
 
-        boolean isIos = "ios".equalsIgnoreCase(platform);
+        String userAgent = request != null ? request.getHeader("User-Agent") : null;
+        boolean isAndroid = userAgent != null && userAgent.toLowerCase().contains("android");
+        boolean isIos = "ios".equalsIgnoreCase(platform) || (
+                !isAndroid && userAgent != null && (
+                        userAgent.contains("iPhone") ||
+                        userAgent.contains("iPad") ||
+                        userAgent.contains("CFNetwork") ||
+                        userAgent.contains("Darwin")
+                )
+        );
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("iosVersionCode", iosVersionCode);
