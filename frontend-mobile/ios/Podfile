@@ -17,6 +17,17 @@ end
 target 'BandiMobile' do
   config = use_native_modules!
 
+  # Firebase 계열 Pod만 modular headers 적용 (전역 use_modular_headers! 대신)
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseInstallations', :modular_headers => true
+  pod 'FirebaseMessaging', :modular_headers => true
+  pod 'GoogleDataTransport', :modular_headers => true
+  pod 'nanopb', :modular_headers => true
+  pod 'PromisesObjC', :modular_headers => true
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
@@ -37,12 +48,30 @@ target 'BandiMobile' do
       # :ccache_enabled => true
     )
 
-    # Xcode Apple Clang fmt C++ consteval 컴파일 호환성 대응
+    # Xcode 16.3+ / fmt 11.0.2 consteval 에러 우회: fmt 헤더에서 consteval 직접 비활성화
+    ['base.h', 'core.h'].each do |header|
+      fmt_header = File.join(installer.sandbox.root.to_s, 'fmt', 'include', 'fmt', header)
+      next unless File.exist?(fmt_header)
+      text = File.read(fmt_header)
+      patched = text.gsub(/(#\s*define\s+FMT_USE_CONSTEVAL\s+)1/, '\10')
+      if patched != text
+        File.chmod(0644, fmt_header)
+        File.write(fmt_header, patched)
+        Pod::UI.puts "Patched #{header}: FMT_USE_CONSTEVAL disabled".green
+      end
+    end
+
     installer.pods_project.targets.each do |target|
-      if target.name == 'fmt'
-        target.build_configurations.each do |config|
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FMT_USE_CONSTEVAL=0'
+      target.build_configurations.each do |config|
+        # iOS 최소 배포 버전 15.0 설정
+        deployment_target = '15.0'
+        if config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < deployment_target.to_f
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = deployment_target
+        end
+
+        # fmt는 C++17로 빌드해서 consteval 경로를 한 번 더 차단
+        if target.name == 'fmt'
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
         end
       end
     end
