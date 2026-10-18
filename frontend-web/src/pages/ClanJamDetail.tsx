@@ -573,7 +573,7 @@ const ClanJamDetail: React.FC = () => {
                                 const isOccupied = role.status === 'occupied';
                                 const currentOccupiedIndex = isOccupied ? occupiedCounter++ : -1;
                                 const bgUrl = isOccupied
-                                    ? (currentOccupiedIndex % 2 === 0 ? role.onImgUrl1 : role.onImgUrl2)
+                                    ? (currentOccupiedIndex % 2 === 0 ? role.onImgUrl1 : (role.onImgUrl2 || role.onImgUrl1))
                                     : role.offImgUrl;
 
                                 return (
@@ -738,60 +738,51 @@ const ClanJamDetail: React.FC = () => {
                     );
                 })()}
 
-                {/* 4. 추가 기능 (Additional Features) */}
-                <div className="space-y-4 pt-1">
-                    {/* Feature Card 1: 합주 일정 조율 */}
-                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">합주 일정 조율</h3>
-                        <button
-                            onClick={() => {
-                                const isMember = bandDetail.roles.some(r => r.isCurrentUser);
-                                if (!isMember) {
-                                    showAlert("합주 참여자만 이용할 수 있습니다.");
-                                    return;
-                                }
-                                navigate(`/main/jam/schedule/${jamId}`);
-                            }}
-                            className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
-                        >
-                            캘린더 보러가기
-                        </button>
-                    </div>
+                {/* 4. 추가 기능 (버튼 목록) */}
+                <div className="flex flex-col gap-2.5 pt-1">
+                    {/* Feature 1: 일정 조율 */}
+                    <button
+                        onClick={() => {
+                            const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                            if (!isMember) {
+                                showAlert("합주 참여자만 이용할 수 있습니다.");
+                                return;
+                            }
+                            navigate(`/main/jam/schedule/${jamId}`);
+                        }}
+                        className="w-full h-11 bg-white border border-[#212121] text-[#001A32] hover:bg-gray-50 active:scale-[0.99] rounded-xl font-bold text-[15px] transition-all flex items-center justify-center shadow-xs"
+                    >
+                        일정 조율
+                    </button>
 
-                    {/* Feature Card 2: 합주실 둘러보기 */}
-                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">합주실 둘러보기</h3>
-                        <button
-                            onClick={() => {
-                                if (!bandDetail.isConfirmed) {
-                                    showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
-                                    return;
-                                }
-                                const isMember = bandDetail.roles.some(r => r.isCurrentUser);
-                                if (!isMember) {
-                                    showAlert("합주 참여자만 이용할 수 있습니다.");
-                                    return;
-                                }
-                                sessionStorage.setItem('currentJamTitle', bandDetail.title || bandDetail.songTitle || '합주 모임');
-                                sessionStorage.setItem('currentJamNo', String(bandDetail.id || jamId));
-                                navigate('/main/jam/reservation/studios');
-                            }}
-                            className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
-                        >
-                            합주실 둘러보기
-                        </button>
-                    </div>
+                    {/* Feature 2: 합주실/공연장 예약 */}
+                    <button
+                        onClick={() => {
+                            if (!bandDetail.isConfirmed) {
+                                showAlert("합주가 확정된 상태에서만 이용할 수 있습니다.");
+                                return;
+                            }
+                            const isMember = bandDetail.roles.some(r => r.isCurrentUser);
+                            if (!isMember) {
+                                showAlert("합주 참여자만 이용할 수 있습니다.");
+                                return;
+                            }
+                            sessionStorage.setItem('currentJamTitle', bandDetail.title || bandDetail.songTitle || '합주 모임');
+                            sessionStorage.setItem('currentJamNo', String(bandDetail.id || jamId));
+                            navigate('/main/jam/reservation/studios');
+                        }}
+                        className="w-full h-11 bg-white border border-[#212121] text-[#001A32] hover:bg-gray-50 active:scale-[0.99] rounded-xl font-bold text-[15px] transition-all flex items-center justify-center shadow-xs"
+                    >
+                        합주실/공연장 예약
+                    </button>
 
-                    {/* Feature Card 3: 밴디콘 정기공연 */}
-                    <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-[0px_2px_6px_rgba(11,17,20,0.06)] border border-gray-100 flex flex-col gap-3">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">밴디콘 정기공연</h3>
-                        <button
-                            onClick={() => showAlert("밴디콘 정기공연 신청 기능은 준비 중입니다.")}
-                            className="w-full h-11 bg-white border border-[#00BDF8] text-[#0098CC] hover:bg-[#00BDF8]/5 active:scale-[0.99] rounded-xl font-bold text-[14px] transition-all flex items-center justify-center"
-                        >
-                            밴디콘서트 신청하기
-                        </button>
-                    </div>
+                    {/* Feature 3: 밴디콘서트 신청 */}
+                    <button
+                        onClick={() => showAlert("밴디콘 정기공연 신청 기능은 준비 중입니다.")}
+                        className="w-full h-11 bg-white border border-[#212121] text-[#001A32] hover:bg-gray-50 active:scale-[0.99] rounded-xl font-bold text-[15px] transition-all flex items-center justify-center shadow-xs"
+                    >
+                        밴디콘서트 신청
+                    </button>
                 </div>
             </div>
 
@@ -800,7 +791,7 @@ const ClanJamDetail: React.FC = () => {
                 <div className="p-4 bg-white z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     {bandDetail.status === 'E' ? (
                         <button
-                            className="w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-sm cursor-not-allowed text-[14px]"
+                            className="w-full bg-gray-100 text-gray-400 font-bold py-3 rounded-xl border border-gray-200 cursor-not-allowed text-[14px]"
                             disabled
                         >
                             합주 종료됨
@@ -808,14 +799,14 @@ const ClanJamDetail: React.FC = () => {
                     ) : !bandDetail.isConfirmed ? (
                         <button
                             onClick={handleDelete}
-                            className="w-full bg-[#FF8A80] text-white font-bold py-3 rounded-xl shadow-sm text-[14px]"
+                            className="w-full bg-[#FEE2E2] hover:bg-[#FECACA] active:scale-[0.99] text-[#DC2626] border border-[#FCA5A5] font-bold py-3 rounded-xl transition-all text-[14px]"
                         >
                             합주방 삭제
                         </button>
                     ) : (
                         <button
                             onClick={handleEndJam}
-                            className="w-full bg-[#FF8A80] text-white font-bold py-3 rounded-xl shadow-sm hover:opacity-90 transition-opacity text-[14px]"
+                            className="w-full bg-[#FEE2E2] hover:bg-[#FECACA] active:scale-[0.99] text-[#DC2626] border border-[#FCA5A5] font-bold py-3 rounded-xl transition-all text-[14px]"
                         >
                             합주 종료
                         </button>

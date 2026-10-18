@@ -99,13 +99,18 @@ const ClanCreatePage: React.FC = () => {
             });
 
             if (response.ok) {
+                const resData = await response.json().catch(() => null);
                 setModal({
                     isOpen: true,
                     type: 'alert',
-                    message: '클랜 생성 신청이 완료되었습니다.',
+                    message: '클랜 개설이 완료되었습니다! 클랜 홈으로 이동합니다.',
                     onConfirm: () => {
                         closeModal();
-                        navigate('/main/clan');
+                        if (resData && resData.clanId) {
+                            navigate(`/main/clan/detail/${resData.clanId}`);
+                        } else {
+                            navigate('/main/clan');
+                        }
                     },
                 });
             } else {
@@ -132,7 +137,7 @@ const ClanCreatePage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="top-room-detail-title">클랜 생성 신청</h1>
+                <h1 className="top-room-detail-title">클랜 생성</h1>
             </div>
 
             <div className="px-6 flex-1 overflow-y-auto pb-4">
@@ -210,7 +215,7 @@ const ClanCreatePage: React.FC = () => {
                     onClick={handleCreate}
                     className="w-full bg-[#00BDF8] text-white font-bold py-4 rounded-xl text-[14px] shadow-lg hover:bg-[#00ACD8] transition-colors"
                 >
-                    클랜 생성 신청
+                    클랜 생성하기
                 </button>
             </div>
         </div>

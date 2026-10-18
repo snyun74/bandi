@@ -45,6 +45,7 @@ public class ClanService {
     private final com.bandi.backend.repository.ClanBoardDetailLikeRepository clanBoardDetailLikeRepository;
     private final CmScrapRepository cmScrapRepository;
     private final com.bandi.backend.repository.CnRoomScheduleRepository cnRoomScheduleRepository;
+    private final ChatService chatService;
 
     @Transactional
     public Long createClan(ClanCreateDto dto, MultipartFile file) {
@@ -65,7 +66,7 @@ public class ClanService {
         clan.setCnDesc(dto.getCnDesc());
         clan.setCnUrl(dto.getCnUrl());
         clan.setCnOwdUserId(dto.getUserId());
-        clan.setCnApprStatCd("RQ"); // Required: RQ
+        clan.setCnApprStatCd("CN"); // 즉시 자동 승인 (기존 RQ -> CN)
         clan.setCnStatCd("A"); // Required: A
         clan.setRoomUseYn("N");
         clan.setInsDtime(currentDateTime);
@@ -137,7 +138,20 @@ public class ClanService {
 
         clanBoardRepository.save(initialPost);
 
-        // 7. Send push notification to system admins (ADMIN_YN = 'Y')
+        // 7. 클랜 승인 환영 메시지 자동 등록 및 발송 (기존 승인 시 동작하던 로직)
+        try {
+            com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
+            chatDto.setCnNo(savedClan.getCnNo());
+            chatDto.setSndUserId("snyun");
+            chatDto.setMsg("클랜이 개설됐어요! 대화를 시작해보세요!");
+            chatDto.setMsgTypeCd("TEXT");
+            chatDto.setRoomType("CLAN");
+            chatService.saveMessage(chatDto);
+        } catch (Exception e) {
+            System.err.println("Failed to send clan welcome chat message: " + e.getMessage());
+        }
+
+        // 8. 관리자 푸시 발송 (기존 기능 유지: ADMIN_YN = 'Y')
         try {
             String applicantNickname = userRepository.findById(dto.getUserId())
                     .map(u -> (u.getUserNickNm() != null && !u.getUserNickNm().isEmpty()) ? u.getUserNickNm() : u.getUserNm())
@@ -148,14 +162,28 @@ public class ClanService {
                 pushService.sendPush(
                         admin.getUserId(),
                         applicantNickname, // Title is applicant's nickname as requested
-                        "[" + savedClan.getCnNm() + "] 클랜 개설 신청이 들어왔습니다.",
-                        "", 
+                        "[" + savedClan.getCnNm() + "] 클랜이 개설(자동 승인)되었습니다.",
+                        "/main/clan/detail/" + savedClan.getCnNo(), 
                         "ADMIN_CLAN_REQUEST",
                         "CLAN_ADMIN"
                 );
             }
         } catch (Exception e) {
             System.err.println("Failed to send admin clan request push notification: " + e.getMessage());
+        }
+
+        // 9. 신청 담당자(개설자)에게 승인 푸시 발송 (신청자 승인 푸시 기능)
+        try {
+            pushService.sendPush(
+                    dto.getUserId(),
+                    "클랜 개설 승인 완료",
+                    "[" + savedClan.getCnNm() + "] 클랜 개설이 승인되었습니다! 지금 바로 활동을 시작해보세요.",
+                    "/main/clan/detail/" + savedClan.getCnNo(),
+                    "CLAN_APPROVED",
+                    "CLAN_" + savedClan.getCnNo()
+            );
+        } catch (Exception e) {
+            System.err.println("Failed to send applicant clan approval push notification: " + e.getMessage());
         }
 
         return savedClan.getCnNo();
