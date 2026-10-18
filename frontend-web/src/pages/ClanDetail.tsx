@@ -31,6 +31,8 @@ interface ClanDetailData {
     roomUseYn?: string;
     roomSttTime?: string;
     roomEndTime?: string;
+    sundayRoomSttTime?: string;
+    sundayRoomEndTime?: string;
 }
 
 const ClanDetail: React.FC = () => {
@@ -71,9 +73,11 @@ const ClanDetail: React.FC = () => {
         roomUseYn: string;
         roomSttTime: string;
         roomEndTime: string;
+        sundayRoomSttTime: string;
+        sundayRoomEndTime: string;
         imageFile: File | null;
         previewUrl: string | null;
-    }>({ nm: '', desc: '', url: '', roomUseYn: 'N', roomSttTime: '08', roomEndTime: '22', imageFile: null, previewUrl: null });
+    }>({ nm: '', desc: '', url: '', roomUseYn: 'N', roomSttTime: '08', roomEndTime: '22', sundayRoomSttTime: '08', sundayRoomEndTime: '22', imageFile: null, previewUrl: null });
 
     const [isGatheringCreateModalOpen, setIsGatheringCreateModalOpen] = useState(false);
     const [isGatheringApplyModalOpen, setIsGatheringApplyModalOpen] = useState(false);
@@ -133,7 +137,9 @@ const ClanDetail: React.FC = () => {
                     cnUrl: data.cnUrl,
                     roomUseYn: data.roomUseYn || 'N',
                     roomSttTime: data.roomSttTime || '08',
-                    roomEndTime: data.roomEndTime || '22'
+                    roomEndTime: data.roomEndTime || '22',
+                    sundayRoomSttTime: data.sundayRoomSttTime || data.roomSttTime || '08',
+                    sundayRoomEndTime: data.sundayRoomEndTime || data.roomEndTime || '22'
                 });
             }
 
@@ -349,6 +355,8 @@ const ClanDetail: React.FC = () => {
                 roomUseYn: clan.roomUseYn || 'N',
                 roomSttTime: clan.roomSttTime || '08',
                 roomEndTime: clan.roomEndTime || '22',
+                sundayRoomSttTime: clan.sundayRoomSttTime || clan.roomSttTime || '08',
+                sundayRoomEndTime: clan.sundayRoomEndTime || clan.roomEndTime || '22',
                 imageFile: null,
                 previewUrl: clan.attachFilePath || null
             });
@@ -385,7 +393,14 @@ const ClanDetail: React.FC = () => {
             const stt = parseInt(editForm.roomSttTime, 10);
             const end = parseInt(editForm.roomEndTime, 10);
             if (isNaN(stt) || isNaN(end) || stt >= end) {
-                showAlert('동방 예약 시작 시간은 종료 시간보다 앞서야 합니다.');
+                showAlert('평일 동방 예약 시작 시간은 종료 시간보다 앞서야 합니다.');
+                return;
+            }
+
+            const sundayStt = parseInt(editForm.sundayRoomSttTime, 10);
+            const sundayEnd = parseInt(editForm.sundayRoomEndTime, 10);
+            if (isNaN(sundayStt) || isNaN(sundayEnd) || sundayStt >= sundayEnd) {
+                showAlert('주말 동방 예약 시작 시간은 종료 시간보다 앞서야 합니다.');
                 return;
             }
         }
@@ -399,7 +414,9 @@ const ClanDetail: React.FC = () => {
                 cnUrl: editForm.url,
                 roomUseYn: editForm.roomUseYn,
                 roomSttTime: editForm.roomUseYn === 'Y' ? editForm.roomSttTime : null,
-                roomEndTime: editForm.roomUseYn === 'Y' ? editForm.roomEndTime : null
+                roomEndTime: editForm.roomUseYn === 'Y' ? editForm.roomEndTime : null,
+                sundayRoomSttTime: editForm.roomUseYn === 'Y' ? editForm.sundayRoomSttTime : null,
+                sundayRoomEndTime: editForm.roomUseYn === 'Y' ? editForm.sundayRoomEndTime : null
             };
             formData.append('data', new Blob([JSON.stringify(updateData)], { type: 'application/json' }));
             if (editForm.imageFile) {
@@ -414,6 +431,7 @@ const ClanDetail: React.FC = () => {
             if (response.ok) {
                 setIsEditModalOpen(false);
                 showAlert('클랜 정보가 수정되었습니다.');
+                fetchMethod();
             } else {
                 const err = await response.json();
                 showAlert(err.message || '수정 실패');
@@ -1078,39 +1096,87 @@ const ClanDetail: React.FC = () => {
                                 </div>
 
                                 {editForm.roomUseYn === 'Y' && (
-                                    <div className="mt-2.5 bg-[#F8FAFC] p-3 rounded-xl border border-sky-100 space-y-2">
+                                    <div className="mt-3 bg-[#F8FAFC] p-3 sm:p-3.5 rounded-xl border border-sky-100 space-y-3">
                                         <label className="block text-xs font-bold text-[#0B1114]">
-                                            동방 예약 가능 시간대 <span className="text-red-500">*</span>
+                                            동방 예약 가능 시간대 설정 <span className="text-red-500">*</span>
                                         </label>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1">
-                                                <span className="text-[11px] text-gray-500 block mb-1">시작 시간</span>
-                                                <select
-                                                    value={editForm.roomSttTime}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, roomSttTime: e.target.value }))}
-                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
-                                                >
-                                                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(hour => (
-                                                        <option key={hour} value={hour}>{hour}:00</option>
-                                                    ))}
-                                                </select>
+
+                                        {/* 평일 설정 */}
+                                        <div className="bg-white p-2.5 sm:p-3 rounded-lg border border-gray-200/80 space-y-1.5 shadow-2xs">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200">
+                                                    평일 (월 ~ 금)
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">예약 시간대</span>
                                             </div>
-                                            <span className="text-gray-400 font-bold self-end pb-1.5">~</span>
-                                            <div className="flex-1">
-                                                <span className="text-[11px] text-gray-500 block mb-1">종료 시간</span>
-                                                <select
-                                                    value={editForm.roomEndTime}
-                                                    onChange={(e) => setEditForm(prev => ({ ...prev, roomEndTime: e.target.value }))}
-                                                    className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
-                                                >
-                                                    {Array.from({ length: 24 }, (_, i) => String(i + 1).padStart(2, '0')).map(hour => (
-                                                        <option key={hour} value={hour}>{hour}:00</option>
-                                                    ))}
-                                                </select>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1">
+                                                    <span className="text-[10px] text-gray-500 block mb-1">시작 시간</span>
+                                                    <select
+                                                        value={editForm.roomSttTime}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, roomSttTime: e.target.value }))}
+                                                        className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                    >
+                                                        {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(hour => (
+                                                            <option key={hour} value={hour}>{hour}:00</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <span className="text-gray-400 font-bold self-end pb-1.5">~</span>
+                                                <div className="flex-1">
+                                                    <span className="text-[10px] text-gray-500 block mb-1">종료 시간</span>
+                                                    <select
+                                                        value={editForm.roomEndTime}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, roomEndTime: e.target.value }))}
+                                                        className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                    >
+                                                        {Array.from({ length: 24 }, (_, i) => String(i + 1).padStart(2, '0')).map(hour => (
+                                                            <option key={hour} value={hour}>{hour}:00</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
-                                        <p className="text-[10px] text-gray-500">
-                                            지정한 시간대 사이에서만 멤버들이 동방을 예약할 수 있습니다.
+
+                                        {/* 주말 설정 */}
+                                        <div className="bg-white p-2.5 sm:p-3 rounded-lg border border-gray-200/80 space-y-1.5 shadow-2xs">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                                                    주말 (토 · 일)
+                                                </span>
+                                                <span className="text-[11px] text-gray-500">예약 시간대</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1">
+                                                    <span className="text-[10px] text-gray-500 block mb-1">시작 시간</span>
+                                                    <select
+                                                        value={editForm.sundayRoomSttTime}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, sundayRoomSttTime: e.target.value }))}
+                                                        className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                    >
+                                                        {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(hour => (
+                                                            <option key={hour} value={hour}>{hour}:00</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <span className="text-gray-400 font-bold self-end pb-1.5">~</span>
+                                                <div className="flex-1">
+                                                    <span className="text-[10px] text-gray-500 block mb-1">종료 시간</span>
+                                                    <select
+                                                        value={editForm.sundayRoomEndTime}
+                                                        onChange={(e) => setEditForm(prev => ({ ...prev, sundayRoomEndTime: e.target.value }))}
+                                                        className="w-full bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8]"
+                                                    >
+                                                        {Array.from({ length: 24 }, (_, i) => String(i + 1).padStart(2, '0')).map(hour => (
+                                                            <option key={hour} value={hour}>{hour}:00</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-[10px] sm:text-[11px] text-gray-500 leading-relaxed">
+                                            💡 평일과 주말의 동아리방 예약 가능 시간대를 각각 설정할 수 있습니다.
                                         </p>
                                     </div>
                                 )}

@@ -40,7 +40,14 @@ const ClanRoomSchedule: React.FC = () => {
     const { clanId } = useParams<{ clanId: string }>();
     const userId = localStorage.getItem('userId') || '';
 
-    const [clanInfo, setClanInfo] = useState<{ id: number; name: string; roomSttTime?: string; roomEndTime?: string } | null>(null);
+    const [clanInfo, setClanInfo] = useState<{
+        id: number;
+        name: string;
+        roomSttTime?: string;
+        roomEndTime?: string;
+        sundayRoomSttTime?: string;
+        sundayRoomEndTime?: string;
+    } | null>(null);
     const [eligibleJams, setEligibleJams] = useState<EligibleJam[]>([]);
     const [isJamSelectModalOpen, setIsJamSelectModalOpen] = useState(false);
     const [schedules, setSchedules] = useState<RoomScheduleDto[]>([]);
@@ -62,22 +69,52 @@ const ClanRoomSchedule: React.FC = () => {
         return sunday;
     });
 
-    // 동방 설정 시간대 (시작 ~ 종료) 동적 계산
-    const timeHours = useMemo(() => {
-        if (!clanInfo || !clanInfo.roomSttTime || !clanInfo.roomEndTime) {
-            return defaultTimeHours;
-        }
-        const stt = parseInt(clanInfo.roomSttTime, 10);
-        const end = parseInt(clanInfo.roomEndTime, 10);
-        if (isNaN(stt) || isNaN(end) || stt >= end) {
-            return defaultTimeHours;
-        }
+    // 평일 및 주말 동방 설정 시간대 (시작 ~ 종료) 동적 계산
+    const operatingConfig = useMemo(() => {
+        const weekdayStt = parseInt(clanInfo?.roomSttTime || '08', 10);
+        const weekdayEnd = parseInt(clanInfo?.roomEndTime || '22', 10);
+
+        const weekendStt = parseInt(clanInfo?.sundayRoomSttTime || clanInfo?.roomSttTime || '08', 10);
+        const weekendEnd = parseInt(clanInfo?.sundayRoomEndTime || clanInfo?.roomEndTime || '22', 10);
+
+        const safeWeekdayStt = isNaN(weekdayStt) ? 8 : weekdayStt;
+        const safeWeekdayEnd = isNaN(weekdayEnd) || safeWeekdayStt >= weekdayEnd ? 22 : weekdayEnd;
+
+        const safeWeekendStt = isNaN(weekendStt) ? 8 : weekendStt;
+        const safeWeekendEnd = isNaN(weekendEnd) || safeWeekendStt >= weekendEnd ? 22 : weekendEnd;
+
+        const minHour = Math.min(safeWeekdayStt, safeWeekendStt);
+        const maxHour = Math.max(safeWeekdayEnd, safeWeekendEnd);
+
         const hours: number[] = [];
-        for (let h = stt; h < end; h++) {
+        for (let h = minHour; h < maxHour; h++) {
             hours.push(h);
         }
-        return hours.length > 0 ? hours : defaultTimeHours;
+
+        return {
+            weekdayStt: safeWeekdayStt,
+            weekdayEnd: safeWeekdayEnd,
+            weekendStt: safeWeekendStt,
+            weekendEnd: safeWeekendEnd,
+            hours: hours.length > 0 ? hours : defaultTimeHours,
+        };
     }, [clanInfo]);
+
+    const timeHours = operatingConfig.hours;
+
+    // 특정 일자 및 시간의 운영 시간 해당 여부 판별 (토/일: 주말, 월~금: 평일)
+    const isSlotOperating = (dateStr: string, hour: number) => {
+        const y = parseInt(dateStr.substring(0, 4), 10);
+        const m = parseInt(dateStr.substring(4, 6), 10) - 1;
+        const d = parseInt(dateStr.substring(6, 8), 10);
+        const dateObj = new Date(y, m, d);
+        const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+
+        const stt = isWeekend ? operatingConfig.weekendStt : operatingConfig.weekdayStt;
+        const end = isWeekend ? operatingConfig.weekendEnd : operatingConfig.weekdayEnd;
+
+        return hour >= stt && hour < end;
+    };
 
     // 멀티 선택된 슬롯들: Set of "YYYYMMDD_HH00"
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
@@ -195,7 +232,9 @@ const ClanRoomSchedule: React.FC = () => {
                         id: clanData.cnNo,
                         name: clanData.cnNm,
                         roomSttTime: clanData.roomSttTime,
-                        roomEndTime: clanData.roomEndTime
+                        roomEndTime: clanData.roomEndTime,
+                        sundayRoomSttTime: clanData.sundayRoomSttTime,
+                        sundayRoomEndTime: clanData.sundayRoomEndTime,
                     });
                 }
                 await Promise.all([fetchSchedules(), fetchEligibleJams()]);
@@ -252,8 +291,9 @@ const ClanRoomSchedule: React.FC = () => {
     ) => {
         const reservation = getSlotReservation(dateStr, hour);
         const past = isSlotPast(dateStr, hour);
+        const operating = isSlotOperating(dateStr, hour);
 
-        if (reservation || past) {
+        if (reservation || past || !operating) {
             return;
         }
 
@@ -309,7 +349,8 @@ const ClanRoomSchedule: React.FC = () => {
 
         const reservation = getSlotReservation(dateStr, hour);
         const past = isSlotPast(dateStr, hour);
-        if (reservation || past) {
+        const operating = isSlotOperating(dateStr, hour);
+        if (reservation || past || !operating) {
             return;
         }
 
@@ -333,7 +374,8 @@ const ClanRoomSchedule: React.FC = () => {
 
         const reservation = getSlotReservation(dateStr, hour);
         const past = isSlotPast(dateStr, hour);
-        if (reservation || past) {
+        const operating = isSlotOperating(dateStr, hour);
+        if (reservation || past || !operating) {
             return;
         }
 
@@ -666,11 +708,16 @@ const ClanRoomSchedule: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* 상태 구분 범례 바 */}
-                    <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#525252] bg-[#F8FAFC] px-3 py-2 rounded-[10px] border border-[#EBECEF]">
-                        <div className="flex items-center gap-1 font-medium">
-                            <span className="text-gray-500">동방:</span>
-                            <span className="font-bold text-[#0B1114]">1실</span>
+                    {/* 상태 구분 및 시간대 범례 바 (반응형) */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-[#525252] bg-[#F8FAFC] px-3 py-2.5 rounded-[10px] border border-[#EBECEF]">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-gray-500 font-semibold">이용 시간:</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200 text-[10px] sm:text-[11px]">
+                                평일 {String(operatingConfig.weekdayStt).padStart(2, '0')}:00 ~ {String(operatingConfig.weekdayEnd).padStart(2, '0')}:00
+                            </span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-bold border border-amber-200 text-[10px] sm:text-[11px]">
+                                주말 {String(operatingConfig.weekendStt).padStart(2, '0')}:00 ~ {String(operatingConfig.weekendEnd).padStart(2, '0')}:00
+                            </span>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                             <div className="flex items-center gap-1">
@@ -679,11 +726,17 @@ const ClanRoomSchedule: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="w-3.5 h-3.5 rounded-[3px] bg-[#00BDF8] border border-white inline-block shadow-2xs" />
-                                <span className="text-[11px] font-bold text-[#0098CC]">내 합주방 예약 / 선택 중</span>
+                                <span className="text-[11px] font-bold text-[#0098CC]">내 예약/선택</span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="w-3.5 h-3.5 rounded-[3px] bg-[#E2E8F0] border border-white inline-block shadow-2xs" />
-                                <span className="text-[11px] font-medium text-gray-400">타 합주방 예약 / 지난 일정</span>
+                                <span className="text-[11px] font-medium text-gray-400">마감/지난 일정</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <span className="w-3.5 h-3.5 rounded-[3px] bg-[#F3F4F6] border border-gray-200 inline-flex items-center justify-center text-[9px] text-gray-400 font-bold">
+                                    -
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-400">운영 외</span>
                             </div>
                         </div>
                     </div>
@@ -758,12 +811,18 @@ const ClanRoomSchedule: React.FC = () => {
                                                     const reservation = getSlotReservation(dateStr, hour);
                                                     const past = isSlotPast(dateStr, hour);
                                                     const isMyJam = reservation ? Boolean(reservation.isMyJam || myJamBnNos.has(reservation.bnNo)) : false;
+                                                    const isOperating = isSlotOperating(dateStr, hour);
 
                                                     let cellBg = '#FFFFFF';
                                                     let borderClass = 'border border-gray-100';
                                                     let cursorStyle = 'cursor-pointer';
 
-                                                    if (isSelected) {
+                                                    if (!isOperating) {
+                                                        // 운영 시간 외: 회색 배경 + 선택 불가
+                                                        cellBg = '#F3F4F6';
+                                                        borderClass = 'border border-gray-100';
+                                                        cursorStyle = 'cursor-not-allowed';
+                                                    } else if (isSelected) {
                                                         // 내가 현재 선택 중인 슬롯: 파란색 (#00BDF8) + 흰색 박스 라인 테두리
                                                         cellBg = '#00BDF8';
                                                         borderClass = 'border border-white shadow-2xs';
@@ -806,7 +865,13 @@ const ClanRoomSchedule: React.FC = () => {
                                                                 backgroundColor: cellBg,
                                                                 touchAction: 'pan-y',
                                                             }}
-                                                        />
+                                                        >
+                                                            {!isOperating && (
+                                                                <div className="w-full h-full flex items-center justify-center">
+                                                                    <span className="text-[10px] text-gray-300 font-bold select-none">-</span>
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                     );
                                                 })}
                                             </tr>

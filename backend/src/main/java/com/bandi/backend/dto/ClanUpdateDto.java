@@ -11,4 +11,6 @@ public class ClanUpdateDto {
     private String roomUseYn;
     private String roomSttTime;
     private String roomEndTime;
+    private String sundayRoomSttTime;
+    private String sundayRoomEndTime;
 }

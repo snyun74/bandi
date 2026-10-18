@@ -25,6 +25,7 @@ public class BandController {
     private final BandService bandService;
     private final com.bandi.backend.repository.CmAttachmentRepository cmAttachmentRepository;
     private final FileStorageService fileStorageService;
+    private final com.bandi.backend.service.AdminJamService adminJamService;
 
     @GetMapping
     public ResponseEntity<java.util.List<com.bandi.backend.dto.ClanJamListDto>> getBandList(
@@ -102,6 +103,44 @@ public class BandController {
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{bnNo}/sessions")
+    public ResponseEntity<?> getSessions(@PathVariable Long bnNo) {
+        try {
+            return ResponseEntity.ok(adminJamService.getSessionsByBnNo(bnNo));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("세션 조회 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{bnNo}/sessions")
+    public ResponseEntity<?> addSession(
+            @PathVariable Long bnNo,
+            @RequestBody java.util.Map<String, String> requestData) {
+        String sessionTypeCd = requestData.get("sessionTypeCd");
+        String userId = requestData.get("userId");
+        if (sessionTypeCd == null || sessionTypeCd.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("세션 유형은 필수입니다.");
+        }
+        try {
+            adminJamService.addSession(bnNo, sessionTypeCd, userId);
+            return ResponseEntity.ok(java.util.Map.of("message", "세션이 추가되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("세션 추가 실패: " + e.getMessage());
+        }
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{bnNo}/sessions/{sessionNo}")
+    public ResponseEntity<?> deleteSession(
+            @PathVariable Long bnNo,
+            @PathVariable Long sessionNo) {
+        try {
+            adminJamService.deleteSession(bnNo, sessionNo);
+            return ResponseEntity.ok(java.util.Map.of("message", "세션이 삭제되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("세션 삭제 실패: " + e.getMessage());
         }
     }
 

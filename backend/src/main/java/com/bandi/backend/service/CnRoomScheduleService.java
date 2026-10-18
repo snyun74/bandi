@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -29,6 +31,7 @@ public class CnRoomScheduleService {
     private final BnUserRepository bnUserRepository;
     private final UserRepository userRepository;
     private final CmAttachmentRepository cmAttachmentRepository;
+    private final ClanGroupRepository clanGroupRepository;
 
     private static final DateTimeFormatter DTIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
@@ -174,6 +177,35 @@ public class CnRoomScheduleService {
         String nowStr = LocalDateTime.now().format(DTIME_FORMATTER);
         if (newEndDateTime.compareTo(nowStr) <= 0) {
             throw new IllegalArgumentException("과거 시간대에는 예약할 수 없습니다.");
+        }
+
+        // 클랜 동아리방 운영 여부 및 평일/주말 운영 시간 검증
+        com.bandi.backend.entity.clan.ClanGroup clan = clanGroupRepository.findById(dto.getCnNo())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 클랜입니다."));
+        if (!"Y".equalsIgnoreCase(clan.getRoomUseYn())) {
+            throw new IllegalArgumentException("동아리방 예약을 지원하지 않는 클랜입니다.");
+        }
+
+        LocalDate schDate = LocalDate.parse(dto.getSchSttDate(), DateTimeFormatter.ofPattern("yyyyMMdd"));
+        boolean isWeekend = (schDate.getDayOfWeek() == DayOfWeek.SATURDAY || schDate.getDayOfWeek() == DayOfWeek.SUNDAY);
+
+        String limitStt = isWeekend
+                ? (clan.getSundayRoomSttTime() != null ? clan.getSundayRoomSttTime() : (clan.getRoomSttTime() != null ? clan.getRoomSttTime() : "08"))
+                : (clan.getRoomSttTime() != null ? clan.getRoomSttTime() : "08");
+        String limitEnd = isWeekend
+                ? (clan.getSundayRoomEndTime() != null ? clan.getSundayRoomEndTime() : (clan.getRoomEndTime() != null ? clan.getRoomEndTime() : "22"))
+                : (clan.getRoomEndTime() != null ? clan.getRoomEndTime() : "22");
+
+        int limitSttHour = Integer.parseInt(limitStt);
+        int limitEndHour = Integer.parseInt(limitEnd);
+        int reqSttHour = Integer.parseInt(sttTime.substring(0, 2));
+        int reqEndHour = Integer.parseInt(endTime.substring(0, 2));
+
+        if (reqSttHour < limitSttHour || reqEndHour > limitEndHour) {
+            String dayType = isWeekend ? "주말" : "평일";
+            throw new IllegalArgumentException(
+                    String.format("%s 동아리방 예약 가능 시간(%02d:00 ~ %02d:00) 외에는 예약할 수 없습니다.",
+                            dayType, limitSttHour, limitEndHour));
         }
 
         // 합주방 유효성 및 소속 권한 확인

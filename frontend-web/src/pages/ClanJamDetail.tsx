@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit, FaUsers } from 'react-icons/fa';
+import { FaChevronLeft, FaMicrophone, FaGuitar, FaDrum, FaCrown, FaMinusCircle, FaRegEdit, FaUsers, FaPlus, FaTrash } from 'react-icons/fa';
 import DefaultProfile from '../components/common/DefaultProfile';
 import { GiGrandPiano } from "react-icons/gi";
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
+
+interface CommDetail {
+    commDtlCd: string;
+    commDtlNm: string;
+    commOrder?: number;
+}
 
 interface JamRole {
     sessionNo?: number;
@@ -78,7 +84,11 @@ const ClanJamDetail: React.FC = () => {
         currentSessionTypeCd?: string;
     }>({ isOpen: false, reservations: [] });
 
-
+    // 세션 추가 / 삭제 상태
+    const [commonSessions, setCommonSessions] = useState<CommDetail[]>([]);
+    const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
+    const [selectedSessionType, setSelectedSessionType] = useState<string>('');
+    const [isDeleteSessionModalOpen, setIsDeleteSessionModalOpen] = useState(false);
 
 
     const handleDelete = () => {
@@ -193,37 +203,113 @@ const ClanJamDetail: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchBandDetail = async () => {
-            if (!jamId || !userId) return;
-            setIsLoading(true);
-            try {
-                const response = await fetch(`/api/bands/${jamId}?userId=${userId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setBandDetail(data);
-                } else {
-                    const errorMsg = await response.text();
-                    setModalConfig({
-                        isOpen: true,
-                        type: 'alert',
-                        message: errorMsg || "합주 정보를 불러올 수 없습니다.",
-                        onConfirm: () => {
-                            closeModal();
-                            navigate(-1);
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error("Failed to fetch band detail", error);
-                showAlert("오류가 발생했습니다.");
-            } finally {
-                setIsLoading(false);
+    const fetchBandDetail = useCallback(async () => {
+        if (!jamId || !userId) return;
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/bands/${jamId}?userId=${userId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setBandDetail(data);
+            } else {
+                const errorMsg = await response.text();
+                setModalConfig({
+                    isOpen: true,
+                    type: 'alert',
+                    message: errorMsg || "합주 정보를 불러올 수 없습니다.",
+                    onConfirm: () => {
+                        closeModal();
+                        navigate(-1);
+                    }
+                });
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch band detail", error);
+            showAlert("오류가 발생했습니다.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [jamId, userId, navigate]);
+
+    useEffect(() => {
         fetchBandDetail();
         fetchSchedules();
-    }, [jamId, userId, navigate]);
+    }, [fetchBandDetail]);
+
+    useEffect(() => {
+        const fetchCommonSessions = async () => {
+            try {
+                const response = await fetch('/api/common/codes/BD100');
+                if (response.ok) {
+                    const data = await response.json();
+                    data.sort((a: CommDetail, b: CommDetail) => {
+                        if (a.commOrder !== b.commOrder) {
+                            return (a.commOrder || 0) - (b.commOrder || 0);
+                        }
+                        return a.commDtlCd.localeCompare(b.commDtlCd);
+                    });
+                    setCommonSessions(data);
+                    if (data.length > 0) {
+                        setSelectedSessionType(data[0].commDtlCd);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to fetch BD100 codes', err);
+            }
+        };
+        fetchCommonSessions();
+    }, []);
+
+    const handleOpenAddSessionModal = () => {
+        if (commonSessions.length > 0 && !selectedSessionType) {
+            setSelectedSessionType(commonSessions[0].commDtlCd);
+        }
+        setIsAddSessionModalOpen(true);
+    };
+
+    const handleAddSession = async () => {
+        if (!jamId || !selectedSessionType) return;
+        try {
+            const res = await fetch(`/api/bands/${jamId}/sessions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionTypeCd: selectedSessionType, userId }),
+            });
+            if (res.ok) {
+                showAlert('세션이 성공적으로 추가되었습니다.');
+                setIsAddSessionModalOpen(false);
+                await fetchBandDetail();
+            } else {
+                const errText = await res.text();
+                showAlert(`세션 추가 실패: ${errText || '오류가 발생했습니다.'}`);
+            }
+        } catch (e) {
+            showAlert('세션 추가 중 오류가 발생했습니다.');
+        }
+    };
+
+    const handleOpenDeleteSessionModal = () => {
+        setIsDeleteSessionModalOpen(true);
+    };
+
+    const promptDeleteSession = (sessionNo: number, part: string) => {
+        showConfirm(`정말 [${part}] 세션을 삭제하시겠습니까?`, async () => {
+            try {
+                const res = await fetch(`/api/bands/${jamId}/sessions/${sessionNo}?userId=${userId}`, {
+                    method: 'DELETE',
+                });
+                if (res.ok) {
+                    showAlert(`[${part}] 세션이 삭제되었습니다.`);
+                    await fetchBandDetail();
+                } else {
+                    const errText = await res.text();
+                    showAlert(`세션 삭제 실패: ${errText || '오류가 발생했습니다.'}`);
+                }
+            } catch (e) {
+                showAlert('세션 삭제 중 오류가 발생했습니다.');
+            }
+        });
+    };
 
     const getFallbackIcon = (part: string, bgUrl?: string) => {
         if (bgUrl) return null;
@@ -797,16 +883,35 @@ const ClanJamDetail: React.FC = () => {
                             합주 종료됨
                         </button>
                     ) : !bandDetail.isConfirmed ? (
-                        <button
-                            onClick={handleDelete}
-                            className="w-full bg-[#FEE2E2] hover:bg-[#FECACA] active:scale-[0.99] text-[#DC2626] border border-[#FCA5A5] font-bold py-3 rounded-xl transition-all text-[14px]"
-                        >
-                            합주방 삭제
-                        </button>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                type="button"
+                                onClick={handleOpenAddSessionModal}
+                                className="bg-white hover:bg-sky-50 active:scale-[0.99] text-[#00BDF8] border border-[#00BDF8] font-bold py-3 rounded-xl transition-all text-[12px] sm:text-[14px] flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
+                            >
+                                <FaPlus size={11} />
+                                <span>세션추가</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleOpenDeleteSessionModal}
+                                className="bg-white hover:bg-rose-50 active:scale-[0.99] text-rose-500 border border-rose-300 font-bold py-3 rounded-xl transition-all text-[12px] sm:text-[14px] flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
+                            >
+                                <FaTrash size={11} />
+                                <span>세션삭제</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                className="bg-white hover:bg-rose-50 active:scale-[0.99] text-rose-500 border border-rose-300 font-bold py-3 rounded-xl transition-all text-[12px] sm:text-[14px] flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
+                            >
+                                <span>합주방삭제</span>
+                            </button>
+                        </div>
                     ) : (
                         <button
                             onClick={handleEndJam}
-                            className="w-full bg-[#FEE2E2] hover:bg-[#FECACA] active:scale-[0.99] text-[#DC2626] border border-[#FCA5A5] font-bold py-3 rounded-xl transition-all text-[14px]"
+                            className="w-full bg-white hover:bg-rose-50 active:scale-[0.99] text-rose-500 border border-rose-300 font-bold py-3 rounded-xl transition-all text-[14px] cursor-pointer shadow-2xs"
                         >
                             합주 종료
                         </button>
@@ -997,6 +1102,136 @@ const ClanJamDetail: React.FC = () => {
                                 className="flex-1 bg-[#00BDF8] text-white font-bold py-3 rounded-xl hover:bg-[#00ACD8] transition-colors"
                             >
                                 수정완료
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Session Add Modal */}
+            {isAddSessionModalOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+                >
+                    <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-fade-in-up border border-gray-100">
+                        <h2 className="text-lg font-bold text-[#0B1114] mb-2 flex items-center gap-2">
+                            <FaPlus className="text-[#00BDF8]" size={14} />
+                            <span>세션 추가</span>
+                        </h2>
+                        <p className="text-xs text-gray-500 mb-4">
+                            추가할 세션 유형을 선택해 주세요.
+                        </p>
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                                세션 유형
+                            </label>
+                            <select
+                                value={selectedSessionType}
+                                onChange={(e) => setSelectedSessionType(e.target.value)}
+                                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-800 focus:outline-none focus:border-[#00BDF8] shadow-2xs"
+                            >
+                                {commonSessions.map((s) => (
+                                    <option key={s.commDtlCd} value={s.commDtlCd}>
+                                        {s.commDtlNm}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => setIsAddSessionModalOpen(false)}
+                                className="py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold transition-colors cursor-pointer"
+                            >
+                                취소
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleAddSession}
+                                className="py-3 px-4 bg-[#00BDF8] hover:bg-[#00a6da] text-white rounded-xl text-sm font-bold shadow-xs transition-colors cursor-pointer"
+                            >
+                                추가
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Session Delete Modal */}
+            {isDeleteSessionModalOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+                >
+                    <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-fade-in-up border border-gray-100 flex flex-col max-h-[80vh]">
+                        <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-3 shrink-0">
+                            <h2 className="text-lg font-bold text-[#0B1114] flex items-center gap-2">
+                                <FaTrash className="text-rose-500" size={14} />
+                                <span>세션 삭제</span>
+                            </h2>
+                            <span className="text-xs font-semibold text-gray-500">
+                                총 {bandDetail?.roles.length || 0}개
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-3 shrink-0">
+                            삭제할 세션의 삭제(휴지통) 버튼을 눌러주세요.
+                        </p>
+
+                        <div className="flex-1 overflow-y-auto pr-1 space-y-2 min-h-[140px] max-h-[50vh]">
+                            {!bandDetail || bandDetail.roles.length === 0 ? (
+                                <div className="text-center text-sm text-gray-400 py-8">
+                                    등록된 세션이 없습니다.
+                                </div>
+                            ) : (
+                                <ul className="space-y-2">
+                                    {bandDetail.roles.map((role, idx) => {
+                                        const isOccupied = role.status === 'occupied';
+                                        return (
+                                            <li
+                                                key={role.sessionNo || idx}
+                                                className="flex items-center justify-between bg-gray-50/80 hover:bg-gray-100/70 p-3 rounded-xl border border-gray-100 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className="font-bold text-[#052c42] text-sm">
+                                                        {role.part}
+                                                    </span>
+                                                    {isOccupied ? (
+                                                        <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 truncate max-w-[120px]">
+                                                            {role.user}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
+                                                            공석
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        promptDeleteSession(role.sessionNo!, role.part)
+                                                    }
+                                                    className="text-rose-500 hover:bg-rose-100/80 p-2 rounded-lg transition-colors cursor-pointer shrink-0"
+                                                    title="세션 삭제"
+                                                >
+                                                    <FaTrash size={13} />
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+                        </div>
+
+                        <div className="pt-4 mt-3 border-t border-gray-100 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setIsDeleteSessionModalOpen(false)}
+                                className="w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors text-sm cursor-pointer"
+                            >
+                                닫기
                             </button>
                         </div>
                     </div>

@@ -19,6 +19,8 @@ public class ClanListDto {
     private String roomUseYn; // Added field for room reservation usage
     private String roomSttTime; // Added field for room start time (e.g. "08")
     private String roomEndTime; // Added field for room end time (e.g. "22")
+    private String sundayRoomSttTime; // Added field for weekend room start time (e.g. "08")
+    private String sundayRoomEndTime; // Added field for weekend room end time (e.g. "22")
 
     public ClanListDto(Long cnNo, String cnNm, String cnDesc, String cnUrl, Long userCnt, String attachFilePath, Long unreadChatCount) {
         this.cnNo = cnNo;
@@ -53,5 +55,20 @@ public class ClanListDto {
         this.roomUseYn = roomUseYn != null ? roomUseYn : "N";
         this.roomSttTime = roomSttTime;
         this.roomEndTime = roomEndTime;
+    }
+
+    public ClanListDto(Long cnNo, String cnNm, String cnDesc, String cnUrl, Long userCnt, String attachFilePath, Long unreadChatCount, String roomUseYn, String roomSttTime, String roomEndTime, String sundayRoomSttTime, String sundayRoomEndTime) {
+        this.cnNo = cnNo;
+        this.cnNm = cnNm;
+        this.cnDesc = cnDesc;
+        this.cnUrl = cnUrl;
+        this.userCnt = userCnt;
+        this.attachFilePath = attachFilePath;
+        this.unreadChatCount = unreadChatCount;
+        this.roomUseYn = roomUseYn != null ? roomUseYn : "N";
+        this.roomSttTime = roomSttTime;
+        this.roomEndTime = roomEndTime;
+        this.sundayRoomSttTime = sundayRoomSttTime;
+        this.sundayRoomEndTime = sundayRoomEndTime;
     }
 }

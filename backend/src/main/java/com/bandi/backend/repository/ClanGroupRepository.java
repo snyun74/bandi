@@ -92,7 +92,9 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         +
                         "g.roomUseYn, " +
                         "g.roomSttTime, " +
-                        "g.roomEndTime " +
+                        "g.roomEndTime, " +
+                        "g.sundayRoomSttTime, " +
+                        "g.sundayRoomEndTime " +
                         ") " +
                         "FROM ClanGroup g " +
                         "LEFT JOIN CmAttachment a ON g.attachNo = a.attachNo " +
