@@ -57,6 +57,17 @@ const Clan: React.FC = () => {
                     logoText: item.cnNm ? item.cnNm.substring(0, 1) : "?",
                     attachFilePath: item.attachFilePath
                 }));
+
+                // 정렬 기준: 1순위 프로필 사진 등록 여부, 2순위 가나다(이름) 순
+                mappedData.sort((a: ClanData, b: ClanData) => {
+                    const aHasImg = !!a.attachFilePath && a.attachFilePath.trim() !== '';
+                    const bHasImg = !!b.attachFilePath && b.attachFilePath.trim() !== '';
+                    if (aHasImg !== bHasImg) {
+                        return aHasImg ? -1 : 1;
+                    }
+                    return (a.name || '').localeCompare(b.name || '', 'ko');
+                });
+
                 setClans(mappedData);
             })
             .catch(err => console.error('Failed to fetch clans:', err));

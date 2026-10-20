@@ -31,7 +31,7 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "LEFT JOIN CmAttachment a ON g.attachNo = a.attachNo " +
                         "WHERE g.cnApprStatCd = 'CN' " +
                         "AND g.cnStatCd = 'A' " +
-                        "ORDER BY g.insDtime DESC")
+                        "ORDER BY (CASE WHEN a.filePath IS NOT NULL AND a.filePath <> '' THEN 0 ELSE 1 END) ASC, g.cnNm ASC")
         List<ClanListDto> findAllActiveClans();
 
         @Query(value = "SELECT new com.bandi.backend.dto.ClanListDto(" +
@@ -44,7 +44,7 @@ public interface ClanGroupRepository extends JpaRepository<ClanGroup, Long> {
                         "WHERE g.cnNm LIKE CONCAT('%', :cnNm, '%') " +
                         "AND g.cnApprStatCd = 'CN' " +
                         "AND g.cnStatCd = 'A' " +
-                        "ORDER BY g.insDtime DESC")
+                        "ORDER BY (CASE WHEN a.filePath IS NOT NULL AND a.filePath <> '' THEN 0 ELSE 1 END) ASC, g.cnNm ASC")
         List<ClanListDto> findActiveClansByName(@org.springframework.data.repository.query.Param("cnNm") String cnNm);
 
         @Query(value = "SELECT new com.bandi.backend.dto.ClanListDto(" +
