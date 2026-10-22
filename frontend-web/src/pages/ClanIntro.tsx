@@ -152,6 +152,28 @@ const ClanIntro: React.FC = () => {
     };
 
     /**
+     * 유튜브 채널명 또는 핸들(@channel) 추출
+     */
+    const getYoutubeChannelName = (url?: string): string => {
+        if (!url) return 'YouTube 공식 채널';
+        const cleanUrl = url.trim();
+
+        // 1. @핸들 매칭 (예: youtube.com/@bandicon)
+        const handleMatch = cleanUrl.match(/@([a-zA-Z0-9_\-\.]+)/);
+        if (handleMatch && handleMatch[1]) {
+            return `@${handleMatch[1]}`;
+        }
+
+        // 2. /c/ 또는 /user/ 사용자 지정 URL 매칭
+        const customMatch = cleanUrl.match(/(?:c|user)\/([a-zA-Z0-9_\-\.]+)/i);
+        if (customMatch && customMatch[1]) {
+            return customMatch[1];
+        }
+
+        return 'YouTube 공식 채널';
+    };
+
+    /**
      * 모바일 공유 링크(?si=), 쇼츠, 라이브 등 모든 형태의 유튜브 URL 파싱
      */
     const getEmbedUrl = (url: string) => {
@@ -267,8 +289,11 @@ const ClanIntro: React.FC = () => {
     }
 
     const hasVideoOrUrl = !!(clan.cnUrl && clan.cnUrl.trim() !== '');
+    const cleanUrl = clan.cnUrl ? clan.cnUrl.trim() : '';
+    const isYoutubeUrl = hasVideoOrUrl && (cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be'));
     const youtubeVideoId = hasVideoOrUrl ? getYoutubeVideoId(clan.cnUrl) : '';
-    const isYouTube = !!youtubeVideoId;
+    const isYouTubeVideo = !!youtubeVideoId;
+    const isYouTubeChannel = isYoutubeUrl && !isYouTubeVideo;
 
     return (
         <div 
@@ -327,9 +352,10 @@ const ClanIntro: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 3. Media / Video Section (상단 라인 제거 및 영상 영역 클릭 시 보기 연결) */}
+                {/* 3. Media / Video Section (개별 영상, 채널 URL, 일반 링크 완벽 지원) */}
                 {hasVideoOrUrl && (
-                    isYouTube ? (
+                    isYouTubeVideo ? (
+                        /* (1) 유튜브 개별 영상: 고화질 썸네일 + 재생 버튼 카드 */
                         <div
                             onClick={() => handleOpenUrl(clan.cnUrl)}
                             className="w-full relative rounded-2xl overflow-hidden aspect-video bg-black shadow-xs border border-slate-200/80 mb-3 cursor-pointer group hover:opacity-95 transition-all"
@@ -356,17 +382,53 @@ const ClanIntro: React.FC = () => {
                                 <span>YouTube 보기</span>
                             </div>
                         </div>
-                    ) : (
+                    ) : isYouTubeChannel ? (
+                        /* (2) 유튜브 채널 URL (@채널, /channel/, /c/ 등): 공식 채널 전용 프리미엄 카드 */
                         <div
                             onClick={() => handleOpenUrl(clan.cnUrl)}
-                            className="bg-white rounded-2xl p-3 shadow-xs border border-slate-100 mb-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                            className="w-full relative rounded-2xl overflow-hidden p-3.5 bg-gradient-to-br from-[#1C1C1E] via-[#242426] to-[#121214] text-white shadow-md border border-slate-700/60 mb-3 cursor-pointer group hover:border-red-500/50 transition-all active:scale-[0.99]"
+                            title="클릭하여 YouTube 채널 바로가기"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                                    <FaYoutube size={26} className="text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                        <span className="text-[10px] font-bold px-1.5 py-0.2 bg-red-500/20 text-red-400 border border-red-500/30 rounded">
+                                            공식 채널
+                                        </span>
+                                        <span className="text-[11px] text-slate-400 font-medium">YouTube</span>
+                                    </div>
+                                    <h4 className="text-[13px] sm:text-sm font-bold text-white truncate group-hover:text-red-400 transition-colors">
+                                        {getYoutubeChannelName(clan.cnUrl)}
+                                    </h4>
+                                    <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                                        클릭하여 채널 영상 및 합주 콘텐츠 보러가기 🎵
+                                    </p>
+                                </div>
+                                <div className="shrink-0 text-slate-400 group-hover:text-white transition-colors pl-1">
+                                    <FaExternalLinkAlt size={12} />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* (3) 일반 웹사이트 URL */
+                        <div
+                            onClick={() => handleOpenUrl(clan.cnUrl)}
+                            className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100 mb-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 transition-colors"
                             title="클릭하여 공식 자료 보기"
                         >
-                            <div className="flex items-center gap-1.5 min-w-0">
-                                <FaExternalLinkAlt className="text-[#00BDF8] text-[12px] flex-shrink-0" />
-                                <span className="text-xs font-semibold text-slate-700 truncate">클랜 공식 자료 보러가기</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-xl bg-sky-50 flex items-center justify-center shrink-0 text-[#00BDF8]">
+                                    <FaExternalLinkAlt size={13} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-xs font-bold text-slate-800 truncate">클랜 공식 자료 바로가기</div>
+                                    <div className="text-[11px] text-slate-400 truncate">{clan.cnUrl}</div>
+                                </div>
                             </div>
-                            <span className="text-xs text-slate-400 font-bold">↗</span>
+                            <span className="text-xs text-slate-400 font-bold shrink-0">↗</span>
                         </div>
                     )
                 )}
