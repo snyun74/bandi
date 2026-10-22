@@ -17,6 +17,8 @@ import GatheringCreateModal from '../components/GatheringCreateModal';
 import GatheringApplyModal from '../components/GatheringApplyModal';
 import DefaultProfile from '../components/common/DefaultProfile';
 import ClanJamSelectModal, { type EligibleJam } from '../components/clan/ClanJamSelectModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
+import ClanIntroTemplateEditor, { parseClanIntroText, getDisplayIntroSummary } from '../components/clan/ClanIntroTemplateEditor';
 
 interface ClanDetailData {
     id: number;
@@ -46,6 +48,10 @@ const ClanDetail: React.FC = () => {
     const [recentJams, setRecentJams] = useState<any[]>([]);
     const [gatherings, setGatherings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Eligible jams for room reservation modal
     const [eligibleJams, setEligibleJams] = useState<EligibleJam[]>([]);
@@ -88,6 +94,12 @@ const ClanDetail: React.FC = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [confirmMessage, setConfirmMessage] = useState('');
     const [onConfirmAction, setOnConfirmAction] = useState<(() => void) | null>(null);
+
+    // 소개글 템플릿 적용 여부 판별 (미적용 클랜에게만 상단 안내 뱃지 노출)
+    const isTemplateApplied = useMemo(() => {
+        if (!clan?.description || !clan.description.trim()) return false;
+        return parseClanIntroText(clan.description).isTemplateMatched;
+    }, [clan?.description]);
 
     const showAlert = (msg: string) => {
         setAlertMessage(msg);
@@ -503,23 +515,40 @@ const ClanDetail: React.FC = () => {
                 ───────────────────────────────────────────────────────────── */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-4">
-                        {/* Clan Avatar */}
-                        <div
-                            className={`relative w-[86px] h-[86px] rounded-full overflow-hidden bg-gray-100 border border-gray-100 shadow-sm shrink-0 flex items-center justify-center ${
-                                myRole === '01' || myRole === '02' ? 'cursor-pointer group' : ''
-                            }`}
-                            onClick={handleEditClick}
-                        >
-                            {clan.attachFilePath ? (
-                                <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
-                            ) : (
-                                <DefaultProfile type="clan" iconSize={28} />
-                            )}
-                            {(myRole === '01' || myRole === '02') && (
-                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <FaRegEdit className="text-white text-base" />
+                        {/* Clan Avatar with Badge on Top */}
+                        <div className="relative shrink-0 pt-2">
+                            {/* 템플릿 미적용 뱃지 (수정 권한을 가진 마스터/매니저에게만 노출) */}
+                            {!isTemplateApplied && (myRole === '01' || myRole === '02') && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditClick();
+                                    }}
+                                    className="absolute -top-1 left-1/2 -translate-x-1/2 z-10 whitespace-nowrap bg-gradient-to-r from-amber-400 to-orange-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center gap-0.5 border border-white"
+                                    title="클릭하여 템플릿으로 소개글 작성하기"
+                                >
+                                    <span className="text-[9px]">✨</span>
+                                    <span>템플릿 미적용</span>
                                 </div>
                             )}
+
+                            <div
+                                className={`relative w-[86px] h-[86px] rounded-full overflow-hidden bg-gray-100 border border-gray-100 shadow-sm flex items-center justify-center ${
+                                    myRole === '01' || myRole === '02' ? 'cursor-pointer group' : ''
+                                }`}
+                                onClick={handleEditClick}
+                            >
+                                {clan.attachFilePath ? (
+                                    <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    <DefaultProfile type="clan" iconSize={28} />
+                                )}
+                                {(myRole === '01' || myRole === '02') && (
+                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <FaRegEdit className="text-white text-base" />
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Clan Identity */}
@@ -528,7 +557,7 @@ const ClanDetail: React.FC = () => {
                                 {clan.name}
                             </h2>
                             <p className="text-[14px] font-medium text-[#525252] leading-snug line-clamp-2">
-                                {clan.description || '클랜 소개가 없습니다.'}
+                                {getDisplayIntroSummary(clan.description) || '클랜 소개가 없습니다.'}
                             </p>
                         </div>
                     </div>
@@ -727,20 +756,32 @@ const ClanDetail: React.FC = () => {
 
                             {/* Footer: Author & Counts */}
                             <div className="flex items-center justify-between pt-1 border-t border-gray-50">
-                                <div className="flex items-center gap-2">
-                                    {latestPost.profileImageUrl ? (
-                                        <img
-                                            src={latestPost.profileImageUrl}
-                                            alt=""
-                                            className="w-[26px] h-[26px] rounded-full object-cover border border-gray-100"
-                                        />
-                                    ) : (
-                                        <div className="w-[26px] h-[26px] rounded-full bg-gray-100 flex items-center justify-center border border-gray-100 overflow-hidden">
+                                <div 
+                                    className={`flex items-center gap-2 ${latestPost.maskingYn !== 'Y' && latestPost.writerUserId ? 'cursor-pointer group' : ''}`}
+                                    onClick={(e) => {
+                                        if (latestPost.maskingYn !== 'Y' && latestPost.writerUserId) {
+                                            e.stopPropagation();
+                                            setSelectedUserId(latestPost.writerUserId);
+                                            setIsProfileModalOpen(true);
+                                        }
+                                    }}
+                                >
+                                    <div 
+                                        className={`w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-100 flex items-center justify-center bg-gray-100 ${latestPost.maskingYn !== 'Y' && latestPost.writerUserId ? 'group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+                                        title={latestPost.maskingYn !== 'Y' && latestPost.writerUserId ? "프로필 보기" : undefined}
+                                    >
+                                        {latestPost.maskingYn !== 'Y' && latestPost.profileImageUrl ? (
+                                            <img
+                                                src={latestPost.profileImageUrl}
+                                                alt=""
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
                                             <img src="/images/default_profile.png" alt="" className="w-full h-full object-cover opacity-60" />
-                                        </div>
-                                    )}
-                                    <span className="text-[#2F2F31] text-[14px] font-semibold">
-                                        {latestPost.userNickNm || '익명'}
+                                        )}
+                                    </div>
+                                    <span className={`text-[#2F2F31] text-[14px] font-semibold ${latestPost.maskingYn !== 'Y' && latestPost.writerUserId ? 'group-hover:underline group-hover:text-[#00BDF8]' : ''}`}>
+                                        {latestPost.maskingYn === 'Y' ? '익명' : (latestPost.userNickNm || '익명')}
                                     </span>
                                 </div>
 
@@ -998,7 +1039,7 @@ const ClanDetail: React.FC = () => {
                     className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm p-4"
                     style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
                 >
-                    <div className="bg-white w-full max-w-sm rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] animate-fade-in-up">
+                    <div className="bg-white w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] animate-fade-in-up">
                         {/* Header */}
                         <h2 className="text-lg sm:text-xl font-bold text-[#0B1114] mb-3 text-center shrink-0">
                             클랜 정보 수정
@@ -1038,16 +1079,13 @@ const ClanDetail: React.FC = () => {
                                 />
                             </div>
 
-                            {/* Clan Description */}
+                            {/* Clan Description (간편 템플릿 & 직접 편집 지원) */}
                             <div>
-                                <label className="block text-xs sm:text-sm font-bold text-[#0B1114] mb-1">
-                                    클랜 소개 <span className="text-red-500">*</span>
-                                </label>
-                                <textarea
+                                <ClanIntroTemplateEditor
                                     value={editForm.desc}
-                                    onChange={(e) => setEditForm((prev) => ({ ...prev, desc: e.target.value }))}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#00BDF8] h-20 resize-none"
-                                    placeholder="클랜 소개를 입력하세요"
+                                    onChange={(desc) => setEditForm((prev) => ({ ...prev, desc }))}
+                                    label="클랜 소개"
+                                    required
                                 />
                             </div>
 
@@ -1255,6 +1293,20 @@ const ClanDetail: React.FC = () => {
                     onSubmit={() => {
                         window.location.reload();
                     }}
+                />
+            )}
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
                 />
             )}
         </div>

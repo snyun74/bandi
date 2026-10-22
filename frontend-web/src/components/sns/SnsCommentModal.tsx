@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaPaperPlane, FaTrash } from 'react-icons/fa';
 import UserAvatar from '../common/UserAvatar';
+import ProfileEditModal from '../profile/ProfileEditModal';
 
 export interface CommentItem {
     replyNo: number;
@@ -32,6 +33,10 @@ const SnsCommentModal: React.FC<SnsCommentModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const currentUserId = localStorage.getItem('userId');
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     const fetchComments = async () => {
         if (!targetId) return;
@@ -172,16 +177,33 @@ const SnsCommentModal: React.FC<SnsCommentModalProps> = ({
                     ) : (
                         comments.map((comment) => (
                             <div key={comment.replyNo} className="flex gap-3 text-[14px] group">
-                                <UserAvatar
-                                    profileImagePath={comment.replyUserProfileImagePath}
-                                    nickName={comment.replyUserNickNm}
-                                    userId={comment.replyUserId}
-                                    size={36}
-                                />
+                                <div 
+                                    className="cursor-pointer group/avatar flex-shrink-0"
+                                    onClick={() => {
+                                        setSelectedUserId(comment.replyUserId);
+                                        setIsProfileModalOpen(true);
+                                    }}
+                                >
+                                    <div className="rounded-full group-hover/avatar:ring-2 group-hover/avatar:ring-[#00BDF8] group-hover/avatar:scale-105 active:scale-95 transition-all shadow-xs" title="프로필 보기">
+                                        <UserAvatar
+                                            profileImagePath={comment.replyUserProfileImagePath}
+                                            nickName={comment.replyUserNickNm}
+                                            userId={comment.replyUserId}
+                                            size={36}
+                                        />
+                                    </div>
+                                </div>
                                 <div className="flex-1">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-zinc-200 text-[13.5px]">
+                                            <span 
+                                                className="font-semibold text-zinc-200 text-[13.5px] cursor-pointer hover:underline hover:text-[#00BDF8] transition-colors"
+                                                onClick={() => {
+                                                    setSelectedUserId(comment.replyUserId);
+                                                    setIsProfileModalOpen(true);
+                                                }}
+                                                title="프로필 보기"
+                                            >
                                                 @{comment.replyUserNickNm || comment.replyUserId}
                                             </span>
                                             <span className="text-[11px] text-zinc-500">
@@ -233,6 +255,20 @@ const SnsCommentModal: React.FC<SnsCommentModalProps> = ({
                     </button>
                 </form>
             </div>
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== currentUserId}
+                />
+            )}
         </div>
     );
 };

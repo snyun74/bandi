@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaCamera } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import { validateFileSize } from '../utils/fileUtils';
+import ClanIntroTemplateEditor from '../components/clan/ClanIntroTemplateEditor';
 
 const ClanCreatePage: React.FC = () => {
     const navigate = useNavigate();
@@ -184,12 +185,11 @@ const ClanCreatePage: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-[#003C48] text-sm font-bold mb-2">클랜 소개</label>
-                        <textarea
+                        <ClanIntroTemplateEditor
                             value={clanIntro}
-                            onChange={(e) => setClanIntro(e.target.value)}
-                            placeholder="클랜 소개를 입력하세요"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#00BDF8] transition-colors h-32 resize-none"
+                            onChange={setClanIntro}
+                            label="클랜 소개"
+                            required
                         />
                     </div>
 

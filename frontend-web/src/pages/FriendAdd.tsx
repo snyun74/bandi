@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaSearch, FaPlusCircle } from 'react-icons/fa';
 
 import CommonModal from '../components/common/CommonModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 interface FriendSearchResult {
     id: string; // Changed to string to match userId in backend
@@ -17,6 +18,10 @@ const FriendAdd: React.FC = () => {
     const [searchText, setSearchText] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [hasSearched, setHasSearched] = useState(false);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Modal State
     const [modalConfig, setModalConfig] = useState<{
@@ -181,8 +186,17 @@ const FriendAdd: React.FC = () => {
                         searchResults.length > 0 ? (
                             searchResults.map((result) => (
                                 <div key={result.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] bg-white">
+                                    <div 
+                                        className="flex items-center gap-3 cursor-pointer group"
+                                        onClick={() => {
+                                            setSelectedUserId(result.id);
+                                            setIsProfileModalOpen(true);
+                                        }}
+                                    >
+                                        <div 
+                                            className="w-10 h-10 rounded-full border border-[#003C48] overflow-hidden flex items-center justify-center text-[#003C48] bg-white group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 transition-all shadow-xs"
+                                            title="프로필 보기"
+                                        >
                                             {result.profileUrl ? (
                                                 <img src={result.profileUrl} alt={result.name} className="w-full h-full object-cover" />
                                             ) : (
@@ -190,7 +204,7 @@ const FriendAdd: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[#003C48] font-bold text-sm">{result.nickname || result.name}</span>
+                                            <span className="text-[#003C48] font-bold text-sm group-hover:underline group-hover:text-[#00BDF8] transition-colors">{result.nickname || result.name}</span>
                                             {result.nickname && <span className="text-gray-400 text-xs">{result.name}</span>}
                                         </div>
                                     </div>
@@ -212,6 +226,20 @@ const FriendAdd: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

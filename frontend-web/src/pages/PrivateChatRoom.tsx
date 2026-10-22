@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaFileAlt } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { validateFileSize } from '../utils/fileUtils';
 
 interface ChatMessage {
@@ -49,6 +50,10 @@ const PrivateChatRoom: React.FC = () => {
     const [alertMessage, setAlertMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
 
+    // Profile Modal
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const prevScrollHeightRef = useRef<number>(0);
@@ -57,16 +62,38 @@ const PrivateChatRoom: React.FC = () => {
     const latestMsgNoRef = useRef<number>(0);
     const isInitialLoadDone = useRef<boolean>(false);
 
+    const [friendUserId, setFriendUserId] = useState<string | null>(null);
     const [friendNickname, setFriendNickname] = useState("Friend");
     const [friendProfileUrl, setFriendProfileUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        const state = location.state as { friendNickname: string; friendProfileUrl?: string } | undefined;
+        const state = location.state as { friendNickname?: string; friendProfileUrl?: string; friendUserId?: string } | undefined;
         if (state) {
-            setFriendNickname(state.friendNickname);
+            if (state.friendNickname) setFriendNickname(state.friendNickname);
             if (state.friendProfileUrl) setFriendProfileUrl(state.friendProfileUrl);
+            if (state.friendUserId) setFriendUserId(state.friendUserId);
         }
     }, [location.state]);
+
+    // 상대방 정보가 없거나 새로고침 시 백엔드에서 1:1 파트너 정보 조회
+    useEffect(() => {
+        const fetchPartnerInfo = async () => {
+            const userId = localStorage.getItem('userId');
+            if (!userId || !roomNo) return;
+            try {
+                const res = await fetch(`/api/chat/private/${roomNo}/partner?userId=${userId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.userId) setFriendUserId(data.userId);
+                    if (data.userNickNm) setFriendNickname(data.userNickNm);
+                    if (data.profileUrl) setFriendProfileUrl(data.profileUrl);
+                }
+            } catch (e) {
+                console.warn("Failed to fetch partner info", e);
+            }
+        };
+        fetchPartnerInfo();
+    }, [roomNo]);
 
     const showAlert = (message: string) => {
         setAlertMessage(message);
@@ -93,6 +120,12 @@ const PrivateChatRoom: React.FC = () => {
                 }));
 
                 const chronologized = processedData.reverse();
+
+                // 상대방 메시지가 있다면 friendUserId 백업 확보
+                const otherMsg = chronologized.find((item: any) => !item.isMyMessage);
+                if (otherMsg?.sndUserId) {
+                    setFriendUserId(prev => prev || otherMsg.sndUserId);
+                }
 
                 if (lastMsgNo) {
                     setMessages(prev => [...chronologized, ...prev]);
@@ -362,14 +395,25 @@ const PrivateChatRoom: React.FC = () => {
                         <FaChevronLeft size={22} />
                     </button>
                     {/* Friend Profile */}
-                    <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-gray-100">
-                        {friendProfileUrl ? (
-                            <img src={friendProfileUrl} alt={friendNickname} className="w-full h-full object-cover" />
-                        ) : (
-                            <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
-                        )}
+                    <div 
+                        className="flex items-center cursor-pointer hover:opacity-85 transition-opacity"
+                        onClick={() => {
+                            if (friendUserId) {
+                                setSelectedUserId(friendUserId);
+                                setIsProfileModalOpen(true);
+                            }
+                        }}
+                        title={friendUserId ? "프로필 보기" : undefined}
+                    >
+                        <div className="w-8 h-8 rounded-full overflow-hidden mr-2 border border-gray-200 flex items-center justify-center flex-shrink-0 bg-gray-100 hover:ring-2 hover:ring-[#00BDF8] transition-all">
+                            {friendProfileUrl ? (
+                                <img src={friendProfileUrl} alt={friendNickname} className="w-full h-full object-cover" />
+                            ) : (
+                                <img src="/images/default_profile.png" alt="Default Profile" className="w-full h-full object-cover opacity-60" />
+                            )}
+                        </div>
+                        <h1 className="text-[14px] font-bold text-[#003C48] hover:text-[#00BDF8] transition-colors">{friendNickname}</h1>
                     </div>
-                    <h1 className="text-[14px] font-bold text-[#003C48]">{friendNickname}</h1>
                 </div>
             </div>
 
@@ -388,7 +432,14 @@ const PrivateChatRoom: React.FC = () => {
                                 {!msg.isMyMessage && (
                                     <div className="mr-2 flex-shrink-0 w-10 flex flex-col items-center">
                                         {showProfile ? (
-                                            <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
+                                            <div 
+                                                className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs"
+                                                onClick={() => {
+                                                    setSelectedUserId(msg.sndUserId);
+                                                    setIsProfileModalOpen(true);
+                                                }}
+                                                title="프로필 보기"
+                                            >
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
@@ -399,7 +450,17 @@ const PrivateChatRoom: React.FC = () => {
                                     </div>
                                 )}
                                 <div className={`max-w-[65%] min-w-0 flex flex-col ${msg.isMyMessage ? 'items-end' : 'items-start'}`}>
-                                    {!msg.isMyMessage && showProfile && <span className="text-xs text-gray-500 mb-1 ml-1">{msg.userNickNm}</span>}
+                                    {!msg.isMyMessage && showProfile && (
+                                        <span 
+                                            onClick={() => {
+                                                setSelectedUserId(msg.sndUserId);
+                                                setIsProfileModalOpen(true);
+                                            }}
+                                            className="text-xs text-gray-500 mb-1 ml-1 cursor-pointer hover:underline hover:text-[#003C48]"
+                                        >
+                                            {msg.userNickNm}
+                                        </span>
+                                    )}
                                     <div className="flex items-end gap-1">
                                         {msg.isMyMessage && (
                                             <div className="flex flex-col items-end min-w-[30px] shrink-0">
@@ -485,6 +546,20 @@ const PrivateChatRoom: React.FC = () => {
             </form>
 
             <CommonModal isOpen={isAlertOpen} type="alert" message={alertMessage} onConfirm={() => setIsAlertOpen(false)} />
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

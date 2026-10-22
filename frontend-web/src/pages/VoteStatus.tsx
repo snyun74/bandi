@@ -1,14 +1,38 @@
 
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaUserCircle } from 'react-icons/fa';
+import { FaChevronLeft } from 'react-icons/fa';
 import SectionTitle from '../components/common/SectionTitle';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
+
+const VoterAvatar: React.FC<{ userId: string }> = ({ userId }) => {
+    const [img, setImg] = React.useState<string | null | undefined>(undefined);
+    React.useEffect(() => {
+        if (!userId) return;
+        fetch(`/api/user/profile/${userId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => setImg(d?.profileImageUrl || null))
+            .catch(() => setImg(null));
+    }, [userId]);
+    if (img) {
+        return <img src={img} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />;
+    }
+    return (
+        <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden border border-gray-200">
+            <img src="/images/default_profile.png" alt="" className="w-full h-full object-cover opacity-60" />
+        </div>
+    );
+};
 
 const VoteStatus: React.FC = () => {
     const { voteId } = useParams<{ voteId: string }>();
     const navigate = useNavigate();
     const [voteStatus, setVoteStatus] = useState<any>(null); // Replace with proper interface
     const [loading, setLoading] = useState(true);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
 
     React.useEffect(() => {
@@ -83,9 +107,21 @@ const VoteStatus: React.FC = () => {
                                     <div className="border-x border-b border-gray-200 rounded-b-xl p-4">
                                         <div className="grid grid-cols-3 gap-y-4 gap-x-2">
                                             {option.voters.map((voter: any, idx: number) => (
-                                                <div key={idx} className="flex items-center justify-center space-x-1">
-                                                    <FaUserCircle className="text-gray-400 text-xl" />
-                                                    <span className="text-sm text-gray-600 truncate max-w-[80px]">{voter.userName}</span>
+                                                <div 
+                                                    key={idx} 
+                                                    className="flex items-center justify-center space-x-1.5 cursor-pointer group py-1 px-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                                                    onClick={() => {
+                                                        if (voter.userId) {
+                                                            setSelectedUserId(voter.userId);
+                                                            setIsProfileModalOpen(true);
+                                                        }
+                                                    }}
+                                                    title="프로필 보기"
+                                                >
+                                                    <div className="group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 rounded-full transition-all">
+                                                        <VoterAvatar userId={voter.userId} />
+                                                    </div>
+                                                    <span className="text-sm text-gray-700 font-medium group-hover:underline group-hover:text-[#00BDF8] truncate max-w-[80px] transition-colors">{voter.userName}</span>
                                                 </div>
                                             ))}
                                             {option.voters.length === 0 && (
@@ -104,6 +140,20 @@ const VoteStatus: React.FC = () => {
 
 
             </div>
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

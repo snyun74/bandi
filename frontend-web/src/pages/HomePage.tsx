@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import JamEvaluationModal from "../components/common/JamEvaluationModal";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import NoticePopup from "../components/notice/NoticePopup";
+import NotificationPermissionModal from "../components/common/NotificationPermissionModal";
+import { syncDeviceToken, isDeviceRegistered } from "../utils/pushNotification";
 import DefaultProfile from "../components/common/DefaultProfile";
 import { FaHeart, FaComment, FaChevronRight, FaPen } from 'react-icons/fa';
 import iconJamCreate from '../assets/group4.png';
@@ -80,6 +82,11 @@ export default function HomePage() {
     const [pendingEvaluation, setPendingEvaluation] = useState<any>(null);
     const [profileIncomplete, setProfileIncomplete] = useState(false);
     const [activeNotices, setActiveNotices] = useState<any[]>([]);
+    const [isNotiPermissionModalOpen, setIsNotiPermissionModalOpen] = useState(false);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // 내 클랜 터치/마우스 스와이프 핸들러
     const clanTouchStartX = useRef<number | null>(null);
@@ -179,6 +186,7 @@ export default function HomePage() {
             checkPendingEvaluation();
             checkProfileComplete();
             fetchActiveNotices();
+            checkDeviceAndPermission();
         }
 
         const html = document.documentElement;
@@ -329,6 +337,54 @@ export default function HomePage() {
         } catch (error) {
             console.error("Failed to fetch active notices", error);
         }
+    };
+
+    // 장비 등록 확인 및 알림 권한 팝업 제어
+    const checkDeviceAndPermission = async () => {
+        if (!userId) return;
+
+        // 1. 등록 여부 확인: 이미 등록되어 있으면 스킵, 미등록이면 등록 요청
+        await syncDeviceToken();
+
+        // 2. 팝업 노출 여부 사전 검사
+        // - 다시 보지 않기(영구) 설정 확인
+        if (localStorage.getItem('hide_noti_perm_modal') === 'permanent') {
+            return;
+        }
+
+        // - 오늘 하루 그만 보기(24시간) 설정 확인
+        const hideUntil = localStorage.getItem('hide_noti_perm_modal_until');
+        if (hideUntil && Date.now() < Number(hideUntil)) {
+            return;
+        }
+
+        // 3. 네이티브 토큰 전달 및 권한 확인 대기 (1.5초 후 확인)
+        setTimeout(() => {
+            // 이미 정상 등록 완료되었으면 팝업을 띄우지 않음
+            if (isDeviceRegistered()) {
+                return;
+            }
+
+            // 장비 등록 처리를 하지 못했을 경우 (권한 거부 또는 토큰 미발급 상태) -> 팝업 노출
+            setIsNotiPermissionModalOpen(true);
+        }, 1500);
+    };
+
+    const handleCloseNotiModal = () => {
+        setIsNotiPermissionModalOpen(false);
+    };
+
+    const handleDontShowToday = () => {
+        // 24시간 동안 그만 보기
+        const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+        localStorage.setItem('hide_noti_perm_modal_until', String(tomorrow));
+        setIsNotiPermissionModalOpen(false);
+    };
+
+    const handleNeverShowAgain = () => {
+        // 아예 다시 보지 않기 (영구 제외)
+        localStorage.setItem('hide_noti_perm_modal', 'permanent');
+        setIsNotiPermissionModalOpen(false);
     };
 
     // 날짜 포맷 YY.MM.DD (예: 26.03.12)
@@ -788,8 +844,22 @@ export default function HomePage() {
 
                                         {/* 하단: 작성자 프로필 + 좋아요/댓글 수 */}
                                         <div className="flex items-center justify-between pt-1">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
+                                            <div 
+                                                className={`flex items-center gap-1.5 min-w-0 ${post.maskingYn !== 'Y' && post.writerUserId ? 'cursor-pointer group' : ''}`}
+                                                onClick={(e) => {
+                                                    if (post.maskingYn !== 'Y' && post.writerUserId) {
+                                                        e.stopPropagation();
+                                                        requireAuth(() => {
+                                                            setSelectedUserId(post.writerUserId);
+                                                            setIsProfileModalOpen(true);
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <div 
+                                                    className={`w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100 ${post.maskingYn !== 'Y' && post.writerUserId ? 'group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+                                                    title={post.maskingYn !== 'Y' && post.writerUserId ? "프로필 보기" : undefined}
+                                                >
                                                     {post.maskingYn !== 'Y' && post.profileImg ? (
                                                         <img
                                                             src={post.profileImg}
@@ -803,7 +873,7 @@ export default function HomePage() {
                                                         <DefaultProfile type="user" iconSize={12} className="w-full h-full" />
                                                     )}
                                                 </div>
-                                                <span className="text-[14px] font-semibold leading-[18px] text-[#2F2F31]">
+                                                <span className={`text-[14px] font-semibold leading-[18px] text-[#2F2F31] ${post.maskingYn !== 'Y' && post.writerUserId ? 'group-hover:underline group-hover:text-[#00BDF8]' : ''}`}>
                                                     {post.maskingYn === 'Y' ? '익명' : (post.userNickNm || '익명')}
                                                 </span>
                                             </div>
@@ -896,6 +966,18 @@ export default function HomePage() {
                     onProfileUpdate={() => setProfileIncomplete(false)}
                 />
             )}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== userId}
+                />
+            )}
             {!profileIncomplete && pendingEvaluation && (
                 <JamEvaluationModal
                     evaluation={pendingEvaluation}
@@ -911,6 +993,12 @@ export default function HomePage() {
                     onClose={() => setActiveNotices([])}
                 />
             )}
+            <NotificationPermissionModal
+                isOpen={isNotiPermissionModalOpen}
+                onClose={handleCloseNotiModal}
+                onDontShowToday={handleDontShowToday}
+                onNeverShowAgain={handleNeverShowAgain}
+            />
         </div>
     );
 }

@@ -4,6 +4,7 @@ import { FaChevronLeft } from 'react-icons/fa';
 import { Heart, MessageSquareText, Eye } from 'lucide-react';
 import SnsCommentModal from '../../components/sns/SnsCommentModal';
 import UserAvatar from '../../components/common/UserAvatar';
+import ProfileEditModal from '../../components/profile/ProfileEditModal';
 
 interface ShortsItem {
     shortsNo: number;
@@ -43,6 +44,10 @@ const SnsShortsFeed: React.FC = () => {
         isOpen: false,
         targetId: 0
     });
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     const fetchShorts = async (pageNum: number) => {
         if (!userId || isLoading) return;
@@ -159,6 +164,10 @@ const SnsShortsFeed: React.FC = () => {
                         <ShortsVideoItem 
                             item={item} 
                             onViewRecord={(count) => handleViewRecorded(item.shortsNo, count)}
+                            onUserClick={(targetId) => {
+                                setSelectedUserId(targetId);
+                                setIsProfileModalOpen(true);
+                            }}
                         />
 
                         {/* Right Action Bar (SNS & YouTube Shorts Minimal Outline Style) */}
@@ -228,6 +237,20 @@ const SnsShortsFeed: React.FC = () => {
                 targetId={commentModalState.targetId}
                 onCommentCountChange={handleCommentCountUpdate}
             />
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== currentUserId}
+                />
+            )}
         </div>
     );
 };
@@ -235,7 +258,8 @@ const SnsShortsFeed: React.FC = () => {
 const ShortsVideoItem: React.FC<{
     item: ShortsItem;
     onViewRecord: (newCount: number) => void;
-}> = ({ item, onViewRecord }) => {
+    onUserClick: (userId: string) => void;
+}> = ({ item, onViewRecord, onUserClick }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isIntersecting, setIsIntersecting] = useState(false);
     const hasViewBeenRecorded = useRef(false);
@@ -346,15 +370,20 @@ const ShortsVideoItem: React.FC<{
 
             {/* Bottom Overlay Info */}
             <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12">
-                <div className="flex items-center gap-3 mb-3">
-                    <UserAvatar
-                        profileImagePath={item.userProfileImagePath}
-                        nickName={item.userNickNm}
-                        userId={item.userId}
-                        size={36}
-                        className="border-white/40"
-                    />
-                    <span className="text-white font-bold text-[15px] drop-shadow-lg">@{item.userNickNm || item.userId}</span>
+                <div 
+                    className="flex items-center gap-3 mb-3 pointer-events-auto cursor-pointer group"
+                    onClick={() => onUserClick(item.userId)}
+                >
+                    <div className="group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 rounded-full transition-all shadow-xs" title="프로필 보기">
+                        <UserAvatar
+                            profileImagePath={item.userProfileImagePath}
+                            nickName={item.userNickNm}
+                            userId={item.userId}
+                            size={36}
+                            className="border-white/40"
+                        />
+                    </div>
+                    <span className="text-white font-bold text-[15px] drop-shadow-lg group-hover:underline group-hover:text-[#00BDF8] transition-colors">@{item.userNickNm || item.userId}</span>
                 </div>
                 <div className="w-full">
                     <h3 className="text-white text-[15px] leading-[1.4] break-all overflow-hidden line-clamp-3 drop-shadow-md font-medium">

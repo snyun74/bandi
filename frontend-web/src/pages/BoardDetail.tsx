@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaHeart, FaRegHeart, FaRegCommentDots, FaRegBookmark, FaBookmark, FaEdit, FaPaperclip, FaImage, FaTimes, FaBan, FaExclamationTriangle } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { validateFileSize } from '../utils/fileUtils';
 
-const UserAvatar: React.FC<{ userId: string; size?: string; isAnonymous?: boolean }> = ({ userId, size = 'w-8 h-8', isAnonymous = false }) => {
+const UserAvatar: React.FC<{ userId: string; size?: string; isAnonymous?: boolean; onClick?: () => void }> = ({ userId, size = 'w-8 h-8', isAnonymous = false, onClick }) => {
     const [img, setImg] = React.useState<string | null | undefined>(undefined);
     React.useEffect(() => {
         if (isAnonymous) {
@@ -18,9 +19,23 @@ const UserAvatar: React.FC<{ userId: string; size?: string; isAnonymous?: boolea
             .catch(() => setImg(null));
     }, [userId, isAnonymous]);
     if (img === undefined) return <div className={`${size} bg-gray-200 rounded-full flex-shrink-0`} />;
-    if (img) return <img src={img} alt="" className={`${size} rounded-full flex-shrink-0 object-cover`} />;
+    if (img) {
+        return (
+            <img 
+                src={img} 
+                alt="" 
+                className={`${size} rounded-full flex-shrink-0 object-cover ${onClick && !isAnonymous ? 'cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`} 
+                onClick={!isAnonymous ? onClick : undefined}
+                title={!isAnonymous && onClick ? "프로필 보기" : undefined}
+            />
+        );
+    }
     return (
-        <div className={`${size} bg-gray-100 rounded-full flex-shrink-0 overflow-hidden border border-gray-100`}>
+        <div 
+            className={`${size} bg-gray-100 rounded-full flex-shrink-0 overflow-hidden border border-gray-100 ${onClick && !isAnonymous ? 'cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+            onClick={!isAnonymous ? onClick : undefined}
+            title={!isAnonymous && onClick ? "프로필 보기" : undefined}
+        >
             <img src="/images/default_profile.png" alt="" className="w-full h-full object-cover opacity-60" />
         </div>
     );
@@ -84,6 +99,10 @@ const BoardDetail: React.FC = () => {
     const userId = localStorage.getItem('userId');
     const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Delete Modal State
     const [deleteModal, setDeleteModal] = useState<{
@@ -561,10 +580,31 @@ const BoardDetail: React.FC = () => {
 
                     <div className="flex items-center mb-4 pb-4 border-b border-gray-200">
                         <div className="mr-2 flex-shrink-0">
-                            <UserAvatar userId={post.writerUserId} size="w-8 h-8" isAnonymous={post.maskingYn === 'Y'} />
+                            <UserAvatar 
+                                userId={post.writerUserId} 
+                                size="w-8 h-8" 
+                                isAnonymous={post.maskingYn === 'Y'} 
+                                onClick={() => {
+                                    if (post.maskingYn !== 'Y') {
+                                        setSelectedUserId(post.writerUserId);
+                                        setIsProfileModalOpen(true);
+                                    }
+                                }}
+                            />
                         </div>
                         <div>
-                            <div className="text-sm font-bold text-gray-800">{post.userNickNm || "익명"}</div>
+                            <div 
+                                className={`text-sm font-bold text-gray-800 ${post.maskingYn !== 'Y' ? 'cursor-pointer hover:underline hover:text-[#00BDF8]' : ''}`}
+                                onClick={() => {
+                                    if (post.maskingYn !== 'Y') {
+                                        setSelectedUserId(post.writerUserId);
+                                        setIsProfileModalOpen(true);
+                                    }
+                                }}
+                                title={post.maskingYn !== 'Y' ? "프로필 보기" : undefined}
+                            >
+                                {post.userNickNm || "익명"}
+                            </div>
                             <div className="text-xs text-gray-500">{formatDate(post.regDate)}</div>
                         </div>
                     </div>
@@ -643,11 +683,30 @@ const BoardDetail: React.FC = () => {
                                         <div className="flex gap-2 w-full">
                                             {/* Comment User Icon */}
                                             <div className="flex-shrink-0">
-                                                <UserAvatar userId={comment.replyUserId} size="w-8 h-8" isAnonymous={comment.maskingYn === 'Y'} />
+                                                <UserAvatar 
+                                                    userId={comment.replyUserId} 
+                                                    size="w-8 h-8" 
+                                                    isAnonymous={comment.maskingYn === 'Y'} 
+                                                    onClick={() => {
+                                                        if (comment.maskingYn !== 'Y') {
+                                                            setSelectedUserId(comment.replyUserId);
+                                                            setIsProfileModalOpen(true);
+                                                        }
+                                                    }}
+                                                />
                                             </div>
                                             <div className="w-full">
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`font-bold text-sm ${comment.replyUserId === post.writerUserId ? 'text-[#00BDF8]' : 'text-gray-800'}`}>
+                                                    <span 
+                                                        className={`font-bold text-sm ${comment.replyUserId === post.writerUserId ? 'text-[#00BDF8]' : 'text-gray-800'} ${comment.maskingYn !== 'Y' ? 'cursor-pointer hover:underline hover:text-[#00BDF8]' : ''}`}
+                                                        onClick={() => {
+                                                            if (comment.maskingYn !== 'Y') {
+                                                                setSelectedUserId(comment.replyUserId);
+                                                                setIsProfileModalOpen(true);
+                                                            }
+                                                        }}
+                                                        title={comment.maskingYn !== 'Y' ? "프로필 보기" : undefined}
+                                                    >
                                                         {getCommentAuthorDisplay(comment)}
                                                     </span>
                                                 </div>
@@ -900,6 +959,20 @@ const BoardDetail: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
             )}
         </div>
     );

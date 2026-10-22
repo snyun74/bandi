@@ -4,6 +4,7 @@ import { FaChevronLeft, FaPaperPlane, FaPlus, FaTimes, FaPaperclip, FaFileAlt } 
 import DefaultProfile from '../components/common/DefaultProfile';
 import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { validateFileSize } from '../utils/fileUtils';
 
 interface ChatMessage {
@@ -44,6 +45,10 @@ const GroupChatRoom: React.FC = () => {
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [confirmMessage, setConfirmMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+
+    // Profile Modal
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Members Popup
     const [isMembersPopupOpen, setIsMembersPopupOpen] = useState(false);
@@ -454,7 +459,14 @@ const GroupChatRoom: React.FC = () => {
                                 {!msg.isMyMessage && (
                                     <div className="mr-2 flex-shrink-0 w-10 flex flex-col items-center">
                                         {showProfile ? (
-                                            <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
+                                            <div 
+                                                className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs"
+                                                onClick={() => {
+                                                    setSelectedUserId(msg.sndUserId);
+                                                    setIsProfileModalOpen(true);
+                                                }}
+                                                title="프로필 보기"
+                                            >
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
@@ -465,7 +477,17 @@ const GroupChatRoom: React.FC = () => {
                                     </div>
                                 )}
                                 <div className={`max-w-[65%] min-w-0 flex flex-col ${msg.isMyMessage ? 'items-end' : 'items-start'}`}>
-                                    {!msg.isMyMessage && showProfile && <span className="text-xs text-gray-500 mb-1 ml-1">{msg.userNickNm}</span>}
+                                    {!msg.isMyMessage && showProfile && (
+                                        <span 
+                                            onClick={() => {
+                                                setSelectedUserId(msg.sndUserId);
+                                                setIsProfileModalOpen(true);
+                                            }}
+                                            className="text-xs text-gray-500 mb-1 ml-1 cursor-pointer hover:underline hover:text-[#003C48]"
+                                        >
+                                            {msg.userNickNm}
+                                        </span>
+                                    )}
                                     <div className="flex items-end gap-1">
                                         {msg.isMyMessage && (
                                             <div className="flex flex-col items-end min-w-[30px] shrink-0">
@@ -550,15 +572,25 @@ const GroupChatRoom: React.FC = () => {
                             <div className="overflow-y-auto p-2">
                                 {chatMembers.map((member) => (
                                     <div key={member.userId} className="flex items-center justify-between p-3 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-100">
+                                        <div 
+                                            className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                                            onClick={() => {
+                                                setIsMembersPopupOpen(false);
+                                                setSelectedUserId(member.userId);
+                                                setIsProfileModalOpen(true);
+                                            }}
+                                            title="프로필 보기"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-100 hover:ring-2 hover:ring-[#00BDF8] transition-all">
                                                 {member.profileUrl ? (
                                                     <img src={member.profileUrl} alt={member.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <DefaultProfile type="user" iconSize={16} />
                                                 )}
                                             </div>
-                                            <span className="text-[#003C48] font-bold text-[14px]">{member.userNickNm} {member.userId === localStorage.getItem('userId') && <span className="text-[10px] text-gray-400 font-normal ml-1">(나)</span>}</span>
+                                            <span className="text-[#003C48] font-bold text-[14px] hover:text-[#00BDF8] transition-colors">
+                                                {member.userNickNm} {member.userId === localStorage.getItem('userId') && <span className="text-[10px] text-gray-400 font-normal ml-1">(나)</span>}
+                                            </span>
                                         </div>
                                         {member.userId === localStorage.getItem('userId') && (
                                             <button onClick={handleLeaveRoom} className="bg-red-50 text-red-500 hover:bg-red-100 text-xs px-3 py-1.5 rounded-full font-bold transition-colors shadow-sm">
@@ -589,6 +621,20 @@ const GroupChatRoom: React.FC = () => {
 
             <CommonModal isOpen={isAlertOpen} type="alert" message={alertMessage} onConfirm={() => setIsAlertOpen(false)} />
             <CommonModal isOpen={isConfirmOpen} type="confirm" message={confirmMessage} onConfirm={executeLeaveRoom} onCancel={() => setIsConfirmOpen(false)} />
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div >
     );
 };

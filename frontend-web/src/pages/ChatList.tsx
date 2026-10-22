@@ -13,6 +13,7 @@ interface ChatRoom {
     attachFilePath?: string | null;
     logoText?: string;
     logoColor?: string;
+    targetUserId?: string | null;
 }
 
 
@@ -243,7 +244,7 @@ const ChatList: React.FC = () => {
             const res = await fetch(`/api/chat/private/room-id?userId=${userId}&friendUserId=${friendUserId}`);
             if (res.ok) {
                 const roomId = await res.json();
-                navigate(`/main/chat/private/${roomId}`, { state: { friendNickname, friendProfileUrl } });
+                navigate(`/main/chat/private/${roomId}`, { state: { friendNickname, friendProfileUrl, friendUserId } });
             } else {
                 console.error("Failed to get chat room ID");
                 alert("채팅방 정보를 불러오지 못했습니다.");
@@ -317,7 +318,7 @@ const ChatList: React.FC = () => {
                                                 } else if (chat.roomType === 'GROUP') {
                                                     navigate(`/main/chat/group/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType } });
                                                 } else if (chat.roomType === 'PRIVATE') {
-                                                    navigate(`/main/chat/private/${chat.roomNo}`, { state: { friendNickname: chat.roomNm, friendProfileUrl: chat.attachFilePath } });
+                                                    navigate(`/main/chat/private/${chat.roomNo}`, { state: { friendNickname: chat.roomNm, friendProfileUrl: chat.attachFilePath, friendUserId: chat.targetUserId } });
                                                 } else {
                                                     navigate(`/main/chat/room/${chat.roomNo}`, { state: { roomNm: chat.roomNm, roomType: chat.roomType, attachFilePath: chat.attachFilePath } });
                                                 }
@@ -325,8 +326,10 @@ const ChatList: React.FC = () => {
                                             className="px-4 py-3.5 flex items-center cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors"
                                         >
                                             <div 
-                                                className="w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-3.5 bg-gray-100 ring-1 ring-black/5 hover:scale-105 transition-transform"
-                                                onClick={(e) => {
+                                                className={`w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mr-3.5 bg-gray-100 ring-1 ring-black/5 hover:scale-105 transition-transform ${
+                                                    chat.roomType === 'PRIVATE' || chat.roomType === 'GROUP' ? 'cursor-pointer hover:ring-2 hover:ring-[#00BDF8]' : ''
+                                                }`}
+                                                onClick={async (e) => {
                                                     if (chat.roomType === 'GROUP') {
                                                         e.stopPropagation();
                                                         const userId = localStorage.getItem('userId');
@@ -334,8 +337,31 @@ const ChatList: React.FC = () => {
                                                             setSelectedUserId(userId);
                                                             setIsProfileModalOpen(true);
                                                         }
+                                                    } else if (chat.roomType === 'PRIVATE') {
+                                                        e.stopPropagation();
+                                                        if (chat.targetUserId) {
+                                                            setSelectedUserId(chat.targetUserId);
+                                                            setIsProfileModalOpen(true);
+                                                        } else {
+                                                            const userId = localStorage.getItem('userId');
+                                                            if (userId) {
+                                                                try {
+                                                                    const res = await fetch(`/api/chat/private/${chat.roomNo}/partner?userId=${userId}`);
+                                                                    if (res.ok) {
+                                                                        const data = await res.json();
+                                                                        if (data.userId) {
+                                                                            setSelectedUserId(data.userId);
+                                                                            setIsProfileModalOpen(true);
+                                                                        }
+                                                                    }
+                                                                } catch (err) {
+                                                                    console.warn("Failed to fetch partner info", err);
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }}
+                                                title={chat.roomType === 'PRIVATE' ? `${chat.roomNm} 프로필 보기` : chat.roomType === 'GROUP' ? '내 프로필 보기' : undefined}
                                             >
                                                 {chat.roomType === 'GROUP' ? (
                                                     myProfileUrl ? (

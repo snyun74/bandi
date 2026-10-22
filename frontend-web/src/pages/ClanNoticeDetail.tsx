@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPaperPlane, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
-const UserAvatar: React.FC<{ userId: string }> = ({ userId }) => {
+const UserAvatar: React.FC<{ userId: string; size?: string; onClick?: () => void }> = ({ userId, size = "w-8 h-8", onClick }) => {
     const [img, setImg] = React.useState<string | null | undefined>(undefined);
     React.useEffect(() => {
         fetch(`/api/user/profile/${userId}`)
@@ -12,10 +13,24 @@ const UserAvatar: React.FC<{ userId: string }> = ({ userId }) => {
             .then(d => setImg(d?.profileImageUrl || null))
             .catch(() => setImg(null));
     }, [userId]);
-    if (img === undefined) return <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />;
-    if (img) return <img src={img} alt="" className="w-8 h-8 rounded-full shrink-0 object-cover" />;
+    if (img === undefined) return <div className={`${size} rounded-full bg-gray-200 shrink-0`} />;
+    if (img) {
+        return (
+            <img 
+                src={img} 
+                alt="" 
+                className={`${size} rounded-full shrink-0 object-cover ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+                onClick={onClick}
+                title={onClick ? "프로필 보기" : undefined}
+            />
+        );
+    }
     return (
-        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200">
+        <div 
+            className={`${size} rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-200 ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+            onClick={onClick}
+            title={onClick ? "프로필 보기" : undefined}
+        >
             <img src="/images/default_profile.png" alt="" className="w-full h-full object-cover opacity-60" />
         </div>
     );
@@ -55,6 +70,10 @@ const ClanNoticeDetail: React.FC = () => {
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const replyTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Modal Config
     const [modalConfig, setModalConfig] = useState<{
@@ -258,10 +277,25 @@ const ClanNoticeDetail: React.FC = () => {
                 <div
                     className={`flex gap-3 ${comment.parentCommentNo > 0 ? 'ml-10 mt-2' : ''}`}
                 >
-                    <UserAvatar userId={comment.commentUserId} />
+                    <UserAvatar 
+                        userId={comment.commentUserId} 
+                        onClick={() => {
+                            setSelectedUserId(comment.commentUserId);
+                            setIsProfileModalOpen(true);
+                        }}
+                    />
                     <div className="flex-1">
                         <div className="flex justify-between items-baseline mb-1">
-                            <span className="text-[#003C48] font-bold text-xs">{comment.userNickNm || comment.commentUserId}</span>
+                            <span 
+                                className="text-[#003C48] font-bold text-xs cursor-pointer hover:underline hover:text-[#00BDF8]"
+                                onClick={() => {
+                                    setSelectedUserId(comment.commentUserId);
+                                    setIsProfileModalOpen(true);
+                                }}
+                                title="프로필 보기"
+                            >
+                                {comment.userNickNm || comment.commentUserId}
+                            </span>
                             <span className="text-gray-400 text-[10px]">{formatDate(comment.insDtime)}</span>
                         </div>
                         <div
@@ -415,6 +449,20 @@ const ClanNoticeDetail: React.FC = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={closeModal}
             />
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div >
     );
 };

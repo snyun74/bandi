@@ -82,6 +82,18 @@ public class ChatController {
         }
     }
 
+    @GetMapping("/private/{roomNo}/partner")
+    public ResponseEntity<java.util.Map<String, Object>> getPrivateChatPartner(
+            @org.springframework.web.bind.annotation.PathVariable Long roomNo,
+            @RequestParam String userId) {
+        java.util.Map<String, Object> partner = chatService.getPrivateChatPartner(roomNo, userId);
+        if (partner != null) {
+            return ResponseEntity.ok(partner);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/private/{roomNo}/messages")
     public ResponseEntity<List<com.bandi.backend.dto.ChatMessageDto>> getPrivateChatMessages(
             @org.springframework.web.bind.annotation.PathVariable Long roomNo,

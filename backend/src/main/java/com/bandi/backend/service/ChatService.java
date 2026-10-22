@@ -75,7 +75,8 @@ public class ChatService {
                       FROM CN_CHAT_MESSAGE MSG
                       WHERE MSG.CN_NO = CNR.CN_NO
                         AND MSG.CHAT_STAT_CD = 'A'
-                    ) AS LAST_MSG_DTIME
+                    ) AS LAST_MSG_DTIME,
+                    NULL AS TARGET_USER_ID
                 FROM
                     CN_USER CNU
                 INNER JOIN CN_GROUP CNG ON CNG.CN_NO = CNU.CN_NO
@@ -127,7 +128,8 @@ public class ChatService {
                       FROM BN_CHAT_MESSAGE MSG
                       WHERE MSG.BN_NO = CNR.BN_NO
                         AND MSG.BN_CHAT_STAT_CD = 'A'
-                    ) AS LAST_MSG_DTIME
+                    ) AS LAST_MSG_DTIME,
+                    NULL AS TARGET_USER_ID
                 FROM
                     BN_USER BNU
                 INNER JOIN BN_GROUP BNG ON BNG.BN_NO = BNU.BN_NO
@@ -191,7 +193,8 @@ public class ChatService {
                       FROM CM_GRP_CHAT_MESSAGE MSG
                       WHERE MSG.GRP_CHAT_NO = CNR.GRP_CHAT_NO
                         AND MSG.GRP_CHAT_STAT_CD = 'A'
-                    ) AS LAST_MSG_DTIME
+                    ) AS LAST_MSG_DTIME,
+                    NULL AS TARGET_USER_ID
                 FROM
                     CM_GRP_CHAT_USER CGU
                 INNER JOIN CM_GRP_CHAT_ROOM CNR ON CNR.GRP_CHAT_NO = CGU.GRP_CHAT_NO
@@ -237,7 +240,8 @@ public class ChatService {
                       FROM MM_CHAT_MESSAGE MSG
                       WHERE MSG.MM_ROOM_NO = CR.MM_ROOM_NO
                         AND MSG.CHAT_STAT_CD = 'A'
-                    ) AS LAST_MSG_DTIME
+                    ) AS LAST_MSG_DTIME,
+                    U.USER_ID AS TARGET_USER_ID
                 FROM
                     MM_CHAT_ROOM CR
                 INNER JOIN MM_USER U ON U.USER_ID = CASE WHEN CR.USER_ID = :userId THEN CR.FRIEND_USER_ID ELSE CR.USER_ID END
@@ -267,6 +271,7 @@ public class ChatService {
           .roomType((String) result[4])
           .attachFilePath((String) result[5])
           .lastMsgDtime((String) result[6])
+          .targetUserId((String) result[7])
           .build();
       chatRooms.add(dto);
     }
@@ -1304,6 +1309,36 @@ public class ChatService {
 
     try {
       return ((Number) query.getSingleResult()).longValue();
+    } catch (jakarta.persistence.NoResultException e) {
+      return null;
+    }
+  }
+
+  public java.util.Map<String, Object> getPrivateChatPartner(Long roomNo, String userId) {
+    String sql = """
+        SELECT
+            U.USER_ID,
+            U.USER_NICK_NM,
+            U.USER_NM,
+            CMA.FILE_PATH AS PROFILE_URL
+        FROM MM_CHAT_ROOM CR
+        INNER JOIN MM_USER U ON U.USER_ID = CASE WHEN CR.USER_ID = :userId THEN CR.FRIEND_USER_ID ELSE CR.USER_ID END
+        LEFT JOIN CM_ATTACHMENT CMA ON CMA.ATTACH_NO = U.ATTACH_NO
+        WHERE CR.MM_ROOM_NO = :roomNo
+          AND (CR.USER_ID = :userId OR CR.FRIEND_USER_ID = :userId)
+        """;
+    Query query = entityManager.createNativeQuery(sql);
+    query.setParameter("roomNo", roomNo);
+    query.setParameter("userId", userId);
+
+    try {
+      Object[] row = (Object[]) query.getSingleResult();
+      java.util.Map<String, Object> res = new java.util.HashMap<>();
+      res.put("userId", row[0]);
+      res.put("userNickNm", row[1]);
+      res.put("userNm", row[2]);
+      res.put("profileUrl", row[3]);
+      return res;
     } catch (jakarta.persistence.NoResultException e) {
       return null;
     }

@@ -6,6 +6,7 @@ import SectionTitle from '../components/common/SectionTitle';
 import CommonModal from '../components/common/CommonModal';
 import VoteCreationModal from '../components/VoteCreationModal';
 import SettlementCreationModal from '../components/SettlementCreationModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { validateFileSize } from '../utils/fileUtils';
 
 interface ChatMessage {
@@ -92,6 +93,10 @@ const JamChatRoom: React.FC = () => {
     const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
     const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
     const [isSending, setIsSending] = useState(false);
+
+    // Profile Modal
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -464,7 +469,14 @@ const JamChatRoom: React.FC = () => {
                                 {!msg.isMyMessage && (
                                     <div className="mr-2 flex-shrink-0 w-10 flex flex-col items-center">
                                         {showProfile ? (
-                                            <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden">
+                                            <div 
+                                                className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#00BDF8] hover:scale-105 active:scale-95 transition-all shadow-xs"
+                                                onClick={() => {
+                                                    setSelectedUserId(msg.sndUserId);
+                                                    setIsProfileModalOpen(true);
+                                                }}
+                                                title="프로필 보기"
+                                            >
                                                 {msg.userProfileUrl ? (
                                                     <img src={msg.userProfileUrl} alt={msg.userNickNm} className="w-full h-full object-cover" />
                                                 ) : (
@@ -475,7 +487,17 @@ const JamChatRoom: React.FC = () => {
                                     </div>
                                 )}
                                 <div className={`max-w-[65%] min-w-0 flex flex-col ${msg.isMyMessage ? 'items-end' : 'items-start'}`}>
-                                    {!msg.isMyMessage && showProfile && <span className="text-xs text-gray-500 mb-1 ml-1">{msg.userNickNm}</span>}
+                                    {!msg.isMyMessage && showProfile && (
+                                        <span 
+                                            onClick={() => {
+                                                setSelectedUserId(msg.sndUserId);
+                                                setIsProfileModalOpen(true);
+                                            }}
+                                            className="text-xs text-gray-500 mb-1 ml-1 cursor-pointer hover:underline hover:text-[#003C48]"
+                                        >
+                                            {msg.userNickNm}
+                                        </span>
+                                    )}
                                     <div className="flex items-end gap-1">
                                         {msg.isMyMessage && (
                                             <div className="flex flex-col items-end min-w-[30px] shrink-0">
@@ -682,6 +704,20 @@ const JamChatRoom: React.FC = () => {
                     />
                 )
             }
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div >
     );
 };

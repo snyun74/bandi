@@ -74,7 +74,7 @@ import AdminAmbassadorPage from './pages/AdminAmbassadorPage';
 import AdminStudioDirectoryPage from './pages/AdminStudioDirectoryPage';
 import NoticeListPage from './pages/NoticeListPage';
 import NoticeDetailPage from './pages/NoticeDetailPage';
-import { requestPermission, onMessageListener, saveTokenToServer } from './utils/pushNotification';
+import { requestPermission, onMessageListener, saveTokenToServer, syncDeviceToken } from './utils/pushNotification';
 import './App.css';
 import PushToast from './components/common/PushToast';
 import PageTracker from './components/common/PageTracker';
@@ -151,16 +151,13 @@ function App() {
       }
     });
 
-    // 4. 로그인 보강 로직: userId가 생길 때 펜딩 토큰 재확인
+    // 4. 로그인 보강 로직: userId가 생길 때 디바이스 토큰 동기화 확인
     const checkTimer = setInterval(() => {
       const currentUserId = localStorage.getItem('userId');
-      const pending = (window as any).__pendingSaveToken;
-      if (currentUserId && pending) {
-        console.log('Detected userId after login, processing pending token...');
-        saveTokenToServer(pending.token, pending.deviceType);
-        delete (window as any).__pendingSaveToken;
+      if (currentUserId) {
+        syncDeviceToken();
       }
-    }, 2000); // 2초마다 체크
+    }, 3000); // 3초마다 체크
 
     return () => {
       if (unsubscribe) {

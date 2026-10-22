@@ -1,6 +1,26 @@
 import React, { useState } from 'react';
-import { FaUserCircle, FaCheck } from 'react-icons/fa';
+import { FaCheck } from 'react-icons/fa';
 import CommonModal from './CommonModal';
+import ProfileEditModal from '../profile/ProfileEditModal';
+
+const MemberAvatar: React.FC<{ userId: string }> = ({ userId }) => {
+    const [img, setImg] = React.useState<string | null | undefined>(undefined);
+    React.useEffect(() => {
+        if (!userId) return;
+        fetch(`/api/user/profile/${userId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => setImg(d?.profileImageUrl || null))
+            .catch(() => setImg(null));
+    }, [userId]);
+    if (img) {
+        return <img src={img} alt="" className="w-5 h-5 rounded-full object-cover shrink-0" />;
+    }
+    return (
+        <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden border border-gray-200">
+            <img src="/images/default_profile.png" alt="" className="w-full h-full object-cover opacity-60" />
+        </div>
+    );
+};
 
 interface EvaluationTarget {
     userId: string;
@@ -24,6 +44,10 @@ interface JamEvaluationModalProps {
 const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onComplete }) => {
     const [scores, setScores] = useState<{ [key: string]: string }>({});
     const [moodMakers, setMoodMakers] = useState<{ [key: string]: boolean }>({});
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Common Modal State
     const [modalState, setModalState] = useState<{
@@ -128,9 +152,18 @@ const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onC
                     <div className="space-y-3">
                         {evaluation.targets.map(target => (
                             <div key={target.userId} className="flex items-center justify-between">
-                                <div className="flex items-center w-2/5">
-                                    <FaUserCircle className="text-gray-400 mr-1 flex-shrink-0" />
-                                    <span className="text-xs text-gray-700 truncate">{target.userNick}</span>
+                                <div 
+                                    className="flex items-center w-2/5 cursor-pointer group"
+                                    onClick={() => {
+                                        setSelectedUserId(target.userId);
+                                        setIsProfileModalOpen(true);
+                                    }}
+                                    title="프로필 보기"
+                                >
+                                    <div className="mr-1.5 flex-shrink-0 group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 rounded-full transition-all">
+                                        <MemberAvatar userId={target.userId} />
+                                    </div>
+                                    <span className="text-xs text-gray-700 font-medium group-hover:underline group-hover:text-[#00BDF8] truncate transition-colors">{target.userNick}</span>
                                 </div>
                                 <input
                                     type="text"
@@ -149,13 +182,27 @@ const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onC
                     <h3 className="text-center text-[14px] font-bold text-slate-700 mb-3">분위기 메이커</h3>
                     <div className="space-y-2">
                         {evaluation.targets.map(target => (
-                            <div key={target.userId} className="flex items-center cursor-pointer" onClick={() => toggleMoodMaker(target.userId)}>
-                                <div className={`w-5 h-5 rounded border flex items-center justify-center mr-2 ${moodMakers[target.userId] ? 'bg-cyan-400 border-cyan-400' : 'border-gray-400'}`}>
-                                    {moodMakers[target.userId] && <FaCheck className="text-white text-xs" />}
+                            <div key={target.userId} className="flex items-center justify-between py-1">
+                                <div 
+                                    className="flex items-center cursor-pointer select-none" 
+                                    onClick={() => toggleMoodMaker(target.userId)}
+                                >
+                                    <div className={`w-5 h-5 rounded border flex items-center justify-center mr-2 transition-colors ${moodMakers[target.userId] ? 'bg-[#00BDF8] border-[#00BDF8]' : 'border-gray-400 bg-white'}`}>
+                                        {moodMakers[target.userId] && <FaCheck className="text-white text-xs" />}
+                                    </div>
+                                    <span className="text-xs text-gray-700 font-medium">{target.userNick}</span>
                                 </div>
-                                <div className="flex items-center">
-                                    <FaUserCircle className="text-gray-400 mr-1" />
-                                    <span className="text-xs text-gray-700">{target.userNick}</span>
+                                <div 
+                                    className="flex items-center cursor-pointer group p-1"
+                                    onClick={() => {
+                                        setSelectedUserId(target.userId);
+                                        setIsProfileModalOpen(true);
+                                    }}
+                                    title="프로필 보기"
+                                >
+                                    <div className="group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 rounded-full transition-all">
+                                        <MemberAvatar userId={target.userId} />
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -181,6 +228,20 @@ const JamEvaluationModal: React.FC<JamEvaluationModalProps> = ({ evaluation, onC
                 onConfirm={modalState.onConfirm}
                 onCancel={() => setModalState(prev => ({ ...prev, isOpen: false }))}
             />
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

@@ -17,4 +17,5 @@ public class ChatRoomListDto {
     private String roomType; // "CLAN" or "BAND"
     private String attachFilePath;
     private String lastMsgDtime;
+    private String targetUserId;
 }

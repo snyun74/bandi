@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaHeart, FaComment, FaPen, FaFire, FaComments, FaGraduationCap } from 'react-icons/fa';
 import DefaultProfile from '../components/common/DefaultProfile';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 interface HotPost {
     boardNo: number;
     boardTypeFg: string;
     title: string;
     regDate: string;
+    writerUserId?: string;
     userNickNm: string | null;
     likeCnt: number;
     commentCnt: number;
@@ -27,6 +29,10 @@ const Board: React.FC = () => {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     useEffect(() => {
         fetchHotPosts();
@@ -131,8 +137,20 @@ const Board: React.FC = () => {
 
                 {/* 하단: 작성자 프로필 + 좋아요/댓글 수 */}
                 <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
+                    <div 
+                        className={`flex items-center gap-1.5 min-w-0 ${!isAnonymous && post.writerUserId ? 'cursor-pointer group' : ''}`}
+                        onClick={(e) => {
+                            if (!isAnonymous && post.writerUserId) {
+                                e.stopPropagation();
+                                setSelectedUserId(post.writerUserId);
+                                setIsProfileModalOpen(true);
+                            }
+                        }}
+                    >
+                        <div 
+                            className={`w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100 ${!isAnonymous && post.writerUserId ? 'group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+                            title={!isAnonymous && post.writerUserId ? "프로필 보기" : undefined}
+                        >
                             {profileImgUrl ? (
                                 <img
                                     src={profileImgUrl}
@@ -146,7 +164,7 @@ const Board: React.FC = () => {
                                 <DefaultProfile type="user" iconSize={12} className="w-full h-full" />
                             )}
                         </div>
-                        <span className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
+                        <span className={`text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate ${!isAnonymous && post.writerUserId ? 'group-hover:underline group-hover:text-[#00BDF8]' : ''}`}>
                             {displayName}
                         </span>
                     </div>
@@ -283,6 +301,20 @@ const Board: React.FC = () => {
             >
                 <FaPen size={17} />
             </button>
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

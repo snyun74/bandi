@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import CommonModal from '../../components/common/CommonModal';
+import { syncDeviceToken } from '../../utils/pushNotification';
 
 const KakaoCallback: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -58,6 +59,7 @@ const KakaoCallback: React.FC = () => {
                 setStatus('Login Success! Redirecting...');
                 if (data.userId) {
                     localStorage.setItem('userId', data.userId);
+                    syncDeviceToken();
                 }
                 navigate('/main');
             } else {

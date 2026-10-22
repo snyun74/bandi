@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FaChevronLeft, FaPen, FaSearch, FaHeart, FaComment, FaTrashAlt } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import DefaultProfile from '../components/common/DefaultProfile';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 
 interface BoardPost {
     boardNo: number;
@@ -37,6 +38,10 @@ const BoardList: React.FC = () => {
 
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [postToDelete, setPostToDelete] = useState<number | null>(null);
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     const observer = useRef<IntersectionObserver | null>(null);
     const lastPostRef = useRef<HTMLDivElement | null>(null);
@@ -249,8 +254,20 @@ const BoardList: React.FC = () => {
 
                                     {/* 하단: 작성자 프로필 + 좋아요/댓글 수 + 삭제 */}
                                     <div className="flex items-center justify-between pt-1">
-                                        <div className="flex items-center gap-1.5 min-w-0">
-                                            <div className="w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100">
+                                        <div 
+                                            className={`flex items-center gap-1.5 min-w-0 ${!isAnonymous && post.writerUserId ? 'cursor-pointer group' : ''}`}
+                                            onClick={(e) => {
+                                                if (!isAnonymous && post.writerUserId) {
+                                                    e.stopPropagation();
+                                                    setSelectedUserId(post.writerUserId);
+                                                    setIsProfileModalOpen(true);
+                                                }
+                                            }}
+                                        >
+                                            <div 
+                                                className={`w-[26px] h-[26px] rounded-full overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center bg-gray-100 ${!isAnonymous && post.writerUserId ? 'group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 transition-all shadow-xs' : ''}`}
+                                                title={!isAnonymous && post.writerUserId ? "프로필 보기" : undefined}
+                                            >
                                                 {profileImgUrl ? (
                                                     <img
                                                         src={profileImgUrl}
@@ -264,7 +281,7 @@ const BoardList: React.FC = () => {
                                                     <DefaultProfile type="user" iconSize={12} className="w-full h-full" />
                                                 )}
                                             </div>
-                                            <span className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
+                                            <span className={`text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate ${!isAnonymous && post.writerUserId ? 'group-hover:underline group-hover:text-[#00BDF8]' : ''}`}>
                                                 {displayName}
                                             </span>
                                         </div>
@@ -348,6 +365,20 @@ const BoardList: React.FC = () => {
                     setPostToDelete(null);
                 }}
             />
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== localStorage.getItem('userId')}
+                />
+            )}
         </div>
     );
 };

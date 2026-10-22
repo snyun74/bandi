@@ -6,6 +6,7 @@ import { BsThreeDotsVertical } from 'react-icons/bs';
 import CommonModal from '../../components/common/CommonModal';
 import SnsCommentModal from '../../components/sns/SnsCommentModal';
 import UserAvatar from '../../components/common/UserAvatar';
+import ProfileEditModal from '../../components/profile/ProfileEditModal';
 
 interface FeedItem {
     type: 'SHORTS' | 'POST';
@@ -53,6 +54,10 @@ const SnsUnifiedFeed: React.FC = () => {
     const [itemToDelete, setItemToDelete] = useState<{ type: 'POST' | 'SHORTS', id: number | string } | null>(null);
     const [publicTypes, setPublicTypes] = useState<{ commDtlCd: string; commDtlNm: string }[]>([]);
     const currentUserId = localStorage.getItem('userId');
+
+    // Profile Modal State
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     // Comment Modal State
     const [commentModalState, setCommentModalState] = useState<{
@@ -307,11 +312,19 @@ const SnsUnifiedFeed: React.FC = () => {
                                 <ShortsVideoItem 
                                     item={item} 
                                     onViewRecord={(count) => handleViewRecorded('SHORTS', item.shortsNo!, count)}
+                                    onUserClick={(targetId) => {
+                                        setSelectedUserId(targetId);
+                                        setIsProfileModalOpen(true);
+                                    }}
                                 />
                             ) : (
                                 <PostFeedItem 
                                     post={item} 
                                     onViewRecord={(count) => handleViewRecorded('POST', item.postId!, count)}
+                                    onUserClick={(targetId) => {
+                                        setSelectedUserId(targetId);
+                                        setIsProfileModalOpen(true);
+                                    }}
                                 />
                             )}
                             
@@ -502,6 +515,20 @@ const SnsUnifiedFeed: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* User Profile Modal */}
+            {selectedUserId && (
+                <ProfileEditModal
+                    isOpen={isProfileModalOpen}
+                    onClose={() => {
+                        setIsProfileModalOpen(false);
+                        setSelectedUserId(null);
+                    }}
+                    userId={selectedUserId}
+                    onProfileUpdate={() => {}}
+                    isReadOnly={selectedUserId !== currentUserId}
+                />
+            )}
         </div>
     );
 };
@@ -510,7 +537,8 @@ const SnsUnifiedFeed: React.FC = () => {
 const ShortsVideoItem: React.FC<{
     item: FeedItem;
     onViewRecord: (newCount: number) => void;
-}> = ({ item, onViewRecord }) => {
+    onUserClick: (userId: string) => void;
+}> = ({ item, onViewRecord, onUserClick }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isIntersecting, setIsIntersecting] = useState(false);
     const hasViewBeenRecorded = useRef(false);
@@ -621,15 +649,20 @@ const ShortsVideoItem: React.FC<{
 
             {/* Bottom Info Overlay */}
             <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12 text-white">
-                <div className="flex items-center gap-3 mb-3">
-                    <UserAvatar
-                        profileImagePath={item.userProfileImagePath}
-                        nickName={item.userNickNm}
-                        userId={item.userId}
-                        size={36}
-                        className="border-white/40"
-                    />
-                    <span className="font-bold text-[15px] drop-shadow-md">@{item.userNickNm || item.userId}</span>
+                <div 
+                    className="flex items-center gap-3 mb-3 pointer-events-auto cursor-pointer group"
+                    onClick={() => onUserClick(item.userId)}
+                >
+                    <div className="group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 rounded-full transition-all shadow-xs" title="프로필 보기">
+                        <UserAvatar
+                            profileImagePath={item.userProfileImagePath}
+                            nickName={item.userNickNm}
+                            userId={item.userId}
+                            size={36}
+                            className="border-white/40"
+                        />
+                    </div>
+                    <span className="font-bold text-[15px] drop-shadow-md group-hover:underline group-hover:text-[#00BDF8] transition-colors">@{item.userNickNm || item.userId}</span>
                     <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">🎬 Reels</span>
                 </div>
                 <div className="w-full">
@@ -644,7 +677,8 @@ const ShortsVideoItem: React.FC<{
 const PostFeedItem: React.FC<{
     post: FeedItem;
     onViewRecord: (newCount: number) => void;
-}> = ({ post, onViewRecord }) => {
+    onUserClick: (userId: string) => void;
+}> = ({ post, onViewRecord, onUserClick }) => {
     const [currentImgIndex, setCurrentImgIndex] = useState(0);
     const [isIntersecting, setIsIntersecting] = useState(false);
     const itemRef = useRef<HTMLDivElement>(null);
@@ -793,15 +827,20 @@ const PostFeedItem: React.FC<{
 
             {/* Bottom Info Overlay */}
             <div className="absolute bottom-0 left-0 right-16 p-6 bg-gradient-to-t from-black/95 via-black/50 to-transparent pointer-events-none pb-12 text-white">
-                <div className="flex items-center gap-3 mb-3">
-                    <UserAvatar
-                        profileImagePath={post.userProfileImagePath}
-                        nickName={post.userNickNm}
-                        userId={post.userId}
-                        size={36}
-                        className="border-white/40"
-                    />
-                    <span className="font-bold text-[15px] drop-shadow-md">@{post.userNickNm || post.userId}</span>
+                <div 
+                    className="flex items-center gap-3 mb-3 pointer-events-auto cursor-pointer group"
+                    onClick={() => onUserClick(post.userId)}
+                >
+                    <div className="group-hover:ring-2 group-hover:ring-[#00BDF8] group-hover:scale-105 active:scale-95 rounded-full transition-all shadow-xs" title="프로필 보기">
+                        <UserAvatar
+                            profileImagePath={post.userProfileImagePath}
+                            nickName={post.userNickNm}
+                            userId={post.userId}
+                            size={36}
+                            className="border-white/40"
+                        />
+                    </div>
+                    <span className="font-bold text-[15px] drop-shadow-md group-hover:underline group-hover:text-[#00BDF8] transition-colors">@{post.userNickNm || post.userId}</span>
                     <span className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-md text-[10px] font-bold border border-white/10 uppercase tracking-tighter">📸 Post</span>
                 </div>
                 <div className="w-full">

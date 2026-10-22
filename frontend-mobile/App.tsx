@@ -279,6 +279,39 @@ function App(): React.JSX.Element {
         onNavigationStateChange={(navState) => {
           setCanGoBack(navState.canGoBack);
         }}
+        setSupportMultipleWindows={false}
+        onShouldStartLoadWithRequest={(request) => {
+          const url = request.url;
+          // 내부 네비게이션 또는 초기/현재 로드 허용
+          if (
+            !url ||
+            url === 'about:blank' ||
+            url === currentUrl ||
+            url.startsWith(WEB_URL) ||
+            url.startsWith('http://localhost') ||
+            url.startsWith('http://10.0.2.2')
+          ) {
+            return true;
+          }
+
+          // 외부 URL(YouTube, SNS 등) 클릭 시 밴디콘 앱 화면 변경을 막고 외부 앱/브라우저로 오픈
+          Linking.openURL(url).catch((err) => {
+            console.warn('Failed to open external link via Linking:', err);
+          });
+          return false;
+        }}
+        onMessage={(event) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data?.type === 'OPEN_EXTERNAL_URL' && data?.url) {
+              Linking.openURL(data.url).catch((err) => {
+                console.warn('Failed to open external URL from web message:', err);
+              });
+            }
+          } catch (err) {
+            // Ignore non-JSON messages
+          }
+        }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
           console.warn('WebView error: ', nativeEvent);

@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaChevronLeft, FaUserPlus } from 'react-icons/fa';
+import { 
+    FaChevronLeft, 
+    FaUserPlus, 
+    FaClock, 
+    FaExclamationCircle, 
+    FaArrowRight, 
+    FaExternalLinkAlt, 
+    FaMusic,
+    FaYoutube,
+    FaPlay
+} from 'react-icons/fa';
 import DefaultProfile from '../components/common/DefaultProfile';
 import CommonModal from '../components/common/CommonModal';
 
@@ -9,10 +19,9 @@ interface ClanIntroData {
     name: string;
     description: string;
     cnUrl: string;
-    memberCount: number;
     logoColor: string;
     logoText: string;
-    attachFilePath?: string; // Added field
+    attachFilePath?: string;
 }
 
 const ClanIntro: React.FC = () => {
@@ -58,10 +67,9 @@ const ClanIntro: React.FC = () => {
                         name: data.cnNm,
                         description: data.cnDesc,
                         cnUrl: data.cnUrl,
-                        memberCount: data.userCnt,
                         logoColor: "bg-black",
                         logoText: data.cnNm ? data.cnNm.substring(0, 1) : "?",
-                        attachFilePath: data.attachFilePath // Mapped field
+                        attachFilePath: data.attachFilePath
                     });
                 }
 
@@ -117,122 +125,156 @@ const ClanIntro: React.FC = () => {
         }
     };
 
+    /**
+     * 모바일 공유 링크(?si=), 쇼츠, 라이브 등 모든 형태의 유튜브 Video ID 추출
+     */
+    const getYoutubeVideoId = (url?: string): string => {
+        if (!url) return '';
+        const cleanUrl = url.trim();
+
+        const standardMatch = cleanUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=))([^"&?\/\s]{11})/i);
+        if (standardMatch && standardMatch[1]) return standardMatch[1];
+
+        const shortMatch = cleanUrl.match(/youtu\.be\/([^"&?\/\s]{11})/i);
+        if (shortMatch && shortMatch[1]) return shortMatch[1];
+
+        if (cleanUrl.includes('/shorts/')) {
+            const shortsMatch = cleanUrl.match(/shorts\/([^"&?\/\s]{11})/i);
+            if (shortsMatch && shortsMatch[1]) return shortsMatch[1];
+        }
+
+        if (cleanUrl.includes('/live/')) {
+            const liveMatch = cleanUrl.match(/live\/([^"&?\/\s]{11})/i);
+            if (liveMatch && liveMatch[1]) return liveMatch[1];
+        }
+
+        return '';
+    };
+
+    /**
+     * 모바일 공유 링크(?si=), 쇼츠, 라이브 등 모든 형태의 유튜브 URL 파싱
+     */
+    const getEmbedUrl = (url: string) => {
+        const videoId = getYoutubeVideoId(url);
+        if (videoId) {
+            return `https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`;
+        }
+        return url ? url.trim() : '';
+    };
+
+    /**
+     * 외부 URL(YouTube, 인스타그램 등) 안전한 링크 생성
+     */
+    const getSafeExternalUrl = (url?: string) => {
+        const target = url || clan?.cnUrl;
+        if (!target) return '#';
+        const cleanUrl = target.trim();
+        return cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')
+            ? cleanUrl
+            : `https://${cleanUrl}`;
+    };
+
+    /**
+     * 외부 링크 열기 핸들러 (앱 화면이 외부 페이지로 변경되는 것 방지)
+     */
+    const handleOpenUrl = (url?: string) => {
+        const targetUrl = getSafeExternalUrl(url);
+        if (!targetUrl || targetUrl === '#') return;
+
+        // 1. React Native WebView 앱 환경인 경우: 네이티브 앱에 외부 브라우저/YouTube 앱 실행 요청
+        if ((window as any).ReactNativeWebView) {
+            try {
+                (window as any).ReactNativeWebView.postMessage(
+                    JSON.stringify({ type: 'OPEN_EXTERNAL_URL', url: targetUrl })
+                );
+                return;
+            } catch (e) {
+                console.warn("ReactNativeWebView postMessage failed", e);
+            }
+        }
+
+        // 2. 일반 웹 브라우저 환경: 새 탭/새 창으로 열기 (현재 밴디콘 앱 화면 유지)
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    /**
+     * 가입 신청 액션 버튼
+     */
     const renderActionButton = () => {
         if (joinStatus === 'RQ') {
             return (
                 <button
                     disabled
-                    className="bg-gray-300 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-not-allowed"
+                    className="w-full py-3 bg-slate-200 text-slate-500 rounded-xl font-bold text-sm cursor-not-allowed flex items-center justify-center gap-1.5 shadow-xs"
                 >
-                    승인대기
+                    <FaClock size={14} />
+                    <span>승인 대기 중</span>
                 </button>
             );
         } else if (joinStatus === 'RJ') {
             return (
                 <button
                     onClick={handleJoinRequest}
-                    className="bg-red-400 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-red-500 transition-colors"
+                    className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-sm shadow-md shadow-rose-500/20 active:scale-98 transition-all flex items-center justify-center gap-1.5"
                 >
-                    승인거절(재요청)
+                    <FaExclamationCircle size={14} />
+                    <span>승인 거절 (다시 신청하기)</span>
                 </button>
             );
         } else if (joinStatus === 'CN') {
             return (
                 <button
                     onClick={() => navigate(`/main/clan/detail/${id}`)}
-                    className="bg-[#00BDF8] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-[#00ACD8] transition-colors"
+                    className="w-full py-3 bg-[#003C48] hover:bg-[#002B34] text-white rounded-xl font-bold text-sm shadow-md shadow-[#003C48]/20 active:scale-98 transition-all flex items-center justify-center gap-1.5"
                 >
-                    상세보기
+                    <span>클랜 홈 바로가기</span>
+                    <FaArrowRight size={13} />
                 </button>
             );
         } else {
             return (
                 <button
                     onClick={handleJoinRequest}
-                    className="bg-gray-100 text-[#003C48] text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 hover:bg-gray-200 transition-colors"
+                    className="w-full py-3 bg-gradient-to-r from-[#00BDF8] to-[#0098E0] hover:from-[#00a6da] hover:to-[#0086c8] text-white rounded-xl font-bold text-sm shadow-md shadow-[#00BDF8]/25 active:scale-98 transition-all flex items-center justify-center"
                 >
-                    <FaUserPlus size={12} />
-                    클랜 신청
+                    <span>클랜 가입 신청하기</span>
                 </button>
             );
         }
     };
 
-    const getEmbedUrl = (url: string) => {
-        if (!url) return '';
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[40vh] text-slate-400">
+                <div className="w-7 h-7 border-3 border-[#00BDF8] border-t-transparent rounded-full animate-spin mb-2" />
+                <span className="text-xs font-medium">클랜 정보를 불러오는 중...</span>
+            </div>
+        );
+    }
 
-        let videoId = '';
+    if (!clan) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[40vh] text-slate-500 px-4">
+                <p className="text-base font-bold mb-3">클랜 정보를 찾을 수 없습니다.</p>
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
+                >
+                    이전으로 돌아가기
+                </button>
+            </div>
+        );
+    }
 
-        // Standard & Shortened (youtu.be) & Embed
-        const standardMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-        if (standardMatch && standardMatch[1]) {
-            videoId = standardMatch[1];
-        }
-
-        // Shorts support
-        if (!videoId && url.includes('/shorts/')) {
-            const shortsMatch = url.match(/shorts\/([^"&?\/\s]{11})/);
-            if (shortsMatch && shortsMatch[1]) {
-                videoId = shortsMatch[1];
-            }
-        }
-
-        if (videoId) {
-            // Add modestbranding and rel=0 for cleaner look
-            return `https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`;
-        }
-
-        return url; // Return original if not a video ID match
-    };
-
-    const renderContent = () => {
-        if (!clan || !clan.cnUrl) return null;
-
-        const embedUrl = getEmbedUrl(clan.cnUrl);
-        if (embedUrl.includes('youtube.com/embed')) {
-            return (
-                <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-black mb-6">
-                    <iframe
-                        width="100%"
-                        height="100%"
-                        src={embedUrl}
-                        title="Clan Video"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="absolute inset-0"
-                    ></iframe>
-                </div>
-            );
-        } else {
-            return (
-                <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-video bg-gray-900 mb-6 group">
-                    <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-black/80 to-transparent">
-                        <h3 className="text-white text-xl font-bold mb-1">{clan.name}</h3>
-                        <p className="text-gray-300 text-xs">{clan.description}</p>
-                    </div>
-                    <div className="absolute inset-0 -z-10 bg-gray-700 flex items-center justify-center text-gray-500">
-                        (외부 링크 자료)
-                    </div>
-                    <a
-                        href={clan.cnUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#00BDF8] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#00ACD8] transition-colors shadow-lg"
-                    >
-                        클랜 자료 보러가기
-                    </a>
-                </div>
-            );
-        }
-    };
-
-    if (loading) return <div className="text-center py-10">Loading...</div>;
-    if (!clan) return <div className="text-center py-10">Clan not found</div>;
+    const hasVideoOrUrl = !!(clan.cnUrl && clan.cnUrl.trim() !== '');
+    const youtubeVideoId = hasVideoOrUrl ? getYoutubeVideoId(clan.cnUrl) : '';
+    const isYouTube = !!youtubeVideoId;
 
     return (
-        <div className="flex flex-col h-full bg-white font-['Pretendard']" style={{ fontFamily: '"Pretendard", sans-serif' }}>
-            {/* Header */}
+        <div 
+            className="flex flex-col bg-[#F8FAFC] font-['Pretendard'] w-full"
+            style={{ fontFamily: '"Pretendard", sans-serif' }}
+        >
             <CommonModal
                 isOpen={modal.isOpen}
                 type={modal.type}
@@ -240,34 +282,99 @@ const ClanIntro: React.FC = () => {
                 onConfirm={modal.onConfirm}
                 onCancel={closeModal}
             />
-            <div className="flex items-center px-4 py-4 mb-2">
-                <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
-                    <FaChevronLeft size={24} />
+
+            {/* Top Navigation Bar */}
+            <div className="px-3 pt-1.5 pb-1 flex items-center max-w-md mx-auto w-full">
+                <button 
+                    onClick={() => navigate(-1)} 
+                    className="p-1.5 -ml-1 text-slate-700 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-colors"
+                    aria-label="뒤로가기"
+                >
+                    <FaChevronLeft size={16} />
                 </button>
-                <h1 className="text-xl text-[#003C48] font-bold">클랜</h1>
+                <h1 className="text-[15px] font-bold text-[#003C48] ml-1">클랜 소개</h1>
             </div>
 
-            <div className="px-4">
-                {/* Clan Info Header */}
-                <div className="flex items-start gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-gray-100 overflow-hidden flex-shrink-0 bg-gray-100">
+            {/* Main Content Area */}
+            <div className="max-w-md mx-auto w-full px-3.5 pb-8">
+
+                {/* 1. Profile Section: Logo on Top + Clan Name Underneath */}
+                <div className="flex flex-col items-center text-center pt-1 pb-2">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white shadow-sm overflow-hidden bg-slate-100 flex items-center justify-center mb-1.5 flex-shrink-0">
                         {clan.attachFilePath ? (
                             <img src={clan.attachFilePath} alt={clan.name} className="w-full h-full object-cover" />
                         ) : (
-                            <DefaultProfile type="clan" iconSize={24} />
+                            <DefaultProfile type="clan" iconSize={26} />
                         )}
                     </div>
-                    <div className="flex-1">
-                        <h2 className="text-[#003C48] text-xl font-bold mb-0.5">{clan.name}</h2>
-                        <p className="text-[#003C48] text-xs mb-1">{clan.description}</p>
-                    </div>
-                    {renderActionButton()}
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 break-keep leading-tight px-2">
+                        {clan.name}
+                    </h2>
                 </div>
 
-                {/* Main Content */}
-                {renderContent()}
+                {/* 2. Clan Description Box (클랜 소개가 먼저 표시되도록 순서 변경 및 기호 일치) */}
+                <div className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100 mb-3">
+                    <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] mb-1.5">
+                        <FaMusic className="text-[#00BDF8] text-[11px]" />
+                        <span>클랜 소개</span>
+                    </div>
+                    <div className="text-xs sm:text-[13px] text-slate-700 leading-relaxed whitespace-pre-wrap break-keep">
+                        {clan.description && clan.description.trim() !== '' 
+                            ? clan.description
+                                .replace(/🎸\s*\[장르\]/g, '🎵 [장르]')
+                                .replace(/⏰\s*\[일정\]/g, '📅 [일정]')
+                            : '등록된 클랜 소개글이 없습니다.'}
+                    </div>
+                </div>
 
-                {/* Additional content could go here */}
+                {/* 3. Media / Video Section (상단 라인 제거 및 영상 영역 클릭 시 보기 연결) */}
+                {hasVideoOrUrl && (
+                    isYouTube ? (
+                        <div
+                            onClick={() => handleOpenUrl(clan.cnUrl)}
+                            className="w-full relative rounded-2xl overflow-hidden aspect-video bg-black shadow-xs border border-slate-200/80 mb-3 cursor-pointer group hover:opacity-95 transition-all"
+                            title="클릭하여 YouTube에서 영상 보기"
+                        >
+                            {/* 썸네일 이미지 */}
+                            <img
+                                src={`https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`}
+                                alt="YouTube Video Thumbnail"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${youtubeVideoId}/mqdefault.jpg`;
+                                }}
+                            />
+                            {/* 재생 버튼 오버레이 */}
+                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                <div className="w-14 h-10 bg-red-600/95 group-hover:bg-red-600 group-hover:scale-110 text-white rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200">
+                                    <FaPlay size={15} className="ml-0.5 text-white" />
+                                </div>
+                            </div>
+                            {/* 우측 하단 YouTube 보기 뱃지 */}
+                            <div className="absolute bottom-2.5 right-2.5 bg-black/75 backdrop-blur-xs text-white text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                                <FaYoutube className="text-red-500" size={13} />
+                                <span>YouTube 보기</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            onClick={() => handleOpenUrl(clan.cnUrl)}
+                            className="bg-white rounded-2xl p-3 shadow-xs border border-slate-100 mb-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                            title="클릭하여 공식 자료 보기"
+                        >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <FaExternalLinkAlt className="text-[#00BDF8] text-[12px] flex-shrink-0" />
+                                <span className="text-xs font-semibold text-slate-700 truncate">클랜 공식 자료 보러가기</span>
+                            </div>
+                            <span className="text-xs text-slate-400 font-bold">↗</span>
+                        </div>
+                    )
+                )}
+
+                {/* Action Button */}
+                <div className="w-full">
+                    {renderActionButton()}
+                </div>
             </div>
         </div>
     );
