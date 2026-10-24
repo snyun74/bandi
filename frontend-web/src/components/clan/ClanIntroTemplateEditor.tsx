@@ -177,24 +177,30 @@ export const getDisplayIntroSummary = (rawText?: string | null): string => {
         return rawText.trim();
     }
 
-    // 템플릿인 경우: 사용자가 직접 입력한 한마디(freeIntro)만 추출
+    // 템플릿인 경우: 템플릿 태그를 제외하고 사용자가 직접 작성한 한마디(freeIntro)만 반환
     if (parsed.template.freeIntro && parsed.template.freeIntro.trim()) {
         return parsed.template.freeIntro.trim();
     }
 
-    // 한마디가 비어있을 때는 기본 장르/지역 서브텍스트 (태그 이모지 없이)
-    const summaryItems: string[] = [];
-    if (parsed.template.genres.length > 0) {
-        summaryItems.push(parsed.template.genres.join('/'));
-    }
-    if (parsed.template.region) {
-        const reg = parsed.template.region === '직접 입력' 
-            ? parsed.template.customRegion 
-            : parsed.template.region;
-        if (reg) summaryItems.push(reg);
-    }
+    return '';
+};
 
-    return summaryItems.join(' · ');
+/**
+ * 클랜 소개글이 필수 규칙을 만족하는지 검증
+ * - 템플릿 사용 시: 템플릿 태그([장르], [지역], [일정]) 외에 클랜 소개 한마디(freeIntro)가 반드시 입력되어야 함
+ * - 직접 입력 시: 소개글 전체가 비어있지 않아야 함
+ */
+export const validateClanIntro = (rawText?: string | null): { isValid: boolean; message?: string } => {
+    if (!rawText || !rawText.trim()) {
+        return { isValid: false, message: '클랜 소개를 입력해주세요.' };
+    }
+    const parsed = parseClanIntroText(rawText);
+    if (parsed.isTemplateMatched) {
+        if (!parsed.template.freeIntro || !parsed.template.freeIntro.trim()) {
+            return { isValid: false, message: '클랜 소개 한마디를 입력해주세요.' };
+        }
+    }
+    return { isValid: true };
 };
 
 interface ClanIntroTemplateEditorProps {
@@ -428,18 +434,30 @@ export const ClanIntroTemplateEditor: React.FC<ClanIntroTemplateEditorProps> = (
                         </div>
                     </div>
 
-                    {/* (4) 밴드 한마디 / 소개 (자유 입력) */}
+                    {/* (4) 클랜 한마디 / 소개 (필수 입력) */}
                     <div className="bg-white rounded-xl p-2.5 border border-slate-200/60 shadow-2xs">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-1.5">
-                            <FaPen className="text-slate-400" size={10} />
-                            <span>클랜 소개 한마디 (자유 입력)</span>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                                <FaPen className="text-[#00BDF8]" size={10} />
+                                <span>클랜 소개 한마디 <span className="text-red-500">*</span></span>
+                            </div>
+                            <span className="text-[10px] text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-200/60">
+                                필수 입력
+                            </span>
                         </div>
                         <textarea
                             value={templateState.freeIntro}
                             onChange={(e) => updateTemplate(prev => ({ ...prev, freeIntro: e.target.value }))}
-                            placeholder="예: 초보자도 환영하며, 연말 라이브 공연을 목표로 신나게 합주할 분들을 환영합니다!"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#00BDF8] transition-colors h-16 resize-none leading-relaxed text-slate-700"
+                            placeholder="예: 초보자도 환영하며, 연말 라이브 공연을 목표로 신나게 합주할 분들을 환영합니다! (필수 입력)"
+                            className={`w-full bg-slate-50 border rounded-lg px-3 py-2 text-xs focus:outline-none transition-colors h-16 resize-none leading-relaxed text-slate-700 ${
+                                !templateState.freeIntro.trim() && (templateState.genres.length > 0 || templateState.region || templateState.schedule)
+                                    ? 'border-amber-300 focus:border-amber-500'
+                                    : 'border-slate-200 focus:border-[#00BDF8]'
+                            }`}
                         />
+                        <p className="text-[11px] text-slate-400 mt-1">
+                            * 클랜을 소개하는 한마디를 필수로 작성해주세요.
+                        </p>
                     </div>
 
                     {/* (5) 실시간 조합 미리보기 (작성된 내용이 있을 때만 단정하게 표시) */}

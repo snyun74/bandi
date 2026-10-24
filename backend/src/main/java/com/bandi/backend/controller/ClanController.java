@@ -125,6 +125,18 @@ public class ClanController {
         }
     }
 
+    @PostMapping("/cancel")
+    public ResponseEntity<?> cancelClanJoin(@RequestBody com.bandi.backend.dto.ClanJoinDto dto) {
+        try {
+            clanService.cancelClanJoin(dto);
+            return ResponseEntity.ok(Map.of("message", "Clan join cancelled successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Failed to cancel clan join", "error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/{id}/boards/types")
     public ResponseEntity<?> createClanBoardType(@PathVariable Long id,
             @RequestBody com.bandi.backend.dto.ClanBoardTypeCreateDto dto) {

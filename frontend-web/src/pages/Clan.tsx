@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import DefaultProfile from '../components/common/DefaultProfile';
 import CommonModal from '../components/common/CommonModal';
 import SectionTitle from '../components/common/SectionTitle';
+import { getDisplayIntroSummary } from '../components/clan/ClanIntroTemplateEditor';
 
 interface ClanData {
     id: number;
@@ -211,7 +212,9 @@ const Clan: React.FC = () => {
                                     <div className="flex items-center gap-2">
                                         <h3 className="text-[15px] font-bold text-[#003C48] truncate">{clan.name}</h3>
                                     </div>
-                                    <p className="text-gray-500 text-[12px] truncate mt-1">{clan.description || '클랜 소개글이 없습니다.'}</p>
+                                    <p className="text-gray-500 text-[12px] truncate mt-1">
+                                        {getDisplayIntroSummary(clan.description) || '클랜 소개글이 없습니다.'}
+                                    </p>
                                 </div>
                             </div>
                         ))

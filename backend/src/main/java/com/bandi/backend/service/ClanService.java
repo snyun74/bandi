@@ -231,10 +231,11 @@ public class ClanService {
                 .orElse(null);
 
         if (clanMember != null) {
-            if ("RJ".equals(clanMember.getCnUserApprStatCd())) {
+            if ("RJ".equals(clanMember.getCnUserApprStatCd()) || "RC".equals(clanMember.getCnUserApprStatCd())) {
                 // Allow re-request
                 clanMember.setCnUserStatCd("A");
                 clanMember.setCnUserApprStatCd("RQ");
+                clanMember.setCnJoinDate(todayDate);
             } else {
                 throw new RuntimeException("이미 가입 신청 중이거나 멤버입니다.");
             }
@@ -278,6 +279,25 @@ public class ClanService {
             System.err.println("Failed to send clan join push notification: " + e.getMessage());
             // Don't throw exception to avoid rolling back the join request itself
         }
+    }
+
+    @Transactional
+    public void cancelClanJoin(com.bandi.backend.dto.ClanJoinDto dto) {
+        com.bandi.backend.entity.clan.ClanUser clanMember = clanUserRepository
+                .findById(new com.bandi.backend.entity.clan.ClanUserId(dto.getCnNo(), dto.getUserId()))
+                .orElseThrow(() -> new RuntimeException("가입 신청 내역이 존재하지 않습니다."));
+
+        if (!"RQ".equals(clanMember.getCnUserApprStatCd())) {
+            throw new RuntimeException("승인 대기(RQ) 상태에서만 요청 취소가 가능합니다.");
+        }
+
+        String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        clanMember.setCnUserStatCd("A");
+        clanMember.setCnUserApprStatCd("RC");
+        clanMember.setUpdDtime(currentDateTime);
+        clanMember.setUpdId(dto.getUserId());
+
+        clanUserRepository.save(clanMember);
     }
 
     @Transactional(readOnly = true)

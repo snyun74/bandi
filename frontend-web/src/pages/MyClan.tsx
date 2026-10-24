@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft } from 'react-icons/fa';
 import DefaultProfile from '../components/common/DefaultProfile';
 import SectionTitle from '../components/common/SectionTitle';
+import { getDisplayIntroSummary } from '../components/clan/ClanIntroTemplateEditor';
 
 interface ClanData {
     id: number;
@@ -87,8 +88,8 @@ const MyClan: React.FC = () => {
                                 <SectionTitle as="h3" className="!mt-0 mb-0.5 truncate">
                                     {clan.name}
                                 </SectionTitle>
-                                <p className="text-[#003C48] text-[13px] mb-1">
-                                    {clan.description.length > 20 ? `${clan.description.substring(0, 20)}...` : clan.description}
+                                <p className="text-[#003C48] text-[13px] mb-1 truncate">
+                                    {getDisplayIntroSummary(clan.description) || '클랜 소개글이 없습니다.'}
                                 </p>
                             </div>
                         </div>

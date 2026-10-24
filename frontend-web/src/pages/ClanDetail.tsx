@@ -18,7 +18,7 @@ import GatheringApplyModal from '../components/GatheringApplyModal';
 import DefaultProfile from '../components/common/DefaultProfile';
 import ClanJamSelectModal, { type EligibleJam } from '../components/clan/ClanJamSelectModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
-import ClanIntroTemplateEditor, { parseClanIntroText, getDisplayIntroSummary } from '../components/clan/ClanIntroTemplateEditor';
+import ClanIntroTemplateEditor, { parseClanIntroText, getDisplayIntroSummary, validateClanIntro } from '../components/clan/ClanIntroTemplateEditor';
 
 interface ClanDetailData {
     id: number;
@@ -396,8 +396,9 @@ const ClanDetail: React.FC = () => {
             showAlert('클랜 이름을 입력해 주세요.');
             return;
         }
-        if (!editForm.desc.trim()) {
-            showAlert('클랜 소개를 입력해 주세요.');
+        const introValidation = validateClanIntro(editForm.desc);
+        if (!introValidation.isValid) {
+            showAlert(introValidation.message || '클랜 소개를 입력해 주세요.');
             return;
         }
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaCamera } from 'react-icons/fa';
 import CommonModal from '../components/common/CommonModal';
 import { validateFileSize } from '../utils/fileUtils';
-import ClanIntroTemplateEditor from '../components/clan/ClanIntroTemplateEditor';
+import ClanIntroTemplateEditor, { validateClanIntro } from '../components/clan/ClanIntroTemplateEditor';
 
 const ClanCreatePage: React.FC = () => {
     const navigate = useNavigate();
@@ -65,8 +65,10 @@ const ClanCreatePage: React.FC = () => {
             showAlert('클랜명을 입력해주세요.');
             return;
         }
-        if (!clanIntro.trim()) {
-            showAlert('클랜 소개를 입력해주세요.');
+
+        const introValidation = validateClanIntro(clanIntro);
+        if (!introValidation.isValid) {
+            showAlert(introValidation.message || '클랜 소개를 입력해주세요.');
             return;
         }
 

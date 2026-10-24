@@ -9,7 +9,8 @@ import {
     FaExternalLinkAlt, 
     FaMusic,
     FaYoutube,
-    FaPlay
+    FaPlay,
+    FaTimes
 } from 'react-icons/fa';
 import DefaultProfile from '../components/common/DefaultProfile';
 import CommonModal from '../components/common/CommonModal';
@@ -49,6 +50,18 @@ const ClanIntro: React.FC = () => {
             type: 'alert',
             message,
             onConfirm: closeModal,
+        });
+    };
+
+    const showConfirm = (message: string, onConfirm: () => void) => {
+        setModal({
+            isOpen: true,
+            type: 'confirm',
+            message,
+            onConfirm: () => {
+                closeModal();
+                onConfirm();
+            },
         });
     };
 
@@ -123,6 +136,42 @@ const ClanIntro: React.FC = () => {
             console.error("Failed to request join", error);
             showAlert('가입 신청 중 오류가 발생했습니다.');
         }
+    };
+
+    const handleCancelJoinRequest = () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            showAlert('로그인이 필요합니다.');
+            return;
+        }
+
+        if (!id) return;
+
+        showConfirm('클랜 가입 신청을 취소하시겠습니까?', async () => {
+            try {
+                const response = await fetch('/api/clans/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        cnNo: Number(id),
+                        userId: userId
+                    }),
+                });
+
+                if (response.ok) {
+                    showAlert('가입 신청이 취소되었습니다.');
+                    setJoinStatus('RC');
+                } else {
+                    const errorData = await response.json();
+                    showAlert(errorData.message || '가입 신청 취소에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error("Failed to cancel join request", error);
+                showAlert('가입 신청 취소 중 오류가 발생했습니다.');
+            }
+        });
     };
 
     /**
@@ -225,23 +274,22 @@ const ClanIntro: React.FC = () => {
     const renderActionButton = () => {
         if (joinStatus === 'RQ') {
             return (
-                <button
-                    disabled
-                    className="w-full py-3 bg-slate-200 text-slate-500 rounded-xl font-bold text-sm cursor-not-allowed flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                    <FaClock size={14} />
-                    <span>승인 대기 중</span>
-                </button>
-            );
-        } else if (joinStatus === 'RJ') {
-            return (
-                <button
-                    onClick={handleJoinRequest}
-                    className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold text-sm shadow-md shadow-rose-500/20 active:scale-98 transition-all flex items-center justify-center gap-1.5"
-                >
-                    <FaExclamationCircle size={14} />
-                    <span>승인 거절 (다시 신청하기)</span>
-                </button>
+                <div className="flex items-center gap-2 w-full">
+                    <button
+                        disabled
+                        className="flex-1 py-3 bg-slate-100 text-slate-500 border border-slate-200/80 rounded-xl font-bold text-sm cursor-not-allowed flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                        <FaClock size={14} className="text-amber-500" />
+                        <span>승인대기</span>
+                    </button>
+                    <button
+                        onClick={handleCancelJoinRequest}
+                        className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl font-bold text-sm active:scale-98 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                        <FaTimes size={13} />
+                        <span>요청취소</span>
+                    </button>
+                </div>
             );
         } else if (joinStatus === 'CN') {
             return (
@@ -254,11 +302,13 @@ const ClanIntro: React.FC = () => {
                 </button>
             );
         } else {
+            // NONE, RC (요청취소), RJ (승인거절) 상태 모두 '클랜 가입 신청하기' 버튼으로 표시
             return (
                 <button
                     onClick={handleJoinRequest}
-                    className="w-full py-3 bg-gradient-to-r from-[#00BDF8] to-[#0098E0] hover:from-[#00a6da] hover:to-[#0086c8] text-white rounded-xl font-bold text-sm shadow-md shadow-[#00BDF8]/25 active:scale-98 transition-all flex items-center justify-center"
+                    className="w-full py-3 bg-gradient-to-r from-[#00BDF8] to-[#0098E0] hover:from-[#00a6da] hover:to-[#0086c8] text-white rounded-xl font-bold text-sm shadow-md shadow-[#00BDF8]/25 active:scale-98 transition-all flex items-center justify-center gap-1.5"
                 >
+                    <FaUserPlus size={14} />
                     <span>클랜 가입 신청하기</span>
                 </button>
             );
