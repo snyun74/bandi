@@ -11,6 +11,7 @@ import iconJamCreate from '../assets/group4.png';
 import iconJamSearch from '../assets/solar_music-notes-bold.png';
 import iconNotice from '../assets/group3.png';
 import iconCreate from '../assets/mynaui_file-plus-solid.png';
+import { getDisplayIntroSummary } from '../components/clan/ClanIntroTemplateEditor';
 
 interface UpcomingSchedule {
     type: string;
@@ -676,11 +677,11 @@ export default function HomePage() {
                                             </div>
                                         )}
                                     </div>
-                                    <h4 className="font-bold text-[18px] leading-[26px] text-[#0B1114] truncate mt-2">
+                                    <h4 className="font-bold text-[16px] sm:text-[18px] leading-[22px] sm:leading-[26px] text-[#0B1114] truncate mt-2">
                                         {currentClan.cnNm}
                                     </h4>
-                                    <p className="text-[13px] text-[#737373] truncate mt-0.5">
-                                        {currentClan.cnDesc || '클랜 소개'}
+                                    <p className="text-[12px] sm:text-[13px] text-[#737373] truncate mt-0.5" title={getDisplayIntroSummary(currentClan.cnDesc) || '클랜 소개'}>
+                                        {getDisplayIntroSummary(currentClan.cnDesc) || '클랜 소개'}
                                     </p>
                                 </div>
                             ) : (
@@ -755,10 +756,10 @@ export default function HomePage() {
                                             </div>
                                         )}
                                     </div>
-                                    <h4 className="font-bold text-[18px] leading-[26px] text-[#0B1114] truncate mt-2">
+                                    <h4 className="font-bold text-[16px] sm:text-[18px] leading-[22px] sm:leading-[26px] text-[#0B1114] truncate mt-2">
                                         {currentJam.bnNm}
                                     </h4>
-                                    <p className="text-[13px] text-[#737373] truncate mt-0.5">
+                                    <p className="text-[12px] sm:text-[13px] text-[#737373] truncate mt-0.5" title={currentJam.bnSongNm ? `${currentJam.bnSongNm} - ${currentJam.bnSingerNm}` : '합주곡 정보 없음'}>
                                         {currentJam.bnSongNm ? `${currentJam.bnSongNm} - ${currentJam.bnSingerNm}` : '합주곡 정보 없음'}
                                     </p>
                                 </div>

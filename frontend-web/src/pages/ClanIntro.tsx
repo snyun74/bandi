@@ -390,7 +390,7 @@ const ClanIntro: React.FC = () => {
                 {/* 2. Clan Description Box (클랜 소개가 먼저 표시되도록 순서 변경 및 기호 일치) */}
                 <div className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100 mb-3">
                     <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] mb-1.5">
-                        <FaMusic className="text-[#00BDF8] text-[11px]" />
+                        <FaMusic className="text-slate-400 text-[11px]" />
                         <span>클랜 소개</span>
                     </div>
                     <div className="text-xs sm:text-[13px] text-slate-700 leading-relaxed whitespace-pre-wrap break-keep">

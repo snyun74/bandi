@@ -102,7 +102,10 @@ export const parseClanIntroText = (rawText: string): { template: TemplateState; 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
 
-        if (line.startsWith('[소개 및 안내]')) {
+        if (
+            line.startsWith('[소개 및 안내]') || 
+            /^\[?\s*(?:소개 및 안내|클랜 소개|클랜소개|상세 소개|소개글|소개)\s*\]?:?$/i.test(line)
+        ) {
             isFreeIntroSection = true;
             isTemplateMatched = true;
             continue;
@@ -179,6 +182,14 @@ export const getDisplayIntroSummary = (rawText?: string | null): string => {
 
     // 템플릿인 경우: 템플릿 태그를 제외하고 사용자가 직접 작성한 한마디(freeIntro)만 반환
     if (parsed.template.freeIntro && parsed.template.freeIntro.trim()) {
+        const cleanLines = parsed.template.freeIntro
+            .split('\n')
+            .map(l => l.trim())
+            .filter(l => l && !l.match(/^(?:[🎵🎸🎶📍🗺️📅⏰🗓️🥁🎯👥]\s*)?\[?(?:장르|지역|일정|주기|합주 일정|모집|모집 파트|소개 및 안내|클랜 소개|클랜소개|상세 소개|소개글|소개)\]?/i));
+
+        if (cleanLines.length > 0) {
+            return cleanLines.join(' ').trim();
+        }
         return parsed.template.freeIntro.trim();
     }
 
