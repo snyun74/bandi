@@ -64,7 +64,7 @@ const AdminPage: React.FC = () => {
 
     const adminMenus = [
         { id: 'banner', label: '배너광고관리', icon: <FaAd size={24} />, path: '/main/admin/banners' },
-        { id: 'clan-approve', label: '클랜승인관리', icon: <FaUserShield size={24} />, path: '/main/admin/clans', count: counts.pendingClans },
+        { id: 'clan-approve', label: '밴드승인관리', icon: <FaUserShield size={24} />, path: '/main/admin/clans', count: counts.pendingClans },
         { id: 'qa', label: '고객센터관리', icon: <FaHeadset size={24} />, path: '/main/admin/qa', count: counts.unansweredQas },
         { id: 'user', label: `회원관리(${userStats.total}명)`, icon: <FaUserCog size={24} />, path: '/main/admin/users' },
         { id: 'notice', label: '공지사항관리', icon: <FaBell size={24} />, path: '/main/admin/notices' },

@@ -179,13 +179,13 @@ const ClanJamList: React.FC = () => {
         }
     };
 
-    // 클랜장/간부 전용: 확정된 합주 일괄 종료 처리
+    // 밴드장/간부 전용: 확정된 합주 일괄 종료 처리
     const handleCloseConfirmedJams = () => {
         if (!clanId || !userId) return;
 
         const confirmedCount = jamRooms.filter(room => room.isConfirmed || room.status === 'Y').length;
         if (confirmedCount === 0) {
-            showAlert("현재 확정 상태인 합주방이 없습니다.");
+            showAlert("현재 확정 상태인 합주팀이 없습니다.");
             return;
         }
 
@@ -602,7 +602,7 @@ const ClanJamList: React.FC = () => {
                                     </button>
                                 )}
                                 <h1 className="text-[18px] sm:text-[20px] font-bold leading-[28px] text-[#0B1114] tracking-tight truncate">
-                                    {clanId ? "클랜 합주방" : "자유 합주방"}
+                                    {clanId ? "밴드 합주팀" : "자유 합주팀"}
                                 </h1>
                             </div>
                             <p className="text-[12px] sm:text-[13px] font-normal leading-[18px] text-gray-500 truncate">
@@ -695,8 +695,8 @@ const ClanJamList: React.FC = () => {
 
                     {jamRooms.length === 0 ? (
                         <div className="bg-white rounded-[12px] p-8 text-center text-gray-400 border border-[#E5E5E5] space-y-2">
-                            <p className="text-base font-bold text-gray-700">개설된 합주방이 없습니다. 🎸</p>
-                            <p className="text-xs text-gray-400">첫 번째 합주방을 직접 만들어보세요!</p>
+                            <p className="text-base font-bold text-gray-700">개설된 합주팀이 없습니다. 🎸</p>
+                            <p className="text-xs text-gray-400">첫 번째 합주팀을 직접 만들어보세요!</p>
                         </div>
                     ) : viewMode === 'grid' ? (
                         /* ============================================================= */
@@ -708,7 +708,7 @@ const ClanJamList: React.FC = () => {
                                     <thead>
                                         <tr className="bg-[#F7F9FC] border-b border-gray-200 text-[#0B1114] text-[11px] font-bold">
                                             <th className="py-2.5 px-3 text-left sticky left-0 z-20 bg-[#F7F9FC] border-r border-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] min-w-[130px]">
-                                                합주방 정보
+                                                합주팀 정보
                                             </th>
                                             {sessionCodes.map((code) => (
                                                 <th key={code.commDtlCd} className="py-2.5 px-2 min-w-[68px] text-gray-700 border-r border-gray-100 last:border-r-0">
@@ -816,7 +816,7 @@ const ClanJamList: React.FC = () => {
                                             </span>
 
                                             {room.secret && (
-                                                <FaLock size={12} className="text-gray-400" title="비공개 합주방" />
+                                                <FaLock size={12} className="text-gray-400" title="비공개 합주팀" />
                                             )}
                                         </div>
 

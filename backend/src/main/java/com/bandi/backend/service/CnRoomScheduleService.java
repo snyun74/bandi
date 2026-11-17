@@ -36,7 +36,7 @@ public class CnRoomScheduleService {
     private static final DateTimeFormatter DTIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     /**
-     * 특정 클랜에서 현재 유저가 예약 가능한 합주방 목록 조회 (진행 'N', 확정 'Y' 상태인 합주방의 멤버)
+     * 특정 밴드에서 현재 유저가 예약 가능한 합주팀 목록 조회 (진행 'N', 확정 'Y' 상태인 합주팀의 멤버)
      */
     @Transactional(readOnly = true)
     public List<EligibleClanJamDto> getEligibleJams(Long clanId, String userId) {
@@ -44,7 +44,7 @@ public class CnRoomScheduleService {
             return Collections.emptyList();
         }
 
-        // 1. 해당 클랜의 활성 합주방 목록 조회
+        // 1. 해당 밴드의 활성 합주팀 목록 조회
         List<BnGroup> groups = bnGroupRepository.findByCnNoAndBnConfFgAndBnStatCd(clanId, "N", "A");
         List<BnGroup> confirmedGroups = bnGroupRepository.findByCnNoAndBnConfFgAndBnStatCd(clanId, "Y", "A");
 
@@ -122,7 +122,7 @@ public class CnRoomScheduleService {
                         k -> cmAttachmentRepository.findById(k).map(CmAttachment::getFilePath).orElse(null));
             }
 
-            // 삭제 가능 여부: 현재 시점 이후이고, 본인 등록 건 또는 그룹/클랜 권한
+            // 삭제 가능 여부: 현재 시점 이후이고, 본인 등록 건 또는 그룹/밴드 권한
             String scheduleStartDateTime = normalizeDateTime(schedule.getSchSttDate(), schedule.getSchSttTime());
             boolean isFuture = scheduleStartDateTime.compareTo(nowStr) > 0;
             boolean isOwner = currentUserId != null && currentUserId.equals(schedule.getInsId());
@@ -133,7 +133,7 @@ public class CnRoomScheduleService {
                     .cnSchNo(schedule.getCnSchNo())
                     .cnNo(schedule.getCnNo())
                     .bnNo(schedule.getBnNo())
-                    .bnNm(group != null ? group.getBnNm() : "합주방")
+                    .bnNm(group != null ? group.getBnNm() : "합주팀")
                     .bnSongNm(group != null ? group.getBnSongNm() : "")
                     .bnSingerNm(group != null ? group.getBnSingerNm() : "")
                     .bnImg(groupImg)
@@ -158,7 +158,7 @@ public class CnRoomScheduleService {
     @Transactional
     public CnRoomScheduleDto createSchedule(CnRoomScheduleDto dto, String userId) {
         if (dto.getCnNo() == null || dto.getBnNo() == null) {
-            throw new IllegalArgumentException("클랜 번호와 합주 번호는 필수입니다.");
+            throw new IllegalArgumentException("밴드 번호와 합주 번호는 필수입니다.");
         }
         if (dto.getSchSttDate() == null || dto.getSchSttTime() == null ||
             dto.getSchEndDate() == null || dto.getSchEndTime() == null) {
@@ -179,11 +179,11 @@ public class CnRoomScheduleService {
             throw new IllegalArgumentException("과거 시간대에는 예약할 수 없습니다.");
         }
 
-        // 클랜 동아리방 운영 여부 및 평일/주말 운영 시간 검증
+        // 밴드 동아리방 운영 여부 및 평일/주말 운영 시간 검증
         com.bandi.backend.entity.clan.ClanGroup clan = clanGroupRepository.findById(dto.getCnNo())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 클랜입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 밴드입니다."));
         if (!"Y".equalsIgnoreCase(clan.getRoomUseYn())) {
-            throw new IllegalArgumentException("동아리방 예약을 지원하지 않는 클랜입니다.");
+            throw new IllegalArgumentException("동아리방 예약을 지원하지 않는 밴드입니다.");
         }
 
         LocalDate schDate = LocalDate.parse(dto.getSchSttDate(), DateTimeFormatter.ofPattern("yyyyMMdd"));
@@ -208,20 +208,20 @@ public class CnRoomScheduleService {
                             dayType, limitSttHour, limitEndHour));
         }
 
-        // 합주방 유효성 및 소속 권한 확인
+        // 합주팀 유효성 및 소속 권한 확인
         BnGroup group = bnGroupRepository.findById(dto.getBnNo())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 합주방입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 합주팀입니다."));
 
         if (!dto.getCnNo().equals(group.getCnNo())) {
-            throw new IllegalArgumentException("해당 클랜에 소속된 합주방이 아닙니다.");
+            throw new IllegalArgumentException("해당 밴드에 소속된 합주팀이 아닙니다.");
         }
         if (!"A".equals(group.getBnStatCd()) || (!"N".equals(group.getBnConfFg()) && !"Y".equals(group.getBnConfFg()))) {
-            throw new IllegalArgumentException("진행 중이거나 확정된 합주방만 동아리방을 예약할 수 있습니다.");
+            throw new IllegalArgumentException("진행 중이거나 확정된 합주팀만 동아리방을 예약할 수 있습니다.");
         }
 
         BnUserId bnUserId = new BnUserId(group.getBnNo(), userId);
         BnUser bnUser = bnUserRepository.findById(bnUserId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 합주방의 멤버만 예약할 수 있습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("해당 합주팀의 멤버만 예약할 수 있습니다."));
         if (!"A".equals(bnUser.getBnUserStatCd())) {
             throw new IllegalArgumentException("활성화된 멤버만 예약할 수 있습니다.");
         }
@@ -231,7 +231,7 @@ public class CnRoomScheduleService {
                 dto.getCnNo(), newStartDateTime, newEndDateTime);
 
         if (!overlapping.isEmpty()) {
-            throw new IllegalStateException("선택하신 시간대에 이미 다른 합주방의 예약이 존재합니다. 최신 예약 현황을 다시 확인해 주세요.");
+            throw new IllegalStateException("선택하신 시간대에 이미 다른 합주팀의 예약이 존재합니다. 최신 예약 현황을 다시 확인해 주세요.");
         }
 
         CnRoomSchedule schedule = new CnRoomSchedule();

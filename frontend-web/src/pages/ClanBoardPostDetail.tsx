@@ -95,7 +95,7 @@ const ClanBoardPostDetail: React.FC = () => {
 
     // Delete confirm modal
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-    const [clanRole, setClanRole] = useState<string>('NONE'); // 현재 유저의 클랜 역할
+    const [clanRole, setClanRole] = useState<string>('NONE'); // 현재 유저의 밴드 역할
 
     // Edit Modal State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -339,7 +339,7 @@ const ClanBoardPostDetail: React.FC = () => {
         }
     };
 
-    // 삭제 권한: 작성자이거나 클랜장(01) / 간부(02)
+    // 삭제 권한: 작성자이거나 밴드장(01) / 간부(02)
     const canDelete = post &&
         userId &&
         (post.writerUserId === userId || clanRole === '01' || clanRole === '02');
@@ -550,7 +550,7 @@ const ClanBoardPostDetail: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="top-room-detail-title">{post.boardTypeNm || '클랜 게시판'}</h1>
+                <h1 className="top-room-detail-title">{post.boardTypeNm || '밴드 게시판'}</h1>
                 <div className="ml-auto flex items-center gap-3">
                     {canDelete ? (
                         <button

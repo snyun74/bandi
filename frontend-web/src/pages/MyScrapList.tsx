@@ -51,8 +51,8 @@ const MyScrapList: React.FC = () => {
     const getLabelName = (tableName: string) => {
         switch (tableName) {
             case 'CM_BOARD': return '일반게시';
-            case 'CN_NOTICE': return '클랜공지';
-            case 'CN_BOARD': return '클랜게시';
+            case 'CN_NOTICE': return '밴드공지';
+            case 'CN_BOARD': return '밴드게시';
             default: return '게시물';
         }
     };

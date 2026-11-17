@@ -33,7 +33,7 @@ const AdminClanApprovalPage: React.FC = () => {
                 const data = await res.json();
                 setClans(data);
             } else {
-                showAlert('클랜 목록을 불러오지 못했습니다.');
+                showAlert('밴드 목록을 불러오지 못했습니다.');
             }
         } catch (error) {
             console.error(error);
@@ -108,7 +108,7 @@ const AdminClanApprovalPage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-3">
                     <FaChevronLeft size={20} />
                 </button>
-                <h1 className="top-room-detail-title">클랜 승인 관리</h1>
+                <h1 className="top-room-detail-title">밴드 승인 관리</h1>
             </div>
 
             {/* List */}
@@ -220,7 +220,7 @@ const AdminClanApprovalPage: React.FC = () => {
                     ))
                 )}
                 {!loading && clans.length === 0 && (
-                    <div className="text-center py-10 text-gray-500">등록된 클랜이 없습니다.</div>
+                    <div className="text-center py-10 text-gray-500">등록된 밴드가 없습니다.</div>
                 )}
             </div>
 

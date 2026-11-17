@@ -176,7 +176,7 @@ const ClanCalendar: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                         <FaChevronLeft size={24} />
                     </button>
-                    <SectionTitle as="h1" className="!mt-0 !mb-0">클랜 캘린더</SectionTitle>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0">밴드 캘린더</SectionTitle>
                 </div>
             </div>
 

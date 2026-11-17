@@ -137,13 +137,13 @@ const Clan: React.FC = () => {
                     {/* Header */}
                     <div className="flex justify-between items-center">
                         <SectionTitle as="h2" className="!mt-0 !mb-0 text-[18px] font-bold text-[#003C48]">
-                            클랜
+                            밴드
                         </SectionTitle>
                         <button
                             onClick={() => navigate('/main/clan/create')}
                             className="bg-[#00BDF8] hover:bg-[#00a8e0] active:scale-95 text-white px-3.5 py-1.5 rounded-xl text-[12px] font-bold shadow-xs transition-all cursor-pointer"
                         >
-                            클랜 생성
+                            밴드 생성
                         </button>
                     </div>
 
@@ -157,7 +157,7 @@ const Clan: React.FC = () => {
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="클랜 명으로 검색"
+                                placeholder="밴드 명으로 검색"
                                 className="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-[13px] outline-none focus:bg-white focus:border-[#00BDF8] transition-all"
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter') handleSearch();
@@ -188,8 +188,8 @@ const Clan: React.FC = () => {
                     {clans.length === 0 ? (
                         <div className="bg-white rounded-2xl p-8 text-center text-gray-400 border border-gray-100 space-y-2 shadow-xs">
                             <span className="text-3xl">👥</span>
-                            <p className="text-sm font-bold text-gray-600">등록된 클랜이 없습니다.</p>
-                            <p className="text-xs text-gray-400">새로운 클랜을 개설해 보세요!</p>
+                            <p className="text-sm font-bold text-gray-600">등록된 밴드가 없습니다.</p>
+                            <p className="text-xs text-gray-400">새로운 밴드를 개설해 보세요!</p>
                         </div>
                     ) : (
                         clans.map((clan) => (
@@ -213,7 +213,7 @@ const Clan: React.FC = () => {
                                         <h3 className="text-[15px] font-bold text-[#003C48] truncate">{clan.name}</h3>
                                     </div>
                                     <p className="text-gray-500 text-[12px] truncate mt-1">
-                                        {getDisplayIntroSummary(clan.description) || '클랜 소개글이 없습니다.'}
+                                        {getDisplayIntroSummary(clan.description) || '밴드 소개글이 없습니다.'}
                                     </p>
                                 </div>
                             </div>

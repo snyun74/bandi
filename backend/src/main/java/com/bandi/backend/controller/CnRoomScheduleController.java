@@ -34,7 +34,7 @@ public class CnRoomScheduleController {
     }
 
     /**
-     * 예약 가능한 내 합주방 목록 조회 (진행/확정 상태 합주방의 멤버)
+     * 예약 가능한 내 합주팀 목록 조회 (진행/확정 상태 합주팀의 멤버)
      */
     @GetMapping("/eligible-jams")
     public ResponseEntity<List<EligibleClanJamDto>> getEligibleJams(

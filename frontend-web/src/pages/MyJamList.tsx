@@ -147,7 +147,7 @@ const MyJamList: React.FC = () => {
                                             ? 'bg-blue-50 text-[#00BDF8] border border-blue-100'
                                             : 'bg-gray-100 text-gray-600 border border-gray-100'
                                             }`}>
-                                            {jam.bnType === 'CLAN' ? '클랜' : '자유'}
+                                            {jam.bnType === 'CLAN' ? '밴드' : '자유'}
                                         </span>
                                         <SectionTitle as="h3" className="!mt-0 !mb-0 truncate flex-1 min-w-0 font-bold">
                                             {jam.bnNm}

@@ -136,12 +136,12 @@ public class AdminService {
 
         clanGroupRepository.save(clan);
 
-        // 클랜 승인(확정) 시 자동 메시지 및 푸시 발송 (RQ/RJ -> CN 상태 변경 시에만)
+        // 밴드 승인(확정) 시 자동 메시지 및 푸시 발송 (RQ/RJ -> CN 상태 변경 시에만)
         if ("CN".equals(status) && !"CN".equals(oldStatus)) {
             com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
             chatDto.setCnNo(cnNo);
             chatDto.setSndUserId("snyun");
-            chatDto.setMsg("클랜이 개설됐어요! 대화를 시작해보세요!");
+            chatDto.setMsg("밴드가 개설됐어요! 대화를 시작해보세요!");
             chatDto.setMsgTypeCd("TEXT");
             chatDto.setRoomType("CLAN");
             chatService.saveMessage(chatDto);
@@ -197,9 +197,9 @@ public class AdminService {
                 try {
                     // boardUrl 예:
                     // 1) 일반 게시판: /main/board/detail?boardNo=123 또는 /main/board/detail/123
-                    // 2) 클랜 게시판: /main/clan/board/detail/2/3/182 또는 쿼리/패스구조
+                    // 2) 밴드 게시판: /main/clan/board/detail/2/3/182 또는 쿼리/패스구조
                     if (boardUrl.contains("clan")) {
-                        // 클랜 게시판 게시글 처리
+                        // 밴드 게시판 게시글 처리
                         Long boardNoVal = extractBoardNo(boardUrl, "boardNo");
                         if (boardNoVal == null) {
                             boardNoVal = extractBoardNoFromPath(boardUrl);

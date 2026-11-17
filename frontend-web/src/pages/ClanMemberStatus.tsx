@@ -194,7 +194,7 @@ const ClanMemberStatus: React.FC = () => {
     };
 
     const getRoleBadge = (roleCd: string) => {
-        if (roleCd === '01') return <span className="text-[#00BDF8] text-sm font-bold">클랜장</span>;
+        if (roleCd === '01') return <span className="text-[#00BDF8] text-sm font-bold">밴드장</span>;
         if (roleCd === '02') return <span className="text-[#00BDF8] text-sm font-bold">간부</span>;
         return null;
     };
@@ -253,7 +253,7 @@ const ClanMemberStatus: React.FC = () => {
 
         if (roleChangeModal.targetRole === '01') {
             showConfirm(
-                '클랜장을 위임하시겠습니까? 위임 후 본인은 간부로 변경됩니다.',
+                '밴드장을 위임하시겠습니까? 위임 후 본인은 간부로 변경됩니다.',
                 proceedWithChange
             );
         } else {
@@ -292,7 +292,7 @@ const ClanMemberStatus: React.FC = () => {
                                     onChange={(e) => setRoleChangeModal(prev => ({ ...prev, targetRole: e.target.value }))}
                                     className="accent-[#00BDF8] w-5 h-5"
                                 />
-                                <span className="font-bold text-[#003C48]">클랜장 (Leader)</span>
+                                <span className="font-bold text-[#003C48]">밴드장 (Leader)</span>
                             </label>
 
                             <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${roleChangeModal.targetRole === '02'
@@ -377,7 +377,7 @@ const ClanMemberStatus: React.FC = () => {
                 {canManageRequests && joinRequests.length > 0 && (
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3">
                         <div className="flex justify-between items-center mb-2">
-                            <SectionTitle as="h2" className="!mt-0 !mb-0 text-sm">클랜 가입 신청</SectionTitle>
+                            <SectionTitle as="h2" className="!mt-0 !mb-0 text-sm">밴드 가입 신청</SectionTitle>
                             <button onClick={handleAcceptAll} className="bg-[#00BDF8] text-white text-[10px] px-2 py-0.5 rounded-full">모두 수락</button>
                         </div>
                         <div className="space-y-2">
@@ -435,7 +435,7 @@ const ClanMemberStatus: React.FC = () => {
 
                                             return canKick ? (
                                                 <button
-                                                    onClick={() => showConfirm(`${member.userNickNm}님을 클랜에서 강퇴하시겠습니까?`, () => handleAction(member.cnUserId, 'RJ'))}
+                                                    onClick={() => showConfirm(`${member.userNickNm}님을 밴드에서 강퇴하시겠습니까?`, () => handleAction(member.cnUserId, 'RJ'))}
                                                     className="bg-[#FF8A80] text-white text-xs px-2 py-1 rounded-lg font-bold hover:bg-red-500"
                                                 >
                                                     강퇴

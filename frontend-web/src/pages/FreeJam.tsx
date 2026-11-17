@@ -89,7 +89,7 @@ const FreeJam: React.FC = () => {
         <div className="p-4 pb-20" style={{ fontFamily: '"Pretendard", sans-serif' }}>
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">자유 합주방</h2>
+                <h2 className="text-xl font-bold text-gray-900">자유 합주팀</h2>
                 <button className="bg-[#00BDF8] text-white px-4 py-1.5 rounded-lg text-sm font-bold shadow-sm">
                     방 생성
                 </button>

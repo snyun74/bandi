@@ -37,7 +37,7 @@ public class ChatService {
   public List<ChatRoomListDto> getUnifiedChatList(String userId, int offset, int limit) {
     String sql = """
             SELECT * FROM (
-                -- 클랜 채팅
+                -- 밴드 채팅
                 SELECT
                     CNR.CN_NO        AS ROOM_NO,
                     CNG.CN_NM        AS ROOM_NM,
@@ -1018,7 +1018,7 @@ public class ChatService {
             .getResultList();
 
         for (String recipientId : recipients) {
-          pushService.sendPush(recipientId, "클랜 " + userNickNm, dto.getMsg(),
+          pushService.sendPush(recipientId, "밴드 " + userNickNm, dto.getMsg(),
               "/main/chat/room/" + dto.getCnNo() + "?type=CLAN", "CN", "CN_" + dto.getCnNo());
         }
       } catch (Exception e) {

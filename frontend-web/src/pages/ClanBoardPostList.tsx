@@ -202,7 +202,7 @@ const ClanBoardPostList: React.FC = () => {
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2 min-w-0 flex-1">
                                             <span className="text-[#0098CC] text-[12px] font-bold leading-[14px] shrink-0">
-                                                {boardName || '클랜'}
+                                                {boardName || '밴드'}
                                             </span>
                                             <h4 className="text-[14px] font-semibold leading-[18px] text-[#2F2F31] truncate">
                                                 {post.title}

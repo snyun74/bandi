@@ -256,7 +256,7 @@ public class ClanGatherService {
                 .map(ClanUser::getCnUserRoleCd)
                 .orElse("NONE");
         if (!"01".equals(role) && !"02".equals(role)) {
-            throw new RuntimeException("클랜 관리자 또는 운영진만 모집 재개를 할 수 있습니다.");
+            throw new RuntimeException("밴드 관리자 또는 운영진만 모집 재개를 할 수 있습니다.");
         }
 
         // 2. 상태 체크 (매칭 여부 확인)
@@ -327,7 +327,7 @@ public class ClanGatherService {
                 .orElse("NONE");
 
         if (!"01".equals(role) && !"02".equals(role)) {
-            throw new RuntimeException("클랜 관리자 또는 운영진만 매칭을 진행할 수 있습니다.");
+            throw new RuntimeException("밴드 관리자 또는 운영진만 매칭을 진행할 수 있습니다.");
         }
         if (!"Y".equals(gather.getGatherProcFg()) && !"M".equals(gather.getGatherProcFg())) {
             throw new RuntimeException("모집종료('Y') 또는 매핑완료('M') 상태인 공고만 매칭을 진행할 수 있습니다.");
@@ -906,7 +906,7 @@ public class ClanGatherService {
                 .orElseThrow(() -> new RuntimeException("합주 모집 공고를 찾을 수 없습니다."));
 
         if ("Y".equals(gather.getBnRoomCrdYn())) {
-            throw new RuntimeException("이미 합주방 생성이 완료된 공고입니다.");
+            throw new RuntimeException("이미 합주팀 생성이 완료된 공고입니다.");
         }
 
         // 권한 체크
@@ -914,12 +914,12 @@ public class ClanGatherService {
                 .map(ClanUser::getCnUserRoleCd)
                 .orElse("NONE");
         if (!"01".equals(role) && !"02".equals(role)) {
-            throw new RuntimeException("클랜 관리자 또는 운영진만 합주방을 일괄 생성할 수 있습니다.");
+            throw new RuntimeException("밴드 관리자 또는 운영진만 합주팀을 일괄 생성할 수 있습니다.");
         }
 
         List<ClanMatchRoom> matchRooms = clanMatchRoomRepository.findByGatherNo(gatherNo);
         if (matchRooms.isEmpty()) {
-            throw new RuntimeException("생성할 매핑 결과(합주방)가 존재하지 않습니다.");
+            throw new RuntimeException("생성할 매핑 결과(합주팀)가 존재하지 않습니다.");
         }
 
         List<ClanGatherSession> gatheredSessions = clanGatherSessionRepository.findByGatherNo(gatherNo);
@@ -945,7 +945,7 @@ public class ClanGatherService {
             if (results.isEmpty())
                 continue; // 매칭된 인원이 없으면 방을 만들지 않음 (Reverted)
 
-            // 리더(방장) 선출: 가장 권한이 높은 클랜 유저
+            // 리더(방장) 선출: 가장 권한이 높은 밴드 유저
             String leaderUserId = results.get(0).getUserId(); // Default
             int highestPriority = 999;
 
@@ -976,7 +976,7 @@ public class ClanGatherService {
             bnGroup.setBnSongNm("미정");
             bnGroup.setBnSingerNm("미정");
             bnGroup.setBnPasswdFg("N");
-            bnGroup.setBnDesc(gather.getTitle() + " 매핑으로 생성된 합주방입니다.");
+            bnGroup.setBnDesc(gather.getTitle() + " 매핑으로 생성된 합주팀입니다.");
             bnGroup.setBnLeaderId(leaderUserId); // 선출된 리더
             bnGroup.setBnConfFg("N");
             bnGroup.setBnStatCd("A");

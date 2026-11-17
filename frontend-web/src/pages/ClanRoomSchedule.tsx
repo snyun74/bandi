@@ -52,7 +52,7 @@ const ClanRoomSchedule: React.FC = () => {
     const [isJamSelectModalOpen, setIsJamSelectModalOpen] = useState(false);
     const [schedules, setSchedules] = useState<RoomScheduleDto[]>([]);
 
-    // 유저 소속 합주방 번호 Set
+    // 유저 소속 합주팀 번호 Set
     const myJamBnNos = useMemo(() => {
         return new Set(eligibleJams.map((j) => j.bnNo));
     }, [eligibleJams]);
@@ -181,7 +181,7 @@ const ClanRoomSchedule: React.FC = () => {
         setCurrentBaseDate(next);
     };
 
-    // 소속 합주방 목록 조회
+    // 소속 합주팀 목록 조회
     const fetchEligibleJams = useCallback(async () => {
         if (!clanId || !userId) return;
         try {
@@ -419,7 +419,7 @@ const ClanRoomSchedule: React.FC = () => {
             return a.schSttTime.localeCompare(b.schSttTime);
         });
 
-    // 실제 서버에 예약 요청 실행 함수 (선택된 합주방으로 연속 블록 순차 전송)
+    // 실제 서버에 예약 요청 실행 함수 (선택된 합주팀으로 연속 블록 순차 전송)
     const executeReservation = async (jam: EligibleJam) => {
         // 선택 슬롯들을 날짜별로 그룹화 및 연속 블록 분할
         const slotsByDate: { [date: string]: number[] } = {};
@@ -495,7 +495,7 @@ const ClanRoomSchedule: React.FC = () => {
                         title: '예약 중복 충돌',
                         message:
                             errorData.message ||
-                            '선택하신 시간대에 이미 다른 합주방의 예약이 완료되었습니다. 최신 현황으로 갱신합니다.',
+                            '선택하신 시간대에 이미 다른 합주팀의 예약이 완료되었습니다. 최신 현황으로 갱신합니다.',
                         type: 'alert',
                         onConfirm: () => {
                             setSelectedSlots(new Set());
@@ -541,7 +541,7 @@ const ClanRoomSchedule: React.FC = () => {
         }
     };
 
-    // [동방 일정 예약 저장] 버튼 클릭 핸들러 (저장 시점에 소속 합주방 실시간 조회 및 분기)
+    // [동방 일정 예약 저장] 버튼 클릭 핸들러 (저장 시점에 소속 합주팀 실시간 조회 및 분기)
     const handleSubmitReservation = async () => {
         if (!userId) {
             setModalInfo({
@@ -572,7 +572,7 @@ const ClanRoomSchedule: React.FC = () => {
                 setModalInfo({
                     isOpen: true,
                     title: '조회 실패',
-                    message: '합주방 소속 정보를 조회하는 중 오류가 발생했습니다.',
+                    message: '합주팀 소속 정보를 조회하는 중 오류가 발생했습니다.',
                     type: 'alert',
                 });
                 return;
@@ -584,17 +584,17 @@ const ClanRoomSchedule: React.FC = () => {
                 setModalInfo({
                     isOpen: true,
                     title: '동방 예약 불가',
-                    message: '합주방에 소속되어 있어야 동방 예약이 가능합니다.',
+                    message: '합주팀에 소속되어 있어야 동방 예약이 가능합니다.',
                     type: 'alert',
                 });
                 return;
             }
 
             if (jams.length === 1) {
-                // 단일 합주방 -> 즉시 해당 합주방으로 예약 실행
+                // 단일 합주팀 -> 즉시 해당 합주팀으로 예약 실행
                 await executeReservation(jams[0]);
             } else {
-                // 멀티 합주방 -> 선택 팝업 모달 표시
+                // 멀티 합주팀 -> 선택 팝업 모달 표시
                 setEligibleJams(jams);
                 setIsJamSelectModalOpen(true);
             }
@@ -603,7 +603,7 @@ const ClanRoomSchedule: React.FC = () => {
             setModalInfo({
                 isOpen: true,
                 title: '오류 발생',
-                message: '합주방 소속 정보를 조회하는 중 오류가 발생했습니다.',
+                message: '합주팀 소속 정보를 조회하는 중 오류가 발생했습니다.',
                 type: 'alert',
             });
         } finally {
@@ -667,7 +667,7 @@ const ClanRoomSchedule: React.FC = () => {
                             동방 예약
                         </h1>
                         <span className="text-[12px] text-gray-500 font-medium truncate max-w-[200px]">
-                            {clanInfo ? clanInfo.name : '클랜 동방'}
+                            {clanInfo ? clanInfo.name : '밴드 동방'}
                         </span>
                     </div>
                     <div className="w-9" />
@@ -828,12 +828,12 @@ const ClanRoomSchedule: React.FC = () => {
                                                         borderClass = 'border border-white shadow-2xs';
                                                     } else if (reservation) {
                                                         if (isMyJam) {
-                                                            // 내가 속한 합주방의 예약: 파란색 (#00BDF8) + 흰색 박스 라인 테두리
+                                                            // 내가 속한 합주팀의 예약: 파란색 (#00BDF8) + 흰색 박스 라인 테두리
                                                             cellBg = '#00BDF8';
                                                             borderClass = 'border border-white shadow-2xs';
                                                             cursorStyle = 'cursor-pointer';
                                                         } else {
-                                                            // 타 합주방 예약: 회색 (#E2E8F0) + 흰색 박스 라인 테두리
+                                                            // 타 합주팀 예약: 회색 (#E2E8F0) + 흰색 박스 라인 테두리
                                                             cellBg = '#E2E8F0';
                                                             borderClass = 'border border-white';
                                                             cursorStyle = 'cursor-not-allowed';
@@ -937,14 +937,14 @@ const ClanRoomSchedule: React.FC = () => {
                                                         isMyJam ? 'bg-[#00BDF8]' : 'bg-[#CBD5E1]'
                                                     }`} />
                                                     <div className="min-w-0 flex-1 space-y-0.5">
-                                                        {/* 1라인: 합주방명 + 내 합주방 뱃지 */}
+                                                        {/* 1라인: 합주팀명 + 내 합주팀 뱃지 */}
                                                         <div className="flex items-center gap-1.5 flex-wrap">
                                                             <h4 className="text-[13px] sm:text-[14px] font-bold text-gray-900 truncate leading-tight">
                                                                 {sch.bnNm}
                                                             </h4>
                                                             {isMyJam && (
                                                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] bg-[#E1F7FF] text-[#0098CC] border border-[#BAE6FD]">
-                                                                    내 합주방
+                                                                    내 합주팀
                                                                 </span>
                                                             )}
                                                         </div>
@@ -1012,7 +1012,7 @@ const ClanRoomSchedule: React.FC = () => {
                 </div>
             </div>
 
-            {/* 멀티 합주방 소속 시 선택 모달 */}
+            {/* 멀티 합주팀 소속 시 선택 모달 */}
             <ClanJamSelectModal
                 isOpen={isJamSelectModalOpen}
                 onClose={() => setIsJamSelectModalOpen(false)}

@@ -359,7 +359,7 @@ const JamRoomConfirm: React.FC = () => {
                                 예약이 완료됐어요!
                             </h2>
                             <p className="text-[13px] text-gray-500">
-                                {jamTitle} 합주방에 예약 정보를 공유해보세요.
+                                {jamTitle} 합주팀에 예약 정보를 공유해보세요.
                             </p>
                         </div>
 
@@ -404,7 +404,7 @@ const JamRoomConfirm: React.FC = () => {
                                 onClick={handleShareToChat}
                                 className="w-full py-3.5 bg-[#e1f5fe] text-[#0288d1] rounded-2xl font-extrabold text-[14px] hover:bg-[#b3e5fc] active:scale-[0.98] transition-all disabled:opacity-50"
                             >
-                                {isSharing ? '채팅방에 공유 중...' : '합주방에 공유하기'}
+                                {isSharing ? '채팅방에 공유 중...' : '합주팀에 공유하기'}
                             </button>
                             <button
                                 onClick={() => navigate('/main/home')}

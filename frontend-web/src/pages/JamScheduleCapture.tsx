@@ -701,7 +701,7 @@ const JamScheduleCapture: React.FC = () => {
     // 탭 2: 합주 일정 최종 확정 저장 API 호출 (BN_SCHEDULE)
     const handleConfirmScheduleSubmit = async () => {
         if (!bandInfo.canManage && !bandInfo.isLeader) {
-            showAlert("합주 일정 최종 확정은 방장 및 클랜 간부만 가능합니다.");
+            showAlert("합주 일정 최종 확정은 방장 및 밴드 간부만 가능합니다.");
             return;
         }
 
@@ -762,7 +762,7 @@ const JamScheduleCapture: React.FC = () => {
     // 탭 2: 확정된 합주 일정 삭제 API 호출
     const handleDeleteConfirmedSchedule = (schNo: number, title: string) => {
         if (!bandInfo.canManage && !bandInfo.isLeader) {
-            showAlert("삭제 권한이 없습니다. (방장 또는 클랜 간부만 가능)");
+            showAlert("삭제 권한이 없습니다. (방장 또는 밴드 간부만 가능)");
             return;
         }
 
@@ -1347,7 +1347,7 @@ const JamScheduleCapture: React.FC = () => {
                                 >
                                     {bandInfo.canManage || bandInfo.isLeader
                                         ? "합주 일정 최종 확정하기"
-                                        : "방장 및 클랜 간부만 일정 확정 가능"}
+                                        : "방장 및 밴드 간부만 일정 확정 가능"}
                                 </button>
                             </div>
                         )}

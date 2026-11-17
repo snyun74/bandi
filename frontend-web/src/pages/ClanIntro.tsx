@@ -147,7 +147,7 @@ const ClanIntro: React.FC = () => {
 
         if (!id) return;
 
-        showConfirm('클랜 가입 신청을 취소하시겠습니까?', async () => {
+        showConfirm('밴드 가입 신청을 취소하시겠습니까?', async () => {
             try {
                 const response = await fetch('/api/clans/cancel', {
                     method: 'POST',
@@ -297,19 +297,19 @@ const ClanIntro: React.FC = () => {
                     onClick={() => navigate(`/main/clan/detail/${id}`)}
                     className="w-full py-3 bg-[#003C48] hover:bg-[#002B34] text-white rounded-xl font-bold text-sm shadow-md shadow-[#003C48]/20 active:scale-98 transition-all flex items-center justify-center gap-1.5"
                 >
-                    <span>클랜 홈 바로가기</span>
+                    <span>밴드 홈 바로가기</span>
                     <FaArrowRight size={13} />
                 </button>
             );
         } else {
-            // NONE, RC (요청취소), RJ (승인거절) 상태 모두 '클랜 가입 신청하기' 버튼으로 표시
+            // NONE, RC (요청취소), RJ (승인거절) 상태 모두 '밴드 가입 신청하기' 버튼으로 표시
             return (
                 <button
                     onClick={handleJoinRequest}
                     className="w-full py-3 bg-gradient-to-r from-[#00BDF8] to-[#0098E0] hover:from-[#00a6da] hover:to-[#0086c8] text-white rounded-xl font-bold text-sm shadow-md shadow-[#00BDF8]/25 active:scale-98 transition-all flex items-center justify-center gap-1.5"
                 >
                     <FaUserPlus size={14} />
-                    <span>클랜 가입 신청하기</span>
+                    <span>밴드 가입 신청하기</span>
                 </button>
             );
         }
@@ -319,7 +319,7 @@ const ClanIntro: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[40vh] text-slate-400">
                 <div className="w-7 h-7 border-3 border-[#00BDF8] border-t-transparent rounded-full animate-spin mb-2" />
-                <span className="text-xs font-medium">클랜 정보를 불러오는 중...</span>
+                <span className="text-xs font-medium">밴드 정보를 불러오는 중...</span>
             </div>
         );
     }
@@ -327,7 +327,7 @@ const ClanIntro: React.FC = () => {
     if (!clan) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[40vh] text-slate-500 px-4">
-                <p className="text-base font-bold mb-3">클랜 정보를 찾을 수 없습니다.</p>
+                <p className="text-base font-bold mb-3">밴드 정보를 찾을 수 없습니다.</p>
                 <button 
                     onClick={() => navigate(-1)} 
                     className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
@@ -367,7 +367,7 @@ const ClanIntro: React.FC = () => {
                 >
                     <FaChevronLeft size={16} />
                 </button>
-                <h1 className="text-[15px] font-bold text-[#003C48] ml-1">클랜 소개</h1>
+                <h1 className="text-[15px] font-bold text-[#003C48] ml-1">밴드 소개</h1>
             </div>
 
             {/* Main Content Area */}
@@ -387,18 +387,18 @@ const ClanIntro: React.FC = () => {
                     </h2>
                 </div>
 
-                {/* 2. Clan Description Box (클랜 소개가 먼저 표시되도록 순서 변경 및 기호 일치) */}
+                {/* 2. Clan Description Box (밴드 소개가 먼저 표시되도록 순서 변경 및 기호 일치) */}
                 <div className="bg-white rounded-2xl p-3.5 shadow-xs border border-slate-100 mb-3">
                     <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] mb-1.5">
                         <FaMusic className="text-slate-400 text-[11px]" />
-                        <span>클랜 소개</span>
+                        <span>밴드 소개</span>
                     </div>
                     <div className="text-xs sm:text-[13px] text-slate-700 leading-relaxed whitespace-pre-wrap break-keep">
                         {clan.description && clan.description.trim() !== '' 
                             ? clan.description
                                 .replace(/🎸\s*\[장르\]/g, '🎵 [장르]')
                                 .replace(/⏰\s*\[일정\]/g, '📅 [일정]')
-                            : '등록된 클랜 소개글이 없습니다.'}
+                            : '등록된 밴드 소개글이 없습니다.'}
                     </div>
                 </div>
 
@@ -474,7 +474,7 @@ const ClanIntro: React.FC = () => {
                                     <FaExternalLinkAlt size={13} />
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="text-xs font-bold text-slate-800 truncate">클랜 공식 자료 바로가기</div>
+                                    <div className="text-xs font-bold text-slate-800 truncate">밴드 공식 자료 바로가기</div>
                                     <div className="text-[11px] text-slate-400 truncate">{clan.cnUrl}</div>
                                 </div>
                             </div>

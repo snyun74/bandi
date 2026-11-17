@@ -92,14 +92,14 @@ const ClanJamDetail: React.FC = () => {
 
 
     const handleDelete = () => {
-        showConfirm("정말 합주방을 삭제하시겠습니까?", async () => {
+        showConfirm("정말 합주팀을 삭제하시겠습니까?", async () => {
             try {
                 const response = await fetch(`/api/bands/${jamId}?userId=${userId}`, {
                     method: 'DELETE',
                 });
 
                 if (response.ok) {
-                    showAlert("합주방이 삭제되었습니다.");
+                    showAlert("합주팀이 삭제되었습니다.");
                     navigate(-1); // Go back
                 } else {
                     const errorMsg = await response.text();
@@ -469,7 +469,7 @@ const ClanJamDetail: React.FC = () => {
     };
 
     const handleEndJam = () => {
-        showConfirm("합주를 종료하시겠습니까?\n(종료시 합주방은 보이지 않습니다.)", async () => {
+        showConfirm("합주를 종료하시겠습니까?\n(종료시 합주팀은 보이지 않습니다.)", async () => {
             if (!bandDetail?.id || !userId) return;
             try {
                 const response = await fetch(`/api/bands/${bandDetail.id}/status`, {
@@ -549,7 +549,7 @@ const ClanJamDetail: React.FC = () => {
             });
 
             if (response.ok) {
-                showAlert("합주방 정보가 수정되었습니다.");
+                showAlert("합주팀 정보가 수정되었습니다.");
                 setIsEditModalOpen(false);
                 // Refresh data
                 const res = await fetch(`/api/bands/${jamId}?userId=${userId}`);
@@ -578,7 +578,7 @@ const ClanJamDetail: React.FC = () => {
     if (!bandDetail) {
         return (
             <div className="flex flex-col h-full bg-gray-50 font-['Pretendard'] items-center justify-center">
-                <div className="text-[#003C48] font-bold">합주방 정보를 찾을 수 없습니다.</div>
+                <div className="text-[#003C48] font-bold">합주팀 정보를 찾을 수 없습니다.</div>
                 <button
                     onClick={() => navigate(-1)}
                     className="mt-4 bg-[#00BDF8] text-white px-4 py-2 rounded-xl font-bold"
@@ -905,7 +905,7 @@ const ClanJamDetail: React.FC = () => {
                                 onClick={handleDelete}
                                 className="bg-white hover:bg-rose-50 active:scale-[0.99] text-rose-500 border border-rose-300 font-bold py-3 rounded-xl transition-all text-[12px] sm:text-[14px] flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap cursor-pointer"
                             >
-                                <span>합주방삭제</span>
+                                <span>합주팀삭제</span>
                             </button>
                         </div>
                     ) : (
@@ -1043,7 +1043,7 @@ const ClanJamDetail: React.FC = () => {
             {isEditModalOpen && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm px-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
                     <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-lg animate-fade-in-up">
-                        <h2 className="text-xl font-bold text-[#003C48] mb-4 text-center">합주방 정보 수정</h2>
+                        <h2 className="text-xl font-bold text-[#003C48] mb-4 text-center">합주팀 정보 수정</h2>
 
                         <div className="flex justify-center mb-6">
                             <div
@@ -1080,12 +1080,12 @@ const ClanJamDetail: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-[#003C48] mb-1">합주방 소개</label>
+                                <label className="block text-sm font-bold text-[#003C48] mb-1">합주팀 소개</label>
                                 <textarea
                                     value={editForm.desc}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, desc: e.target.value }))}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#00BDF8] h-24 resize-none"
-                                    placeholder="합주방 소개를 입력하세요"
+                                    placeholder="합주팀 소개를 입력하세요"
                                 />
                             </div>
                         </div>

@@ -138,12 +138,12 @@ public class ClanService {
 
         clanBoardRepository.save(initialPost);
 
-        // 7. 클랜 승인 환영 메시지 자동 등록 및 발송 (기존 승인 시 동작하던 로직)
+        // 7. 밴드 승인 환영 메시지 자동 등록 및 발송 (기존 승인 시 동작하던 로직)
         try {
             com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
             chatDto.setCnNo(savedClan.getCnNo());
             chatDto.setSndUserId("snyun");
-            chatDto.setMsg("클랜이 개설됐어요! 대화를 시작해보세요!");
+            chatDto.setMsg("밴드가 개설됐어요! 대화를 시작해보세요!");
             chatDto.setMsgTypeCd("TEXT");
             chatDto.setRoomType("CLAN");
             chatService.saveMessage(chatDto);
@@ -162,7 +162,7 @@ public class ClanService {
                 pushService.sendPush(
                         admin.getUserId(),
                         applicantNickname, // Title is applicant's nickname as requested
-                        "[" + savedClan.getCnNm() + "] 클랜이 개설(자동 승인)되었습니다.",
+                        "[" + savedClan.getCnNm() + "] 밴드가 개설(자동 승인)되었습니다.",
                         "/main/clan/detail/" + savedClan.getCnNo(), 
                         "ADMIN_CLAN_REQUEST",
                         "CLAN_ADMIN"
@@ -176,8 +176,8 @@ public class ClanService {
         try {
             pushService.sendPush(
                     dto.getUserId(),
-                    "클랜 개설 승인 완료",
-                    "[" + savedClan.getCnNm() + "] 클랜 개설이 승인되었습니다! 지금 바로 활동을 시작해보세요.",
+                    "밴드 개설 승인 완료",
+                    "[" + savedClan.getCnNm() + "] 밴드 개설이 승인되었습니다! 지금 바로 활동을 시작해보세요.",
                     "/main/clan/detail/" + savedClan.getCnNo(),
                     "CLAN_APPROVED",
                     "CLAN_" + savedClan.getCnNo()
@@ -268,8 +268,8 @@ public class ClanService {
             for (com.bandi.backend.entity.clan.ClanUser admin : admins) {
                 pushService.sendPush(
                         admin.getCnUserId(),
-                        "클랜 신청 알림",
-                        applicantNickname + "님이 클랜 신규 회원 가입을 요청을 했습니다.",
+                        "밴드 신청 알림",
+                        applicantNickname + "님이 밴드 신규 회원 가입을 요청을 했습니다.",
                         "", // No link as requested
                         "CLAN_JOIN",
                         "CLAN_JOIN_" + dto.getCnNo()
@@ -454,7 +454,7 @@ public class ClanService {
         // 1. Check Authority (Clan Leader '01' or Executive '02')
         String role = getMemberRole(clanId, userId);
         if (!"01".equals(role) && !"02".equals(role)) {
-            throw new RuntimeException("클랜장 또는 간부만 게시판을 삭제할 수 있습니다.");
+            throw new RuntimeException("밴드장 또는 간부만 게시판을 삭제할 수 있습니다.");
         }
 
         // 2. Find Board Type
@@ -563,7 +563,7 @@ public class ClanService {
             dto.setCnBoardTypeNo(bTypeNo.longValue());
 
         Object bTypeNmObj = result.get("boardTypeNm");
-        dto.setBoardTypeNm(bTypeNmObj != null ? String.valueOf(bTypeNmObj) : "클랜 게시판");
+        dto.setBoardTypeNm(bTypeNmObj != null ? String.valueOf(bTypeNmObj) : "밴드 게시판");
 
         dto.setTitle(result.get("title") != null ? String.valueOf(result.get("title")) : "");
         dto.setContent(result.get("content") != null ? String.valueOf(result.get("content")) : "");
@@ -744,7 +744,7 @@ public class ClanService {
         // 1. Permission Check
         String role = getMemberRole(clanId, dto.getUserId());
         if (!"01".equals(role) && !"02".equals(role)) {
-            throw new RuntimeException("클랜장 또는 간부만 클랜 정보를 수정할 수 있습니다.");
+            throw new RuntimeException("밴드장 또는 간부만 밴드 정보를 수정할 수 있습니다.");
         }
 
         ClanGroup clan = clanGroupRepository.findById(clanId)
@@ -863,9 +863,9 @@ public class ClanService {
         com.bandi.backend.entity.clan.ClanBoard board = clanBoardRepository.findById(boardNo)
                 .orElseThrow(() -> new RuntimeException("게시글을 찾을 수 없습니다. (ID: " + boardNo + ")"));
 
-        // 클랜 일치 확인
+        // 밴드 일치 확인
         if (clanId != null && !clanId.equals(board.getCnNo())) {
-            throw new RuntimeException("해당 클랜의 게시글이 아닙니다.");
+            throw new RuntimeException("해당 밴드의 게시글이 아닙니다.");
         }
 
         System.out.println("DEBUG: found board writerUserId=" + board.getWriterUserId() + " boardStatCd="
@@ -875,7 +875,7 @@ public class ClanService {
             throw new RuntimeException("이미 삭제된 게시글입니다.");
         }
 
-        // 권한 확인: 작성자, 클랜장(01), 간부(02)만 삭제 가능
+        // 권한 확인: 작성자, 밴드장(01), 간부(02)만 삭제 가능
         boolean isAuthor = userId.equals(board.getWriterUserId());
         boolean hasPrivilege = false;
 

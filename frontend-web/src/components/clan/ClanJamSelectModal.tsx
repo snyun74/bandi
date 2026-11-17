@@ -34,10 +34,10 @@ const ClanJamSelectModal: React.FC<ClanJamSelectModalProps> = ({
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-cyan-50/50 to-blue-50/30">
                     <div>
                         <h3 className="text-base font-bold text-gray-900">
-                            동방 예약 합주방 선택
+                            동방 예약 합주팀 선택
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
-                            예약을 진행할 합주방을 선택해 주세요.
+                            예약을 진행할 합주팀을 선택해 주세요.
                         </p>
                     </div>
                     <button

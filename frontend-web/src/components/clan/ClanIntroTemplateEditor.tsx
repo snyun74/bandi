@@ -104,7 +104,7 @@ export const parseClanIntroText = (rawText: string): { template: TemplateState; 
 
         if (
             line.startsWith('[소개 및 안내]') || 
-            /^\[?\s*(?:소개 및 안내|클랜 소개|클랜소개|상세 소개|소개글|소개)\s*\]?:?$/i.test(line)
+            /^\[?\s*(?:소개 및 안내|밴드 소개|밴드소개|클랜 소개|클랜소개|상세 소개|소개글|소개)\s*\]?:?$/i.test(line)
         ) {
             isFreeIntroSection = true;
             isTemplateMatched = true;
@@ -168,7 +168,7 @@ export const parseClanIntroText = (rawText: string): { template: TemplateState; 
 };
 
 /**
- * 클랜 헤더/목록용 간략 소개글 추출
+ * 밴드 헤더/목록용 간략 소개글 추출
  * - 템플릿 태그([장르], [지역], [일정])를 제외하고, 사용자가 직접 작성한 순수 한마디/소개글만 깔끔하게 추출합니다.
  */
 export const getDisplayIntroSummary = (rawText?: string | null): string => {
@@ -185,7 +185,7 @@ export const getDisplayIntroSummary = (rawText?: string | null): string => {
         const cleanLines = parsed.template.freeIntro
             .split('\n')
             .map(l => l.trim())
-            .filter(l => l && !l.match(/^(?:[🎵🎸🎶📍🗺️📅⏰🗓️🥁🎯👥]\s*)?\[?(?:장르|지역|일정|주기|합주 일정|모집|모집 파트|소개 및 안내|클랜 소개|클랜소개|상세 소개|소개글|소개)\]?/i));
+            .filter(l => l && !l.match(/^(?:[🎵🎸🎶📍🗺️📅⏰🗓️🥁🎯👥]\s*)?\[?(?:장르|지역|일정|주기|합주 일정|모집|모집 파트|소개 및 안내|밴드 소개|밴드소개|클랜 소개|클랜소개|상세 소개|소개글|소개)\]?/i));
 
         if (cleanLines.length > 0) {
             return cleanLines.join(' ').trim();
@@ -197,18 +197,18 @@ export const getDisplayIntroSummary = (rawText?: string | null): string => {
 };
 
 /**
- * 클랜 소개글이 필수 규칙을 만족하는지 검증
- * - 템플릿 사용 시: 템플릿 태그([장르], [지역], [일정]) 외에 클랜 소개 한마디(freeIntro)가 반드시 입력되어야 함
+ * 밴드 소개글이 필수 규칙을 만족하는지 검증
+ * - 템플릿 사용 시: 템플릿 태그([장르], [지역], [일정]) 외에 밴드 소개 한마디(freeIntro)가 반드시 입력되어야 함
  * - 직접 입력 시: 소개글 전체가 비어있지 않아야 함
  */
 export const validateClanIntro = (rawText?: string | null): { isValid: boolean; message?: string } => {
     if (!rawText || !rawText.trim()) {
-        return { isValid: false, message: '클랜 소개를 입력해주세요.' };
+        return { isValid: false, message: '밴드 소개를 입력해주세요.' };
     }
     const parsed = parseClanIntroText(rawText);
     if (parsed.isTemplateMatched) {
         if (!parsed.template.freeIntro || !parsed.template.freeIntro.trim()) {
-            return { isValid: false, message: '클랜 소개 한마디를 입력해주세요.' };
+            return { isValid: false, message: '밴드 소개 한마디를 입력해주세요.' };
         }
     }
     return { isValid: true };
@@ -224,7 +224,7 @@ interface ClanIntroTemplateEditorProps {
 export const ClanIntroTemplateEditor: React.FC<ClanIntroTemplateEditorProps> = ({
     value,
     onChange,
-    label = '클랜 소개',
+    label = '밴드 소개',
     required = false,
 }) => {
     // 탭 모드: 'template' (템플릿 선택) vs 'direct' (직접 텍스트 편집)
@@ -445,12 +445,12 @@ export const ClanIntroTemplateEditor: React.FC<ClanIntroTemplateEditorProps> = (
                         </div>
                     </div>
 
-                    {/* (4) 클랜 한마디 / 소개 (필수 입력) */}
+                    {/* (4) 밴드 한마디 / 소개 (필수 입력) */}
                     <div className="bg-white rounded-xl p-2.5 border border-slate-200/60 shadow-2xs">
                         <div className="flex items-center justify-between mb-1.5">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                                 <FaPen className="text-[#00BDF8]" size={10} />
-                                <span>클랜 소개 한마디 <span className="text-red-500">*</span></span>
+                                <span>밴드 소개 한마디 <span className="text-red-500">*</span></span>
                             </div>
                             <span className="text-[10px] text-red-500 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-200/60">
                                 필수 입력
@@ -467,7 +467,7 @@ export const ClanIntroTemplateEditor: React.FC<ClanIntroTemplateEditorProps> = (
                             }`}
                         />
                         <p className="text-[11px] text-slate-400 mt-1">
-                            * 클랜을 소개하는 한마디를 필수로 작성해주세요.
+                            * 밴드를 소개하는 한마디를 필수로 작성해주세요.
                         </p>
                     </div>
 
@@ -493,7 +493,7 @@ export const ClanIntroTemplateEditor: React.FC<ClanIntroTemplateEditorProps> = (
                             isInternalUpdate.current = true;
                             onChange(e.target.value);
                         }}
-                        placeholder="클랜 소개글을 자유롭게 작성하세요."
+                        placeholder="밴드 소개글을 자유롭게 작성하세요."
                         className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[#00BDF8] transition-colors h-40 resize-none leading-relaxed"
                     />
                     <p className="text-[11px] text-gray-400 ml-1">

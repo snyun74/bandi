@@ -7,10 +7,10 @@ const BottomNav: React.FC = () => {
     const location = useLocation();
 
     const menuItems = [
-        { id: 'freejam', label: '자유합주방', icon: Music2, path: '/main/jam' },
+        { id: 'freejam', label: '자유합주팀', icon: Music2, path: '/main/jam' },
         { id: 'explore', label: '피드', icon: Compass, path: '/main/explore' },
         { id: 'home', label: '홈', icon: Home, path: '/main/home' },
-        { id: 'clan', label: '클랜', icon: Users, path: '/main/clan' },
+        { id: 'clan', label: '밴드', icon: Users, path: '/main/clan' },
         { id: 'membersador', label: '엠버서더', icon: Medal, path: '/main/membersador' },
     ];
 

@@ -99,7 +99,7 @@ const ClanNoticeList: React.FC = () => {
                     <button onClick={() => navigate(-1)} className="text-[#052c42]">
                         <FaChevronLeft size={24} />
                     </button>
-                    <SectionTitle as="h1" className="!mt-0 !mb-0">클랜 공지</SectionTitle>
+                    <SectionTitle as="h1" className="!mt-0 !mb-0">밴드 공지</SectionTitle>
                 </div>
                 {canCreateNotice && (
                     <button

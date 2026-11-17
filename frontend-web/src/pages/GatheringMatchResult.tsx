@@ -205,7 +205,7 @@ const GatheringMatchResult: React.FC = () => {
             });
 
             if (response.ok) {
-                setAlertMessage('합주방이 성공적으로 생성되었습니다.');
+                setAlertMessage('합주팀이 성공적으로 생성되었습니다.');
                 setIsAlertModalOpen(true);
                 setRoomCrdYn('Y');
                 fetchResults();
@@ -248,7 +248,7 @@ const GatheringMatchResult: React.FC = () => {
                             : 'bg-[#00BDF8] text-white hover:bg-[#00BDF8]/90 active:scale-95'
                             }`}
                     >
-                        합주방 생성
+                        합주팀 생성
                     </button>
                 </div>
             </div>
@@ -413,7 +413,7 @@ const GatheringMatchResult: React.FC = () => {
             <CommonModal
                 isOpen={isCreateModalOpen}
                 type="confirm"
-                message="합주방을 일괄 생성하시겠습니까? 한번 생성하면 다시 생성할 수 없습니다."
+                message="합주팀을 일괄 생성하시겠습니까? 한번 생성하면 다시 생성할 수 없습니다."
                 onConfirm={executeCreateJamRooms}
                 onCancel={() => setIsCreateModalOpen(false)}
             />

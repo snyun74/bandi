@@ -115,7 +115,7 @@ public class AdminJamService {
         // 1. BN_SESSION 삭제
         bnSessionRepository.delete(session);
 
-        // 2. 참여자 처리: 삭제된 세션에 참여자가 있었고, 해당 유저가 이 합주방의 다른 세션에 없다면 BN_USER(합주 멤버)에서도 완전 삭제
+        // 2. 참여자 처리: 삭제된 세션에 참여자가 있었고, 해당 유저가 이 합주팀의 다른 세션에 없다면 BN_USER(합주 멤버)에서도 완전 삭제
         if (joinedUserId != null && !joinedUserId.isBlank()) {
             boolean stillInOtherSession = bnSessionRepository.findByBnNo(bnNo).stream()
                     .anyMatch(s -> joinedUserId.equals(s.getBnSessionJoinUserId()));
@@ -127,7 +127,7 @@ public class AdminJamService {
             }
         }
 
-        // 3. 예약자 처리: 해당 합주방에 동일한 세션 유형이 더 이상 존재하지 않는다면, 해당 세션 유형의 모든 예약자(BN_RSV_SESSION)도 함께 삭제
+        // 3. 예약자 처리: 해당 합주팀에 동일한 세션 유형이 더 이상 존재하지 않는다면, 해당 세션 유형의 모든 예약자(BN_RSV_SESSION)도 함께 삭제
         boolean hasRemainingSessionOfType = bnSessionRepository.findByBnNo(bnNo).stream()
                 .anyMatch(s -> sessionTypeCd != null && sessionTypeCd.equals(s.getBnSessionTypeCd()));
 

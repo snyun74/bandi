@@ -67,7 +67,7 @@ export default function HomePage() {
     const [upcomingSchedules, setUpcomingSchedules] = useState<UpcomingSchedule[]>([]);
     const [currentUpcomingIndex, setCurrentUpcomingIndex] = useState(0);
 
-    // 3 영역: 내 클랜 & 내 합주
+    // 3 영역: 내 밴드 & 내 합주
     const [myClans, setMyClans] = useState<any[]>([]);
     const [currentClanIndex, setCurrentClanIndex] = useState(0);
     const [myJams, setMyJams] = useState<any[]>([]);
@@ -89,7 +89,7 @@ export default function HomePage() {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-    // 내 클랜 터치/마우스 스와이프 핸들러
+    // 내 밴드 터치/마우스 스와이프 핸들러
     const clanTouchStartX = useRef<number | null>(null);
     const clanTouchEndX = useRef<number | null>(null);
     const isClanMoved = useRef(false);
@@ -228,7 +228,7 @@ export default function HomePage() {
         }
     };
 
-    // 3 영역: 내 클랜 조회
+    // 3 영역: 내 밴드 조회
     const fetchMyClans = async () => {
         try {
             const res = await fetch(`/api/clans/my-list?userId=${userId}`);
@@ -241,7 +241,7 @@ export default function HomePage() {
         }
     };
 
-    // 3 영역: 내 합주 조회 (자유합주 + 클랜합주)
+    // 3 영역: 내 합주 조회 (자유합주 + 밴드합주)
     const fetchMyJams = async () => {
         try {
             const res = await fetch(`/api/bands/my?userId=${userId}&size=30`);
@@ -493,14 +493,14 @@ export default function HomePage() {
                             {/* 예약 카드 */}
                             <div className="bg-white rounded-[12px] p-4 border border-[#ECECEC] shadow-[0px_4px_10px_rgba(0,0,0,0.06)] relative transition-all duration-300">
                                 
-                                {/* 상단: [D-6] 뱃지 + 합주방명 및 하위 상세 정보 */}
+                                {/* 상단: [D-6] 뱃지 + 합주팀명 및 하위 상세 정보 */}
                                 <div className="flex items-start gap-2">
                                     {/* D-Day 다크 캡슐 뱃지 */}
                                     <span className="bg-[#2F2F31] text-white text-[12px] font-bold leading-[16px] px-[9px] py-[2px] rounded-full shrink-0 mt-0.5">
                                         {currentUpcoming.dDay}
                                     </span>
 
-                                    {/* 합주방명 및 하단 텍스트들 */}
+                                    {/* 합주팀명 및 하단 텍스트들 */}
                                     <div className="flex-1 min-w-0 space-y-1.5">
                                         <h3 className="text-[16px] font-bold leading-[22px] text-[#2F2F31] truncate">
                                             {currentUpcoming.jamTitle}
@@ -561,7 +561,7 @@ export default function HomePage() {
                             <div
                                 onClick={() => requireAuth(() => navigate('/main/jam/create'), {
                                     title: '합주를 직접 개설해 보세요! 🎸',
-                                    description: '합주방을 만들고 멤버를 모집하려면\n로그인이 필요합니다.'
+                                    description: '합주팀을 만들고 멤버를 모집하려면\n로그인이 필요합니다.'
                                 })}
                                 className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
@@ -576,8 +576,8 @@ export default function HomePage() {
                             {/* 2. 합주 찾기 */}
                             <div
                                 onClick={() => requireAuth(() => navigate('/main/jam'), {
-                                    title: '합주방을 둘러보세요! 🎵',
-                                    description: '합주방 목록 및 상세 정보를 보시려면\n로그인이 필요합니다.'
+                                    title: '합주팀을 둘러보세요! 🎵',
+                                    description: '합주팀 목록 및 상세 정보를 보시려면\n로그인이 필요합니다.'
                                 })}
                                 className="bg-white rounded-[15px] p-1.5 min-[380px]:p-2.5 py-3 flex flex-col items-center justify-center gap-1.5 shadow-[0px_5px_12.5px_rgba(0,0,0,0.06)] border-[1.25px] border-[#F5F5F5] hover:border-[#00BDF8]/40 hover:shadow-md transition-all cursor-pointer group active:scale-95"
                             >
@@ -624,15 +624,15 @@ export default function HomePage() {
                     </section>
 
                     {/* ========================================================================= */}
-                    {/* 3 영역. 내 클랜 & 내 합주 (좌우 스와이프 제스처 및 클릭 이동 지원) */}
+                    {/* 3 영역. 내 밴드 & 내 합주 (좌우 스와이프 제스처 및 클릭 이동 지원) */}
                     {/* ========================================================================= */}
                     <section className="grid grid-cols-2 gap-3">
-                        {/* [좌측] 내 클랜 */}
+                        {/* [좌측] 내 밴드 */}
                         <div className="flex flex-col">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-[5px] h-[14px] bg-[#00BDF8] rounded-[10px] inline-block"></span>
-                                    <h3 className="font-bold text-[18px] leading-[26px] text-[#0B1114]">내 클랜</h3>
+                                    <h3 className="font-bold text-[18px] leading-[26px] text-[#0B1114]">내 밴드</h3>
                                 </div>
                                 <button
                                     onClick={() => requireAuth(() => navigate('/main/clan/my'))}
@@ -680,23 +680,23 @@ export default function HomePage() {
                                     <h4 className="font-bold text-[16px] sm:text-[18px] leading-[22px] sm:leading-[26px] text-[#0B1114] truncate mt-2">
                                         {currentClan.cnNm}
                                     </h4>
-                                    <p className="text-[12px] sm:text-[13px] text-[#737373] truncate mt-0.5" title={getDisplayIntroSummary(currentClan.cnDesc) || '클랜 소개'}>
-                                        {getDisplayIntroSummary(currentClan.cnDesc) || '클랜 소개'}
+                                    <p className="text-[12px] sm:text-[13px] text-[#737373] truncate mt-0.5" title={getDisplayIntroSummary(currentClan.cnDesc) || '밴드 소개'}>
+                                        {getDisplayIntroSummary(currentClan.cnDesc) || '밴드 소개'}
                                     </p>
                                 </div>
                             ) : (
                                 <div
                                     onClick={() => requireAuth(() => navigate('/main/clan'), {
-                                        title: '클랜에 참여해 보세요! 👥',
-                                        description: '다양한 밴드 클랜 활동을 하려면\n로그인이 필요합니다.'
+                                        title: '밴드에 참여해 보세요! 👥',
+                                        description: '다양한 밴드 활동을 하려면\n로그인이 필요합니다.'
                                     })}
                                     className="w-full aspect-square rounded-[10px] border border-dashed border-gray-200 bg-white/60 flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:bg-white transition-all"
                                 >
                                     <p className="text-xs text-gray-500 font-medium">
-                                        {userId ? '가입된 클랜이 없습니다.' : '클랜을 찾아보세요!'}
+                                        {userId ? '가입된 밴드가 없습니다.' : '밴드를 찾아보세요!'}
                                     </p>
                                     <span className="text-[12px] text-[#00BDF8] font-bold mt-1">
-                                        {userId ? '클랜 찾기' : '클랜 둘러보기'}
+                                        {userId ? '밴드 찾기' : '밴드 둘러보기'}
                                     </span>
                                 </div>
                             )}
@@ -775,7 +775,7 @@ export default function HomePage() {
                                         {userId ? '참여 중인 합주가 없습니다.' : '내가 원하는 곡으로 합주해보세요!'}
                                     </p>
                                     <span className="text-[12px] text-[#00BDF8] font-bold mt-1">
-                                        {userId ? '합주방 둘러보기' : '합주방 둘러보기'}
+                                        {userId ? '합주팀 둘러보기' : '합주팀 둘러보기'}
                                     </span>
                                 </div>
                             )}

@@ -397,7 +397,7 @@ const ChatList: React.FC = () => {
                                                         chat.roomType === 'BAND' ? 'bg-emerald-50 text-emerald-600' :
                                                         'bg-gray-100 text-gray-600'
                                                     }`}>
-                                                        {chat.roomType === 'GROUP' ? '그룹' : chat.roomType === 'CLAN' ? '클랜' : chat.roomType === 'BAND' ? '합주' : '개인'}
+                                                        {chat.roomType === 'GROUP' ? '그룹' : chat.roomType === 'CLAN' ? '밴드' : chat.roomType === 'BAND' ? '합주' : '개인'}
                                                     </span>
                                                     <h3 className="text-sm sm:text-base font-bold text-[#003C48] leading-tight truncate min-w-0">{chat.roomNm}</h3>
                                                 </div>
@@ -627,7 +627,7 @@ const ChatList: React.FC = () => {
                                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00BDF8]" />
                                 <input
                                     type="text"
-                                    placeholder="친구, 클랜원, 합주원 검색"
+                                    placeholder="친구, 밴드원, 합주원 검색"
                                     value={groupSearchText}
                                     onChange={(e) => setGroupSearchText(e.target.value)}
                                     className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#00BDF8] text-sm bg-gray-50 focus:bg-white transition-colors"
@@ -660,7 +660,7 @@ const ChatList: React.FC = () => {
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <span className="text-[#003C48] font-bold text-sm">{member.userNickNm}</span>
-                                                            <span className="text-[10px] text-gray-500">{member.memberType === 'FRIEND' ? '친구' : member.memberType === 'CLAN' ? '클랜원' : '합주원'}</span>
+                                                            <span className="text-[10px] text-gray-500">{member.memberType === 'FRIEND' ? '친구' : member.memberType === 'CLAN' ? '밴드원' : '합주원'}</span>
                                                         </div>
                                                     </div>
                                                     <button

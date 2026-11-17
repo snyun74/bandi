@@ -95,7 +95,7 @@ const ClanDetail: React.FC = () => {
     const [confirmMessage, setConfirmMessage] = useState('');
     const [onConfirmAction, setOnConfirmAction] = useState<(() => void) | null>(null);
 
-    // 소개글 템플릿 적용 여부 판별 (미적용 클랜에게만 상단 안내 뱃지 노출)
+    // 소개글 템플릿 적용 여부 판별 (미적용 밴드에게만 상단 안내 뱃지 노출)
     const isTemplateApplied = useMemo(() => {
         if (!clan?.description || !clan.description.trim()) return false;
         return parseClanIntroText(clan.description).isTemplateMatched;
@@ -393,12 +393,12 @@ const ClanDetail: React.FC = () => {
         if (!userId) return;
 
         if (!editForm.nm.trim()) {
-            showAlert('클랜 이름을 입력해 주세요.');
+            showAlert('밴드 이름을 입력해 주세요.');
             return;
         }
         const introValidation = validateClanIntro(editForm.desc);
         if (!introValidation.isValid) {
-            showAlert(introValidation.message || '클랜 소개를 입력해 주세요.');
+            showAlert(introValidation.message || '밴드 소개를 입력해 주세요.');
             return;
         }
 
@@ -443,7 +443,7 @@ const ClanDetail: React.FC = () => {
 
             if (response.ok) {
                 setIsEditModalOpen(false);
-                showAlert('클랜 정보가 수정되었습니다.');
+                showAlert('밴드 정보가 수정되었습니다.');
                 fetchMethod();
             } else {
                 const err = await response.json();
@@ -485,7 +485,7 @@ const ClanDetail: React.FC = () => {
     if (!clan) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAFBFD] p-4 text-center">
-                <p className="text-gray-500 mb-4">클랜 정보를 불러올 수 없습니다.</p>
+                <p className="text-gray-500 mb-4">밴드 정보를 불러올 수 없습니다.</p>
                 <button onClick={() => navigate(-1)} className="px-4 py-2 bg-[#00BDF8] text-white rounded-xl text-sm font-bold">
                     돌아가기
                 </button>
@@ -506,13 +506,13 @@ const ClanDetail: React.FC = () => {
                 >
                     <FaChevronLeft size={20} />
                 </button>
-                <h1 className="text-[17px] font-bold text-[#0B1114] ml-2">클랜 상세</h1>
+                <h1 className="text-[17px] font-bold text-[#0B1114] ml-2">밴드 상세</h1>
             </div>
 
             {/* Main Content Container (Responsive Width) */}
             <div className="w-full max-w-lg px-5 py-6 pb-24 space-y-6 flex-1">
                 {/* ─────────────────────────────────────────────────────────────
-                    영역 1. 클랜 프로필 관련 정보
+                    영역 1. 밴드 프로필 관련 정보
                 ───────────────────────────────────────────────────────────── */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-4">
@@ -558,7 +558,7 @@ const ClanDetail: React.FC = () => {
                                 {clan.name}
                             </h2>
                             <p className="text-[14px] font-medium text-[#525252] leading-snug line-clamp-2">
-                                {getDisplayIntroSummary(clan.description) || '클랜 소개가 없습니다.'}
+                                {getDisplayIntroSummary(clan.description) || '밴드 소개가 없습니다.'}
                             </p>
                         </div>
                     </div>
@@ -650,11 +650,11 @@ const ClanDetail: React.FC = () => {
                 </section>
 
                 {/* ─────────────────────────────────────────────────────────────
-                    영역 3. 클랜 합주방
+                    영역 3. 밴드 합주팀
                 ───────────────────────────────────────────────────────────── */}
                 <section className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">클랜 합주방</h3>
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">밴드 합주팀</h3>
                         <span
                             onClick={() => navigate(`/main/clan/jam/${id}`)}
                             className="text-[13px] font-medium text-[#525252] hover:text-[#00BDF8] cursor-pointer transition-colors"
@@ -709,17 +709,17 @@ const ClanDetail: React.FC = () => {
                         </div>
                     ) : (
                         <div className="bg-white border border-[#E5E5E5] rounded-[12px] p-6 text-center text-xs text-gray-400">
-                            개설된 합주방이 없습니다.
+                            개설된 합주팀이 없습니다.
                         </div>
                     )}
                 </section>
 
                 {/* ─────────────────────────────────────────────────────────────
-                    영역 4. 클랜 게시판
+                    영역 4. 밴드 게시판
                 ───────────────────────────────────────────────────────────── */}
                 <section className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">클랜 게시판</h3>
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">밴드 게시판</h3>
                         <span
                             onClick={() => navigate(`/main/clan/board/${id}`)}
                             className="text-[13px] font-medium text-[#525252] hover:text-[#00BDF8] cursor-pointer transition-colors"
@@ -806,11 +806,11 @@ const ClanDetail: React.FC = () => {
                 </section>
 
                 {/* ─────────────────────────────────────────────────────────────
-                    영역 5. 클랜 캘린더
+                    영역 5. 밴드 캘린더
                 ───────────────────────────────────────────────────────────── */}
                 <section className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-[16px] font-semibold text-[#0B1114]">클랜 캘린더</h3>
+                        <h3 className="text-[16px] font-semibold text-[#0B1114]">밴드 캘린더</h3>
                         <span
                             onClick={() => navigate(`/main/clan/calendar/${id}`)}
                             className="text-[13px] font-medium text-[#525252] hover:text-[#00BDF8] cursor-pointer transition-colors"
@@ -984,7 +984,7 @@ const ClanDetail: React.FC = () => {
                                                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                                                     <div className="w-1 self-stretch bg-[#00BDF8] rounded-full min-h-[46px] shrink-0" />
                                                     <div className="flex-1 min-w-0 space-y-1">
-                                                        {/* 1라인: 합주방명 */}
+                                                        {/* 1라인: 합주팀명 */}
                                                         <h4 className="text-[14px] sm:text-[15px] font-bold text-[#0B1114] truncate leading-tight">
                                                             {sch.bnNm}
                                                         </h4>
@@ -1033,7 +1033,7 @@ const ClanDetail: React.FC = () => {
             </div>
 
             {/* ─────────────────────────────────────────────────────────────
-                클랜 정보 수정 모달
+                밴드 정보 수정 모달
             ───────────────────────────────────────────────────────────── */}
             {isEditModalOpen && (
                 <div
@@ -1043,7 +1043,7 @@ const ClanDetail: React.FC = () => {
                     <div className="bg-white w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-2xl flex flex-col max-h-[90vh] animate-fade-in-up">
                         {/* Header */}
                         <h2 className="text-lg sm:text-xl font-bold text-[#0B1114] mb-3 text-center shrink-0">
-                            클랜 정보 수정
+                            밴드 정보 수정
                         </h2>
 
                         {/* Scrollable Form Body (팝업 내부에서만 스크롤) */}
@@ -1069,14 +1069,14 @@ const ClanDetail: React.FC = () => {
                             {/* Clan Name */}
                             <div>
                                 <label className="block text-xs sm:text-sm font-bold text-[#0B1114] mb-1">
-                                    클랜 이름 <span className="text-red-500">*</span>
+                                    밴드 이름 <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={editForm.nm}
                                     onChange={(e) => setEditForm((prev) => ({ ...prev, nm: e.target.value }))}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs sm:text-sm focus:outline-none focus:border-[#00BDF8]"
-                                    placeholder="클랜 이름을 입력하세요"
+                                    placeholder="밴드 이름을 입력하세요"
                                 />
                             </div>
 
@@ -1085,7 +1085,7 @@ const ClanDetail: React.FC = () => {
                                 <ClanIntroTemplateEditor
                                     value={editForm.desc}
                                     onChange={(desc) => setEditForm((prev) => ({ ...prev, desc }))}
-                                    label="클랜 소개"
+                                    label="밴드 소개"
                                     required
                                 />
                             </div>
@@ -1241,7 +1241,7 @@ const ClanDetail: React.FC = () => {
                 </div>
             )}
 
-            {/* 합주방 선택 팝업 모달 */}
+            {/* 합주팀 선택 팝업 모달 */}
             <ClanJamSelectModal
                 isOpen={isJamSelectModalOpen}
                 onClose={() => setIsJamSelectModalOpen(false)}
@@ -1259,7 +1259,7 @@ const ClanDetail: React.FC = () => {
                 message={alertMessage}
                 onConfirm={() => {
                     setIsAlertOpen(false);
-                    if (alertMessage === '클랜 정보가 수정되었습니다.') {
+                    if (alertMessage === '밴드 정보가 수정되었습니다.') {
                         window.location.reload();
                     }
                 }}

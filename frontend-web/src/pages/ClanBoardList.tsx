@@ -245,7 +245,7 @@ const ClanBoardList: React.FC = () => {
                     >
                         <FaChevronLeft size={18} />
                     </button>
-                    <h1 className="text-[18px] font-bold text-[#0B1114]">클랜 게시판</h1>
+                    <h1 className="text-[18px] font-bold text-[#0B1114]">밴드 게시판</h1>
                 </div>
                 {(userRole === '01' || userRole === '02') && (
                     <button
@@ -394,7 +394,7 @@ const ClanBoardList: React.FC = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl animate-fade-in-up">
-                        <h3 className="text-[17px] font-bold text-[#0B1114] mb-2 text-center">클랜 게시판 추가</h3>
+                        <h3 className="text-[17px] font-bold text-[#0B1114] mb-2 text-center">밴드 게시판 추가</h3>
                         <p className="text-xs text-gray-500 text-center mb-4">새로 개설할 게시판 이름을 입력해 주세요.</p>
                         <input
                             type="text"

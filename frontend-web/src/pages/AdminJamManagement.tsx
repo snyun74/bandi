@@ -87,7 +87,7 @@ const AdminJamManagement: React.FC = () => {
     const [sessionsLoading, setSessionsLoading] = useState(false);
 
     const [isPushModalOpen, setIsPushModalOpen] = useState(false);
-    const [pushMessage, setPushMessage] = useState('합주방이 확정됐어요! 대화를 시작해보세요!');
+    const [pushMessage, setPushMessage] = useState('합주팀이 확정됐어요! 대화를 시작해보세요!');
 
     const observerTarget = useRef<HTMLDivElement | null>(null);
 
@@ -273,7 +273,7 @@ const AdminJamManagement: React.FC = () => {
 
     const openPushModal = (bnNo: number) => {
         setSelectedJamId(bnNo);
-        setPushMessage('합주방이 확정됐어요! 대화를 시작해보세요!');
+        setPushMessage('합주팀이 확정됐어요! 대화를 시작해보세요!');
         setIsPushModalOpen(true);
     };
 
@@ -322,7 +322,7 @@ const AdminJamManagement: React.FC = () => {
                         <input
                             type="text"
                             className="flex-1 bg-transparent p-3 outline-none text-sm placeholder-gray-400"
-                            placeholder="합주명, 가수, 작곡, 클랜명 검색"
+                            placeholder="합주명, 가수, 작곡, 밴드명 검색"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             onKeyDown={handleKeyDown}
@@ -348,7 +348,7 @@ const AdminJamManagement: React.FC = () => {
                                         </span>
                                     ) : (
                                         <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-600">
-                                            {jam.clanNm || '클랜합주'}
+                                            {jam.clanNm || '밴드합주'}
                                         </span>
                                     )}
                                     <span className="text-xs text-gray-400">ID: {jam.bnNo}</span>

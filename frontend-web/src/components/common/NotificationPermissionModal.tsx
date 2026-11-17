@@ -50,7 +50,7 @@ const NotificationPermissionModal: React.FC<NotificationPermissionModalProps> = 
                         밴디콘 알림을 켜주세요
                     </h3>
                     <p className="text-[13px] sm:text-[14px] text-gray-600 leading-relaxed break-keep">
-                        합주 일정, 새로운 채팅, 클랜 및 공지 소식을<br />
+                        합주 일정, 새로운 채팅, 밴드 및 공지 소식을<br />
                         실시간으로 안전하게 받아보실 수 있습니다.
                     </p>
                 </div>

@@ -62,13 +62,13 @@ const ClanCreatePage: React.FC = () => {
 
     const handleCreate = async () => {
         if (!clanName.trim()) {
-            showAlert('클랜명을 입력해주세요.');
+            showAlert('밴드명을 입력해주세요.');
             return;
         }
 
         const introValidation = validateClanIntro(clanIntro);
         if (!introValidation.isValid) {
-            showAlert(introValidation.message || '클랜 소개를 입력해주세요.');
+            showAlert(introValidation.message || '밴드 소개를 입력해주세요.');
             return;
         }
 
@@ -106,7 +106,7 @@ const ClanCreatePage: React.FC = () => {
                 setModal({
                     isOpen: true,
                     type: 'alert',
-                    message: '클랜 개설이 완료되었습니다! 클랜 홈으로 이동합니다.',
+                    message: '밴드 개설이 완료되었습니다! 밴드 홈으로 이동합니다.',
                     onConfirm: () => {
                         closeModal();
                         if (resData && resData.clanId) {
@@ -118,11 +118,11 @@ const ClanCreatePage: React.FC = () => {
                 });
             } else {
                 const errorData = await response.json();
-                showAlert(errorData.message || '클랜 생성에 실패했습니다.');
+                showAlert(errorData.message || '밴드 생성에 실패했습니다.');
             }
         } catch (error) {
             console.error("Failed to create clan", error);
-            showAlert('클랜 생성 중 오류가 발생했습니다.');
+            showAlert('밴드 생성 중 오류가 발생했습니다.');
         }
     };
 
@@ -140,7 +140,7 @@ const ClanCreatePage: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-gray-600 mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <h1 className="top-room-detail-title">클랜 생성</h1>
+                <h1 className="top-room-detail-title">밴드 생성</h1>
             </div>
 
             <div className="px-6 flex-1 overflow-y-auto pb-4">
@@ -176,12 +176,12 @@ const ClanCreatePage: React.FC = () => {
                 {/* Form Fields */}
                 <div className="space-y-6">
                     <div>
-                        <label className="block text-[#003C48] text-sm font-bold mb-2">클랜명</label>
+                        <label className="block text-[#003C48] text-sm font-bold mb-2">밴드명</label>
                         <input
                             type="text"
                             value={clanName}
                             onChange={(e) => setClanName(e.target.value)}
-                            placeholder="클랜명을 입력하세요"
+                            placeholder="밴드명을 입력하세요"
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#00BDF8] transition-colors"
                         />
                     </div>
@@ -190,7 +190,7 @@ const ClanCreatePage: React.FC = () => {
                         <ClanIntroTemplateEditor
                             value={clanIntro}
                             onChange={setClanIntro}
-                            label="클랜 소개"
+                            label="밴드 소개"
                             required
                         />
                     </div>
@@ -205,7 +205,7 @@ const ClanCreatePage: React.FC = () => {
                             className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#00BDF8] transition-colors"
                         />
                         <p className="text-xs text-gray-400 mt-1 ml-1">
-                            * 입력한 URL은 클랜 소개 페이지에 표시됩니다.
+                            * 입력한 URL은 밴드 소개 페이지에 표시됩니다.
                         </p>
                     </div>
                 </div>
@@ -217,7 +217,7 @@ const ClanCreatePage: React.FC = () => {
                     onClick={handleCreate}
                     className="w-full bg-[#00BDF8] text-white font-bold py-4 rounded-xl text-[14px] shadow-lg hover:bg-[#00ACD8] transition-colors"
                 >
-                    클랜 생성하기
+                    밴드 생성하기
                 </button>
             </div>
         </div>

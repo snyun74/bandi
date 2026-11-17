@@ -787,7 +787,7 @@ public class BandService {
             com.bandi.backend.dto.ChatMessageCreateDto chatDto = new com.bandi.backend.dto.ChatMessageCreateDto();
             chatDto.setCnNo(bnNo);
             chatDto.setSndUserId(userId);
-            chatDto.setMsg("합주방이 확정됐어요! 대화를 시작해보세요!");
+            chatDto.setMsg("합주팀이 확정됐어요! 대화를 시작해보세요!");
             chatDto.setMsgTypeCd("TEXT");
             chatDto.setRoomType("BAND");
             chatService.saveMessage(chatDto);
@@ -814,10 +814,10 @@ public class BandService {
     public int endAllConfirmedClanJams(Long clanId, String userId) {
         com.bandi.backend.entity.clan.ClanUserId clanUserId = new com.bandi.backend.entity.clan.ClanUserId(clanId, userId);
         com.bandi.backend.entity.clan.ClanUser clanUser = clanUserRepository.findById(clanUserId)
-                .orElseThrow(() -> new RuntimeException("클랜 멤버 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new RuntimeException("밴드 멤버 정보를 찾을 수 없습니다."));
         String role = clanUser.getCnUserRoleCd();
         if (!"01".equals(role) && !"02".equals(role)) {
-            throw new RuntimeException("클랜장 또는 간부만 일괄 합주 종료를 수행할 수 있습니다.");
+            throw new RuntimeException("밴드장 또는 간부만 일괄 합주 종료를 수행할 수 있습니다.");
         }
 
         java.util.List<BnGroup> confirmedGroups = bnGroupRepository.findByCnNoAndBnConfFgAndBnStatCd(clanId, "Y", "A");
@@ -1032,7 +1032,7 @@ public class BandService {
         String newLeaderId;
 
         if ("CLAN".equals(group.getBnType())) {
-            // ─── 클랜합주방: 세션 우선순위 기반으로 방장 결정 ───────────────────
+            // ─── 밴드합주팀: 세션 우선순위 기반으로 방장 결정 ───────────────────
             // 2-1. Get Priority Map (COMM_ORDER)
             java.util.Map<String, Integer> orderMap = getSessionOrderMap();
 
@@ -1048,7 +1048,7 @@ public class BandService {
 
             newLeaderId = sessions.get(0).getBnSessionJoinUserId();
 
-            // 2-3. Update BN_GROUP.BN_LEADER_ID (클랜합주방만 변경)
+            // 2-3. Update BN_GROUP.BN_LEADER_ID (밴드합주팀만 변경)
             if (!newLeaderId.equals(group.getBnLeaderId())) {
                 group.setBnLeaderId(newLeaderId);
                 group.setUpdDtime(java.time.LocalDateTime.now()
@@ -1057,7 +1057,7 @@ public class BandService {
                 bnGroupRepository.save(group);
             }
         } else {
-            // ─── 자유합주방: 최초 생성자(BN_LEADER_ID)를 방장으로 고정 ─────────
+            // ─── 자유합주팀: 최초 생성자(BN_LEADER_ID)를 방장으로 고정 ─────────
             // BN_LEADER_ID는 변경하지 않음 (최초 등록자가 항상 방장)
             newLeaderId = group.getBnLeaderId();
         }
@@ -1162,7 +1162,7 @@ public class BandService {
         Long bnNo = dto.getBnNo();
         String userId = dto.getUserId();
 
-        // 1. 해당 합주방에서 이 사용자의 기존 일정 시간 삭제
+        // 1. 해당 합주팀에서 이 사용자의 기존 일정 시간 삭제
         java.util.List<com.bandi.backend.entity.band.BnPlanScheduleTime> userTimes = bnPlanScheduleTimeRepository.findByBnNo(bnNo).stream()
                 .filter(t -> t.getBnUserId().equals(userId))
                 .collect(java.util.stream.Collectors.toList());
@@ -1275,7 +1275,7 @@ public class BandService {
         BnGroup group = bnGroupRepository.findById(bnNo)
                 .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
-        // 방장 또는 클랜 간부 권한 체크
+        // 방장 또는 밴드 간부 권한 체크
         boolean isLeader = group.getBnLeaderId().equals(userId);
         boolean canManage = isLeader;
         if (!canManage && "CLAN".equals(group.getBnType()) && group.getCnNo() != null) {
@@ -1288,7 +1288,7 @@ public class BandService {
         }
 
         if (!canManage) {
-            throw new RuntimeException("합주 일정 확정 권한이 없습니다. (방장 또는 클랜 간부만 가능)");
+            throw new RuntimeException("합주 일정 확정 권한이 없습니다. (방장 또는 밴드 간부만 가능)");
         }
 
         String currentDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
@@ -1443,7 +1443,7 @@ public class BandService {
         BnGroup group = bnGroupRepository.findById(rsv.getBnNo())
                 .orElseThrow(() -> new RuntimeException("합주 정보를 찾을 수 없습니다."));
 
-        // 관리자(방장/클랜장/간부) 또는 본인만 삭제 가능
+        // 관리자(방장/밴드장/간부) 또는 본인만 삭제 가능
         boolean hasPermission = group.getBnLeaderId().equals(requesterId)
                 || rsv.getBnSessionRsvUserId().equals(requesterId);
 
@@ -1495,7 +1495,7 @@ public class BandService {
 
         java.util.Map<String, com.bandi.backend.dto.UpcomingScheduleDto> dateGroupMap = new java.util.HashMap<>();
 
-        // 2. Check Studio Reservations (사용자 합주방 예약 + 사용자 본인 예약 모두 수집)
+        // 2. Check Studio Reservations (사용자 합주팀 예약 + 사용자 본인 예약 모두 수집)
         java.util.List<com.bandi.backend.entity.band.BnReservation> reservations = new java.util.ArrayList<>();
         if (!bnNos.isEmpty()) {
             java.util.List<com.bandi.backend.entity.band.BnReservation> bandResvs = bnReservationRepository.findByBnNoIn(bnNos);

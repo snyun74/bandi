@@ -187,11 +187,11 @@ public class ClanGatherController {
         try {
             String userId = body.get("userId");
             clanGatherService.createJamRoomsFromMatch(gatherNo, userId);
-            return ResponseEntity.ok(Map.of("message", "합주방이 일괄 생성되었습니다."));
+            return ResponseEntity.ok(Map.of("message", "합주팀이 일괄 생성되었습니다."));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "합주방 생성 중 오류가 발생했습니다."));
+                    .body(Map.of("message", e.getMessage() != null ? e.getMessage() : "합주팀 생성 중 오류가 발생했습니다."));
         }
     }
 }

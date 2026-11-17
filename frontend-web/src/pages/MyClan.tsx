@@ -61,14 +61,14 @@ const MyClan: React.FC = () => {
                 <button onClick={() => navigate(-1)} className="text-[#052c42] mr-4">
                     <FaChevronLeft size={24} />
                 </button>
-                <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1">내 클랜</SectionTitle>
+                <SectionTitle as="h1" className="!mt-0 !mb-0 flex-1">내 밴드</SectionTitle>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 pb-20 space-y-4">
                 {loading ? (
                     <div className="text-center py-10 text-gray-400">Loading...</div>
                 ) : clans.length === 0 ? (
-                    <div className="text-center py-10 text-gray-400">가입된 클랜이 없습니다.</div>
+                    <div className="text-center py-10 text-gray-400">가입된 밴드가 없습니다.</div>
                 ) : (
                     clans.map((clan) => (
                         <div key={clan.id}
@@ -89,7 +89,7 @@ const MyClan: React.FC = () => {
                                     {clan.name}
                                 </SectionTitle>
                                 <p className="text-[#003C48] text-[13px] mb-1 truncate">
-                                    {getDisplayIntroSummary(clan.description) || '클랜 소개글이 없습니다.'}
+                                    {getDisplayIntroSummary(clan.description) || '밴드 소개글이 없습니다.'}
                                 </p>
                             </div>
                         </div>
