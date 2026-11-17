@@ -12,6 +12,7 @@ import iconJamSearch from '../assets/solar_music-notes-bold.png';
 import iconNotice from '../assets/group3.png';
 import iconCreate from '../assets/mynaui_file-plus-solid.png';
 import { getDisplayIntroSummary } from '../components/clan/ClanIntroTemplateEditor';
+import MainBannerSlider from '../components/banner/MainBannerSlider';
 
 interface UpcomingSchedule {
     type: string;
@@ -60,8 +61,6 @@ export default function HomePage() {
     };
 
     // 메인 광고/배너 상태
-    const [mainBanner, setMainBanner] = useState<{ url: string; isVideo: boolean; linkUrl: string | null } | null>(null);
-    const [isBannerLoading, setIsBannerLoading] = useState(true);
 
     // 1 영역: 다가오는 예약
     const [upcomingSchedules, setUpcomingSchedules] = useState<UpcomingSchedule[]>([]);
@@ -178,7 +177,6 @@ export default function HomePage() {
     };
 
     useEffect(() => {
-        fetchMainBanner();
         fetchBandiTalkPosts();
         if (userId) {
             fetchUpcomingSchedules();
@@ -196,24 +194,6 @@ export default function HomePage() {
             html.style.scrollBehavior = '';
         };
     }, [userId]);
-
-    // 메인 광고 배너 조회
-    const fetchMainBanner = async () => {
-        try {
-            const res = await fetch('/api/admin/banners/MAIN');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.fileUrl) {
-                    const isVideo = data.mimeType?.startsWith('video/') || data.fileUrl.match(/\.(mp4|webm|ogg)$/i) !== null;
-                    setMainBanner({ url: data.fileUrl, isVideo, linkUrl: data.adBannerLinkUrl || null });
-                }
-            }
-        } catch (error) {
-            console.error("Failed to fetch main banner", error);
-        } finally {
-            setIsBannerLoading(false);
-        }
-    };
 
     // 1 영역: 다가오는 예약 API 호출
     const fetchUpcomingSchedules = async () => {
@@ -417,56 +397,8 @@ export default function HomePage() {
             {/* ========================================================================= */}
             <div className="fixed top-[calc(var(--header-height)+var(--safe-top))] left-0 right-0 z-0 w-full flex justify-center pointer-events-auto">
                 <section className="w-full max-w-lg aspect-[16/9] bg-[#003C48] overflow-hidden select-none flex items-center justify-center transform-gpu">
-                    {isBannerLoading ? (
-                        <div className="w-full h-full bg-slate-800 animate-pulse" />
-                    ) : mainBanner ? (
-                        mainBanner.linkUrl ? (
-                            <a
-                                href={mainBanner.linkUrl.startsWith('http') ? mainBanner.linkUrl : `http://${mainBanner.linkUrl}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full h-full block"
-                            >
-                                {mainBanner.isVideo ? (
-                                    <video 
-                                        src={mainBanner.url} 
-                                        autoPlay 
-                                        loop 
-                                        muted 
-                                        playsInline 
-                                        className="w-full h-full object-cover cursor-pointer transition-opacity duration-300" 
-                                    />
-                                ) : (
-                                    <img 
-                                        src={mainBanner.url} 
-                                        alt="Main Banner" 
-                                        className="w-full h-full object-cover cursor-pointer transition-opacity duration-300" 
-                                    />
-                                )}
-                            </a>
-                        ) : (
-                            <div className="w-full h-full">
-                                {mainBanner.isVideo ? (
-                                    <video 
-                                        src={mainBanner.url} 
-                                        autoPlay 
-                                        loop 
-                                        muted 
-                                        playsInline 
-                                        className="w-full h-full object-cover transition-opacity duration-300" 
-                                    />
-                                ) : (
-                                    <img 
-                                        src={mainBanner.url} 
-                                        alt="Main Banner" 
-                                        className="w-full h-full object-cover transition-opacity duration-300" 
-                                    />
-                                )}
-                            </div>
-                        )
-                    ) : (
-                        <img src="/images/main_logo.png" alt="Default Main Banner" className="w-full h-full object-cover" />
-                    )}
+                    {/* 메인(MAIN) 위치 노출 배너: 여러 개면 2초 간격 자동 슬라이드 */}
+                    <MainBannerSlider positionCd="MAIN" intervalMs={2000} />
                 </section>
             </div>
 
