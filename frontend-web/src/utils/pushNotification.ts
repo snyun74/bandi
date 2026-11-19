@@ -1,6 +1,15 @@
 import { messaging, VAPID_KEY } from "../firebase/firebaseConfig";
 import { getToken, onMessage } from "firebase/messaging";
 
+/** 이 기기의 푸시 토큰이 현재 사용자로 서버 등록 완료되었을 때 발생하는 이벤트 */
+export const PUSH_REGISTERED_EVENT = 'bandi:push-registered';
+
+const notifyPushRegistered = () => {
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(PUSH_REGISTERED_EVENT));
+    }
+};
+
 /**
  * 앱 환경(Android / iOS WebView)인지 확인
  */
@@ -66,6 +75,7 @@ export const saveTokenToServer = async (
 
     if (lastSyncedToken === token && lastSyncedUser === userId) {
         console.log(`[Push] Device token already registered on server for user: ${userId}. Skipping server call.`);
+        notifyPushRegistered();
         return true;
     }
 
@@ -89,6 +99,7 @@ export const saveTokenToServer = async (
             localStorage.setItem("last_synced_fcm_token", token);
             localStorage.setItem("last_synced_user_id", userId);
             delete (window as any).__pendingSaveToken;
+            notifyPushRegistered();
             return true;
         } else {
             console.error(`[Push] Failed to register token to server. Status:`, response.status);

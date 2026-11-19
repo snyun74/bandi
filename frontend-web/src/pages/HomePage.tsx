@@ -4,7 +4,11 @@ import JamEvaluationModal from "../components/common/JamEvaluationModal";
 import ProfileEditModal from "../components/profile/ProfileEditModal";
 import NoticePopup from "../components/notice/NoticePopup";
 import NotificationPermissionModal from "../components/common/NotificationPermissionModal";
-import { syncDeviceToken, isDeviceRegistered } from "../utils/pushNotification";
+import { syncDeviceToken, isDeviceRegistered, PUSH_REGISTERED_EVENT } from "../utils/pushNotification";
+
+// 알림 권한 팝업: 앱이 토큰을 전달할 때까지 기다리는 최대 시간 / '확인·닫기' 후 다시 띄우지 않는 기간
+const NOTI_PERM_WAIT_MS = 4000;
+const NOTI_PERM_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
 import DefaultProfile from "../components/common/DefaultProfile";
 import { FaHeart, FaComment, FaChevronRight, FaPen } from 'react-icons/fa';
 import iconJamCreate from '../assets/group4.png';
@@ -83,6 +87,7 @@ export default function HomePage() {
     const [profileIncomplete, setProfileIncomplete] = useState(false);
     const [activeNotices, setActiveNotices] = useState<any[]>([]);
     const [isNotiPermissionModalOpen, setIsNotiPermissionModalOpen] = useState(false);
+    const notiPermTimerRef = useRef<number | null>(null);
 
     // Profile Modal State
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -339,19 +344,46 @@ export default function HomePage() {
             return;
         }
 
-        // 3. 네이티브 토큰 전달 및 권한 확인 대기 (1.5초 후 확인)
-        setTimeout(() => {
-            // 이미 정상 등록 완료되었으면 팝업을 띄우지 않음
+        // - 이미 등록 완료된 기기면 팝업 불필요
+        if (isDeviceRegistered()) {
+            return;
+        }
+
+        // 3. 네이티브 토큰 전달 대기 후 확인 (대기 중 등록 완료 이벤트가 오면 팝업을 띄우지 않음)
+        if (notiPermTimerRef.current) window.clearTimeout(notiPermTimerRef.current);
+        notiPermTimerRef.current = window.setTimeout(() => {
+            notiPermTimerRef.current = null;
             if (isDeviceRegistered()) {
                 return;
             }
 
             // 장비 등록 처리를 하지 못했을 경우 (권한 거부 또는 토큰 미발급 상태) -> 팝업 노출
             setIsNotiPermissionModalOpen(true);
-        }, 1500);
+        }, NOTI_PERM_WAIT_MS);
     };
 
+    // 토큰 등록이 완료되면 대기 중인 확인을 취소하고, 열려 있는 팝업도 자동으로 닫음
+    useEffect(() => {
+        const handleRegistered = () => {
+            if (notiPermTimerRef.current) {
+                window.clearTimeout(notiPermTimerRef.current);
+                notiPermTimerRef.current = null;
+            }
+            setIsNotiPermissionModalOpen(false);
+        };
+        window.addEventListener(PUSH_REGISTERED_EVENT, handleRegistered);
+        return () => {
+            window.removeEventListener(PUSH_REGISTERED_EVENT, handleRegistered);
+            if (notiPermTimerRef.current) {
+                window.clearTimeout(notiPermTimerRef.current);
+                notiPermTimerRef.current = null;
+            }
+        };
+    }, []);
+
     const handleCloseNotiModal = () => {
+        // '확인/닫기' 시 3일간 다시 띄우지 않음
+        localStorage.setItem('hide_noti_perm_modal_until', String(Date.now() + NOTI_PERM_SNOOZE_MS));
         setIsNotiPermissionModalOpen(false);
     };
 

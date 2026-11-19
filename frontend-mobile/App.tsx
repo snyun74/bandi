@@ -14,7 +14,9 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  NativeModules
+  NativeModules,
+  AppState,
+  AppStateStatus
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
@@ -64,8 +66,25 @@ function App(): React.JSX.Element {
     return enabled;
   };
 
+  // 현재 알림 권한 상태 확인 (권한 요청 팝업 없이 조회만)
+  const hasNotificationPermission = async (): Promise<boolean> => {
+    try {
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        return await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+      }
+      const authStatus = await messaging().hasPermission();
+      return (
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL
+      );
+    } catch (error) {
+      console.warn('Notification permission check error:', error);
+      return false;
+    }
+  };
+
   // FCM 토큰 획득 및 설정
-  const getAndSetFcmToken = async () => {
+  const getAndSetFcmToken = async (): Promise<string | null> => {
     try {
       if (Platform.OS === 'ios') {
         await messaging().registerDeviceForRemoteMessages();
@@ -74,10 +93,12 @@ function App(): React.JSX.Element {
       if (token) {
         console.log('Firebase Token:', token);
         setFcmToken(token);
+        return token;
       }
     } catch (error) {
       console.warn('FCM Token error:', error);
     }
+    return null;
   };
 
   // 웹뷰로 토큰 전달 (인위적 주입)
@@ -192,7 +213,8 @@ function App(): React.JSX.Element {
         if (initialMessage) {
           console.log('Notification caused app to open from quit state (initial):', initialMessage);
           if (initialMessage.data?.click_action) {
-            const link = initialMessage.data.click_action;
+            // FCM data 값 타입(string | object) 보정: 문자열로 변환
+            const link = String(initialMessage.data.click_action);
             const targetUrl = link.startsWith('http') ? link : `${WEB_URL}${link}`;
             console.log('Setting initial URL from deep link:', targetUrl);
             setCurrentUrl(targetUrl);
@@ -212,6 +234,30 @@ function App(): React.JSX.Element {
       if (unsubscribeTokenRefresh) unsubscribeTokenRefresh();
       if (unsubscribeOnMessage) unsubscribeOnMessage();
     };
+  }, []);
+
+  // 토큰을 늦게 받은 경우(권한 팝업 응답이 웹뷰 로딩보다 늦은 경우 등)에도 웹뷰로 전달
+  useEffect(() => {
+    if (fcmToken) {
+      sendTokenToWebView(fcmToken);
+    }
+  }, [fcmToken]);
+
+  // 앱이 다시 활성화될 때(설정 화면에서 알림을 켜고 돌아온 경우 등) 권한 재확인 후 토큰 발급·전달
+  useEffect(() => {
+    let lastState: AppStateStatus = AppState.currentState;
+    const subscription = AppState.addEventListener('change', async (nextState) => {
+      const becameActive = lastState.match(/inactive|background/) && nextState === 'active';
+      lastState = nextState;
+      if (!becameActive) return;
+
+      if (await hasNotificationPermission()) {
+        const token = await getAndSetFcmToken();
+        // 동일 토큰이면 state 변경이 없어 위 effect가 동작하지 않으므로 직접 전달
+        if (token) sendTokenToWebView(token);
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
@@ -263,7 +309,6 @@ function App(): React.JSX.Element {
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
         allowsFullscreenVideo={false}
-        webKitAllowsInlineMediaPlayback={true}
         onLoadStart={() => setIsLoading(true)}
         onLoadEnd={(e) => {
           const url = e.nativeEvent.url;
